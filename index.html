@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Comboniani">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<title>Stagione Comboniani 26/27 · Calciotto 8 vs 8</title>
+<title>Stagione Comboniani 26/27 · Calciotto</title>
 <link rel="icon" type="image/png" href="icons/favicon-32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -209,6 +209,9 @@ table.cls{width:100%;border-collapse:separate;border-spacing:0;font-variant-nume
 .chamf{clip-path:polygon(var(--c) 0,calc(100% - var(--c)) 0,100% var(--c),100% calc(100% - var(--c)),calc(100% - var(--c)) 100%,var(--c) 100%,0 calc(100% - var(--c)),0 var(--c))}
 .pgrid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 @media (min-width:900px){.pgrid{grid-template-columns:repeat(auto-fill,minmax(195px,1fr))}}
+.mfig-w{position:relative}
+.mfig-turn{position:absolute;right:9px;bottom:9px;z-index:3;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:rgba(10,13,20,.82);color:var(--tx);font-size:16px;line-height:1;touch-action:manipulation}
+.mfig-turn:active{background:var(--or-soft)}
 .mfig{display:block;width:100%;padding:0;border:0;background:none;filter:drop-shadow(0 0 var(--gr) var(--glow));transition:transform .2s var(--ease)}
 .mfig-fr{--c:15px;display:block;padding:2px;background:var(--tier)}
 .mfig:hover{transform:translateY(-3px)}
@@ -368,7 +371,7 @@ button.affr:hover{border-color:var(--line)}
 .ed-team h4>span:first-child{display:flex;align-items:center;gap:8px}
 .cnt{font:800 12px var(--body);color:var(--mu);padding:3px 8px;border-radius:7px;background:rgba(255,255,255,.05)}
 .cnt.full{color:var(--or);background:var(--or-soft)}
-.erow{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:8px 10px;padding:9px 4px;border-top:1px solid rgba(255,255,255,.05)}
+.erow{display:grid;grid-template-columns:auto 1fr auto auto auto;align-items:center;gap:8px 10px;padding:9px 4px;border-top:1px solid rgba(255,255,255,.05)}
 .erow .nm{font-weight:800;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .steps{grid-column:1/-1;display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
 .stp{display:inline-flex;align-items:center;border:1px solid var(--hair);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.02)}
@@ -379,6 +382,9 @@ button.affr:hover{border-color:var(--line)}
 .stp.on{border-color:var(--line)}
 .stp.on output{color:var(--or)}
 .capb{width:32px;height:32px;border-radius:9px;border:1px solid var(--hair);background:none;color:var(--mu);font:800 14px var(--body);touch-action:manipulation}
+.latb{width:32px;height:32px;border-radius:9px;border:1px solid var(--hair);background:none;color:var(--mu);font-size:15px;line-height:1;touch-action:manipulation;filter:grayscale(1);opacity:.7}
+.latb[aria-pressed=true]{filter:none;opacity:1;background:rgba(251,191,36,.14);border-color:rgba(251,191,36,.6)}
+.lt-ic{font-style:normal;margin-left:2px}
 .capb[aria-pressed=true]{background:#fbbf24;border-color:#fbbf24;color:#0a0d14}
 .rm{width:32px;height:32px;border-radius:9px;border:1px solid var(--hair);background:none;color:var(--mu);font-size:18px;line-height:1}
 .sticky-actions{position:sticky;bottom:-20px;margin:16px -20px -20px;padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px));background:rgba(11,14,21,.97);border-top:1px solid var(--hair);z-index:3}
@@ -469,6 +475,12 @@ button.arow:hover{background:rgba(255,255,255,.035)}
 .pchip.w .co{color:#475569}
 .bal{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:space-between;padding:10px 12px;border-radius:14px;border:1px dashed rgba(251,191,36,.35);background:rgba(251,191,36,.05)}
 .bal span{font-weight:700;font-size:13.5px;color:#fde68a}
+.bal-sz{display:inline-flex;align-items:center;gap:6px}
+.bal-sz label{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:12.5px;color:#fde68a}
+.bal-sz input{width:56px;height:34px;padding:0 4px;text-align:center}
+.bal-sz b{color:var(--mu)}
+.pcard.r5 .pc-name{max-width:17cqw}
+.cc.r5 .cc-nm{max-width:calc(var(--cw) * 1.3)}
 .ed-score .t small b{color:var(--tx)}
 
 /* ---------- Share figurina (4:5, 1080x1350) ---------- */
@@ -758,6 +770,13 @@ body:not(.lit) .holo{animation:holoIdle 6s ease-in-out infinite alternate}
 /* --- Figurina in 3D: palco, flip, inclinazione --- */
 .stage3d{position:relative;perspective:1100px}
 .flip,.tilt{position:relative;transform-style:preserve-3d}
+.flip{transition:transform .6s var(--ease)}
+.flip.turned{transform:rotateY(180deg)}
+.flip.turned .face-front,.flip:not(.turned) .face-back{pointer-events:none}
+.flip.peek{animation:flipPeek 1.9s ease-in-out both}
+@keyframes flipPeek{0%{transform:none}35%,60%{transform:rotateY(180deg)}100%{transform:none}}
+.flip-hint{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:5;padding:6px 14px;border-radius:999px;background:rgba(10,13,20,.88);border:1px solid var(--line-strong);color:var(--tx);font:800 13px var(--body);white-space:nowrap;pointer-events:none;animation:hintOut .4s ease 2.2s forwards}
+@keyframes hintOut{to{opacity:0}}
 .tilt{transition:transform .14s linear}
 .tilt.on-holo{transform:rotateY(calc(var(--tx,0) * 9deg)) rotateX(calc(var(--ty,0) * -9deg));touch-action:none}
 .face-front,.face-back{-webkit-backface-visibility:hidden;backface-visibility:hidden}
@@ -767,6 +786,15 @@ body:not(.lit) .holo{animation:holoIdle 6s ease-in-out infinite alternate}
 .face-back{position:absolute;top:0;left:0;transform:rotateY(180deg)}
 .back-in{align-items:center;justify-content:center;gap:10px;text-align:center;
   background:radial-gradient(circle at 50% 42%,rgba(249,115,22,.22),rgba(10,13,20,0) 55%),repeating-linear-gradient(45deg,rgba(255,255,255,.025) 0 2px,rgba(0,0,0,0) 2px 14px),#07090e}
+.back-in.prof{align-items:stretch;justify-content:flex-start;gap:9px;text-align:left;padding:26px 22px 20px;overflow:auto}
+.back-in.prof>b{font:italic 800 28px/1 var(--disp);color:var(--tier-ink);margin-bottom:4px}
+.pb-row{display:flex;gap:11px;align-items:flex-start}
+.pb-row i{font-style:normal;font-size:19px;line-height:1.2}
+.pb-row span{display:flex;flex-direction:column;min-width:0;letter-spacing:0;text-transform:none;font-size:inherit}
+.back-in .pb-row small{font:700 11px var(--body);color:var(--mu);letter-spacing:.08em;text-transform:uppercase}
+.back-in .pb-row b{font:700 15px/1.25 var(--body);color:var(--tx);overflow-wrap:anywhere}
+.pb-bio{margin:4px 0 0;padding-top:10px;border-top:1px dashed rgba(255,255,255,.12);font:500 14px/1.4 var(--body);color:var(--tx);overflow-wrap:anywhere}
+.back-in.prof .btn,.back-in .btn{align-self:center;margin-top:auto;letter-spacing:0;text-transform:none}
 .back-in svg{width:42%;height:auto;filter:drop-shadow(0 0 26px rgba(249,115,22,.55))}
 .back-in b{font:italic 800 34px/1 var(--disp);color:var(--tier-ink)}
 .back-in span{font:700 13px var(--body);color:var(--mu);letter-spacing:.18em;text-transform:uppercase}
@@ -1313,6 +1341,26 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .rt-st:active{background:var(--or-soft)}
 .rt-note{margin:0 0 8px;font-size:12.5px}
 .rt-send{width:100%}
+.bday{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:18px;border-color:rgba(251,191,36,.45);background:linear-gradient(100deg,rgba(251,191,36,.16),rgba(12,16,24,.66) 60%)}
+.bday .bd-ic{font-size:26px}
+.bday>div{flex:1;min-width:0;font-weight:700;font-size:14px}
+.bday .lk{border:0;background:none;color:var(--or);font:800 14px var(--body);padding:0;text-decoration:underline}
+.bday .bd-x{width:32px;height:32px;border-radius:9px;border:1px solid var(--hair);background:none;color:var(--mu);font-size:14px}
+.prof-form{display:grid;gap:10px}
+.prof-form label{display:grid;gap:4px;font:700 12.5px var(--body);color:var(--mu)}
+.prof-form .field{width:100%}
+.prof-form textarea.field{min-height:78px;resize:vertical;font-family:var(--body)}
+.prof-st{padding:9px 12px;border-radius:12px;font-weight:700;font-size:13.5px;background:rgba(255,255,255,.04)}
+.prof-st.ok{color:#86efac;background:rgba(74,222,128,.08)}
+.prof-st.no{color:#fda4af;background:rgba(251,113,133,.08)}
+.prof-st.wait{color:#fde68a;background:rgba(251,191,36,.08)}
+.pr-item{padding:12px;margin-top:10px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);display:grid;gap:8px}
+.pr-item h4{margin:0;font:italic 800 20px/1 var(--disp)}
+.pr-r{display:flex;flex-direction:column;font-size:13.5px;overflow-wrap:anywhere}
+.pr-r small{color:var(--mu);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.pr-r s{color:var(--mu)}
+.pr-act{display:flex;flex-wrap:wrap;gap:8px}
+.cbadge{display:inline-block;min-width:20px;padding:0 6px;margin-left:6px;border-radius:999px;background:var(--or);color:#1a0a00;font:800 12px/20px var(--body);text-align:center}
 .me-rt{display:grid;gap:6px}
 .me-rt>div{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.03);font-weight:700;font-size:13.5px}
 .me-rt small{color:var(--mu);font-weight:600}
@@ -1358,7 +1406,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 <header class="topbar">
   <div class="brand">
     <svg class="crest" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbbf24"/><stop offset=".45" stop-color="#f97316"/><stop offset="1" stop-color="#ea580c"/></linearGradient></defs><path d="M16 2h16l14 14v16L32 46H16L2 32V16z" fill="#0a0d14" stroke="url(#cg)" stroke-width="2.5"/><path d="M24 11l3.8 9.2L37 24l-9.2 3.8L24 37l-3.8-9.2L11 24l9.2-3.8z" fill="url(#cg)"/></svg>
-    <div><h1>Comboniani</h1><small>Stagione 26/27, calciotto 8 vs 8</small></div>
+    <div><h1>Comboniani</h1><small>Stagione 26/27, calciotto</small></div>
   </div>
   <div class="grow"></div>
   <span id="sync" class="sync" data-state="connecting" title="Connessione al database in corso"><i></i><span>Connessione…</span></span>
@@ -1479,7 +1527,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 <div class="modal" id="m-match" aria-hidden="true">
   <div class="sheet glass wide" role="dialog" aria-modal="true" aria-labelledby="mm-t">
     <div class="mm-head">
-      <div><h3 id="mm-t">Registro gara</h3><p class="lead-p" style="margin:0">Spunta i 16 convocati e bilancia, oppure schiera a mano. Poi inserisci i gol uno alla volta, nell’ordine in cui sono avvenuti.</p></div>
+      <div><h3 id="mm-t">Registro gara</h3><p class="lead-p" style="margin:0">Spunta i convocati e bilancia, oppure schiera a mano. Poi inserisci i gol uno alla volta, nell’ordine in cui sono avvenuti.</p></div>
       <div class="mm-meta">
         <label>Giornata<input id="ed-day" class="field" type="number" min="1" max="99" inputmode="numeric"></label>
         <label>Data<input id="ed-date" class="field" type="date"></label>
@@ -1499,7 +1547,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
         <button type="button" class="tt" data-edteam="black" aria-pressed="false"><span class="dot b"></span>Neri</button>
         <input id="ed-filter" class="field" type="search" placeholder="Filtra giocatori" aria-label="Filtra giocatori" autocomplete="off">
       </div>
-      <div class="bal"><span id="ed-called">Convocati 0/16</span><button type="button" class="btn sm primary" data-action="balance" id="ed-bal">⚖️ Bilancia squadre</button></div>
+      <div class="bal"><span id="ed-called">Convocati 0</span><span class="bal-sz"><label>Bianchi <input id="bal-w" class="field" type="number" min="1" max="11" inputmode="numeric" aria-label="Giocatori dei Bianchi"></label><b>/</b><label>Neri <input id="bal-b" class="field" type="number" min="1" max="11" inputmode="numeric" aria-label="Giocatori dei Neri"></label></span><button type="button" class="btn sm primary" data-action="balance" id="ed-bal">⚖️ Bilancia squadre</button></div>
       <div id="ed-pool" class="pool"></div>
     </div>
     <div class="ed-teams">
@@ -1519,6 +1567,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 <div class="modal" id="m-who" aria-hidden="true" data-lock="1"><div class="sheet glass who" role="dialog" aria-modal="true" aria-label="Chi sei?" id="who-body"></div></div>
 <div class="modal" id="m-rate" aria-hidden="true" data-lock="1"><div class="sheet glass vg" role="dialog" aria-modal="true" aria-label="Vota i compagni" id="rt-body"></div></div>
 <div class="modal" id="m-vote" aria-hidden="true" data-lock="1"><div class="sheet glass vg" role="dialog" aria-modal="true" aria-label="Vota l’MVP" id="vg-body"></div></div>
+<div class="modal" id="m-prof" aria-hidden="true"><div class="sheet glass vi" role="dialog" aria-modal="true" aria-label="Richieste schede giocatore" style="width:min(620px,100%)"><div id="pr-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 <div class="modal" id="m-vinfo" aria-hidden="true"><div class="sheet glass vi" role="dialog" aria-modal="true" aria-label="Chi ha votato chi" style="width:min(560px,100%)"><div id="vi-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 
 <!-- Replay a schermo intero -->
@@ -1602,7 +1651,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.4.0';
 const DEFAULT_PIN = '2026';
 const CACHE_KEY = 'cmb2627_cache_v1';
 const ROLES = { ATT:'Attaccante', CEN:'Centrocampista', DIF:'Difensore', JOLLY:'Jolly' };
@@ -1649,8 +1698,26 @@ PLAQUES.push({ id:'apriscatole', icon:'🥫', name:'L’Apriscatole', desc:'Più
   ok:s => s.firstG >= 1, cmp:(a,b) => (b.firstG - a.firstG) || (b.g - a.g), val:s => `${s.firstG} ${s.firstG === 1 ? 'primo gol' : 'primi gol'}` });
 PLAQUES.push({ id:'ultimo', icon:'⏳', name:'Ultimo Respiro', desc:'Più gol nell’ultimo 20% della gara (servono minuti e ora di fine). Parità: più gol totali.',
   ok:s => s.lateG >= 1, cmp:(a,b) => (b.lateG - a.lateG) || (b.g - a.g), val:s => `${s.lateG} ${s.lateG === 1 ? 'gol nel finale' : 'gol nel finale'}` });
-const FORMATIONS = { '1-3-3-1':[1,3,3,1], '1-3-2-2':[1,3,2,2], '1-2-3-2':[1,2,3,2], '1-2-4-1':[1,2,4,1] };
+/* Moduli per ogni misura di squadra (da 1 a 11 titolari). La prima riga è sempre un solo giocatore "in porta"; massimo 4 righe e 5 per riga.
+   Quelli a 8 sono i quattro di sempre. Il menu del modulo mostra solo quelli la cui somma è uguale ai titolari. */
+const FORMATIONS = {
+  '1-4-4-2':[1,4,4,2], '1-4-3-3':[1,4,3,3], '1-3-5-2':[1,3,5,2],
+  '1-4-3-2':[1,4,3,2], '1-3-4-2':[1,3,4,2], '1-4-4-1':[1,4,4,1],
+  '1-3-3-2':[1,3,3,2], '1-4-3-1':[1,4,3,1], '1-3-4-1':[1,3,4,1],
+  '1-3-3-1':[1,3,3,1], '1-3-2-2':[1,3,2,2], '1-2-3-2':[1,2,3,2], '1-2-4-1':[1,2,4,1],
+  '1-3-2-1':[1,3,2,1], '1-2-3-1':[1,2,3,1], '1-2-2-2':[1,2,2,2],
+  '1-2-2-1':[1,2,2,1], '1-3-1-1':[1,3,1,1], '1-2-1-2':[1,2,1,2],
+  '1-2-2':[1,2,2], '1-3-1':[1,3,1], '1-2-1-1':[1,2,1,1],
+  '1-2-1':[1,2,1], '1-1-2':[1,1,2], '1-3':[1,3],
+  '1-2':[1,2], '1-1-1':[1,1,1],
+  '1-1':[1,1],
+  '1':[1]
+};
 const DEF_FM = '1-3-3-1';
+const MAX_START = 11, MAX_BENCH = 2;                          /* titolari e giocatori "in più" per squadra */
+const MAX_CALLED = 2 * (MAX_START + MAX_BENCH);               /* 26 giocatori in distinta; 22 per una gara in programma */
+const fmSize = k => (FORMATIONS[k] || []).reduce((t, v) => t + v, 0);
+const fmOptions = n => Object.keys(FORMATIONS).filter(k => fmSize(k) === n);
 const ROLE_ORDER = { DIF:1, CEN:2, JOLLY:2.5, ATT:3 };
 /* [valore, unità singolare, plurale, soglia "in pericolo", decimali] */
 const PLQ_GAP = {
@@ -1678,7 +1745,7 @@ const COLS = [
 /* =========================================================
    STATE
    ========================================================= */
-const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{} };
+const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{} };
 const loaded = { players:false, matches:false };
 let localMode = false;
 const ui = {
@@ -1741,7 +1808,7 @@ function evDesc(x){
 function loadCache(){
   try{
     const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    if(c){ store.players = c.players || {}; store.matches = c.matches || {}; store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; }
+    if(c){ store.players = c.players || {}; store.matches = c.matches || {}; store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; }
   }catch(e){}
 }
 let cacheT;
@@ -1754,7 +1821,7 @@ function saveCache(){
       const { photo, ...rest } = p;
       return [k, (!rest.photoV && photo) ? p : rest];
     }));
-    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, photos:localMode ? store.photos : {} };
+    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, profileReq:store.profileReq, photos:localMode ? store.photos : {} };
     try{ localStorage.setItem(CACHE_KEY, JSON.stringify(data)); }
     catch(e){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, players:Object.fromEntries(Object.entries(players).map(([k, p]) => { const { photo, ...r } = p || {}; return [k, r]; })) })); }catch(e2){} }
   }, 400);
@@ -1924,7 +1991,7 @@ const starters = (m, team) => list(m[team]).filter(e => !e.bench);
 function matchMoves(m){
   return list(m.moves).map((x, j) => {
     const cm = x.ts ? clockMin(x.ts, m.time, m.end) : null;
-    return { j, pid:x.pid, k:x.k, ts:x.ts || '', min:cm != null ? cm : (x.min == null || x.min === '' ? null : num(x.min)), at:num(x.at) };
+    return { j, pid:x.pid, k:x.k, why:(x.k === 'out' && (x.why === 'inf' || x.why === 'imp')) ? x.why : '', ts:x.ts || '', min:cm != null ? cm : (x.min == null || x.min === '' ? null : num(x.min)), at:num(x.at) };
   }).filter(x => x.pid && (x.k === 'out' || x.k === 'in' || x.k === 'sw'));
 }
 /* Ordine dei cambi rispetto ai gol: ogni cambio ha uno "slot" (= prima del gol n). Si ordina per minuto quando il cambio e il gol
@@ -1948,24 +2015,26 @@ function matchTimeline(m){
   for(const x of mv) (byPid[x.pid] = byPid[x.pid] || []).push(x);
   return { moves:mv, byPid };
 }
-/* Transizione di un cambio: restituisce la nuova squadra (null = fuori dal campo) oppure undefined se il cambio è impossibile */
-function stepTeam(st, k, start, bench){
-  if(k === 'out') return st ? null : undefined;
-  if(k === 'sw') return st ? otherTeam(st) : undefined;
-  return (!st && bench) ? start : undefined;
+/* Stato di un giocatore durante la gara: t = squadra in cui sta ora (null = fuori dal campo), last = ultima squadra in cui ha giocato.
+   Un titolare parte in campo, uno "in più" parte fuori. Chi è fuori (uscito o "in più" non ancora entrato) può entrare, e rientra nella squadra che aveva lasciato. */
+const initState = (start, bench) => bench ? { t:null, last:null } : { t:start, last:start };
+/* Transizione di un cambio: restituisce il nuovo stato oppure undefined se il cambio è impossibile */
+function stepState(s, k, start){
+  if(k === 'out') return s.t ? { t:null, last:s.t } : undefined;
+  if(k === 'sw') return s.t ? { t:otherTeam(s.t), last:otherTeam(s.t) } : undefined;
+  return !s.t ? { t:s.last || start, last:s.last || start } : undefined;
 }
 /* Squadra in cui sta un giocatore nel momento del gol numero gi (indice in m.goals); gi = Infinity per lo stato a fine gara.
    null = non in campo (uscito, o "in più" non ancora entrato). */
 function teamAt(m, pid, gi, tl){
   const start = startTeam(m, pid); if(!start) return null;
   if(!hasMoves(m)) return start;
-  const bench = isBench(m, pid);
-  let st = bench ? null : start;
+  let s = initState(start, isBench(m, pid));
   for(const x of ((tl || matchTimeline(m)).byPid[pid] || [])){
     if(x.slot > gi) break;
-    const n = stepTeam(st, x.k, start, bench); if(n !== undefined) st = n;
+    const n = stepState(s, x.k, start); if(n !== undefined) s = n;
   }
-  return st;
+  return s.t;
 }
 /* Squadra in cui il giocatore ha giocato più minuti (usata per V/P/S, gol subiti, compagni, OVR).
    Se manca anche un solo minuto necessario, o la durata, o in parità: squadra di partenza. */
@@ -1974,15 +2043,15 @@ function effTeam(m, pid){
   if(!hasMoves(m)) return start;
   const mv = matchTimeline(m).byPid[pid] || [];
   if(!mv.length) return start;
-  const bench = isBench(m, pid), len = matchLen(m), tot = { white:0, black:0 };
-  let st = bench ? null : start, t = 0;
-  for(const x of mv){
+  const len = matchLen(m), tot = { white:0, black:0 };
+  let s = initState(start, isBench(m, pid)), t = 0;
+  for(const x of mv){   /* minuti giocati per squadra = somma degli intervalli in campo */
     if(x.min == null || x.min < t) return start;
-    if(st) tot[st] += x.min - t;
+    if(s.t) tot[s.t] += x.min - t;
     t = x.min;
-    const n = stepTeam(st, x.k, start, bench); if(n !== undefined) st = n;
+    const n = stepState(s, x.k, start); if(n !== undefined) s = n;
   }
-  if(st){ if(len == null || len < t) return start; tot[st] += len - t; }
+  if(s.t){ if(len == null || len < t) return start; tot[s.t] += len - t; }
   return tot.white > tot.black ? 'white' : tot.black > tot.white ? 'black' : start;
 }
 /* Righe dei giocatori divise per squadra effettiva (senza cambi sono le liste di sempre) */
@@ -1997,21 +2066,21 @@ function moveRows(m){
   const tl = matchTimeline(m), st = {}, out = [];
   for(const x of tl.moves){
     const start = startTeam(m, x.pid); if(!start) continue;
-    const bench = isBench(m, x.pid);
-    if(!(x.pid in st)) st[x.pid] = bench ? null : start;
-    const from = st[x.pid], n = stepTeam(from, x.k, start, bench);
-    if(n === undefined){ out.push({ ...x, bad:true, from, to:from }); continue; }
-    st[x.pid] = n; out.push({ ...x, from, to:n });
+    if(!(x.pid in st)) st[x.pid] = initState(start, isBench(m, x.pid));
+    const cur = st[x.pid], n = stepState(cur, x.k, start);
+    if(n === undefined){ out.push({ ...x, bad:true, from:cur.t, to:cur.t }); continue; }
+    st[x.pid] = n; out.push({ ...x, from:cur.t, to:n.t, back:x.k === 'in' && !!cur.last });
   }
   return out;
 }
 const teamName = t => t === 'white' ? 'Bianchi' : 'Neri';
-const moveIcon = k => k === 'sw' ? '🔁' : k === 'in' ? '⬆️' : '⬇️';
+/* ⬇️ esce (🤕 per infortunio, 📅 per impegno), ⬆️ entra, 🔁 passa all'altra squadra */
+const moveIcon = (k, why) => k === 'sw' ? '🔁' : k === 'in' ? '⬆️' : why === 'inf' ? '🤕' : why === 'imp' ? '📅' : '⬇️';
 function moveText(r, m){
   const nm = pname(r.pid, [...list(m.white), ...list(m.black)].find(e => e.pid === r.pid)?.n);
   if(r.k === 'sw') return `${nm} passa ${r.from ? `dai ${teamName(r.from)} ai ${teamName(r.to)}` : 'all’altra squadra'}`;
-  if(r.k === 'in') return `${nm} entra${r.to ? ` nei ${teamName(r.to)}` : ''}`;
-  return `${nm} esce${r.from ? ` dai ${teamName(r.from)}` : ''}`;
+  if(r.k === 'in') return `${nm} ${r.back ? 'rientra' : 'entra'}${r.to ? ` nei ${teamName(r.to)}` : ''}`;
+  return `${nm} esce${r.from ? ` dai ${teamName(r.from)}` : ''}${r.why === 'inf' ? ' per infortunio' : r.why === 'imp' ? ' per un impegno' : ''}`;
 }
 function matchScore(m){
   if(hasMoves(m)){ const tl = matchGoals(m), last = tl[tl.length - 1]; return last ? { w:last.w, b:last.b } : { w:0, b:0 }; }
@@ -2074,9 +2143,13 @@ function sortedMatches(){
     .sort((a, b) => (num(a.day) - num(b.day)) || String(a.date || '').localeCompare(String(b.date || '')) || ((a.createdAt || 0) - (b.createdAt || 0)));
 }
 /* MVP: Gol = 1.0, Assist = 0.5. Parità: squadra vincente, meno autogol, più gol. */
-/* Votazione MVP: votano solo i giocatori della gara (non se stessi), 24 ore o finché votano tutti.
+/* Votazione MVP: votano solo i giocatori della gara (non se stessi), 12 ore (24 per le gare vecchie) o finché votano tutti.
    Ogni voto vale VOTE_W punti SOLO per scegliere l'MVP; i voti restano segreti finché la votazione è aperta. */
-const VOTE_W = 0.25, VOTE_W2 = 0.2, VOTE_WINDOW = 24 * 3600e3;
+const VOTE_W = 0.25, VOTE_W2 = 0.2, VOTE_HRS_NEW = 12, VOTE_HRS_OLD = 24, VOTE_EXT = 6 * 3600e3;
+/* Finestra di voto della gara: voteHrs (12 per le gare nuove); le gare senza voteHrs restano a 24 ore */
+const voteWin = m => ((m && m.voteHrs) || VOTE_HRS_OLD) * 3600e3;
+const voteHrsTxt = m => `${(m && m.voteHrs) || VOTE_HRS_OLD} ore`;
+const extendBtn = m => ui.admin ? `<button type="button" class="btn sm ghost" data-action="vote-extend" data-mid="${m.id}">Riapri votazione</button>` : '';
 const voteW = m => (m && m.vote2 ? VOTE_W2 : VOTE_W);   /* le gare con vote2 (nuova regola) pesano 0,2 a voto; le precedenti restano a 0,25 */
 /* ---------- MVP: si vota solo tra i 4 migliori della partita ----------
    Punti = gol + ½ assist, senza bonus né malus di vittoria o sconfitta. A pari punti entra chi ha il ruolo con priorità
@@ -2221,7 +2294,7 @@ function computeStats(upto){
   const S = {};
   for(const [pid, p] of Object.entries(store.players || {})){
     if(!p || typeof p !== 'object') continue;
-    S[pid] = { pid, p, name:p.name || '', pres:0, v:0, pa:0, s:0, g:0, a:0, og:0, mvp:0, mvpPts:0, votesRx:0, firstG:0, lateG:0, hat:0, maxG:0, minConcW:Infinity, bigW:0,
+    S[pid] = { pid, p, name:p.name || '', pres:0, v:0, pa:0, s:0, g:0, a:0, og:0, mvp:0, mvpPts:0, votesRx:0, ritardi:0, firstG:0, lateG:0, hat:0, maxG:0, minConcW:Infinity, bigW:0,
                ovr:OVR_START, last:null, mates:{}, hist:[], prevRank:null };
   }
   const all = sortedMatches();
@@ -2251,6 +2324,7 @@ function computeStats(upto){
       for(const e of es){
         const st = S[e.pid];
         const g = num(e.g), a = num(e.a), og = num(e.og);
+        if(e.late) st.ritardi++;
         st.pres++; st[r]++; st.g += g; st.a += a; st.og += og;
         if(st.pres === 1) st.first = m.id;
         if(g >= 3) st.hat++;
@@ -2263,8 +2337,8 @@ function computeStats(upto){
         const award = awardIds.has(e.pid);
         if(award) st.awards = (st.awards || 0) + 1;
         const preOvr = st.ovr;
-        /* il bonus delle stelle si somma dopo il delta già limitato dai tetti (+5/-3); la variazione mostrata lo include */
-        const d = ovrDelta(st.p.role, st.ovr, { res:r, margin, conceded, g, a, og, mvp:isMvp, award }) + (RR[e.pid] ? RR[e.pid].bonus : 0);
+        /* il bonus delle stelle e il −1 del ritardo si sommano dopo il delta già limitato dai tetti (+5/-3); la variazione mostrata li include */
+        const d = ovrDelta(st.p.role, st.ovr, { res:r, margin, conceded, g, a, og, mvp:isMvp, award }) + (RR[e.pid] ? RR[e.pid].bonus : 0) - (e.late ? 1 : 0);
         st.ovr = Math.max(OVR_MIN, Math.min(OVR_MAX, st.ovr + d));
         st.last = { d, day:num(m.day) };
         (log[m.id] = log[m.id] || {})[e.pid] = { d, ovr:st.ovr, pre:preOvr };
@@ -2415,7 +2489,7 @@ function boardHTML(sc){
 let rq = false;
 function scheduleRender(){ if(rq) return; rq = true; requestAnimationFrame(() => { rq = false; render(); }); }
 function render(){
-  watchRatings();
+  watchRatings(); watchProfileReq();
   /* Ruolo Portiere eliminato: i POR già salvati valgono come DIF solo in memoria, nel database non si riscrive nulla */
   for(const id in store.players){ const p = store.players[id]; if(p && p.role === 'POR') p.role = 'DIF'; }
   attachPhotos();
@@ -2427,6 +2501,8 @@ function render(){
   if(ui.duel && $('#m-duel').classList.contains('open')) renderDuel();
   if(openFigPid && Date.now() > figAnimUntil) renderFigurina();   // non interrompe il flip se arrivano dati durante l'animazione
   if(ED && $('#m-match').classList.contains('open')) renderEditor();
+  if($('#m-prof') && $('#m-prof').classList.contains('open') && ui.admin) $('#pr-body').innerHTML = profListHTML();
+  profToast();
   if(dataReady()){ syncSeenTiers(); checkRecords(); migrateLegacyPhotos(); rankShift(); pvFlush(); prFlush(); flow(); }
 }
 
@@ -2473,7 +2549,7 @@ function renderDashboardInner(){
   const next = nx ? `<div class="glass next" role="button" tabindex="0" data-open-match="${nx.id}" aria-label="Apri la gara in programma">
       <span class="tag">🗓️ Prossima gara</span><b>Giornata ${num(nx.day)}</b><span class="mu">${esc(whenLabel(nx) || 'Data da definire')}</span>
       <span class="mu">OVR medio ${teamMean(nx.white).toFixed(1)} contro ${teamMean(nx.black).toFixed(1)}</span>${cdSpan(nx)}<span class="go">Scopri dove giochi</span>${list(nx.white).length || list(nx.black).length ? `<span class="capsrow"><span class="capside">${kit('white')}${capInfoHTML(nx, 'white')}</span><span class="capside">${kit('black')}${capInfoHTML(nx, 'black')}</span></span>` : ''}</div>` : '';
-  $('#dash').innerHTML = `<div class="dash">${next}${hero}
+  $('#dash').innerHTML = `<div class="dash">${bdayHTML()}${next}${hero}
     <section class="glass">
       <div class="panel-h"><h2>Classifica generale</h2><span class="mu sm">Tocca un giocatore per aprire la figurina</span></div>
       ${podiumHTML()}
@@ -2566,7 +2642,7 @@ function renderPlayers(){
     .sort((a, b) => cmp(a, b) || a.name.localeCompare(b.name, 'it'));
   $('#pcount').textContent = `${ps.length} ${ps.length === 1 ? 'giocatore' : 'giocatori'}${ui.pRole === 'CEN' ? ' (Jolly inclusi)' : ''}`;
   const key = { ovr:null, g:'g', a:'a', pres:'pres', az:null }[ui.pSort];
-  grid.innerHTML = ps.map(s => `<button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}${roleChip(s.p.role)}${ovrPlate(s.ovr, 'sm')}${holoSpan(s.ovr)}<span class="mfig-b"><span class="mfig-n">${esc(s.name)}</span><span class="mfig-s"><span${key === 'g' ? ' style="color:var(--or)"' : ''}><b>${s.g}</b>gol</span><span${key === 'a' ? ' style="color:var(--or)"' : ''}><b>${s.a}</b>ass</span><span${key === 'pres' ? ' style="color:var(--or)"' : ''}><b>${s.pres}</b>pres</span></span></span></span></span></button>`).join('')
+  grid.innerHTML = ps.map(s => `<div class="mfig-w"><button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}${roleChip(s.p.role)}${ovrPlate(s.ovr, 'sm')}${holoSpan(s.ovr)}<span class="mfig-b"><span class="mfig-n">${esc(s.name)}</span><span class="mfig-s"><span${key === 'g' ? ' style="color:var(--or)"' : ''}><b>${s.g}</b>gol</span><span${key === 'a' ? ' style="color:var(--or)"' : ''}><b>${s.a}</b>ass</span><span${key === 'pres' ? ' style="color:var(--or)"' : ''}><b>${s.pres}</b>pres</span></span></span></span></span></button><button type="button" class="mfig-turn" data-action="fig-back" data-pid="${s.pid}" aria-label="Retro della figurina di ${esc(s.name)}" title="Retro della figurina">↻</button></div>`).join('')
     || `<p class="mu" style="grid-column:1/-1">Nessun giocatore${ui.pRole !== 'ALL' ? ' ' + ui.pRole : ''}${raw ? ` corrisponde a “${esc(raw)}”` : ' in questo ruolo'}.</p>`;
 }
 
@@ -2598,7 +2674,197 @@ function figCounters(pid){
   seen[pid] = ov; try{ localStorage.setItem(SEEN_OVR, JSON.stringify(seen)); }catch(e){}
   countUp($('#fig-body'));
 }
-function openFigurina(pid){
+/* =========================================================
+   SCHEDE GIOCATORE, COMPLEANNI, RETRO DELLA FIGURINA
+   Approvata: players/{pid}/profile = { bd:'AAAA-MM-GG', bplace, nat, pos, bio }.
+   Richiesta: profileReq/{pid} = { campi, at, status:'pending'|'rejected', note? }. Tutti i campi sono facoltativi.
+   Pubblica solo l'età calcolata, mai la data. Ogni testo passa da esc().
+   ========================================================= */
+const POS_BY = { DIF:['terzino destro', 'terzino sinistro', 'difensore centrale', 'libero'], CEN:['mediano', 'regista', 'mezzala', 'esterno', 'trequartista'], ATT:['ala', 'seconda punta', 'centravanti', 'punta'] };
+const POS_ALL = [...POS_BY.DIF, ...POS_BY.CEN, ...POS_BY.ATT, 'tuttocampista'];
+const PROF_MAX = { bplace:40, nat:30, bio:200 }, PROF_LBL = { bd:'Data di nascita', bplace:'Luogo di nascita', nat:'Nazionalità', pos:'Ruolo preciso', bio:'Descrizione' };
+const pad2 = n => String(n).padStart(2, '0');
+const isoOf = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+function validDate(iso){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); if(!m) return null;
+  const y = +m[1], mo = +m[2], d = +m[3], dt = new Date(y, mo - 1, d);
+  return (dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d && y >= 1900) ? { y, mo, d } : null;
+}
+/* Controlla e pulisce i campi di una scheda: { campi } oppure { err } */
+function profileClean(raw, now){
+  now = now || new Date(); raw = raw && typeof raw === 'object' ? raw : {};
+  const out = {}, t = v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
+  const bd = t(raw.bd);
+  if(bd){
+    if(!validDate(bd)) return { err:'Data di nascita non valida' };
+    if(bd > isoOf(now)) return { err:'La data di nascita non può essere nel futuro' };
+    out.bd = bd;
+  }
+  for(const k of ['bplace', 'nat', 'bio']){
+    const v = t(raw[k]);
+    if(v.length > PROF_MAX[k]) return { err:`${PROF_LBL[k]}: massimo ${PROF_MAX[k]} caratteri` };
+    if(v) out[k] = v;
+  }
+  const pos = t(raw.pos);
+  if(pos){ if(!POS_ALL.includes(pos)) return { err:'Ruolo preciso non valido' }; out.pos = pos; }
+  return { campi:out };
+}
+/* Il 29/02 si festeggia il 28/02 negli anni non bisestili */
+const isLeap = y => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+const bdMD = (v, y) => (v.mo === 2 && v.d === 29 && !isLeap(y)) ? [2, 28] : [v.mo, v.d];
+function ageOf(bd, now){
+  const v = validDate(bd); if(!v) return null;
+  now = now || new Date();
+  const y = now.getFullYear(), [m, d] = bdMD(v, y), cm = now.getMonth() + 1;
+  const a = y - v.y - ((cm < m || (cm === m && now.getDate() < d)) ? 1 : 0);
+  return a >= 0 ? a : null;
+}
+function isBirthday(bd, now){
+  const v = validDate(bd); if(!v) return false;
+  now = now || new Date();
+  const y = now.getFullYear(), [m, d] = bdMD(v, y);
+  return y > v.y && now.getMonth() + 1 === m && now.getDate() === d;
+}
+/* Scheda approvata di un giocatore (campi validi) oppure null */
+function profOf(pid){
+  const r = store.players[pid] && store.players[pid].profile; if(!r || typeof r !== 'object') return null;
+  const c = profileClean(r);
+  return (c.campi && Object.keys(c.campi).length) ? c.campi : null;
+}
+const profPending = () => Object.entries(store.profileReq || {}).filter(([pid, r]) => r && r.status === 'pending' && store.players[pid]);
+/* Banner dei compleanni in dashboard: visibile a tutti, si chiude una volta al giorno */
+function bdayHTML(){
+  const now = new Date(), key = 'cmb_bday_' + isoOf(now);
+  try{ if(localStorage.getItem(key)) return ''; }catch(e){}
+  const who = STATS.list.map(s => ({ s, pr:profOf(s.pid) })).filter(x => x.pr && x.pr.bd && isBirthday(x.pr.bd, now));
+  if(!who.length) return '';
+  return `<div class="glass bday" role="status"><span class="bd-ic" aria-hidden="true">🎂</span><div>${who.map(x => `<div>Oggi compie ${ageOf(x.pr.bd, now)} anni: <button type="button" class="lk" data-open-player="${x.s.pid}">${esc(x.s.name)}</button></div>`).join('')}</div><button type="button" class="bd-x" data-action="bday-close" aria-label="Chiudi">✕</button></div>`;
+}
+/* Retro della figurina: scheda approvata (solo età, luogo, nazionalità, ruolo preciso, descrizione) oppure lo stemma */
+function backHTML(pid, p, backT){
+  const pr = profOf(pid), mine = !!pid && myPid() === pid, now = new Date();
+  const age = pr && pr.bd ? ageOf(pr.bd, now) : null;
+  const row = (ic, k, v) => v ? `<div class="pb-row"><i aria-hidden="true">${ic}</i><span><small>${k}</small><b>${esc(v)}</b></span></div>` : '';
+  const rows = pr ? row('🎂', 'Età', age != null ? `${age} anni` : '') + row('📍', 'Luogo di nascita', pr.bplace) + row('🌍', 'Nazionalità', pr.nat) + row('🎯', 'Ruolo preciso', pr.pos) + (pr.bio ? `<p class="pb-bio">${esc(pr.bio)}</p>` : '') : '';
+  const act = mine ? `<button type="button" class="btn sm" data-action="prof-open">${rows ? '✏️ Modifica scheda' : 'Completa la tua scheda'}</button>` : '';
+  const inner = rows ? `<div class="fig-in chamf back-in prof"><b>${esc(p.name)}</b>${rows}${act}</div>` : `<div class="fig-in chamf back-in">${crestSVG('cgb')}<b>Comboniani</b><span>Stagione 26/27</span>${act}</div>`;
+  return `<div class="fig-glow face-back t-${backT}"><div class="fig chamf">${inner}</div></div>`;
+}
+let figTurned = false;
+function figTurn(){
+  const fl = $('#fig-body .flip'); if(!fl) return;
+  fl.classList.remove('reveal-gold', 'reveal-dia', 'promo', 'peek');   /* il fotogramma finale dell'animazione bloccherebbe il giro */
+  figTurned = !figTurned;
+  fl.classList.toggle('turned', figTurned);
+}
+/* Alla prima apertura la carta fa mezzo giro e torna indietro, con la scritta "Gira la carta" */
+function flipHint(){
+  let seen = true; try{ seen = !!localStorage.getItem('cmb_flipHint'); }catch(e){}
+  const fl = $('#fig-body .flip'), st = $('#fig-body .stage3d');
+  if(seen || figTurned || !fl || !st || (figAnim && figAnim.cls)) return;
+  try{ localStorage.setItem('cmb_flipHint', '1'); }catch(e){}
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    fl.classList.add('peek');
+    fl.addEventListener('animationend', () => fl.classList.remove('peek'), { once:true });
+  }
+  st.insertAdjacentHTML('beforeend', '<div class="flip-hint">↻ Gira la carta</div>');
+  setTimeout(() => { const h = $('#fig-body .flip-hint'); if(h) h.remove(); }, 2700);
+}
+/* "La mia scheda" nella sezione Io */
+let profDraft = null;   /* quello che si sta scrivendo: sopravvive ai ridisegni della pagina */
+function profileSecHTML(pid){
+  const req = store.profileReq && store.profileReq[pid], cur = (store.players[pid] && store.players[pid].profile) || {};
+  const pending = !!req && req.status === 'pending', rejected = !!req && req.status === 'rejected';
+  const base = profDraft || (req && req.campi) || cur || {}, p = store.players[pid] || {};
+  const fmtV = (k, v) => v ? (k === 'bd' ? (validDate(v) ? v.split('-').reverse().join('/') : '') : v) : '';
+  const summary = k => { const v = fmtV(k, base[k]); return v ? `<div class="pb-row"><span><small>${PROF_LBL[k]}</small><b>${esc(v)}</b></span></div>` : ''; };
+  const st = pending ? '<div class="prof-st wait">⏳ Richiesta in attesa di approvazione dell’admin</div>'
+    : rejected ? `<div class="prof-st no">❌ Richiesta rifiutata${req.note ? `: ${esc(req.note)}` : ''}. Puoi correggerla e inviarla di nuovo.</div>`
+    : Object.keys(cur).length ? '<div class="prof-st ok">✅ La tua scheda è pubblicata sul retro della figurina</div>' : '';
+  const grp = POS_BY[p.role];
+  const opt = v => `<option value="${esc(v)}" ${base.pos === v ? 'selected' : ''}>${esc(v)}</option>`;
+  const posOpts = grp ? [...grp, 'tuttocampista'].map(opt).join('') + (base.pos && ![...grp, 'tuttocampista'].includes(base.pos) ? opt(base.pos) : '')
+    : Object.entries(POS_BY).map(([g, l]) => `<optgroup label="${g}">${l.map(opt).join('')}</optgroup>`).join('') + opt('tuttocampista');
+  const form = pending
+    ? ['bd', 'bplace', 'nat', 'pos', 'bio'].map(summary).join('') || '<p class="mu sm" style="margin:0">Richiesta vuota.</p>'
+    : `<form class="prof-form" id="prof-form" autocomplete="off">
+        <label>Data di nascita<input class="field" id="pf2-bd" type="date" min="1900-01-01" max="${isoOf(new Date())}" value="${esc(base.bd || '')}"></label>
+        <label>Luogo di nascita<input class="field" id="pf2-bplace" maxlength="${PROF_MAX.bplace}" value="${esc(base.bplace || '')}"></label>
+        <label>Nazionalità<input class="field" id="pf2-nat" maxlength="${PROF_MAX.nat}" value="${esc(base.nat || '')}"></label>
+        <label>Ruolo preciso<select class="field" id="pf2-pos"><option value="">–</option>${posOpts}</select></label>
+        <label>Descrizione (max ${PROF_MAX.bio} caratteri)<textarea class="field" id="pf2-bio" maxlength="${PROF_MAX.bio}">${esc(base.bio || '')}</textarea></label>
+        <button type="submit" class="btn primary">Invia richiesta all’admin</button>
+      </form>`;
+  return `<section class="glass me-sec wide" id="prof-sec"><h3>🪪 La mia scheda</h3>${st}<div class="prof-form" style="margin-top:10px">${form}</div>
+    <p class="mu sm" style="margin:8px 0 0">L’admin approva ogni modifica. Sul retro della figurina gli altri vedono solo la tua età, mai la data di nascita: la vedi solo tu e l’admin.</p></section>`;
+}
+function profReadForm(){
+  const v = id => { const el = $('#' + id); return el && typeof el.value === 'string' ? el.value : ''; };
+  return { bd:v('pf2-bd'), bplace:v('pf2-bplace'), nat:v('pf2-nat'), pos:v('pf2-pos'), bio:v('pf2-bio') };
+}
+function profSend(){
+  const pid = myPid();
+  if(!pid || !store.players[pid]){ toast('Scegli prima la tua carta in “Chi sei?”', 'warn'); return; }
+  const cur = store.profileReq && store.profileReq[pid];
+  if(cur && cur.status === 'pending'){ toast('Hai già una richiesta in attesa', 'warn'); return; }
+  const c = profileClean(profReadForm());
+  if(c.err){ toast(c.err, 'warn'); return; }
+  if(!Object.keys(c.campi).length){ toast('Compila almeno un campo', 'warn'); return; }
+  profDraft = null;
+  commit({ ['profileReq/' + pid]: { campi:c.campi, at:Date.now(), status:'pending' } }, 'Richiesta inviata: l’admin la rivedrà');
+}
+/* Admin: richieste da rivedere, con valori prima e dopo */
+function profListHTML(){
+  const items = profPending().sort((a, b) => num(a[1].at) - num(b[1].at));
+  if(!items.length) return '<h3>Richieste schede</h3><p class="mu sm">Nessuna richiesta in attesa.</p>';
+  return `<h3>Richieste schede</h3><p class="mu sm">${items.length} ${items.length === 1 ? 'richiesta da rivedere' : 'richieste da rivedere'}. Approvando si scrive la scheda del giocatore.</p>` + items.map(([pid, r]) => {
+    const cur = store.players[pid].profile || {}, nw = r.campi || {};
+    const rows = ['bd', 'bplace', 'nat', 'pos', 'bio'].filter(k => String(cur[k] || '') !== String(nw[k] || '')).map(k => {
+      const f = v => v ? esc(k === 'bd' && validDate(v) ? v.split('-').reverse().join('/') : v) : '—';
+      return `<div class="pr-r"><small>${PROF_LBL[k]}</small><span><s>${f(cur[k])}</s> → <b>${f(nw[k])}</b></span></div>`;
+    }).join('') || '<p class="mu sm" style="margin:0">Nessuna differenza dalla scheda attuale.</p>';
+    return `<div class="pr-item"><h4>${esc(pname(pid))}</h4>${rows}<input class="field" data-prnote="${pid}" maxlength="80" placeholder="Motivo del rifiuto (facoltativo)" aria-label="Motivo del rifiuto"><div class="pr-act"><button type="button" class="btn sm primary" data-action="prof-ok" data-pid="${pid}">Approva</button><button type="button" class="btn sm danger" data-action="prof-no" data-pid="${pid}">Rifiuta</button></div></div>`;
+  }).join('');
+}
+function profApprove(pid){
+  if(!ui.admin) return;
+  const r = store.profileReq && store.profileReq[pid]; if(!r || r.status !== 'pending' || !store.players[pid]) return;
+  const c = profileClean(r.campi);
+  if(c.err || !Object.keys(c.campi).length){ toast('Richiesta non valida: rifiutala o chiedi di correggerla', 'err'); return; }
+  commit({ [`players/${pid}/profile`]: c.campi, [`profileReq/${pid}`]: null }, `Scheda di ${pname(pid)} approvata`);
+}
+function profReject(pid){
+  if(!ui.admin) return;
+  const r = store.profileReq && store.profileReq[pid]; if(!r || r.status !== 'pending') return;
+  const inp = document.querySelector(`[data-prnote="${pid}"]`), note = inp && typeof inp.value === 'string' ? inp.value.replace(/\s+/g, ' ').trim().slice(0, 80) : '';
+  commit({ [`profileReq/${pid}`]: { campi:r.campi || {}, at:r.at || Date.now(), status:'rejected', ...(note ? { note } : {}) } }, `Richiesta di ${pname(pid)} rifiutata`);
+}
+function profToast(){
+  if(!ui.admin || ui.view !== 'admin' || ui.profToasted) return;
+  const n = profPending().length;
+  if(n){ ui.profToasted = true; toast(`${n} ${n === 1 ? 'richiesta di scheda da rivedere' : 'richieste di schede da rivedere'}`, 'warn'); }
+}
+/* Ascolto: il giocatore solo profileReq/{suo pid}, l'admin l'intero nodo. Se le regole lo negano l'app continua a funzionare */
+let profWatch = null;
+function watchProfileReq(){
+  if(!db) return;
+  const me = myPid(), want = ui.admin ? 'all' : (me && store.players[me] ? 'me:' + me : '');
+  /* un dispositivo non admin non tiene in memoria le richieste altrui (per esempio rimaste nella cache di quando era admin) */
+  if(!ui.admin && Object.keys(store.profileReq || {}).some(k => k !== me)) store.profileReq = (me && store.profileReq[me]) ? { [me]:store.profileReq[me] } : {};
+  if(profWatch && profWatch.key === want) return;
+  if(profWatch){ try{ profWatch.ref.off('value', profWatch.fn); }catch(e){} profWatch = null; store.profileReq = {}; }   /* cambio di ruolo (admin ↔ giocatore): niente richieste altrui in memoria */
+  if(!want) return;
+  const ref = db.ref(want === 'all' ? 'profileReq' : 'profileReq/' + me);
+  const fn = sn => { if(want === 'all') store.profileReq = sn.val() || {}; else { const v = sn.val(); if(v) store.profileReq = { [me]:v }; else store.profileReq = {}; } afterData(); };
+  ref.on('value', fn, () => {});
+  profWatch = { key:want, ref, fn };
+}
+function openProfList(){
+  if(!requireAdmin()) return;
+  $('#pr-body').innerHTML = profListHTML();
+  openModal('#m-prof');
+}
+function openFigurina(pid, turned){
   const s = STATS.byId[pid];
   if(!store.players[pid] || !s) return;
   const t = tierOf(s.ovr);
@@ -2607,10 +2873,12 @@ function openFigurina(pid){
   const promo = prev && TIER_RANK[t] > TIER_RANK[prev] ? { from:prev } : null;
   seen[pid] = t; saveSeenTiers(seen);
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const cls = reduce ? '' : promo ? 'promo' : t === 'dia' ? 'reveal-dia' : t === 'gold' ? 'reveal-gold' : '';
+  const cls = (reduce || turned) ? '' : promo ? 'promo' : t === 'dia' ? 'reveal-dia' : t === 'gold' ? 'reveal-gold' : '';
   figAnim = cls ? { pid, cls, promo } : (promo ? { pid, cls:'', promo } : null);
   if(isHolo(s.ovr)) askGyro();
+  figTurned = !!turned;
   openFigPid = pid; renderFigurina(); openModal('#m-fig'); figCounters(pid);
+  flipHint();
 }
 function renderFigurina(){
   const pid = openFigPid, p = store.players[pid], s = STATS.byId[pid];
@@ -2636,8 +2904,8 @@ function renderFigurina(){
   const burst = anim && anim.cls ? `<div class="burst b-${t}" style="--bd:${bd}">${(t === 'dia' || promo) ? Array.from({ length:12 }, (_, k) => `<i style="--a:${k * 30}deg"></i>`).join('') : ''}</div>` : '';
   const sweep = anim && anim.cls ? `<span class="sweep" style="--sd:${({ 'reveal-gold':'.75s', 'reveal-dia':'1.3s', promo:'2s' }[anim.cls])}"></span>` : '';
   const banner = promo ? `<div class="promo-banner t-${t}"><span>⬆ Promozione</span><b>${TIERS[promo.from].l} → ${TIERS[t].l}</b></div>` : '';
-  const back = `<div class="fig-glow face-back t-${backT}"><div class="fig chamf"><div class="fig-in chamf back-in">${crestSVG('cgb')}<b>Comboniani</b><span>Stagione 26/27</span></div></div></div>`;
-  $('#fig-body').innerHTML = `${banner}<div class="stage3d ${anim && anim.cls ? 'fade' : ''}">${burst}<div class="flip ${anim ? anim.cls : ''}"><div class="tilt ${holo ? 'on-holo' : ''} ${streakCls(s)}"><div class="fig-shadow t-${t}"></div><div class="fig-glow face-front t-${t}"><div class="fig chamf"><div class="fig-in chamf">${holo ? '<span class="holo" aria-hidden="true"></span>' : ''}${sweep}
+  const back = backHTML(pid, p, backT);
+  $('#fig-body').innerHTML = `${banner}<div class="stage3d ${anim && anim.cls ? 'fade' : ''}">${burst}<div class="flip ${anim ? anim.cls : ''}${figTurned ? ' turned' : ''}"><div class="tilt ${holo ? 'on-holo' : ''} ${streakCls(s)}"><div class="fig-shadow t-${t}"></div><div class="fig-glow face-front t-${t}"><div class="fig chamf"><div class="fig-in chamf">${holo ? '<span class="holo" aria-hidden="true"></span>' : ''}${sweep}
     <div class="fig-top">${photoBlock(p)}
       <div class="fig-badges">
         <div class="fig-role">${ovrPlate(s.ovr, 'xl')}<span class="rf">${roleChip(p.role)}<span>${esc(FEET[p.foot] || '')}</span></span></div>
@@ -2659,6 +2927,7 @@ function renderFigurina(){
   </div></div></div>${back}</div></div></div>
   <div class="fig-actions">
     <button class="btn ghost" data-close>Chiudi</button>
+    <button class="btn" data-action="fig-turn">↻ Gira</button>
     <button class="btn primary" data-action="share-fig" data-pid="${pid}">📸 Condividi figurina</button>
     <button class="btn" data-action="duel" data-pid="${pid}">⚔️ Confronta</button>
     <button class="btn admin-only" data-action="edit-player" data-pid="${pid}">✏️ Modifica</button>
@@ -2677,11 +2946,13 @@ function renderMatches(){
   }
   sel.hidden = false;
   if(!ui.matchId || !store.matches[ui.matchId]) ui.matchId = (sched[0] || played[0]).id;
+  /* Durante gli spostamenti si aggiorna solo il campo: il resto della pagina non si tocca */
+  if(ui.admin && ui.swapMode && paintedMatch === ui.matchId && $('#mdetail .pp')){ rerenderPitch(); return; }
   const opt = (m, label) => `<option value="${m.id}" ${m.id === ui.matchId ? 'selected' : ''}>${label}</option>`;
   sel.innerHTML =
     (sched.length ? `<optgroup label="In programma">${sched.map(m => opt(m, `Giornata ${num(m.day)}${whenLabel(m) ? ' (' + whenLabel(m) + ')' : ''}: formazioni`)).join('')}</optgroup>` : '') +
     (played.length ? `<optgroup label="Giocate">${played.map(m => { const s = matchScore(m); return opt(m, `Giornata ${num(m.day)}${m.date ? ' (' + fmtDate(m.date) + ')' : ''}: Bianchi ${s.w}–${s.b} Neri`); }).join('')}</optgroup>` : '');
-  $('#mdetail').innerHTML = matchDetailHTML(ui.matchId);
+  paintMatch();
 }
 function evListHTML(evs){
   const li = [];
@@ -2695,7 +2966,7 @@ function chronHTML(m){
   if(!tl.length && !mv.length) return '';
   const est = tl.some(x => x.est);
   const goalLi = x => `<li class="cr ${x.t === 'black' ? 'b' : 'w'}"><span class="mn${x.est ? ' est' : ''}">${x.min != null ? (x.est ? '~' : '') + x.min + '’' : '·'}</span><span class="ci">${x.og ? '🟥' : '⚽'}</span><span class="cw"><b>${esc(pname(x.s))}${x.og ? ' (autogol)' : ''}</b>${!x.og && x.a ? `<small>assist ${esc(pname(x.a))}</small>` : ''}</span><span class="cs">${x.w}–${x.b}</span></li>`;
-  const mvLi = r => `<li class="cr mv"><span class="mn">${r.min != null ? r.min + '’' : '·'}</span><span class="ci">${moveIcon(r.k)}</span><span class="cw"><b>${esc(moveText(r, m))}</b></span><span class="cs">0–0</span></li>`;
+  const mvLi = r => `<li class="cr mv"><span class="mn">${r.min != null ? r.min + '’' : '·'}</span><span class="ci">${moveIcon(r.k, r.why)}</span><span class="cw"><b>${esc(moveText(r, m))}</b></span><span class="cs">0–0</span></li>`;
   /* i cambi stanno tra i gol, in ordine: lo slot n vuol dire "prima del gol n" */
   const items = [];
   for(let i = 0; i <= tl.length; i++){
@@ -2708,7 +2979,7 @@ function chronHTML(m){
 function cambiHTML(m){
   const mv = hasMoves(m) ? moveRows(m) : [];
   if(!mv.length) return '';
-  return `<section class="chron"><h3>🔁 Cambi</h3><ol>${mv.map(r => `<li class="cr mv"><span class="mn">${r.min != null ? r.min + '’' : '·'}</span><span class="ci">${moveIcon(r.k)}</span><span class="cw"><b>${esc(moveText(r, m))}</b></span><span class="cs">0–0</span></li>`).join('')}</ol></section>`;
+  return `<section class="chron"><h3>🔁 Cambi</h3><ol>${mv.map(r => `<li class="cr mv"><span class="mn">${r.min != null ? r.min + '’' : '·'}</span><span class="ci">${moveIcon(r.k, r.why)}</span><span class="cw"><b>${esc(moveText(r, m))}</b></span><span class="cs">0–0</span></li>`).join('')}</ol></section>`;
 }
 function matchDetailHTML(id){
   const m = { id, ...store.matches[id] };
@@ -2716,7 +2987,7 @@ function matchDetailHTML(id){
   const sc = matchScore(m), mv = matchMvp(m);
   const col = team => `<div class="tcol"><h3><span class="dot ${team === 'white' ? 'w' : 'b'}"></span>Squadra ${team === 'white' ? 'Bianca' : 'Nera'}</h3>
     ${evListHTML(teamEvents(m, team))}
-    <div class="lineup">${list(m[team]).map(e => `<button class="lu" data-open-player="${e.pid}" ${store.players[e.pid] ? '' : 'disabled'}>${avatar(store.players[e.pid] || { name:e.n }, 'xs')}${esc(pname(e.pid, e.n))}${e.bench ? '<em class="bn">in più</em>' : ''}</button>`).join('')}</div>
+    <div class="lineup">${list(m[team]).map(e => `<button class="lu" data-open-player="${e.pid}" ${store.players[e.pid] ? '' : 'disabled'}>${avatar(store.players[e.pid] || { name:e.n }, 'xs')}${esc(pname(e.pid, e.n))}${e.late ? '<em class="lt-ic" title="In ritardo">⏰</em>' : ''}${e.bench ? '<em class="bn">in più</em>' : ''}</button>`).join('')}</div>
   </div>`;
   const mvp = mv
     ? `<div class="mvpbox">${avatar(store.players[mv.pid] || { name:mv.n }, 'md')}<div><div class="t">★ ${mv.provisional ? 'MVP provvisorio' : 'MVP della gara'}</div><div class="n">${esc(pname(mv.pid, mv.n))}</div><div class="d">${evDesc(mv)}${mv.vts ? `, ${mv.vts} ${mv.vts === 1 ? 'voto' : 'voti'}` : ''}, squadra ${mv.team === 'white' ? 'Bianca' : 'Nera'}</div></div><div class="pts">${fmtPts(mv.score)}<small>pt</small></div></div>`
@@ -2757,9 +3028,9 @@ function voteBoxHTML(m){
       : !inMatch ? `<p class="mu sm">Può votare solo chi ha giocato questa partita.</p>`
       : locked ? `<p class="vb-me">Il tuo voto: <b>${nm(mine)}</b>. È bloccato perché la gara è stata corretta.</p>`
       : `<p class="vb-me">${mine ? `Il tuo voto: <b>${nm(mine)}</b>. Puoi cambiarlo fino alla chiusura.` : 'Tocca chi secondo te è stato il migliore in campo:'}</p><div class="vb-opts">${cl.map(c => `<button class="vb-opt ${mine === c.pid ? 'on' : ''}" data-vote="${c.pid}" data-mid="${m.id}">${avatar(store.players[c.pid], 'xs')}<span>${nm(c.pid)}${sub(c)}</span></button>`).join('')}</div>`;
-    return `<div class="vbox"><div class="vb-h"><h4>🗳️ Vota l’MVP</h4><span class="cd" data-cd="${m.voteClose}" data-t="0">${cdText(m.voteClose, false)}</span></div>
+    return `<div class="vbox"><div class="vb-h"><h4>🗳️ Vota l’MVP</h4><span class="cd" data-cd="${m.voteClose}" data-t="0">${cdText(m.voteClose, false)}</span>${extendBtn(m)}</div>
       ${vi.cands ? `<p class="mu sm">Si vota tra i 4 migliori della partita per punti (gol e assist). Se i punti non bastano, i posti si completano con i più alti per OVR.${m.reopened ? ' Votazione riaperta dopo la correzione della gara: chi aveva già votato un candidato ancora valido non può cambiare il voto.' : ''}</p>` : ''}
-      <p class="mu sm">Ogni voto vale +${fmtPts(VOTE_W)} punti solo per scegliere l’MVP. I voti restano segreti fino alla chiusura: 24 ore dopo la gara o appena votano tutti.</p>
+      <p class="mu sm">Ogni voto vale +${fmtPts(VOTE_W)} punti solo per scegliere l’MVP. I voti restano segreti fino alla chiusura: ${voteHrsTxt(m)} dopo la gara o appena votano tutti.</p>
       <div class="vb-prog"><i style="width:${(vi.n / vi.eligible.length * 100).toFixed(0)}%"></i></div>
       <p class="mu sm">${vi.n} su ${vi.eligible.length} hanno votato${left.length && left.length <= 8 ? `. Mancano: ${left.map(nm).join(', ')}` : ''}</p>${action}</div>`;
   }
@@ -2786,8 +3057,8 @@ function rateBoxHTML(m){
   const mine = !inMatch ? '' : (info.done[me] || prHas(m.id))
     ? '<p class="vb-me">Hai votato i compagni. Il voto è anonimo e definitivo.</p>'
     : `<button class="btn sm primary" data-action="rate-open" data-mid="${m.id}">Vota i compagni</button>`;
-  return `<div class="vbox"><div class="vb-h"><h4>⭐ Voto ai compagni</h4><span class="cd" data-cd="${m.voteClose}" data-t="0">${cdText(m.voteClose, false)}</span></div>
-    <p class="mu sm">Da 1 a 5 stelle ai compagni di squadra, in forma anonima. Nessuno vede i risultati: a votazione chiusa ognuno scopre solo il proprio bonus nella sezione Io. Chiude 24 ore dopo la gara o appena votano tutti.</p>
+  return `<div class="vbox"><div class="vb-h"><h4>⭐ Voto ai compagni</h4><span class="cd" data-cd="${m.voteClose}" data-t="0">${cdText(m.voteClose, false)}</span>${extendBtn(m)}</div>
+    <p class="mu sm">Da 1 a 5 stelle ai compagni di squadra, in forma anonima. Nessuno vede i risultati: a votazione chiusa ognuno scopre solo il proprio bonus nella sezione Io. Chiude ${voteHrsTxt(m)} dopo la gara o appena votano tutti.</p>
     <div class="vb-prog"><i style="width:${(info.n / info.voters.length * 100).toFixed(0)}%"></i></div>
     <p class="mu sm">${info.n} su ${info.voters.length} hanno votato${ui.admin && left.length ? `. Mancano: ${left.map(nm).join(', ')}` : ''}</p>${mine}</div>`;
 }
@@ -2825,8 +3096,8 @@ function voteBox2HTML(m, vi, me, inMatch, mine, pend){
       : mine ? `<p class="vb-me">Hai votato <b>${nm(mine)}</b>. Il voto è definitivo.</p>`
       : pend ? `<p class="vb-me">Il tuo voto è in attesa di invio: partirà appena torni online.</p>`
       : `<p class="mu sm">Può votare solo chi ha giocato questa partita.</p>`;
-    return `<div class="vbox"><div class="vb-h"><h4>🗳️ Vota l’MVP</h4><span class="cd" data-cd="${m.voteClose}" data-t="0">${cdText(m.voteClose, false)}</span>${info}</div>
-      <p class="mu sm">Si vota tra i 4 migliori della partita per punti (gol e assist). Ogni voto vale +${fmtPts(w)} punti solo per scegliere l’MVP. I voti restano privati fino alla chiusura: 24 ore dopo la gara o appena votano tutti.${m.reopened ? ' Votazione riaperta dopo una correzione.' : ''}</p>
+    return `<div class="vbox"><div class="vb-h"><h4>🗳️ Vota l’MVP</h4><span class="cd" data-cd="${m.voteClose}" data-t="0">${cdText(m.voteClose, false)}</span>${info}${extendBtn(m)}</div>
+      <p class="mu sm">Si vota tra i 4 migliori della partita per punti (gol e assist). Ogni voto vale +${fmtPts(w)} punti solo per scegliere l’MVP. I voti restano privati fino alla chiusura: ${voteHrsTxt(m)} dopo la gara o appena votano tutti.${m.reopened ? ' Votazione riaperta dopo una correzione.' : ''}</p>
       <div class="vb-prog"><i style="width:${(vi.n / vi.eligible.length * 100).toFixed(0)}%"></i></div>
       <p class="mu sm">${vi.n} su ${vi.eligible.length} hanno votato${left.length && left.length <= 8 ? `. Mancano: ${left.map(nm).join(', ')}` : ''}</p>
       ${canVote ? '' : `<div class="mvb-h">Punteggio MVP finora</div>${bars}`}${act}</div>`;
@@ -2881,6 +3152,16 @@ function voteInfoHTML(mid){
     <div class="vi-list">${rows}</div>
     ${log.length ? `<h4 class="vi-h">Voti annullati</h4>${log.map(x => `<div class="vi-l">${fmt(x.at)}: voto di <b>${esc(pname(x.voter))}</b> per ${esc(pname(x.target))} annullato da ${esc(x.by || 'Admin')}</div>`).join('')}` : ''}`;
 }
+/* Riapri votazione (admin): solo a votazione attiva (MVP o voto ai compagni ancora aperti). Nuova scadenza = la più lontana tra l'attuale e adesso + 6 ore */
+function extendVote(mid){
+  if(!ui.admin) return;
+  const m = store.matches[mid]; if(!m) return;
+  const mm = { id:mid, ...m };
+  const active = (m.voteClose && Date.now() < m.voteClose) && (voteInfo(mm).open || rateInfo(mm).open);
+  if(!active){ toast('La votazione è già chiusa: non si può riaprire', 'warn'); return; }
+  const to = Math.max(num(m.voteClose), Date.now() + VOTE_EXT), when = new Date(to).toLocaleString('it-IT', { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+  commit({ [`matches/${mid}/voteClose`]: to, [`matches/${mid}/voteExt`]: num(m.voteExt) + 1 }, `Votazione aperta fino a ${when}`);
+}
 async function voteCancel(mid, voter){
   if(!ui.admin) return;
   const m = store.matches[mid]; if(!m) return;
@@ -2889,7 +3170,7 @@ async function voteCancel(mid, voter){
   if(!ok) return;
   const me = myPid(), by = me && store.players[me] ? pname(me) : 'Admin', id = newId();
   const up = { [`votes/${mid}/${voter}`]:null, [`votes/${mid}/_m/${voter}`]:null, [`votes/${mid}/_log/${id}`]:{ voter, target:t, at:Date.now(), by } };
-  if(!(m.voteClose && Date.now() < m.voteClose)) up[`matches/${mid}/voteClose`] = Date.now() + VOTE_WINDOW;
+  if(!(m.voteClose && Date.now() < m.voteClose)) up[`matches/${mid}/voteClose`] = Date.now() + voteWin(m);
   await commit(up, `Voto di ${pname(voter)} annullato`);
   setTimeout(() => { if($('#m-vinfo').classList.contains('open')) $('#vi-body').innerHTML = voteInfoHTML(mid); }, 120);
 }
@@ -3106,13 +3387,20 @@ function autoOrder(entries){
 }
 /* Ordine degli slot (porta → attacco, sinistra → destra): quello salvato dall'admin, poi i nuovi in automatico */
 function orderFor(m, team){
-  const entries = starters(m, team);   /* il campo è sempre 8 contro 8: solo i titolari, nella squadra di partenza */
+  const entries = starters(m, team);   /* il campo ha solo i titolari, nella squadra di partenza */
   const ids = new Set(entries.map(e => e.pid));
   const saved = list(m[team === 'white' ? 'posW' : 'posB']).filter((pid, i, a) => ids.has(pid) && a.indexOf(pid) === i);
   return [...saved, ...autoOrder(entries).filter(pid => !saved.includes(pid))];
 }
+/* Modulo da usare: quello salvato se la somma coincide con i titolari, altrimenti il primo valido per quel numero (senza riscrivere la gara) */
+function fmFor(m, team){
+  const n = starters(m, team).length, saved = m[team === 'white' ? 'fmW' : 'fmB'];
+  if(saved && FORMATIONS[saved] && fmSize(saved) === n) return saved;
+  const ok = fmOptions(n);
+  return ok.length ? ok[0] : (saved && FORMATIONS[saved] ? saved : DEF_FM);
+}
 function placeTeam(m, team){
-  const lines = FORMATIONS[team === 'white' ? (m.fmW || DEF_FM) : (m.fmB || DEF_FM)] || FORMATIONS[DEF_FM];
+  const lines = FORMATIONS[fmFor(m, team)] || FORMATIONS[DEF_FM];
   const byId = Object.fromEntries(starters(m, team).map(e => [e.pid, e]));
   const ord = orderFor(m, team);
   const out = []; let k = 0;
@@ -3179,7 +3467,8 @@ function pitchHTML(m){
       const yTop = 6 + (n > 1 ? li * (34.2 / (n - 1)) : 0);
       const y = pos === 'top' ? yTop : 100 - yTop;
       const x = cnt === 1 ? 50 : 14 + j * (72 / (cnt - 1));
-      return pitchCardHTML(e, m, team, cap, pre, mv, awards)(x.toFixed(2), y.toFixed(2));
+      const h = pitchCardHTML(e, m, team, cap, pre, mv, awards)(x.toFixed(2), y.toFixed(2));
+      return cnt >= 5 ? h.replace('class="pcard ', 'class="pcard r5 ') : h;   /* 5 per riga: il nome non deve sovrapporsi ai vicini */
     }).join('');
   };
   const stripes = Array.from({ length:8 }, (_, i) => `<i style="top:${i * 12.5}%"></i>`).join('');
@@ -3202,10 +3491,10 @@ function pitchHTML(m){
 function pitchPanelHTML(m){
   const pre = m.status === 'scheduled';
   const fmCtl = (team, key) => {
-    const cur = m[key] || DEF_FM;
+    const team_ = key === 'fmW' ? 'white' : 'black', cur = fmFor(m, team_), opts = fmOptions(starters(m, team_).length);
     const lbl = `<span class="dot ${team === 'white' ? 'w' : 'b'}"></span>${team === 'white' ? 'Bianchi' : 'Neri'}`;
     return ui.admin
-      ? `<label>${lbl}<select class="field" data-fm="${key}" data-mid="${m.id}" aria-label="Modulo ${team === 'white' ? 'Bianchi' : 'Neri'}">${Object.keys(FORMATIONS).map(f => `<option ${f === cur ? 'selected' : ''}>${f}</option>`).join('')}</select></label>`
+      ? `<label>${lbl}<select class="field" data-fm="${key}" data-mid="${m.id}" aria-label="Modulo ${team === 'white' ? 'Bianchi' : 'Neri'}">${(opts.length ? opts : [cur]).map(f => `<option ${f === cur ? 'selected' : ''}>${f}</option>`).join('')}</select></label>`
       : `<span class="fmtag">${lbl} ${cur}</span>`;
   };
   return `<section class="glass pp">
@@ -3255,7 +3544,8 @@ function cPitchHTML(m, o = {}){
     return placeTeam(m, team).map(({ e, li, j, cnt, n }) => {
       const yc = CP_Y0 + (n > 1 ? li * ((CP_Y1 - CP_Y0) / (n - 1)) : 0), yp = yc / CP_H * 100;
       const y = pos === 'top' ? yp : 100 - yp, x = cnt === 1 ? 50 : 14 + j * (72 / (cnt - 1));
-      return cCardHTML(e, m, team, { pre, mv, awards, cap, ph:o.ph, ev:o.ev })(x.toFixed(2), y.toFixed(2));
+      const h = cCardHTML(e, m, team, { pre, mv, awards, cap, ph:o.ph, ev:o.ev })(x.toFixed(2), y.toFixed(2));
+      return cnt >= 5 ? h.replace('class="cc ', 'class="cc r5 ') : h;
     }).join('');
   };
   const stripes = Array.from({ length:8 }, (_, i) => `<i style="top:${i * 12.5}%"></i>`).join('');
@@ -3475,16 +3765,33 @@ function exportPitchHTML(mm, ph){
   return `<div class="pcx">
     <div class="pcx-head">${crestSVG('cgp')}<div><div class="a">Torneo Comboniani</div><div class="b">Giornata ${num(mm.day)}</div></div><div class="c">${pre ? 'Formazioni ufficiali' : 'Risultato finale'}<br>${esc(whenLabel(mm))}</div></div>
     ${cPitchHTML(mm, { pre, ph, ev:true, mid:true, flip:ui.flip })}
-    <div class="pcx-foot">Stagione Comboniani 26/27<span>Bianchi ${mm.fmW || DEF_FM}, Neri ${mm.fmB || DEF_FM}</span></div>
+    <div class="pcx-foot">Stagione Comboniani 26/27<span>Bianchi ${fmFor(mm, 'white')}, Neri ${fmFor(mm, 'black')}</span></div>
   </div>`;
 }
 
-function rerenderMatch(){ if(ui.matchId && store.matches[ui.matchId]) $('#mdetail').innerHTML = matchDetailHTML(ui.matchId); }
+/* Il tabellino si ridisegna senza far saltare la pagina: la posizione si salva prima e si ripristina dopo, se gara e sezione sono le stesse */
+let paintedMatch = null;   /* gara mostrata nell'ultimo disegno di #mdetail */
+function restoreScroll(y){ requestAnimationFrame(() => { if(Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y); }); }
+function paintMatch(){
+  const same = ui.view === 'matches' && paintedMatch === ui.matchId, y = window.scrollY;
+  $('#mdetail').innerHTML = matchDetailHTML(ui.matchId);
+  paintedMatch = ui.matchId;
+  if(same) restoreScroll(y);
+}
+function rerenderMatch(){ if(ui.matchId && store.matches[ui.matchId]) paintMatch(); }
+/* Solo il pannello del campo (.pp): per selezioni, scambi, modulo e "Inverti metà campo" */
+function rerenderPitch(){
+  const m = ui.matchId && store.matches[ui.matchId], pp = m && paintedMatch === ui.matchId && $('#mdetail .pp');
+  if(!pp){ rerenderMatch(); return; }
+  const y = window.scrollY;
+  pp.outerHTML = pitchPanelHTML({ id:ui.matchId, ...m });
+  restoreScroll(y);
+}
 function handleSwap(mid, team, pid){
   const m = store.matches[mid]; if(!m) return;
-  if(!ui.swapSel){ ui.swapSel = { team, pid }; rerenderMatch(); return; }
+  if(!ui.swapSel){ ui.swapSel = { team, pid }; rerenderPitch(); return; }
   const a = ui.swapSel; ui.swapSel = null;
-  if(a.pid === pid){ rerenderMatch(); return; }
+  if(a.pid === pid){ rerenderPitch(); return; }
   const key = t => t === 'white' ? 'posW' : 'posB';
   if(a.team === team){
     const ord = orderFor(m, team);
@@ -3492,10 +3799,10 @@ function handleSwap(mid, team, pid){
     [ord[i], ord[j]] = [ord[j], ord[i]];
     commit({ [`matches/${mid}/${key(team)}`]: ord });
   }else{
-    if(m.status !== 'scheduled'){ toast('In una gara già giocata puoi scambiare solo compagni della stessa squadra', 'warn'); rerenderMatch(); return; }
+    if(m.status !== 'scheduled'){ toast('In una gara già giocata puoi scambiare solo compagni della stessa squadra', 'warn'); rerenderPitch(); return; }
     const A = list(m[a.team]).map(x => ({ ...x })), B = list(m[team]).map(x => ({ ...x }));
     const ia = A.findIndex(x => x.pid === a.pid), ib = B.findIndex(x => x.pid === pid);
-    if(ia < 0 || ib < 0){ rerenderMatch(); return; }
+    if(ia < 0 || ib < 0){ rerenderPitch(); return; }
     const oa = orderFor(m, a.team).map(x => x === a.pid ? pid : x);
     const ob = orderFor(m, team).map(x => x === pid ? a.pid : x);
     [A[ia], B[ib]] = [B[ib], A[ia]];
@@ -3503,7 +3810,7 @@ function handleSwap(mid, team, pid){
     toast(`${pname(a.pid)} e ${pname(pid)} hanno cambiato squadra`);
   }
   haptic();
-  rerenderMatch();
+  rerenderPitch();
 }
 
 /* ---------- Luce olografica: giroscopio sul telefono, mouse su PC, dito sulla figurina ---------- */
@@ -3555,6 +3862,7 @@ document.addEventListener('pointerup', e => { const t = e.target.closest && e.ta
 /* ---------- Il mio giocatore ---------- */
 function renderMe(){
   const el = $('#me'); if(!el) return;
+  const ae = document.activeElement; if(ae && typeof ae.id === 'string' && /^pf2-/.test(ae.id)) return;   /* mentre scrivi la scheda la pagina non si ridisegna */
   const me = localStorage.getItem('cmb_me'), s = me && STATS.byId[me];
   if(!s){
     el.innerHTML = STATS.list.length
@@ -3653,6 +3961,7 @@ function renderMe(){
       <section class="glass me-sec"><h3>🥊 Vittima e incubo</h3>${rivBox}</section>
       <section class="glass me-sec"><h3>📍 Il tuo posto in campo</h3>${posBox}</section>
       ${rateSec}
+      ${profileSecHTML(s.pid)}
       <section class="glass me-sec wide"><h3>⏱️ Quando segni</h3>${histBox}</section>
       <section class="glass me-sec wide"><h3>🧭 Il tuo percorso</h3>${pathBox}</section>
     </div>`;
@@ -3817,8 +4126,9 @@ function computeRecords(){
   const oro = Object.entries(pairs).filter(([, p]) => p.v > 0).sort(([ka, a], [kb, b]) => (b.v - a.v) || (b.v / b.n - a.v / a.n) || (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it'))[0];
   const derby = Object.entries(opp).sort(([ka, a], [kb, b]) => (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it'))[0];
   const bunk = Object.entries(bunker).filter(([, b]) => b.n >= 2).sort(([ka, a], [kb, b]) => (a.c / a.n - b.c / b.n) || (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it'))[0];
+  const ritard = L.filter(s => s.ritardi > 0).sort((a, b) => (b.ritardi - a.ritardi) || ((b.ritardi / b.pres) - (a.ritardi / a.pres)) || alpha(a, b))[0];
   const intesa = Object.entries(combo).sort(([ka, a], [kb, b]) => (b.c - a.c) || ((b.c / ((pairs[kb] && pairs[kb].n) || 1)) - (a.c / ((pairs[ka] && pairs[ka].n) || 1))) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it'))[0];
-  return { manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, bunkerAny:Object.keys(bunker).length };
+  return { manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, ritard, bunkerAny:Object.keys(bunker).length };
 }
 const matchWhen = m => `Giornata ${num(m.day)}${m.date ? ', ' + fmtDateCap(m.date) : ''}`;
 function recCard(o, x = {}){
@@ -3913,9 +4223,9 @@ function renderTrophies(){
     <div class="rec-grid">${recs}</div>`;
   try{ localStorage.setItem('cmb2627_seenPlq', JSON.stringify(curP)); localStorage.setItem('cmb2627_seenRecV', JSON.stringify(curR)); }catch(e){}
 }
-const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk'];
+const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk','rit'];
 /* event = record di una singola impresa (festeggiato anche se lo stesso giocatore si migliora); lead = primato di classifica (festeggiato solo al cambio di detentore) */
-const REC_KIND = { manita:'event', mitra:'event', lampo:'event', scadere:'event', mida:'event', uomo:'event', inarr:'event', goleada:'event', cappotto:'event', cecchino:'lead', fortino:'lead', mina:'lead', come:'lead', down:'lead', eroe:'lead', oro:'lead', intesa:'lead', derby:'lead', bunk:'lead' };
+const REC_KIND = { manita:'event', mitra:'event', lampo:'event', scadere:'event', mida:'event', uomo:'event', inarr:'event', goleada:'event', cappotto:'event', cecchino:'lead', fortino:'lead', mina:'lead', come:'lead', down:'lead', eroe:'lead', oro:'lead', intesa:'lead', derby:'lead', bunk:'lead', rit:'lead' };
 function buildRecordCards(R, nM){
   const none = 'Nessuna gara registrata';
   const need = lbl => nM ? lbl : none;
@@ -3958,6 +4268,8 @@ function buildRecordCards(R, nM){
       : { icon:'🥊', title:'L’Eterno Derby', desc:'I due che si sono affrontati più volte da avversari.', lock:none },
     R.bunk ? (() => { const [k, b] = R.bunk; return { icon:'🧱', title:'Coppia Bunker', desc:'Coppia di difensori con la media gol subiti più bassa giocando insieme.', pair:k.split('|'), value:(b.c / b.n).toFixed(1), unit:'gol subiti a gara', foot:`${b.n} gare insieme, ${b.c} gol subiti in totale` }; })()
       : { icon:'🧱', title:'Coppia Bunker', desc:'Coppia di difensori con la media gol subiti più bassa giocando insieme.', lock:R.bunkerAny ? 'In attesa di sblocco (min. 2 gare insieme)' : need('Nessuna coppia di difensori schierata insieme') }
+    ,R.ritard ? { icon:'⏰', title:'Il Ritardatario', desc:'Più ritardi in stagione. Parità: percentuale di ritardi sulle presenze.', pid:R.ritard.pid, sub:`${R.ritard.pres} ${R.ritard.pres === 1 ? 'presenza' : 'presenze'}, ${Math.round(R.ritard.ritardi / R.ritard.pres * 100)}% delle gare`, value:R.ritard.ritardi, unit:R.ritard.ritardi === 1 ? 'ritardo' : 'ritardi' }
+      : { icon:'⏰', title:'Il Ritardatario', desc:'Più ritardi in stagione. Parità: percentuale di ritardi sulle presenze.', lock:'Nessun ritardo registrato' }
   ];
   cards.forEach((c, i) => c.key = REC_KEYS[i]);
   return cards;
@@ -4041,8 +4353,9 @@ function renderAdmin(){
   const mode = db ? (syncState === 'live' ? 'Firebase, sincronizzato' : 'Firebase, in attesa di connessione') : 'Solo su questo dispositivo';
   el.innerHTML = `<div class="toolbar"><h2 class="vtitle">Pannello admin</h2></div>
     <div class="admin-grid">
-      <button class="tile" data-action="new-sched"><span class="ic">🗓️</span><b>Programma gara</b><span>Data, ora e 16 convocati bilanciati: tutti vedono dove giocano.</span></button>
-      <button class="tile" data-action="new-match"><span class="ic">📝</span><b>Registra gara</b><span>Schiera 8 contro 8 e segna gol, assist e autogol.</span></button>
+      <button class="tile" data-action="new-sched"><span class="ic">🗓️</span><b>Programma gara</b><span>Data, ora e convocati bilanciati: tutti vedono dove giocano.</span></button>
+      <button class="tile" data-action="new-match"><span class="ic">📝</span><b>Registra gara</b><span>Schiera le squadre e segna gol, assist e autogol.</span></button>
+      <button class="tile" data-action="prof-list"><span class="ic">🪪</span><b>Richieste schede${profPending().length ? `<span class="cbadge">${profPending().length}</span>` : ''}</b><span>Approva o rifiuta le schede dei giocatori (nascita, nazionalità, ruolo preciso).</span></button>
       <button class="tile" data-action="add-player"><span class="ic">🧑‍🎤</span><b>Aggiungi giocatore</b><span>Nome, ruolo, piede e foto dal rullino.</span></button>
       <button class="tile" data-action="backup-all"><span class="ic">💾</span><b>Backup completo</b><span>Scarica tutti i dati del database in un file .json. Contiene anche il PIN.</span></button>
       <button class="tile" data-action="import-xlsx"><span class="ic">📥</span><b>Importa Excel</b><span>Carica un file con i fogli “Giocatori” e “Partite”. Aggiorna senza cancellare.</span></button>
@@ -4178,11 +4491,11 @@ async function deletePlayer(pid){
     'Elimina giocatore', true);
   if(!ok) return;
   closeModal('#m-fig');
-  commit({ [`players/${pid}`]: null, [`photos/${pid}`]: null }, 'Giocatore eliminato');
+  commit({ [`players/${pid}`]: null, [`photos/${pid}`]: null, [`profileReq/${pid}`]: null }, 'Giocatore eliminato');
 }
 
 /* =========================================================
-   MATCH EDITOR (8 vs 8)
+   MATCH EDITOR
    ========================================================= */
 function nextDay(){ return sortedMatches().reduce((m, x) => Math.max(m, num(x.day)), 0) + 1; }
 function setEdMode(mode){
@@ -4192,8 +4505,8 @@ function setEdMode(mode){
   $('#ed-end-w').hidden = mode === 'scheduled';
   $('#ed-save').textContent = mode === 'scheduled' ? 'Salva gara in programma' : 'Salva risultato';
   if(mode === 'scheduled'){
-    [...ED.white, ...ED.black].forEach(e => { e.g = 0; e.a = 0; e.og = 0; }); ED.goals = []; ED.moves = []; goalFormReset(); moveFormReset();
-    /* una gara in programma è 8 contro 8: i giocatori "in più" tornano tra i convocati */
+    [...ED.white, ...ED.black].forEach(e => { e.g = 0; e.a = 0; e.og = 0; delete e.late; }); ED.goals = []; ED.moves = []; goalFormReset(); moveFormReset();
+    /* una gara in programma non ha giocatori "in più": tornano tra i convocati */
     for(const T of ['white', 'black']){ ED.called.push(...ED[T].filter(e => e.bench).map(e => e.pid)); ED[T] = ED[T].filter(e => !e.bench); }
   }
   renderEditor();
@@ -4201,12 +4514,12 @@ function setEdMode(mode){
 function openMatchEditor(id, mode){
   if(!STATS.list.length){ toast('Aggiungi prima i giocatori alla rosa', 'warn'); return; }
   const m = id ? store.matches[id] : null;
-  const cp = arr => list(arr).map(e => ({ pid:e.pid, n:e.n, g:num(e.g), a:num(e.a), og:num(e.og), ...(e.bench ? { bench:1 } : {}) }));
+  const cp = arr => list(arr).map(e => ({ pid:e.pid, n:e.n, g:num(e.g), a:num(e.a), og:num(e.og), ...(e.bench ? { bench:1 } : {}), ...(e.late ? { late:1 } : {}) }));
   const wasSched = m?.status === 'scheduled';
-  ED = { id:id || null, day:m ? num(m.day) : nextDay(), date:m?.date || todayISO(), time:m?.time || '', end:m?.end || '', fmW:m?.fmW || DEF_FM, fmB:m?.fmB || DEF_FM, posW:m?.posW || null, posB:m?.posB || null, capW:m?.capW || null, capB:m?.capB || null,
+  ED = { id:id || null, day:m ? num(m.day) : nextDay(), date:m?.date || todayISO(), time:m?.time || '', end:m?.end || '', fmW:m?.fmW || DEF_FM, fmB:m?.fmB || DEF_FM, posW:m?.posW || null, posB:m?.posB || null, balW:null, balB:null, capW:m?.capW || null, capB:m?.capB || null,
          white:cp(m?.white), black:cp(m?.black), called:[], status:mode || (wasSched ? 'scheduled' : 'played'),
          goals:list(m?.goals).map(g => ({ s:g.s, a:g.a || '', og:!!num(g.og), min:(g.min == null ? null : num(g.min)), ts:g.ts || '' })),
-         moves:list(m?.moves).map(x => ({ pid:x.pid, k:x.k, min:(x.min == null ? null : num(x.min)), ts:x.ts || '', at:num(x.at) })),
+         moves:list(m?.moves).map(x => ({ pid:x.pid, k:x.k, ...(x.why ? { why:x.why } : {}), min:(x.min == null ? null : num(x.min)), ts:x.ts || '', at:num(x.at) })),
          seq:!m || wasSched || list(m.goals).length > 0 || [...list(m.white), ...list(m.black)].every(e => !num(e.g) && !num(e.a) && !num(e.og)) };
   goalFormReset(); moveFormReset(); if(ED.seq) syncCounts();
   edTeam = (ED.white.length || ED.black.length) ? 'white' : 'called';
@@ -4225,8 +4538,9 @@ function edFind(pid){
   if(ED.called.includes(pid)) return 'called';
   return null;
 }
-/* "8/8" oppure "8/8 +1 in più" */
-const edCount = T => { const n = ED[T].filter(e => !e.bench).length, b = ED[T].length - n; return `${n}/8${b ? ` +${b} in più` : ''}`; };
+/* "9 giocatori" oppure "9 giocatori +1 in più" */
+const edCount = T => { const n = ED[T].filter(e => !e.bench).length, b = ED[T].length - n; return `${n} ${n === 1 ? 'giocatore' : 'giocatori'}${b ? ` +${b} in più` : ''}`; };
+const edCap = () => ED.status === 'scheduled' ? 2 * MAX_START : MAX_CALLED;
 const edTotal = () => ED.white.length + ED.black.length + ED.called.length;
 const ovrOf = pid => STATS.byId[pid]?.ovr ?? OVR_START;
 function edToggle(pid){
@@ -4239,20 +4553,19 @@ function edToggle(pid){
   };
   if(cur === T){ pull(cur); renderEditor(); return; }
   if(T === 'called'){
-    if(!cur && edTotal() >= 16){ toast('Hai già 16 convocati', 'warn'); return; }
+    if(!cur && edTotal() >= edCap()){ toast(`Hai già ${edCap()} convocati`, 'warn'); return; }
     if(cur) pull(cur);
     ED.called.push(pid);
   }else{
     const tn = T === 'white' ? 'I Bianchi' : 'I Neri', nStart = ED[T].filter(x => !x.bench).length, nBench = ED[T].length - nStart;
     let asBench = false;
-    if(nStart >= 8){
-      if(ED.status === 'scheduled'){ toast(`${tn} hanno già 8 giocatori`, 'warn'); return; }
-      if(!ED.seq){ toast(`${tn} hanno già 8 giocatori. Per aggiungere giocatori in più passa all’inserimento dei gol in sequenza`, 'warn'); return; }
-      if(nBench >= 2){ toast(`${tn} hanno già 8 titolari e 2 giocatori in più`, 'warn'); return; }
+    if(nStart >= MAX_START){
+      if(ED.status === 'scheduled'){ toast(`${tn} hanno già ${MAX_START} giocatori`, 'warn'); return; }
+      if(!ED.seq){ toast(`${tn} hanno già ${MAX_START} giocatori. Per aggiungere giocatori in più passa all’inserimento dei gol in sequenza`, 'warn'); return; }
+      if(nBench >= MAX_BENCH){ toast(`${tn} hanno già ${MAX_START} titolari e ${MAX_BENCH} giocatori in più`, 'warn'); return; }
       asBench = true;
     }
-    const cap = ED.status === 'scheduled' ? 16 : 20;
-    if(!cur && edTotal() >= cap){ toast(`Hai già ${cap} giocatori in distinta`, 'warn'); return; }
+    if(!cur && edTotal() >= edCap()){ toast(`Hai già ${edCap()} giocatori in distinta`, 'warn'); return; }
     const e = (cur && pull(cur)) || { pid, n:pname(pid), g:0, a:0, og:0 };
     if(asBench) e.bench = 1; else delete e.bench;
     ED[T].push(e);
@@ -4260,8 +4573,68 @@ function edToggle(pid){
   }
   renderEditor();
 }
-/* Bilanciatore: prova tutte le divisioni (2^n, n ≤ 16) e minimizza lo scarto di OVR medio.
-   A parità quasi perfetta distribuisce i ruoli; tra le soluzioni equivalenti ne sceglie una a caso. */
+/* Bilanciatore: divide i giocatori in due squadre di misure kA e n-kA minimizzando la differenza di OVR medio, con un piccolo peso
+   sulla distribuzione dei ruoli (difensori e attaccanti). Assegnazione golosa + scambi di miglioramento, ripetuti da più partenze casuali
+   entro un budget di tempo. Quando le combinazioni possibili sono poche (fino a 16 giocatori) le prova tutte, ma una alla volta (niente 2^n):
+   oltre si usa l'euristica, che regge anche 26 giocatori. Restituisce un array di 0/1 (1 = squadra A); tra le soluzioni quasi equivalenti ne sceglie una a caso. */
+const BAL_EXACT_MAX = 13000;   /* combinazioni al massimo da provare tutte (16 giocatori in 8 + 8: 12870) */
+function balanceSplit(o, role, kA, budgetMs){
+  const n = o.length, kB = n - kA;
+  const out = new Array(n).fill(0);
+  if(kA <= 0 || kB <= 0){ if(kA >= n) out.fill(1); return out; }
+  let combos = 1; for(let i = 1; i <= Math.min(kA, kB); i++) combos = combos * (n - Math.min(kA, kB) + i) / i;
+  if(combos <= BAL_EXACT_MAX && n <= 30) return balanceExact(o, role, kA);
+  const rk = role.map(r => r === 'DIF' ? 0 : r === 'ATT' ? 1 : -1);
+  const total = o.reduce((t, v) => t + v, 0), nD = rk.filter(x => x === 0).length, nT = rk.filter(x => x === 1).length, w = n / 2 * 0.08;
+  const sc = (sA, dA, tA) => Math.abs(sA / kA - (total - sA) / kB) + (Math.abs(dA / kA - (nD - dA) / kB) + Math.abs(tA / kA - (nT - tA) / kB)) * w;
+  const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+  const t0 = now(), seen = new Map();
+  let best = Infinity, tries = 0;
+  while(tries < 12 || (now() - t0 < budgetMs && tries < 600)){
+    tries++;
+    /* partenza: dal più forte al più debole, ognuno nella squadra con la media prevista più bassa (con un po' di rumore) */
+    const idx = o.map((v, i) => [v + Math.random() * 3, i]).sort((a, b) => b[0] - a[0]).map(x => x[1]);
+    const inA = new Array(n).fill(false); let cA = 0, cB = 0, sA = 0, sB = 0, dA = 0, tA = 0;
+    for(const i of idx){
+      const toA = cA >= kA ? false : cB >= kB ? true : (sA / kA) <= (sB / kB);
+      if(toA){ inA[i] = true; cA++; sA += o[i]; if(rk[i] === 0) dA++; if(rk[i] === 1) tA++; } else { cB++; sB += o[i]; }
+    }
+    let cur = sc(sA, dA, tA);
+    for(let it = 0; it < 80; it++){
+      let bi = -1, bj = -1, bs = cur - 1e-9, bsA = 0, bdA = 0, btA = 0;
+      for(let a = 0; a < n; a++){ if(!inA[a]) continue;
+        for(let b = 0; b < n; b++){ if(inA[b]) continue;
+          const s2 = sA - o[a] + o[b], d2 = dA - (rk[a] === 0 ? 1 : 0) + (rk[b] === 0 ? 1 : 0), t2 = tA - (rk[a] === 1 ? 1 : 0) + (rk[b] === 1 ? 1 : 0), v = sc(s2, d2, t2);
+          if(v < bs){ bs = v; bi = a; bj = b; bsA = s2; bdA = d2; btA = t2; }
+        } }
+      if(bi < 0) break;
+      inA[bi] = false; inA[bj] = true; sA = bsA; dA = bdA; tA = btA; cur = bs;
+    }
+    const key = inA.map(x => x ? 1 : 0).join('');
+    if(!seen.has(key)) seen.set(key, cur);
+    if(cur < best) best = cur;
+  }
+  const near = [...seen].filter(([, v]) => v <= best + 0.12);
+  const pick = near[Math.floor(Math.random() * near.length)][0];
+  return [...pick].map(Number);
+}
+/* Prova tutte le divisioni con kA giocatori in A (enumerazione per combinazioni, algoritmo di Gosper) e sceglie a caso tra quelle entro 0,12 dalla migliore */
+function balanceExact(o, role, kA){
+  const n = o.length, kB = n - kA, total = o.reduce((t, v) => t + v, 0);
+  const rk = role.map(r => r === 'DIF' ? 0 : r === 'ATT' ? 1 : -1), nD = rk.filter(x => x === 0).length, nT = rk.filter(x => x === 1).length, w = n / 2 * 0.08;
+  const scoreOf = mask => {
+    let sA = 0, dA = 0, tA = 0;
+    for(let m = mask; m; m &= m - 1){ const i = 31 - Math.clz32(m & -m); sA += o[i]; if(rk[i] === 0) dA++; else if(rk[i] === 1) tA++; }
+    return Math.abs(sA / kA - (total - sA) / kB) + (Math.abs(dA / kA - (nD - dA) / kB) + Math.abs(tA / kA - (nT - tA) / kB)) * w;
+  };
+  const limit = 1 << n, first = (1 << kA) - 1;
+  const next = c => { const x = c & -c, y = c + x; return (((c ^ y) >>> 2) / x | 0) | y; };
+  let best = Infinity;
+  for(let c = first; c < limit; c = next(c)){ const v = scoreOf(c); if(v < best) best = v; }
+  let pick = first, seen = 0;
+  for(let c = first; c < limit; c = next(c)){ if(scoreOf(c) <= best + 0.12 && Math.random() * ++seen < 1) pick = c; }   /* scelta uniforme tra le quasi-equivalenti */
+  return Array.from({ length:n }, (_, i) => (pick >> i) & 1);
+}
 function balanceTeams(){
   if(ED.seq && ED.goals.length){ toast('Ci sono già dei gol in cronaca: ribilanciare cambierebbe le squadre. Elimina prima i gol.', 'warn'); return; }
   if(ED.moves.length){ toast('Ci sono già dei cambi registrati: ribilanciare cambierebbe le squadre. Elimina prima i cambi.', 'warn'); return; }
@@ -4269,37 +4642,41 @@ function balanceTeams(){
   const ids = [...ED.white.filter(e => !e.bench).map(e => e.pid), ...ED.black.filter(e => !e.bench).map(e => e.pid), ...ED.called];
   const n = ids.length;
   if(n < 2){ toast('Spunta almeno 2 convocati', 'warn'); return; }
+  if(n > 2 * MAX_START){ toast(`Il bilanciatore sistema fino a ${2 * MAX_START} titolari (${MAX_START} per squadra): togli ${n - 2 * MAX_START} convocati e aggiungili poi come giocatori in più`, 'warn'); return; }
+  const sz = edSizes(n);
+  if(sz.err){ toast(sz.err, 'warn'); return; }
   const o = ids.map(ovrOf), role = ids.map(id => store.players[id]?.role || 'JOLLY');
-  const kA = Math.ceil(n / 2), kB = n - kA, total = o.reduce((t, v) => t + v, 0);
-  const cnt = r => role.filter(x => x === r).length;
-  let cands = [], best = Infinity;
-  for(let mask = 0; mask < (1 << n); mask++){
-    if(!(mask & 1) && n % 2 === 0) continue;               // simmetria
-    let bits = 0, sA = 0; const rc = { DIF:0, ATT:0 };
-    for(let i = 0; i < n; i++) if(mask >> i & 1){ bits++; sA += o[i]; if(rc[role[i]] !== undefined) rc[role[i]]++; }
-    if(bits !== kA) continue;
-    const diff = Math.abs(sA / kA - (total - sA) / kB);
-    const roleGap = ['DIF','ATT'].reduce((t, r) => t + Math.abs(rc[r] - (cnt(r) - rc[r])) * 0.08, 0);
-    const score = diff + roleGap;
-    if(score < best - 1e-9){ best = score; }
-    cands.push([score, mask]);
-  }
-  cands = cands.filter(c => c[0] <= best + 0.12);
-  const mask = cands[Math.floor(Math.random() * cands.length)][1];
+  const mask = balanceSplit(o, role, sz.w, 120);
   const old = Object.fromEntries([...ED.white, ...ED.black].map(e => [e.pid, e]));
   const mk = id => old[id] || { pid:id, n:pname(id), g:0, a:0, og:0 };
-  ED.white = [...ids.filter((_, i) => mask >> i & 1).map(mk), ...benchW];
-  ED.black = [...ids.filter((_, i) => !(mask >> i & 1)).map(mk), ...benchB];
+  ED.white = [...ids.filter((_, i) => mask[i]).map(mk), ...benchW];
+  ED.black = [...ids.filter((_, i) => !mask[i]).map(mk), ...benchB];
   ED.called = [];
   edTeam = 'white';
   renderEditor();
-  const mean = arr => arr.filter(e => !e.bench).reduce((t, e) => t + ovrOf(e.pid), 0) / (arr.filter(e => !e.bench).length || 1);
-  toast(`Squadre bilanciate: OVR medio ${mean(ED.white).toFixed(1)} contro ${mean(ED.black).toFixed(1)}. Premi di nuovo per un’alternativa.`);
+  const mean = arr => { const l = arr.filter(e => !e.bench); return l.reduce((t, e) => t + ovrOf(e.pid), 0) / (l.length || 1); };
+  toast(`Squadre bilanciate (${sz.w} contro ${sz.b}): OVR medio ${mean(ED.white).toFixed(1)} contro ${mean(ED.black).toFixed(1)}. Premi di nuovo per un’alternativa.`);
+}
+/* Misure scelte per il bilanciatore (campi "Bianchi n / Neri n"); senza scelta: ceil(n/2) e floor(n/2) */
+function balInput(side, v){
+  if(!ED) return;
+  const n = ED.white.filter(e => !e.bench).length + ED.black.filter(e => !e.bench).length + ED.called.length, x = parseInt(v, 10);
+  if(!Number.isFinite(x)) return;
+  const k = Math.max(0, Math.min(n, x)), w = side === 'w' ? k : n - k;
+  ED.balW = w; ED.balB = n - w;
+  const other = $(side === 'w' ? '#bal-b' : '#bal-w'); if(other) other.value = side === 'w' ? n - w : w;   /* l'altro campo si adegua: la somma è sempre n */
+}
+function edSizes(n){
+  let w = ED.balW, b = ED.balB;
+  if(w == null || b == null || w + b !== n){ w = Math.ceil(n / 2); b = n - w; }
+  if(!Number.isInteger(w) || !Number.isInteger(b) || w < 1 || b < 1) return { err:'Servono almeno 1 giocatore per squadra' };
+  if(w > MAX_START || b > MAX_START) return { err:`Al massimo ${MAX_START} titolari per squadra` };
+  return { w, b };
 }
 function renderEditorScore(){
   if(ED.status === 'scheduled'){
     const mean = arr => { const l = arr.filter(e => !e.bench); return l.length ? (l.reduce((t, e) => t + ovrOf(e.pid), 0) / l.length).toFixed(1) : '–'; };
-    $('#ed-score').innerHTML = `<div class="t w">Bianchi<small>${ED.white.length}/8, OVR medio <b>${mean(ED.white)}</b></small></div><div class="s"><span style="color:var(--or)">VS</span></div><div class="t b">Neri<small>${ED.black.length}/8, OVR medio <b>${mean(ED.black)}</b></small></div><div class="note">Gara in programma: gol e assist si inseriscono dopo il fischio finale con “Registra risultato”</div>`;
+    $('#ed-score').innerHTML = `<div class="t w">Bianchi<small>${edCount('white')}, OVR medio <b>${mean(ED.white)}</b></small></div><div class="s"><span style="color:var(--or)">VS</span></div><div class="t b">Neri<small>${ED.black.length}/8, OVR medio <b>${mean(ED.black)}</b></small></div><div class="note">Gara in programma: gol e assist si inseriscono dopo il fischio finale con “Registra risultato”</div>`;
     return;
   }
   const sc = matchScore(ED);
@@ -4313,7 +4690,14 @@ function renderEditorScore(){
 function renderEditorPick(){
   $$('[data-edteam]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.edteam === edTeam)));
   const tot = edTotal();
-  $('#ed-called').textContent = `Convocati ${tot}/16${ED.called.length ? `, ${ED.called.length} da assegnare` : ''}`;
+  $('#ed-called').textContent = `Convocati ${tot}/${edCap()}${ED.called.length ? `, ${ED.called.length} da assegnare` : ''}`;
+  const nBal = ED.white.filter(e => !e.bench).length + ED.black.filter(e => !e.bench).length + ED.called.length;
+  if(ED.balW != null && ED.balW + ED.balB !== nBal){ ED.balW = ED.balB = null; }   /* i convocati sono cambiati: tornano le misure predefinite */
+  const sz0 = { w:ED.balW != null ? ED.balW : Math.ceil(nBal / 2) }; sz0.b = nBal - sz0.w;
+  const iw = $('#bal-w'), ib = $('#bal-b');
+  if(iw && document.activeElement !== iw) iw.value = nBal >= 2 ? sz0.w : '';
+  if(ib && document.activeElement !== ib) ib.value = nBal >= 2 ? sz0.b : '';
+  if(iw) iw.disabled = ib.disabled = nBal < 2;
   $('#ed-bal').disabled = tot < 2;
   const q = norm($('#ed-filter').value);
   const ps = STATS.list.filter(s => !q || norm(s.name).includes(q)).sort((a, b) => a.name.localeCompare(b.name, 'it'));
@@ -4328,8 +4712,8 @@ function stp(f, ic, label, v){
 }
 function edTeamHTML(T){
   const arr = ED[T];
-  return `<h4><span><span class="dot ${T === 'white' ? 'w' : 'b'}"></span>Squadra ${T === 'white' ? 'Bianca' : 'Nera'}</span><span class="cnt ${arr.filter(e => !e.bench).length === 8 ? 'full' : ''}">${edCount(T)}</span></h4>` +
-    (arr.length ? arr.map(e => `<div class="erow" data-t="${T}" data-pid="${e.pid}">${avatar(store.players[e.pid] || { name:e.n }, 'xs')}<span class="nm">${esc(pname(e.pid, e.n))}${e.bench ? '<em class="bn">in più</em>' : ''}</span>${e.bench ? '<span></span>' : `<button type="button" class="capb" data-cap aria-pressed="${ED[T === 'white' ? 'capW' : 'capB'] === e.pid}" aria-label="Capitano: ${esc(pname(e.pid, e.n))}" title="Scegli come capitano (tocca di nuovo per tornare all’automatico)">C</button>`}<button type="button" class="rm" data-rm aria-label="Togli ${esc(pname(e.pid, e.n))}">×</button>${ED.seq ? roSteps(e) : `<div class="steps">${stp('g', '⚽', 'Gol', e.g)}${stp('a', '👟', 'Assist', e.a)}${stp('og', '🟥', 'Autogol', e.og)}</div>`}</div>`).join('')
+  return `<h4><span><span class="dot ${T === 'white' ? 'w' : 'b'}"></span>Squadra ${T === 'white' ? 'Bianca' : 'Nera'}</span><span class="cnt ${arr.filter(e => !e.bench).length === MAX_START ? 'full' : ''}">${edCount(T)}</span></h4>` +
+    (arr.length ? arr.map(e => `<div class="erow" data-t="${T}" data-pid="${e.pid}">${avatar(store.players[e.pid] || { name:e.n }, 'xs')}<span class="nm">${esc(pname(e.pid, e.n))}${e.bench ? '<em class="bn">in più</em>' : ''}</span>${ED.status === 'scheduled' ? '' : `<button type="button" class="latb" data-late aria-pressed="${!!e.late}" aria-label="In ritardo: ${esc(pname(e.pid, e.n))}" title="In ritardo (−1 OVR)">⏰</button>`}${e.bench ? '<span></span>' : `<button type="button" class="capb" data-cap aria-pressed="${ED[T === 'white' ? 'capW' : 'capB'] === e.pid}" aria-label="Capitano: ${esc(pname(e.pid, e.n))}" title="Scegli come capitano (tocca di nuovo per tornare all’automatico)">C</button>`}<button type="button" class="rm" data-rm aria-label="Togli ${esc(pname(e.pid, e.n))}">×</button>${ED.seq ? roSteps(e) : `<div class="steps">${stp('g', '⚽', 'Gol', e.g)}${stp('a', '👟', 'Assist', e.a)}${stp('og', '🟥', 'Autogol', e.og)}</div>`}</div>`).join('')
       : `<p class="mu sm pad">Scegli la squadra qui sopra e tocca i nomi per schierarli.</p>`);
 }
 function renderEditor(){
@@ -4395,16 +4779,16 @@ function validateMatch(m){
   for(const x of mv) if(!startTeam(m, x.pid)) return `${nm(x.pid)} ha un cambio ma non è in distinta`;
   const tl = matchTimeline(m);
   for(const [pid, arr] of Object.entries(tl.byPid)){
-    const start = startTeam(m, pid), bench = isBench(m, pid);
-    let st = bench ? null : start, prev = null;
+    const start = startTeam(m, pid);
+    let s = initState(start, isBench(m, pid)), prev = null;
     for(const x of arr){
       if(prev != null && x.min != null && x.min < prev) return `I cambi di ${nm(pid)} non sono in ordine di minuto`;
       if(x.min != null) prev = x.min;
-      const n = stepTeam(st, x.k, start, bench);
+      const n = stepState(s, x.k, start);
       if(n === undefined) return x.k === 'in'
-        ? (bench ? `${nm(pid)} è già in campo: non può entrare` : `${nm(pid)} è un titolare: può entrare solo chi è “in più”`)
+        ? `${nm(pid)} è già in campo: non può entrare`
         : `${nm(pid)} non è in campo in quel momento (è già uscito o non è ancora entrato)`;
-      st = n;
+      s = n;
     }
   }
   const gl = list(m.goals);
@@ -4488,7 +4872,7 @@ function goalAct(act, i){
 }
 /* ---------- Cambi (editor) ---------- */
 let MF = null;
-function moveFormReset(){ MF = { pid:'', k:'', ts:'', edit:-1 }; }
+function moveFormReset(){ MF = { pid:'', k:'', why:'', ts:'', edit:-1 }; }
 function renderMoves(){
   const box = $('#ed-moves'); if(!box) return;
   if(!ED || ED.status === 'scheduled'){ box.hidden = true; box.innerHTML = ''; return; }
@@ -4499,7 +4883,7 @@ function renderMoves(){
   }
   const rows = moveRows(ED);
   const list_ = rows.map(r => `<li class="gl-row mv ${r.bad ? 'bad' : ''}">
-      <span class="gl-n">${moveIcon(r.k)}</span><span class="gl-m">${r.min != null ? r.min + '’' : ''}</span>
+      <span class="gl-n">${moveIcon(r.k, r.why)}</span><span class="gl-m">${r.min != null ? r.min + '’' : ''}</span>
       <span class="gl-w"><span>${esc(moveText(r, ED))}</span>${r.bad ? '<small>cambio non valido</small>' : ''}</span><span class="gl-s"></span>
       <span class="gl-act"><button type="button" data-mact="edit" data-mi="${r.j}" aria-label="Modifica">✎</button><button type="button" data-mact="del" data-mi="${r.j}" aria-label="Elimina">×</button></span>
     </li>`).join('');
@@ -4515,6 +4899,7 @@ function renderMoves(){
       <div class="gl-ft">${MF.edit >= 0 ? 'Modifica il cambio' : 'Nuovo cambio'}</div>
       <div class="gl-lb">Giocatore</div><div class="gl-chips">${chips}</div>
       <div class="gl-lb">Tipo</div><div class="gl-chips">${KS.map(([k, l]) => `<button type="button" class="pchip gc" data-mk="${k}" aria-pressed="${MF.k === k}">${l}</button>`).join('')}</div>
+      ${MF.k === 'out' ? `<div class="gl-lb">Motivo dell’uscita</div><div class="gl-chips">${[['inf', '🤕 Infortunio'], ['imp', '📅 Impegno']].map(([k, l]) => `<button type="button" class="pchip gc" data-mw="${k}" aria-pressed="${MF.why === k}">${l}</button>`).join('')}</div>` : ''}
       <div class="gl-lb">Minuto o ora del memo (facoltativo)</div>
       <div class="gl-when"><input id="mv-ts" class="field" type="text" inputmode="text" autocomplete="off" placeholder="es. 21:14 oppure 23" value="${esc(MF.ts)}"><span id="mv-prev">${esc(prev)}</span></div>
       <p class="mu sm" style="margin:0">Senza minuto il cambio vale dopo i ${at} gol già in cronaca.</p>
@@ -4526,7 +4911,8 @@ function moveAdd(){
   if(!MF.pid){ toast('Scegli il giocatore', 'warn'); return; }
   if(!MF.k){ toast('Scegli il tipo di cambio', 'warn'); return; }
   const w = parseWhen(MF.ts); if(w.err){ toast(w.err, 'warn'); return; }
-  const x = { pid:MF.pid, k:MF.k, min:w.min != null ? w.min : null, ts:w.ts || '', at:MF.edit >= 0 ? ED.moves[MF.edit].at : ED.goals.length };
+  if(MF.k === 'out' && !MF.why && (MF.edit < 0 || ED.moves[MF.edit]?.why)){ toast('Scegli il motivo dell’uscita: infortunio o impegno', 'warn'); return; }
+  const x = { pid:MF.pid, k:MF.k, ...(MF.k === 'out' && MF.why ? { why:MF.why } : {}), min:w.min != null ? w.min : null, ts:w.ts || '', at:MF.edit >= 0 ? ED.moves[MF.edit].at : ED.goals.length };
   const arr = [...ED.moves];
   if(MF.edit >= 0) arr[MF.edit] = x; else arr.push(x);
   const err = validateMatch({ ...ED, moves:arr }); if(err){ toast(err, 'warn'); return; }
@@ -4545,7 +4931,7 @@ function moveAct(act, j){
     renderEditor(); return;
   }
   const x = ED.moves[j];
-  MF = { pid:x.pid, k:x.k, ts:x.ts || (x.min != null ? String(x.min) : ''), edit:j };
+  MF = { pid:x.pid, k:x.k, why:x.why || '', ts:x.ts || (x.min != null ? String(x.min) : ''), edit:j };
   renderMoves();
 }
 async function goalsToSeq(){
@@ -4579,9 +4965,9 @@ async function saveMatch(){
     const ok = await confirmDlg('Convocati non assegnati', `${ED.called.length} convocati non sono in nessuna squadra e non verranno salvati. Premi “Bilancia squadre” oppure continua.`, 'Salva senza di loro');
     if(!ok) return;
   }
-  if(!w || !b){ toast('Schiera almeno un giocatore per squadra', 'err'); return; }
-  if(w !== 8 || b !== 8){
-    const ok = await confirmDlg('Formazioni incomplete', `Bianchi ${w}, Neri ${b}. Il calciotto si gioca 8 contro 8: vuoi salvare comunque?`, 'Salva comunque');
+  if(!w && !b){ toast('Schiera almeno un giocatore', 'err'); return; }
+  if(!w || !b){
+    const ok = await confirmDlg('Formazioni incomplete', `Una squadra è vuota (Bianchi ${w}, Neri ${b}): vuoi salvare comunque?`, 'Salva comunque');
     if(!ok) return;
   }
   edCapFix();
@@ -4597,8 +4983,10 @@ async function saveMatch(){
     ED.goals = ordered; ED.moves = mvOrd;
     goalsOut = ordered.map(g => ({ s:g.s, ...(g.a && !g.og ? { a:g.a } : {}), ...(g.og ? { og:1 } : {}), ...(g.min != null ? { min:g.min } : {}), ...(g.ts ? { ts:g.ts } : {}) }));
   }
-  const clean = e => ({ pid:e.pid, n:pname(e.pid, e.n), g:sched ? 0 : num(e.g), a:sched ? 0 : num(e.a), og:sched ? 0 : num(e.og), ...(e.bench && !sched ? { bench:1 } : {}) });
-  const movesOut = (!sched && ED.seq) ? matchTimeline({ ...ED, goals:goalsOut }).moves.map(x => ({ pid:x.pid, k:x.k, ...(x.min != null ? { min:x.min } : {}), ...(x.ts ? { ts:x.ts } : {}), at:x.slot })) : [];
+  const clean = e => ({ pid:e.pid, n:pname(e.pid, e.n), g:sched ? 0 : num(e.g), a:sched ? 0 : num(e.a), og:sched ? 0 : num(e.og), ...(e.bench && !sched ? { bench:1 } : {}), ...(e.late && !sched ? { late:1 } : {}) });
+  const movesOut = (!sched && ED.seq) ? matchTimeline({ ...ED, goals:goalsOut }).moves.map(x => ({ pid:x.pid, k:x.k, ...(x.why ? { why:x.why } : {}), ...(x.min != null ? { min:x.min } : {}), ...(x.ts ? { ts:x.ts } : {}), at:x.slot })) : [];
+  const oldM = ED.id ? store.matches[ED.id] : null, newPlayed = !sched && (!oldM || oldM.status === 'scheduled');
+  const vHrs = oldM && oldM.voteHrs ? oldM.voteHrs : (newPlayed ? VOTE_HRS_NEW : 0);   /* gare nuove: 12 ore; le esistenti restano a 24 */
   const payload = {
     status:sched ? 'scheduled' : 'played', time:ED.time, ...(!sched && ED.end ? { end:ED.end } : {}), fmW:ED.fmW || DEF_FM, fmB:ED.fmB || DEF_FM,
     ...(ED.posW ? { posW:list(ED.posW) } : {}), ...(ED.posB ? { posB:list(ED.posB) } : {}),
@@ -4608,7 +4996,8 @@ async function saveMatch(){
     ...(goalsOut.length ? { goals:goalsOut } : {}),
     ...(movesOut.length ? { moves:movesOut } : {}),
     createdAt:(ED.id && store.matches[ED.id]?.createdAt) || Date.now(),
-    voteClose:sched ? null : (store.matches[ED.id]?.voteClose || ((!ED.id || store.matches[ED.id]?.status === 'scheduled') ? Date.now() + VOTE_WINDOW : null)),
+    ...(vHrs && !sched ? { voteHrs:vHrs } : {}), ...(oldM && oldM.voteExt && !sched ? { voteExt:oldM.voteExt } : {}),
+    voteClose:sched ? null : (store.matches[ED.id]?.voteClose || (newPlayed ? Date.now() + (vHrs || VOTE_HRS_OLD) * 3600e3 : null)),
     updatedAt:Date.now()
   };
   /* Gara giocata senza capitano scelto: si salva quello automatico di adesso, così non cambia nelle settimane dopo */
@@ -4625,7 +5014,7 @@ async function saveMatch(){
     if(old && old.reopened) payload.reopened = 1;
     if(old && old.top4 && old.status !== 'scheduled'){
       const key = mm => mvpCands(mm).map(c => c.pid).sort().join(',');
-      if(key({ id, ...old }) !== key({ id, ...payload })){ payload.voteClose = Date.now() + VOTE_WINDOW; payload.reopened = 1; }
+      if(key({ id, ...old }) !== key({ id, ...payload })){ payload.voteClose = Date.now() + voteWin(payload); payload.reopened = 1; }
     }
   }
   const wasEdit = !!ED.id;
@@ -4668,7 +5057,7 @@ function exportCardHTML(m, ph){
   const mp = mv ? store.players[mv.pid] : null;
   return `<div class="xc ${dense ? 'dense' : ''} ${dense2 ? 'dense2' : ''}">
     <div class="xc-glow"></div><div class="xc-lines"></div><div class="xc-edge"></div>
-    <div class="xc-z xc-head">${crestSVG('cgx')}<div><div class="a">Torneo Comboniani</div><div class="b">Giornata ${num(m.day)}</div></div><div class="xc-date">${m.date ? fmtDateCap(m.date) : ''}<br>Calciotto 8 vs 8${len ? ` · ${len}’` : ''}</div></div>
+    <div class="xc-z xc-head">${crestSVG('cgx')}<div><div class="a">Torneo Comboniani</div><div class="b">Giornata ${num(m.day)}</div></div><div class="xc-date">${m.date ? fmtDateCap(m.date) : ''}<br>Calciotto ${starters(m, 'white').length} vs ${starters(m, 'black').length}${len ? ` · ${len}’` : ''}</div></div>
     <div class="xc-z xc-board"><div class="xc-team">${kit('white', '')}<span>Bianchi</span></div><div class="xc-score"><span class="${sc.w < sc.b ? 'lose' : ''}">${sc.w}</span><i></i><span class="${sc.b < sc.w ? 'lose' : ''}">${sc.b}</span></div><div class="xc-team">${kit('black', '')}<span>Neri</span></div></div>
     <div class="xc-z xc-res">${res}</div>
     <div class="xc-z xc-bar"></div>
@@ -4774,7 +5163,7 @@ async function backupAll(){
   backing = true;
   toast('Backup in corso…');
   const data = {}, failed = [];
-  const PATHS = ['players','matches','settings','votes','photos','ratings','ratingsDone'];
+  const PATHS = ['players','matches','settings','votes','photos','ratings','ratingsDone','profileReq'];
   for(const path of PATHS){
     try{ data[path] = (await db.ref(path).once('value')).val(); }
     catch(e){ console.warn('backup', path, e); failed.push(path); }
@@ -4899,7 +5288,7 @@ function closeModal(sel, force){
   const m = $(sel); if(!m) return;
   if(m.dataset.lock && !force) return;
   m.classList.remove('open'); m.setAttribute('aria-hidden', 'true');
-  if(sel === '#m-fig'){ openFigPid = null; figPlq = null; }
+  if(sel === '#m-fig'){ openFigPid = null; figPlq = null; figTurned = false; }
   if(sel === '#m-match') ED = null;
   if(sel === '#m-replay'){ rpStop(); if(document.fullscreenElement) document.exitFullscreen().catch(() => {}); setTimeout(() => { if(!RP) m.innerHTML = ''; }, 320); }
   if(sel === '#m-confirm' && confirmResolve){ const r = confirmResolve; confirmResolve = null; r(false); }
@@ -5018,6 +5407,7 @@ function go(view){
   if(view === 'me'){ const el = $('#me'); el.classList.remove('me-anim'); void el.offsetWidth; el.classList.add('me-anim'); countUp(el); }
   if(view === 'dashboard') rankShift();
   if(view === 'trophies') renderTrophies();
+  if(view === 'admin') setTimeout(profToast, 500);
   anBump('v/' + view);
   if(view === 'admin' && ui.admin) anLoad();
 }
@@ -5054,11 +5444,13 @@ document.addEventListener('click', async e => {
   if(d.gact){ goalAct(d.gact, +d.gi); return; }
   if(d.rt !== undefined){ rateTap(d.rt); return; }
   if(d.mp !== undefined){ if(MF){ MF.pid = MF.pid === d.mp ? '' : d.mp; renderMoves(); } return; }
-  if(d.mk !== undefined){ if(MF){ MF.k = MF.k === d.mk ? '' : d.mk; renderMoves(); } return; }
+  if(d.mk !== undefined){ if(MF){ MF.k = MF.k === d.mk ? '' : d.mk; if(MF.k !== 'out') MF.why = ''; renderMoves(); } return; }
+  if(d.mw !== undefined){ if(MF){ MF.why = MF.why === d.mw ? '' : d.mw; renderMoves(); } return; }
   if(d.mact){ moveAct(d.mact, +d.mi); return; }
   if(d.pool){ edToggle(d.pool); return; }
   if(d.st){ edStep(t, +d.st); return; }
   if('rm' in d){ const row = t.closest('.erow'); if(movesInvolve(row.dataset.pid)){ toast(`${pname(row.dataset.pid)} ha dei cambi registrati: eliminali prima di toglierlo`, 'warn'); return; } if(goalsInvolve(row.dataset.pid)){ toast(`${pname(row.dataset.pid)} ha gol o assist registrati: eliminali dalla cronaca prima di toglierlo`, 'warn'); return; } ED[row.dataset.t] = ED[row.dataset.t].filter(x => x.pid !== row.dataset.pid); edCapFix(); renderEditor(); return; }
+  if('late' in d){ const row = t.closest('.erow'); if(row && ED){ const e = ED[row.dataset.t].find(x => x.pid === row.dataset.pid); if(e){ if(e.late) delete e.late; else e.late = 1; renderEditor(); } } return; }
   if('cap' in d){ const row = t.closest('.erow'); if(row && ED){ const k = row.dataset.t === 'white' ? 'capW' : 'capB'; ED[k] = ED[k] === row.dataset.pid ? null : row.dataset.pid; renderEditor(); } return; }
   if(d.openPlayer && !d.action){ figPlq = null; openFigurina(d.openPlayer); return; }
   if(d.openMatch){ ui.matchId = d.openMatch; renderMatches(); go('matches'); return; }
@@ -5074,6 +5466,13 @@ document.addEventListener('click', async e => {
     case 'del-match': if(requireAdmin()) deleteMatch(d.mid); break;
     case 'export-match': exportMatch(d.mid, t); break;
     case 'share-fig': exportFigurina(d.pid, t); break;
+    case 'fig-turn': figTurn(); break;
+    case 'fig-back': openFigurina(d.pid, true); break;
+    case 'prof-open': closeModal('#m-fig'); go('me'); setTimeout(() => { const f = $('#prof-sec'); if(f && f.scrollIntoView) f.scrollIntoView({ block:'start' }); }, 80); break;
+    case 'prof-list': openProfList(); break;
+    case 'prof-ok': profApprove(d.pid); break;
+    case 'prof-no': profReject(d.pid); break;
+    case 'bday-close': try{ localStorage.setItem('cmb_bday_' + isoOf(new Date()), '1'); }catch(e){} renderDashboard(); break;
     case 'duel': openDuel(d.pid); break;
     case 'me-pick': localStorage.setItem('cmb_me', d.pid); anSetMe(d.pid); renderMe(); go('me'); toast('Fatto: questa è la tua sezione'); break;
     case 'me-change': localStorage.removeItem('cmb_me'); renderMe(); break;
@@ -5085,8 +5484,8 @@ document.addEventListener('click', async e => {
     case 'ios-hint-close': $('#ios-hint').hidden = true; localStorage.setItem('cmb_iosHint', '1'); break;
     case 'duel-swap': if(ui.duel){ ui.duel = { a:ui.duel.b, b:ui.duel.a }; renderDuel(); } break;
     case 'balance': balanceTeams(); break;
-    case 'flip': ui.flip = !ui.flip; rerenderMatch(); break;
-    case 'swap-mode': ui.swapMode = !ui.swapMode; ui.swapSel = null; rerenderMatch(); break;
+    case 'flip': ui.flip = !ui.flip; rerenderPitch(); break;
+    case 'swap-mode': ui.swapMode = !ui.swapMode; ui.swapSel = null; if(ui.swapMode) rerenderPitch(); else rerenderMatch(); break;
     case 'export-pitch': exportPitch(d.mid, t); break;
     case 'record-result': if(requireAdmin()) openMatchEditor(d.mid, 'played'); break;
     case 'optimize-photos': if(requireAdmin()) optimizeStoredPhotos(); break;
@@ -5094,7 +5493,7 @@ document.addEventListener('click', async e => {
     case 'import-xlsx': if(requireAdmin()){ $('#xlsxInput').value = ''; $('#xlsxInput').click(); } break;
     case 'change-pin': if(requireAdmin()){ $('#cpin-form').reset(); openModal('#m-cpin'); } break;
     case 'logout':
-      ui.admin = false; ui.swapMode = false; ui.swapSel = null; sessionStorage.removeItem('cmb_admin');
+      ui.admin = false; ui.profToasted = false; ui.swapMode = false; ui.swapSel = null; sessionStorage.removeItem('cmb_admin');
       toast('Sei tornato in sola lettura'); render(); go('dashboard'); break;
     case 'pf-rm': PF.photo = null; $('#pf-file').value = ''; $('#pf-info').textContent = ''; renderPfPreview(); break;
     case 'ed-save': saveMatch(); break;
@@ -5108,6 +5507,7 @@ document.addEventListener('click', async e => {
     case 'who-guest-ok': whoGuest(); break;
     case 'vote-info': if(ui.admin){ $('#vi-body').innerHTML = voteInfoHTML(d.mid); openModal('#m-vinfo'); } break;
     case 'vote-cancel': voteCancel(d.mid, d.voter); break;
+    case 'vote-extend': extendVote(d.mid); break;
     case 'rate-send': rateSend(); break;
     case 'rate-open': { const m = store.matches[d.mid]; if(m) openRateGate({ id:d.mid, ...m }); break; }
     case 'rate-later': ui.voteLater = ui.voteLater || {}; ui.voteLater['r' + d.mid] = true; closeModal('#m-rate', true); break;
@@ -5140,7 +5540,12 @@ document.addEventListener('keydown', e => {
 
 $('#psearch').addEventListener('input', renderPlayers);
 $('#msel').addEventListener('change', e => { ui.matchId = e.target.value; ui.swapSel = null; rerenderMatch(); });
+document.addEventListener('input', e => { const t = e.target; if(t && typeof t.id === 'string' && /^pf2-/.test(t.id)) profDraft = profReadForm(); });
+document.addEventListener('submit', e => { if(e.target && e.target.id === 'prof-form'){ e.preventDefault(); profSend(); } });
+$('#fig-body').addEventListener('animationend', e => { if(e.target.classList && e.target.classList.contains('flip')) e.target.classList.remove('reveal-gold', 'reveal-dia', 'promo', 'peek'); });
 $('#ed-filter').addEventListener('input', renderEditorPick);
+$('#bal-w').addEventListener('input', e => balInput('w', e.target.value));
+$('#bal-b').addEventListener('input', e => balInput('b', e.target.value));
 $('#ed-day').addEventListener('input', e => { if(ED) ED.day = num(e.target.value); });
 $('#ed-date').addEventListener('input', e => { if(ED) ED.date = e.target.value; });
 $('#ed-time').addEventListener('input', e => { if(ED){ ED.time = e.target.value; if(ED.seq){ ED.goals.forEach(gkey); setGoals(goalOrder(effGoals(ED.goals))); renderGoals(); renderMoves(); } } });
