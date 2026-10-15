@@ -317,6 +317,23 @@ button.affr:hover{border-color:var(--line)}
 .locked p{color:var(--mu);margin:0 auto 18px;max-width:40ch}
 .db-info{margin-top:16px;padding:14px 18px;display:flex;flex-wrap:wrap;gap:8px 22px;color:var(--mu);font-size:13.5px;font-weight:600}
 .db-info b{color:var(--tx)}
+.emb{display:inline-block;width:.85em;height:.85em;margin-left:.3em;vertical-align:-.1em;color:#fbbf24;flex:none}
+.nmx{display:inline}
+.nc-smeraldo{color:#34d399}.nc-rubino{color:#f87171}.nc-cielo{color:#60a5fa}.nc-viola{color:#c084fc}.nc-ambra{color:#fbbf24}
+.nf-lampo{animation:nfLampo 1.6s ease-in-out infinite}
+@keyframes nfLampo{0%,100%{color:#f8fafc;text-shadow:none}50%{color:#fbbf24;text-shadow:0 0 .55em rgba(251,191,36,.9)}}
+.nf-ombra{text-shadow:.07em .07em 0 rgba(249,115,22,.65),.14em .14em .12em rgba(0,0,0,.85)}
+.nf-aurora{background:linear-gradient(90deg,#34d399,#a78bfa,#34d399);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+.nf-veggente{color:#e9d5ff;text-shadow:0 0 .5em rgba(167,139,250,.95),0 0 1em rgba(124,58,237,.7)}
+.cls tbody tr.rw-oro td{background:linear-gradient(90deg,rgba(251,191,36,.2),rgba(251,191,36,.04))}
+.cls tbody tr.rw-oro td.c-pl{background:#241d0b}
+.cls tbody tr.rw-smeraldo td{background:linear-gradient(90deg,rgba(52,211,153,.2),rgba(52,211,153,.04))}
+.cls tbody tr.rw-smeraldo td.c-pl{background:#0b2219}
+.cls tbody tr.rw-notte td{background:linear-gradient(90deg,rgba(96,165,250,.2),rgba(96,165,250,.04))}
+.cls tbody tr.rw-notte td.c-pl{background:#0b1730}
+.sh-row{background:linear-gradient(90deg,rgba(251,191,36,.35),rgba(251,191,36,.05))!important}
+.sh-row.rw-smeraldo{background:linear-gradient(90deg,rgba(52,211,153,.35),rgba(52,211,153,.05))!important}
+.sh-row.rw-notte{background:linear-gradient(90deg,rgba(96,165,250,.35),rgba(96,165,250,.05))!important}
 .sh-r{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--hair);min-height:56px}
 .sh-pv{flex:none;width:44px;height:44px;display:grid;place-items:center;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid var(--hair);font-size:22px;overflow:hidden}
 .sh-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
@@ -2882,7 +2899,7 @@ function renderDashboardInner(){
     const top = STATS.list.filter(s => s[key] > 0)
       .sort((a, b) => (b[key] - a[key]) || (a.pres - b.pres) || (a.rank - b.rank)).slice(0, 5);
     return `<section class="glass"><div class="panel-h"><h2><span class="ico">${icon}</span>${title}</h2></div><div class="lead">${
-      top.length ? top.map((s, i) => `<button class="lrow ${i === 0 ? 'first' : ''}" data-open-player="${s.pid}"><span class="i">${i + 1}</span>${avatar(s.p, 'sm')}<span class="n">${esc(s.name)}<small>${s.pres} ${s.pres === 1 ? 'presenza' : 'presenze'}</small></span><span class="v">${s[key]}</span></button>`).join('')
+      top.length ? top.map((s, i) => `<button class="lrow ${i === 0 ? 'first' : ''}" data-open-player="${s.pid}"><span class="i">${i + 1}</span>${avatar(s.p, 'sm')}<span class="n">${nameHTML(s.pid)}<small>${s.pres} ${s.pres === 1 ? 'presenza' : 'presenze'}</small></span><span class="v">${s[key]}</span></button>`).join('')
       : `<p class="mu pad">Nessun ${unit} registrato finora.</p>`}</div></section>`;
   };
   const nx = STATS.scheduled[0];
@@ -2926,7 +2943,7 @@ function podiumHTML(){
   const top = STATS.list.slice(0, 3);
   return `<div class="podium" aria-label="Podio">${[1, 0, 2].filter(i => top[i]).map(i => {
     const s = top[i], place = i + 1;
-    return `<button class="pod p${place}" data-open-player="${s.pid}" aria-label="${place}° ${esc(s.name)}"><span class="pod-av">${avatar(s.p, 'md')}</span><span class="pod-n">${esc(shortName(s.name))}</span><span class="pod-s">${s.v} V, ${s.pct.toFixed(0)}%</span><span class="pod-step"><b>${place}</b></span></button>`;
+    return `<button class="pod p${place}" data-open-player="${s.pid}" aria-label="${place}° ${esc(s.name)}"><span class="pod-av">${avatar(s.p, 'md')}</span><span class="pod-n">${nameHTML(s.pid, shortName(s.name))}</span><span class="pod-s">${s.v} V, ${s.pct.toFixed(0)}%</span><span class="pod-step"><b>${place}</b></span></button>`;
   }).join('')}</div>`;
 }
 function sortCmp(a, b){
@@ -2943,8 +2960,8 @@ function tableHTML(){
   };
   const k = ui.sort.key;
   return `<table class="cls"><thead><tr>${th('rank', '#  Giocatore', 'Posizione in classifica', 'c-pl')}${COLS.map(c => th(c.k, c.l, c.t)).join('')}</tr></thead><tbody>${
-    rows.map(s => `<tr class="r${s.rank} ${STATS.matches.length && s.rank <= 3 ? 'pod' + s.rank : ''}" data-open-player="${s.pid}">
-      <td class="c-pl"><div class="pl-cell"><span class="pos">${s.rank}</span>${mvArrow(s)}${avatar(s.p, 'sm')}<span><span class="pl-name">${esc(s.name)}</span><span class="pl-sub">${roleChip(s.p.role)}<span class="foot">${esc(FEET[s.p.foot] || '')}</span></span></span></div></td>
+    rows.map(s => `<tr class="r${s.rank} ${STATS.matches.length && s.rank <= 3 ? 'pod' + s.rank : ''}${rowCls(s.pid) ? ' ' + rowCls(s.pid) : ''}" data-open-player="${s.pid}">
+      <td class="c-pl"><div class="pl-cell"><span class="pos">${s.rank}</span>${mvArrow(s)}${avatar(s.p, 'sm')}<span><span class="pl-name">${nameHTML(s.pid)}</span><span class="pl-sub">${roleChip(s.p.role)}<span class="foot">${esc(FEET[s.p.foot] || '')}</span></span></span></div></td>
       <td class="ov">${ovrPlate(s.ovr, 'pill')}</td>
       <td class="${k === 'pres' ? 'on' : ''}">${s.pres}</td>
       <td class="k ${k === 'v' ? 'on' : ''}">${s.v}</td>
@@ -2982,7 +2999,7 @@ function renderPlayers(){
     .sort((a, b) => cmp(a, b) || a.name.localeCompare(b.name, 'it'));
   $('#pcount').textContent = `${ps.length} ${ps.length === 1 ? 'giocatore' : 'giocatori'}${ui.pRole === 'CEN' ? ' (Jolly inclusi)' : ''}`;
   const key = { ovr:null, g:'g', a:'a', pres:'pres', az:null }[ui.pSort];
-  grid.innerHTML = ps.map(s => `<div class="mfig-w"><button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}${roleChip(s.p.role)}${ovrPlate(s.ovr, 'sm')}${holoSpan(s.ovr)}<span class="mfig-b"><span class="mfig-n">${esc(s.name)}</span><span class="mfig-s"><span${key === 'g' ? ' style="color:var(--or)"' : ''}><b>${s.g}</b>gol</span><span${key === 'a' ? ' style="color:var(--or)"' : ''}><b>${s.a}</b>ass</span><span${key === 'pres' ? ' style="color:var(--or)"' : ''}><b>${s.pres}</b>pres</span></span></span></span></span></button><button type="button" class="mfig-turn" data-action="fig-back" data-pid="${s.pid}" aria-label="Retro della figurina di ${esc(s.name)}" title="Retro della figurina">↻</button></div>`).join('')
+  grid.innerHTML = ps.map(s => `<div class="mfig-w"><button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}${roleChip(s.p.role)}${ovrPlate(s.ovr, 'sm')}${holoSpan(s.ovr)}<span class="mfig-b"><span class="mfig-n">${nameHTML(s.pid)}</span><span class="mfig-s"><span${key === 'g' ? ' style="color:var(--or)"' : ''}><b>${s.g}</b>gol</span><span${key === 'a' ? ' style="color:var(--or)"' : ''}><b>${s.a}</b>ass</span><span${key === 'pres' ? ' style="color:var(--or)"' : ''}><b>${s.pres}</b>pres</span></span></span></span></span></button><button type="button" class="mfig-turn" data-action="fig-back" data-pid="${s.pid}" aria-label="Retro della figurina di ${esc(s.name)}" title="Retro della figurina">↻</button></div>`).join('')
     || `<p class="mu" style="grid-column:1/-1">Nessun giocatore${ui.pRole !== 'ALL' ? ' ' + ui.pRole : ''}${raw ? ` corrisponde a “${esc(raw)}”` : ' in questo ruolo'}.</p>`;
 }
 
@@ -3251,7 +3268,7 @@ function renderFigurina(){
         <div class="fig-role">${ovrPlate(s.ovr, 'xl')}<span class="rf">${roleChip(p.role)}<span>${esc(FEET[p.foot] || '')}</span></span></div>
         <div class="fig-rank"><span class="tierlbl">${TIERS[t].i} ${TIERS[t].l}</span><b>${s.rank}°</b><span>in classifica</span>${dl}${streakChip(s)}</div>
       </div>
-      <h3 class="fig-name" id="fig-t">${esc(p.name)}</h3>
+      <h3 class="fig-name" id="fig-t">${nameHTML(pid, p.name)}</h3>
     </div>
     <div class="fig-bot">
       <div class="fig-grid">
@@ -4296,7 +4313,7 @@ function renderMe(){
       : `<div><span>Giornata ${num(x.m.day)}</span><small>voti insufficienti: servono almeno ${RATE_MIN_N} votanti</small></div>`;
   });
   const rateSec = rrows.length ? `<section class="glass me-sec wide"><h3>⭐ Voti dei compagni</h3><div class="me-rt">${rrows.join('')}</div><p class="mu sm" style="margin:8px 0 0">Solo tu vedi questi numeri. I voti sono anonimi: media e bonus sono tutto ciò che si sa.</p></section>` : '';
-  el.innerHTML = `${voteNote}${rateNote}<div class="me-head glass"><div class="me-card">${miniFigHTML(s)}</div><div class="me-info"><span class="mu sm">Il mio giocatore</span><h2>${esc(s.name)}</h2>
+  el.innerHTML = `${voteNote}${rateNote}<div class="me-head glass"><div class="me-card">${miniFigHTML(s)}</div><div class="me-info"><span class="mu sm">Il mio giocatore</span><h2>${nameHTML(s.pid)}</h2>
       <div class="me-chips">${roleChip(s.p.role)}<span class="tierlbl t-${t}">${TIERS[t].i} ${TIERS[t].l}</span>${streakChip(s)}</div>
       <div class="me-big"><div>${cu(rov)}<span>OVR</span></div><div>${cu(s.rank, 0, '°')}<span>in classifica</span></div><div>${cu(s.pres)}<span>presenze</span></div></div>
       <div class="row"><button class="btn sm" data-open-player="${s.pid}">Apri figurina</button><button class="btn sm ghost" data-action="me-change">Cambia giocatore</button></div></div></div>
@@ -5308,9 +5325,33 @@ async function shopActivate(cat, id){
   await commit({ [`casino/shop/active/${me}/${cat}`]:id || null }, id ? `Attivo: ${SHOP_BY_ID[id].name}` : 'Oggetto disattivato');
 }
 
+/* Simboli accanto al nome: disegni originali (stelle, corone, fulmini... generici), nessun marchio */
+const EMBLEMS = {
+  em_stella:'<path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z"/>',
+  em_corona:'<path d="M3 8l4.5 4L12 5l4.5 7L21 8l-1.8 10H4.8zM5 20h14v2H5z"/>',
+  em_fulmine:'<path d="M13.5 2L5 13.5h5.5L9.5 22 19 9.5h-5.8z"/>',
+  em_luna:'<path d="M15.5 3.2a9 9 0 1 0 5.3 15.2A7.6 7.6 0 0 1 15.5 3.2z"/>',
+  em_fiore:'<circle cx="12" cy="12" r="3"/><path d="M12 2.5c2 2.3 2 4.6 0 6.8-2-2.2-2-4.5 0-6.8zm0 12.2c2 2.2 2 4.5 0 6.8-2-2.3-2-4.6 0-6.8zM2.5 12c2.3-2 4.6-2 6.8 0-2.2 2-4.5 2-6.8 0zm12.2 0c2.2-2 4.5-2 6.8 0-2.3 2-4.6 2-6.8 0z"/>',
+  em_bersaglio:'<circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="5.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.8"/>'
+};
+const emblemSVG = id => EMBLEMS[id] ? `<svg class="emb emb-${id.slice(3)}" viewBox="0 0 24 24" fill="currentColor" role="img" aria-label="${esc(SHOP_BY_ID[id].name)}">${EMBLEMS[id]}</svg>` : '';
+/* Il nome di un giocatore con colore, effetto e stemma scelti. Senza oggetti attivi restituisce il solo testo: l'HTML di prima, identico */
+function nameHTML(pid, text){
+  const t = text != null ? text : pname(pid), c = cosOf(pid);
+  if(!c.ncol && !c.nfx && !c.emblem) return esc(t);
+  const cls = ['nmx', c.ncol && 'nc-' + c.ncol.slice(3), c.nfx && 'nf-' + c.nfx.slice(3)].filter(Boolean).join(' ');
+  return `<span class="${cls}">${esc(t)}</span>${c.emblem ? emblemSVG(c.emblem) : ''}`;
+}
+const rowCls = pid => { const c = cosOf(pid); return c.row ? 'rw-' + c.row.slice(3) : ''; };
 const SHOP_CAT_ICON = { trail:'☄️', frame:'🖼️', ncol:'🎨', nfx:'✨', holo:'🌈', emblem:'🏅', icons:'⚽', cheer:'🎆', row:'📊', token:'🎟️' };
 /* Anteprima di un oggetto (si arricchisce man mano che gli oggetti hanno un loro disegno) */
-function shopPreviewHTML(id){ const it = SHOP_BY_ID[id]; return `<span class="sh-pv" aria-hidden="true">${SHOP_CAT_ICON[it.cat]}</span>`; }
+function shopPreviewHTML(id){
+  const it = SHOP_BY_ID[id];
+  if(it.cat === 'ncol' || it.cat === 'nfx') return `<span class="sh-pv" aria-hidden="true"><span class="nmx ${it.cat === 'ncol' ? 'nc-' : 'nf-'}${id.slice(3)}">Aa</span></span>`;
+  if(it.cat === 'emblem') return `<span class="sh-pv" aria-hidden="true">${emblemSVG(id)}</span>`;
+  if(it.cat === 'row') return `<span class="sh-pv sh-row rw-${id.slice(3)}" aria-hidden="true"></span>`;
+  return `<span class="sh-pv" aria-hidden="true">${SHOP_CAT_ICON[it.cat]}</span>`;
+}
 const dayLeft = until => { const d = Math.ceil((until - Date.now()) / DAY_MS); return d <= 1 ? 'scade oggi o domani' : `scade tra ${d} giorni`; };
 function shopTabHTML(me){
   const guest = !me || !store.players[me], own = guest ? {} : shopOwned(me), act = guest ? {} : cosOf(me), now = Date.now();
