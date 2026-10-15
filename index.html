@@ -317,6 +317,24 @@ button.affr:hover{border-color:var(--line)}
 .locked p{color:var(--mu);margin:0 auto 18px;max-width:40ch}
 .db-info{margin-top:16px;padding:14px 18px;display:flex;flex-wrap:wrap;gap:8px 22px;color:var(--mu);font-size:13.5px;font-weight:600}
 .db-info b{color:var(--tx)}
+.gi{display:inline-block;width:1.1em;height:1.1em;vertical-align:-.2em}
+.rv-ball .gi{width:100%;height:100%}
+.rv-tr{position:absolute;z-index:5;width:2.4cqw;height:2.4cqw;margin:-1.2cqw 0 0 -1.2cqw;border-radius:50%;pointer-events:none;opacity:0;animation:trFade .8s ease-out both}
+@keyframes trFade{0%{opacity:.95;transform:scale(1)}100%{opacity:0;transform:scale(.3)}}
+.tr-cometa{background:radial-gradient(circle,#fff,#7dd3fc 55%,transparent 72%);box-shadow:0 0 2cqw #38bdf8}
+.tr-neon{border-radius:.6cqw;background:#a3e635;box-shadow:0 0 2cqw #84cc16}
+.tr-brace{background:radial-gradient(circle,#fde047,#f97316 60%,transparent 75%);box-shadow:0 0 2cqw #ea580c}
+.tr-esplosiva{width:3.2cqw;height:3.2cqw;margin:-1.6cqw 0 0 -1.6cqw;background:radial-gradient(circle,#fff,#fde047 35%,#ef4444 65%,transparent 78%);box-shadow:0 0 3cqw #ef4444}
+.rv-ch{position:absolute;z-index:7;pointer-events:none}
+.ch-fuochi i{position:absolute;left:0;top:0;width:1.6cqw;height:1.6cqw;margin:-.8cqw;border-radius:50%;background:var(--c);box-shadow:0 0 1.6cqw var(--c);animation:chBurst 1.1s ease-out both}
+@keyframes chBurst{0%{transform:rotate(var(--a)) translateX(0);opacity:1}100%{transform:rotate(var(--a)) translateX(22cqw);opacity:0}}
+.ch-coriandoli{left:0;top:0;width:100%;height:100%;overflow:hidden}
+.ch-coriandoli i{position:absolute;top:-4%;width:1.8cqw;height:3cqw;background:var(--c);animation:chFall 1.6s ease-in var(--d) both}
+@keyframes chFall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110cqh) rotate(540deg);opacity:.9}}
+.ch-onda i{position:absolute;left:0;top:0;width:10cqw;height:10cqw;margin:-5cqw;border-radius:50%;border:1cqw solid rgba(125,211,252,.9);animation:chWave 1.1s ease-out both}
+.ch-onda i+i{animation-delay:.25s;border-color:rgba(251,191,36,.9)}
+@keyframes chWave{0%{transform:scale(.2);opacity:1}100%{transform:scale(4.5);opacity:0}}
+@media (prefers-reduced-motion:reduce){.rv-ch{display:none}}
 .frm{position:absolute;top:0;left:0;right:0;bottom:0;z-index:6;padding:6px;pointer-events:none;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
 .mfig-in .frm{padding:3px}
 .frm-rame{background:linear-gradient(135deg,#7c2d12,#f59e0b 25%,#fde68a 45%,#b45309 65%,#f59e0b 85%,#7c2d12)}
@@ -3327,16 +3345,16 @@ function renderMatches(){
 }
 function evListHTML(evs){
   const li = [];
-  evs.goals.forEach(e => li.push(`<li><span class="ic">⚽</span>${esc(e.n)}${e.c > 1 ? `<span class="c">×${e.c}</span>` : ''}</li>`));
+  evs.goals.forEach(e => li.push(`<li><span class="ic">${goalIcon(e.pid)}</span>${esc(e.n)}${e.c > 1 ? `<span class="c">×${e.c}</span>` : ''}</li>`));
   evs.ogs.forEach(e => li.push(`<li><span class="ic">🟥</span>${esc(e.n)} <span class="og">(autogol)</span>${e.c > 1 ? `<span class="c">×${e.c}</span>` : ''}</li>`));
-  evs.assists.forEach(e => li.push(`<li class="as"><span class="ic">👟</span>${esc(e.n)}${e.c > 1 ? `<span class="c">×${e.c}</span>` : ''}</li>`));
+  evs.assists.forEach(e => li.push(`<li class="as"><span class="ic">${assistIcon(e.pid)}</span>${esc(e.n)}${e.c > 1 ? `<span class="c">×${e.c}</span>` : ''}</li>`));
   return li.length ? `<ul class="ev">${li.join('')}</ul>` : `<p class="mu sm" style="margin:0">Nessun gol o assist registrato.</p>`;
 }
 function chronHTML(m){
   const tl = matchGoals(m), mv = hasMoves(m) ? moveRows(m) : [];
   if(!tl.length && !mv.length) return '';
   const est = tl.some(x => x.est);
-  const goalLi = x => `<li class="cr ${x.t === 'black' ? 'b' : 'w'}"><span class="mn${x.est ? ' est' : ''}">${x.min != null ? (x.est ? '~' : '') + x.min + '’' : '·'}</span><span class="ci">${x.og ? '🟥' : '⚽'}</span><span class="cw"><b>${esc(pname(x.s))}${x.og ? ' (autogol)' : ''}</b>${!x.og && x.a ? `<small>assist ${esc(pname(x.a))}</small>` : ''}</span><span class="cs">${x.w}–${x.b}</span></li>`;
+  const goalLi = x => `<li class="cr ${x.t === 'black' ? 'b' : 'w'}"><span class="mn${x.est ? ' est' : ''}">${x.min != null ? (x.est ? '~' : '') + x.min + '’' : '·'}</span><span class="ci">${x.og ? '🟥' : goalIcon(x.s)}</span><span class="cw"><b>${esc(pname(x.s))}${x.og ? ' (autogol)' : ''}</b>${!x.og && x.a ? `<small>assist ${esc(pname(x.a))}</small>` : ''}</span><span class="cs">${x.w}–${x.b}</span></li>`;
   const mvLi = r => `<li class="cr mv"><span class="mn">${r.min != null ? r.min + '’' : '·'}</span><span class="ci">${moveIcon(r.k, r.why)}</span><span class="cw"><b>${esc(moveText(r, m))}</b></span><span class="cs">0–0</span></li>`;
   /* i cambi stanno tra i gol, in ordine: lo slot n vuol dire "prima del gol n" */
   const items = [];
@@ -4015,18 +4033,35 @@ function rpPos(pid){
   const c = pid && rv$(`.cc[data-pid="${pid}"]`);
   return c ? { x:parseFloat(c.style.left), y:parseFloat(c.style.top), el:c } : null;
 }
+let RP_FX = { icons:null, trail:null, cheer:null };   /* oggetti del segnatore del gol in corso (solo estetica) */
 function rpBallAt(x, y){
   const p = rv$('.pitch.cp'); if(!p) return;
   let b = p.querySelector('.rv-ball');
-  if(!b){ b = document.createElement('div'); b.className = 'rv-ball'; b.textContent = '⚽'; p.appendChild(b); }
+  if(!b){ b = document.createElement('div'); b.className = 'rv-ball'; if(RP_FX.icons) b.innerHTML = iconSVG(RP_FX.icons, 'ball'); else b.textContent = '⚽'; p.appendChild(b); }
   b.style.transitionDuration = '0ms'; b.style.left = x + '%'; b.style.top = y + '%'; void b.offsetWidth;
 }
 function rpBallTo(x, y, ms){
   const b = rv$('.rv-ball'); if(!b) return;
+  if(RP_FX.trail){   /* scia: puntini che compaiono lungo il percorso al passaggio del pallone e svaniscono */
+    const p = rv$('.pitch.cp'), x0 = parseFloat(b.style.left), y0 = parseFloat(b.style.top);
+    if(p && Number.isFinite(x0) && Number.isFinite(y0)) for(let i = 1; i <= 9; i++){
+      const f = i / 10, d = document.createElement('i'); d.className = 'rv-tr tr-' + RP_FX.trail.slice(3);
+      d.style.left = (x0 + (x - x0) * f) + '%'; d.style.top = (y0 + (y - y0) * f) + '%'; d.style.animationDelay = Math.round(ms * f) + 'ms'; p.appendChild(d);
+    }
+  }
   b.style.transitionDuration = ms + 'ms'; b.style.left = x + '%'; b.style.top = y + '%';
 }
+/* Esultanza del segnatore: fuochi, coriandoli o un'onda di luce, nel punto in cui si trova */
+function rpCheer(kind, pos){
+  const p = rv$('.pitch.cp'); if(!p || !kind) return;
+  const w = document.createElement('div'); w.className = 'rv-ch ch-' + kind.slice(3); w.style.left = (pos ? pos.x : 50) + '%'; w.style.top = (pos ? pos.y : 50) + '%';
+  if(kind === 'ch_fuochi') w.innerHTML = Array.from({ length:14 }, (_, k) => `<i style="--a:${k * 360 / 14}deg;--c:${['#fbbf24', '#f87171', '#60a5fa', '#34d399'][k % 4]}"></i>`).join('');
+  else if(kind === 'ch_coriandoli'){ w.style.left = '0'; w.style.top = '0'; w.innerHTML = Array.from({ length:26 }, (_, k) => `<i style="left:${(k * 37) % 100}%;--d:${(k * 53) % 600}ms;--c:${['#fbbf24', '#f87171', '#60a5fa', '#34d399', '#e879f9'][k % 5]}"></i>`).join(''); }
+  else w.innerHTML = '<i></i><i></i>';
+  p.appendChild(w);
+}
 function rpClear(){
-  document.querySelectorAll('#rpv .rv-ball, #rpv .rv-fx').forEach(e => e.remove());
+  document.querySelectorAll('#rpv .rv-ball, #rpv .rv-fx, #rpv .rv-tr, #rpv .rv-ch').forEach(e => e.remove());
   document.querySelectorAll('#rpv .cc.rv-hl, #rpv .cc.rv-as').forEach(e => e.classList.remove('rv-hl', 'rv-as'));
 }
 /* Contatori sulle card: gol, assist e autogol fino al gol n */
@@ -4035,7 +4070,7 @@ function rpCounts(n){
   RP.goals.slice(0, n).forEach(x => { if(x.og) og[x.s] = (og[x.s] || 0) + 1; else { g[x.s] = (g[x.s] || 0) + 1; if(x.a) a[x.a] = (a[x.a] || 0) + 1; } });
   document.querySelectorAll('#rpv .cc').forEach(c => {
     const id = c.dataset.pid, ev = c.querySelector('.cc-ev'); if(!ev) return;
-    ev.innerHTML = (g[id] ? `<i>⚽${g[id] > 1 ? g[id] : ''}</i>` : '') + (a[id] ? `<i>👟${a[id] > 1 ? a[id] : ''}</i>` : '') + (og[id] ? `<i>🟥${og[id] > 1 ? og[id] : ''}</i>` : '');
+    ev.innerHTML = (g[id] ? `<i>${goalIcon(id)}${g[id] > 1 ? g[id] : ''}</i>` : '') + (a[id] ? `<i>${assistIcon(id)}${a[id] > 1 ? a[id] : ''}</i>` : '') + (og[id] ? `<i>🟥${og[id] > 1 ? og[id] : ''}</i>` : '');
   });
 }
 function rpTick(){
@@ -4053,6 +4088,7 @@ function rpTick(){
 }
 function rpFire(k){
   const g = RP.goals[k]; if(!g) return;
+  { const co = g.og ? {} : cosOf(g.s); RP_FX = { icons:co.icons || null, trail:co.trail || null, cheer:co.cheer || null }; }
   RP.state = 'goal'; RP.idx = k + 1; rpClear(); rpUI();
   const d = ms => Math.max(160, ms / RP.speed), at = (ms, fn) => RP.timers.push(setTimeout(() => { if(RP) fn(); }, ms));
   const ownTeam = g.og ? (g.t === 'white' ? 'black' : 'white') : g.t;
@@ -4062,7 +4098,7 @@ function rpFire(k){
   const from = as || sc || { x:50, y:50 };
   rpBallAt(from.x, from.y);
   if(as) as.el.classList.add('rv-as'); else if(sc) sc.el.classList.add('rv-hl');
-  rpNow(`<b>${g.min != null ? Math.round(g.min) + '’' : ''}</b> ${g.og ? '🟥 Autogol di' : '⚽'} ${esc(pname(g.s))}${as ? ` · assist ${esc(pname(g.a))}` : ''}`);
+  rpNow(`<b>${g.min != null ? Math.round(g.min) + '’' : ''}</b> ${g.og ? '🟥 Autogol di' : goalIcon(g.s)} ${esc(pname(g.s))}${as ? ` · assist ${esc(pname(g.a))}` : ''}`);
   let tm = d(350);
   if(as && sc){ at(tm, () => { sc.el.classList.add('rv-hl'); rpBallTo(sc.x, sc.y, d(650)); }); tm += d(650) + d(300); }
   else tm += d(300);
@@ -4071,6 +4107,7 @@ function rpFire(k){
     rpScore(g.w, g.b); rpCounts(k + 1);
     const pitch = rv$('.pitch.cp');
     if(pitch){ const fx = document.createElement('div'); fx.className = 'rv-fx'; fx.style.top = (goalTop ? 16 : 84) + '%'; fx.innerHTML = `<span>${g.og ? 'AUTOGOL' : 'GOL!'}</span>`; pitch.appendChild(fx); }
+    if(RP_FX.cheer && !g.og) rpCheer(RP_FX.cheer, sc);
     haptic();
   });
   tm += d(1100);
@@ -5361,6 +5398,17 @@ function cardFx(pid){
   const c = cosOf(pid);
   return { frm:c.frame ? `<span class="frm frm-${c.frame.slice(3)}" aria-hidden="true"></span>` : '', hx:c.holo ? `<span class="holo-x hx-${c.holo.slice(3)}" aria-hidden="true"></span>` : '' };
 }
+/* Icone di gol e assist personalizzate (set originali). Senza set attivo: il pallone ⚽ e la scarpa 👟 di sempre */
+const ICON_SETS = {
+  ic_cometa:{ ball:'<circle cx="12" cy="12" r="10" fill="#e0f2fe" stroke="#0369a1" stroke-width="1.6"/><path d="M2.5 15C8 7 16 6 21.5 9" fill="none" stroke="#0ea5e9" stroke-width="2.6"/><path d="M15 15l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z" fill="#0369a1"/>', shoe:'#38bdf8', sole:'#0c4a6e' },
+  ic_foglia:{ ball:'<circle cx="12" cy="12" r="10" fill="#bbf7d0" stroke="#15803d" stroke-width="1.6"/><path d="M12 3v18M12 8L8 5M12 12L7 9M12 16l-4-3M12 8l4-3M12 12l5-3M12 16l4-3" fill="none" stroke="#16a34a" stroke-width="1.6" stroke-linecap="round"/>', shoe:'#4ade80', sole:'#14532d' },
+  ic_lava:{ ball:'<circle cx="12" cy="12" r="10" fill="#292524" stroke="#ea580c" stroke-width="1.6"/><path d="M5 9l4 2-2 3 5 1-1 4 5-4-3-1 3-3-4 1 1-3z" fill="#fb923c"/>', shoe:'#f97316', sole:'#7c2d12' }
+};
+const SHOE_PATH = 'M2.5 14.5l5.2-1.2 2.3-5 3.4 1.2 1 3.1 6.1 1.2 2 2.3v2.4H2.5z';
+const iconSVG = (set, kind) => { const S = ICON_SETS[set]; if(!S) return '';
+  return `<svg class="gi gi-${kind}" viewBox="0 0 24 24" aria-hidden="true">${kind === 'ball' ? S.ball : `<path d="${SHOE_PATH}" fill="${S.shoe}"/><path d="M2.5 19.2h19" stroke="${S.sole}" stroke-width="2.2" stroke-linecap="round"/><path d="M10 8.3l1.5 3.6M12.4 9.2l1.3 3" stroke="${S.sole}" stroke-width="1.2" stroke-linecap="round"/>`}</svg>`; };
+const goalIcon = pid => { const c = cosOf(pid); return c.icons ? iconSVG(c.icons, 'ball') : '⚽'; };
+const assistIcon = pid => { const c = cosOf(pid); return c.icons ? iconSVG(c.icons, 'shoe') : '👟'; };
 const rowCls = pid => { const c = cosOf(pid); return c.row ? 'rw-' + c.row.slice(3) : ''; };
 const SHOP_CAT_ICON = { trail:'☄️', frame:'🖼️', ncol:'🎨', nfx:'✨', holo:'🌈', emblem:'🏅', icons:'⚽', cheer:'🎆', row:'📊', token:'🎟️' };
 /* Anteprima di un oggetto (si arricchisce man mano che gli oggetti hanno un loro disegno) */
@@ -5368,6 +5416,8 @@ function shopPreviewHTML(id){
   const it = SHOP_BY_ID[id];
   if(it.cat === 'ncol' || it.cat === 'nfx') return `<span class="sh-pv" aria-hidden="true"><span class="nmx ${it.cat === 'ncol' ? 'nc-' : 'nf-'}${id.slice(3)}">Aa</span></span>`;
   if(it.cat === 'emblem') return `<span class="sh-pv" aria-hidden="true">${emblemSVG(id)}</span>`;
+  if(it.cat === 'icons') return `<span class="sh-pv" aria-hidden="true">${iconSVG(id, 'ball')}${iconSVG(id, 'shoe')}</span>`;
+  if(it.cat === 'trail' || it.cat === 'cheer') return `<span class="sh-pv sh-${it.cat}-${id.slice(3)}" aria-hidden="true">${SHOP_CAT_ICON[it.cat]}</span>`;
   if(it.cat === 'frame') return `<span class="sh-pv sh-fr" aria-hidden="true"><span class="frm frm-${id.slice(3)}"></span></span>`;
   if(it.cat === 'holo') return `<span class="sh-pv sh-fr" aria-hidden="true"><span class="holo-x hx-${id.slice(3)}"></span></span>`;
   if(it.cat === 'row') return `<span class="sh-pv sh-row rw-${id.slice(3)}" aria-hidden="true"></span>`;
