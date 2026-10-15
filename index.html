@@ -317,6 +317,13 @@ button.affr:hover{border-color:var(--line)}
 .locked p{color:var(--mu);margin:0 auto 18px;max-width:40ch}
 .db-info{margin-top:16px;padding:14px 18px;display:flex;flex-wrap:wrap;gap:8px 22px;color:var(--mu);font-size:13.5px;font-weight:600}
 .db-info b{color:var(--tx)}
+.mk-adm{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--or-soft);font-size:14px;font-weight:600}
+.mk-sum{margin:0 0 6px;font-size:14px}
+.mk-r{display:grid;gap:4px;padding:8px 0;border-top:1px solid var(--hair)}
+.mk-r>b{font-size:13px}
+.mk-s{display:flex;flex-wrap:wrap;gap:4px 8px}
+.mk-s i{font-style:normal;font-size:13px;padding:3px 8px;border-radius:8px;background:rgba(255,255,255,.06)}
+.mk-s em{font-style:normal;font-weight:800;color:var(--or)}
 .sa-list{display:grid;gap:8px}
 .sa-r{display:grid;gap:2px;padding:10px 12px;border-radius:12px;border:1px solid var(--hair);background:rgba(255,255,255,.03);font-size:13.5px}
 .sa-r span{color:var(--mu)}
@@ -1701,6 +1708,7 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 <div class="modal" id="m-vote" aria-hidden="true" data-lock="1"><div class="sheet glass vg" role="dialog" aria-modal="true" aria-label="Vota l’MVP" id="vg-body"></div></div>
 <div class="modal" id="m-news" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Novità" style="width:min(620px,100%)"><div id="nw-body"></div><div class="row end sticky-actions"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 <div class="modal" id="m-prof" aria-hidden="true"><div class="sheet glass vi" role="dialog" aria-modal="true" aria-label="Richieste schede giocatore" style="width:min(620px,100%)"><div id="pr-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
+<div class="modal" id="m-mk" aria-hidden="true"><div class="sheet glass mk" role="dialog" aria-modal="true" aria-label="Apri scommesse" style="width:min(680px,100%)"><div id="mk-body"></div></div></div>
 <div class="modal" id="m-vinfo" aria-hidden="true"><div class="sheet glass vi" role="dialog" aria-modal="true" aria-label="Chi ha votato chi" style="width:min(560px,100%)"><div id="vi-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 
 <!-- Replay a schermo intero -->
@@ -3619,6 +3627,7 @@ function scheduledDetailHTML(m){
     <div class="ovbar" aria-label="OVR medio Bianchi ${mW.toFixed(1)}, Neri ${mB.toFixed(1)}"><span>${mW.toFixed(1)}</span><span class="bar"><i style="width:${share}%"></i><em></em></span><span>${mB.toFixed(1)}</span></div>
     <p class="mu sm" style="text-align:center;margin:0 0 12px">OVR medio delle due squadre</p>
     <div class="tab-cols">${col('white')}${col('black')}</div>
+    ${mkAdminHTML(m)}
     <div class="tab-actions">
       <button class="btn primary admin-only" data-action="record-result" data-mid="${m.id}">📝 Registra risultato</button>
       <button class="btn admin-only" data-action="edit-match" data-mid="${m.id}">✏️ Modifica convocazioni</button>
@@ -4786,6 +4795,91 @@ function bmMarkets(m, nm = pid => pid){
   add('og', 'spec', 'Ci sarà un autogol', [{ sel:'y', label:'Sì' }, { sel:'n', label:'No' }]);
   return out;
 }
+/* ---------- Mercati aperti dall'admin: casino/markets/{mid} = { gen, status:'open'|'void', at, v, lineup, m:snapshot } ----------
+   Le quote nascono UNA volta dallo snapshot e non cambiano più. Una puntata vale solo se bet.gen === market.gen e il mercato non è annullato. */
+const mkOf = mid => (store.casino && store.casino.markets && store.casino.markets[mid]) || null;
+function lineupKey(m){
+  const k = [];
+  for(const [t, L] of [['W', list(m.white)], ['B', list(m.black)]]) for(const e of L) if(e && e.pid) k.push(t + (e.bench ? 'b' : '') + ':' + e.pid);
+  return k.sort().join(',');
+}
+/* Stato effettivo: una gara in programma con formazione diversa da quella del mercato vale come annullata anche se la scrittura non è ancora partita */
+function mkState(mid){
+  const mk = mkOf(mid), m = store.matches[mid]; if(!mk) return { s:'none' };
+  if(mk.status === 'void') return { s:'void', mk };
+  if(m && m.status === 'scheduled' && lineupKey(m) !== mk.lineup) return { s:'void', mk, stale:true };
+  if(m && m.status !== 'scheduled') return { s:'closed', mk };
+  const kd = m && kickDate(m);
+  if(kd && Date.now() >= kd.getTime()) return { s:'closed', mk };
+  return { s:'open', mk };
+}
+function bmCtx(){
+  let tg = 0, og = 0; const roster = {};
+  for(const m of STATS.matches){ const sc = matchScore(m); tg += sc.w + sc.b; }
+  for(const st of STATS.list){ roster[st.pid] = { role:st.p.role, pres:st.pres, g:st.g, a:st.a, og:st.og, ovr:st.ovr }; og += st.og; }
+  return { n:STATS.matches.length, totalGoals:tg, totalOg:og, roster };
+}
+const mkLineup = m => { const f = L => list(L).filter(e => e && store.players[e.pid]).map(e => ({ pid:e.pid, bench:!!e.bench })); return { W:f(m.white), B:f(m.black) }; };
+function mkCanOpen(m){
+  if(!m || m.status !== 'scheduled') return 'La gara non è in programma';
+  if(!m.date || !m.time) return 'Servono data e ora della gara';
+  const L = mkLineup(m); if(!L.W.some(e => !e.bench) || !L.B.some(e => !e.bench)) return 'Serve almeno un titolare per squadra';
+  const kd = kickDate(m); if(kd && Date.now() >= kd.getTime()) return 'La gara è già iniziata';
+  return '';
+}
+function mkAdminHTML(m){
+  if(!ui.admin || !feat('casino')) return '';
+  const st = mkState(m.id), why = mkCanOpen(m);
+  const open = `<button class="btn primary" data-action="mk-open" data-mid="${m.id}" ${why ? 'disabled' : ''}>🎰 ${st.s === 'void' ? 'Riapri scommesse' : 'Apri scommesse'}</button>${why ? `<span class="mu sm">${why}.</span>` : ''}`;
+  let body;
+  if(st.s === 'open') body = `<span>🎰 Scommesse aperte (versione ${num(st.mk.gen)}): si chiudono all’inizio della gara ${cdSpan(m)}</span><button class="btn danger" data-action="mk-close" data-mid="${m.id}">Chiudi e rimborsa</button>`;
+  else if(st.s === 'void') body = `<span>🎰 Scommesse annullate${st.stale ? ': la formazione è cambiata' : ''}. Le puntate sono rimborsate.</span>${open}`;
+  else if(st.s === 'closed') body = '<span>🎰 Scommesse chiuse: la gara è iniziata.</span>';
+  else body = open;
+  return `<div class="mk-adm admin-only">${body}</div>`;
+}
+function mkPreviewHTML(m, P){
+  const S = P.snap, nm = pid => esc(pname(pid)), fo = o => o == null ? '' : o.toFixed(2).replace('.', ',');
+  const mk = bmMarkets(S, nm), grp = { main:'Principali', gol:'Gol', marc:'Marcatori', spec:'Speciali' };
+  const part = g => mk.filter(x => x.grp === g).map(x => {
+    let sels = x.sels.filter(y => y.odds != null);
+    if(x.k === 'exact') sels = [...sels].sort((a, b) => b.p - a.p).slice(0, 10);
+    return sels.length ? `<div class="mk-r"><b>${x.title}</b><span class="mk-s">${sels.map(y => `<i>${y.label} <em>${fo(y.odds)}</em></i>`).join('')}</span></div>` : '';
+  }).join('');
+  return `<h3>Apri scommesse, giornata ${num(m.day)}</h3>
+    <p class="mu sm">Anteprima: finché non confermi non viene scritto nulla. Dopo la conferma le quote restano fissate e non cambiano più.</p>
+    <p class="mk-sum"><b>Bianchi</b> ${S.nW} (OVR ${S.oW}) contro <b>Neri</b> ${S.nB} (OVR ${S.oB}) · gol attesi ${(Math.round(S.mT * 10) / 10).toString().replace('.', ',')} · dopo ${S.n} ${S.n === 1 ? 'gara giocata' : 'gare giocate'} · margine ${Math.round(bmMargin(S, 'esito') * 100)}%</p>
+    ${Object.entries(grp).map(([g, t]) => `<h4 class="vi-h">${t}</h4>${part(g)}`).join('')}
+    <p class="mu sm">Le quote mancanti sono mercati non offerti (quota sotto ${String(S.p.ODDS_MIN).replace('.', ',')}). Risultato esatto: le 10 più probabili.</p>
+    <div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Annulla</button><button type="button" class="btn primary" data-action="mk-confirm">🎰 ${P.gen > 1 ? 'Riapri' : 'Apri'} le scommesse</button></div>`;
+}
+function openMarketPreview(mid){
+  if(!ui.admin) return;
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  const m = store.matches[mid], why = mkCanOpen(m); if(why){ toast(why, 'warn'); return; }
+  const snap = buildModel(mkLineup(m), bmCtx()), mk = mkOf(mid);
+  ui.mkPrev = { mid, snap, key:lineupKey(m), gen:(mk ? num(mk.gen) : 0) + 1 };
+  $('#mk-body').innerHTML = mkPreviewHTML({ id:mid, ...m }, ui.mkPrev); openModal('#m-mk');
+}
+async function openMarketConfirm(){
+  const P = ui.mkPrev; if(!P || !ui.admin) return;
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  if(db && syncState !== 'live'){ toast('Per aprire le scommesse serve la connessione', 'warn'); return; }
+  const m = store.matches[P.mid], why = mkCanOpen(m); if(why){ toast(why, 'warn'); return; }
+  if(lineupKey(m) !== P.key){ toast('La formazione è cambiata: controlla di nuovo le quote', 'warn'); openMarketPreview(P.mid); return; }
+  const cur = mkOf(P.mid); if(cur && cur.status === 'open' && mkState(P.mid).s === 'open'){ toast('Le scommesse sono già aperte', 'warn'); return; }
+  ui.mkPrev = null; closeModal('#m-mk', true);
+  await commit({ ['casino/markets/' + P.mid]:{ gen:P.gen, status:'open', at:Date.now(), v:APP_VERSION, lineup:P.key, m:P.snap } }, `Scommesse aperte (versione ${P.gen})`);
+}
+async function closeMarket(mid){
+  if(!ui.admin) return;
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  if(db && syncState !== 'live'){ toast('Per chiudere le scommesse serve la connessione', 'warn'); return; }
+  if(mkState(mid).s !== 'open') return;
+  const ok = await confirmDlg('Chiudere e rimborsare?', 'Le scommesse di questa gara vengono annullate e tutte le puntate rimborsate. Potrai riaprirle con quote nuove.', 'Chiudi e rimborsa', true);
+  if(!ok || mkState(mid).s !== 'open') return;
+  await commit({ [`casino/markets/${mid}/status`]:'void' }, 'Scommesse chiuse: puntate rimborsate');
+}
 async function claimDaily(){
   if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
   const me = myPid(); if(!me || !store.players[me]){ toast('Scegli prima la tua carta nella sezione Io', 'warn'); return; }
@@ -5577,7 +5671,13 @@ async function saveMatch(){
   ui.matchId = id;
   closeModal('#m-match');
   ED = null;
-  commit({ [`matches/${id}`]: payload }, sched ? 'Gara in programma salvata' : (wasEdit ? 'Risultato salvato' : 'Gara salvata'));
+  const up = { [`matches/${id}`]: payload };
+  /* Gara in programma con scommesse aperte e formazione cambiata: le scommesse si annullano (puntate rimborsate) */
+  const mkc = mkOf(id);
+  if(sched && mkc && mkc.status === 'open' && lineupKey(payload) !== mkc.lineup){
+    if(feat('casino')){ up[`casino/markets/${id}/status`] = 'void'; toast('Formazione cambiata: scommesse rimborsate, riaprile', 'warn'); }
+  }
+  commit(up, sched ? 'Gara in programma salvata' : (wasEdit ? 'Risultato salvato' : 'Gara salvata'));
   if(!sched){ markFinal(id); setTimeout(() => showFinal({ id, ...payload }), 380); }
   go('matches');
 }
@@ -6059,6 +6159,9 @@ document.addEventListener('click', async e => {
     case 'backup-all': if(requireAdmin()) backupAll(); break;
     case 'import-xlsx': if(requireAdmin()){ $('#xlsxInput').value = ''; $('#xlsxInput').click(); } break;
     case 'casino-claim': claimDaily(); break;
+    case 'mk-open': openMarketPreview(d.mid); break;
+    case 'mk-confirm': openMarketConfirm(); break;
+    case 'mk-close': closeMarket(d.mid); break;
     case 'feat-toggle': toggleFeature(d.fx); break;
     case 'change-pin': if(requireAdmin()){ $('#cpin-form').reset(); openModal('#m-cpin'); } break;
     case 'logout':
