@@ -2002,7 +2002,7 @@ const ratingsLoaded = {}, ratingsWatch = {};
 function ratingsProblem(kind, path){ ratingsIssue = { kind, path }; scheduleRender(); }
 /* Le stelle di una gara si scaricano solo a votazione chiusa: finché è aperta nessun dispositivo le riceve */
 function watchRatings(){
-  if(!db) return;
+  if(!db || !feat('ratings')) return;
   for(const [id, m] of Object.entries(store.matches || {})){
     if(!m || !m.rate || m.status === 'scheduled' || ratingsWatch[id] || rateInfo({ id, ...m }).open) continue;
     ratingsWatch[id] = 1;
@@ -2011,7 +2011,7 @@ function watchRatings(){
 }
 /* Pronti a calcolare l'OVR: per le gare con voto chiuso servono già le stelle (altrimenti l'OVR salterebbe a caricamento finito) */
 function ratingsReady(){
-  if(!db || ratingsIssue) return true;
+  if(!db || ratingsIssue || !feat('ratings')) return true;
   return Object.entries(store.matches || {}).every(([id, m]) => !m || !m.rate || m.status === 'scheduled' || ratingsLoaded[id] || rateInfo({ id, ...m }).open);
 }
 
@@ -2273,6 +2273,8 @@ function mvpCands(m, preFn){
 function voteInfo(m, preFn){
   const eligible = [...list(m.white), ...list(m.black)].map(e => e.pid).filter(pid => store.players[pid]);
   const cands = m.top4 ? mvpCands(m, preFn) : null, candIds = cands ? cands.map(c => c.pid) : eligible;
+  /* Voto MVP spento: i voti non si rileggono (restano nel database) e la votazione non è mai aperta; l'MVP dipende solo dai punti */
+  if(!feat('mvp')) return { eligible, votes:{}, n:0, open:false, cands, candIds };
   const raw = (m.id && store.votes && store.votes[m.id]) || {};
   const votes = {};
   for(const [voter, target] of Object.entries(raw)) if(eligible.includes(voter) && candIds.includes(target) && voter !== target) votes[voter] = target;
@@ -2291,7 +2293,7 @@ function rateInfo(m){
   const voters = Object.keys(teamOf).filter(p => targets(p).length);
   const done = (store.ratingsDone && store.ratingsDone[m.id]) || {};
   const n = voters.filter(p => done[p]).length;
-  const open = !!m.rate && m.status !== 'scheduled' && !!m.voteClose && Date.now() < m.voteClose && n < voters.length;
+  const open = feat('ratings') && !!m.rate && m.status !== 'scheduled' && !!m.voteClose && Date.now() < m.voteClose && n < voters.length;
   return { voters, targets, teamOf, done, n, open };
 }
 /* Un voto è valido se dà una valutazione 1-5 a ciascun compagno (una sola volta), con al massimo 3 cinque stelle e 2 una stella */
@@ -2307,7 +2309,7 @@ function ratingsValid(items, targets){
 /* Risultati di una gara a votazione chiusa: { pid: { n, avg, bonus } }. Aperta (o senza rate): vuoto */
 function rateResults(m){
   const out = {};
-  if(!m.rate || m.status === 'scheduled') return out;
+  if(!feat('ratings') || !m.rate || m.status === 'scheduled') return out;   /* stelle spente: bonus sempre 0, i voti restano salvati */
   const info = rateInfo(m); if(info.open) return out;
   const acc = {};
   for(const rec of Object.values((store.ratings && store.ratings[m.id]) || {})){
@@ -3112,7 +3114,7 @@ function matchDetailHTML(id){
 
 /* ---------- Votazione MVP ---------- */
 function voteBoxHTML(m){
-  if(m.status === 'scheduled') return '';
+  if(m.status === 'scheduled' || !feat('mvp')) return '';
   const vi = voteInfo(m);
   if(!m.voteClose && !vi.n) return '';
   const me = localStorage.getItem('cmb_me'), inMatch = me && vi.eligible.includes(me), mine = me ? vi.votes[me] : null;
@@ -3148,7 +3150,7 @@ function voteBoxHTML(m){
 }
 /* Riquadro del voto ai compagni nella gara: avanzamento e, solo all'admin, chi manca. Nessun risultato */
 function rateBoxHTML(m){
-  if(!m.rate || m.status === 'scheduled') return '';
+  if(!feat('ratings') || !m.rate || m.status === 'scheduled') return '';
   const info = rateInfo(m); if(!info.voters.length) return '';
   const me = myPid(), inMatch = !!me && info.voters.includes(me), nm = pid => esc(pname(pid));
   if(!info.open) return `<div class="vbox closed"><div class="vb-h"><h4>⭐ Voto ai compagni chiuso</h4></div><p class="mu sm" style="margin:0">I voti sono anonimi e restano privati: ognuno vede solo il proprio bonus, nella sezione Io.</p></div>`;
@@ -3169,6 +3171,7 @@ const pvHas = mid => pvGet().some(x => x.mid === mid);
 const myPid = () => { try{ return localStorage.getItem('cmb_me') || ''; }catch(e){ return ''; } };
 const voteWrites = (mid, voter, target) => ({ [`votes/${mid}/${voter}`]:target, [`votes/${mid}/_m/${voter}`]:Date.now() });
 function pvFlush(){
+  if(!feat('mvp')){ if(pvGet().length) pvSet([]); return; }   /* voto MVP spento: la coda si svuota senza inviare nulla */
   if(db && syncState !== 'live') return;
   const q = pvGet(); if(!q.length) return;
   pvSet([]);
@@ -3215,6 +3218,7 @@ function voteBox2HTML(m, vi, me, inMatch, mine, pend){
     ${missing.length && trows.length ? `<p class="mu sm">Non hanno votato: ${missing.map(nm).join(', ')}</p>` : ''}</div>`;
 }
 async function castVote(mid, target){
+  if(!feat('mvp')){ toast('Il voto MVP è sospeso', 'warn'); return false; }
   const m = store.matches[mid]; if(!m) return false;
   const me = myPid();
   let vi = voteInfo({ id:mid, ...m });
@@ -3263,6 +3267,7 @@ function extendVote(mid){
 }
 async function voteCancel(mid, voter){
   if(!ui.admin) return;
+  if(!feat('mvp')){ toast('Il voto MVP è sospeso', 'warn'); return; }
   const m = store.matches[mid]; if(!m) return;
   const vi = voteInfo({ id:mid, ...m }), t = vi.votes[voter]; if(!t) return;
   const ok = await confirmDlg(`Annullare il voto di ${pname(voter)}?`, `Aveva votato ${pname(t)}. Potrà votare di nuovo e l’annullamento viene registrato.`, 'Annulla voto', true);
@@ -3279,7 +3284,7 @@ const seenFinal = () => { try{ return JSON.parse(localStorage.getItem('cmb2627_s
 function markFinal(mid){ const x = seenFinal(); x[mid] = 1; try{ localStorage.setItem('cmb2627_seenFinal', JSON.stringify(x)); }catch(e){} }
 function openWho(){
   const ls = [...STATS.list].sort((a, b) => a.name.localeCompare(b.name, 'it'));
-  $('#who-body').innerHTML = `<h3>Chi sei?</h3><p class="lead-p">Scegli la tua carta: serve per votare l’MVP e per vedere le tue statistiche. Resta salvata su questo telefono.</p>
+  $('#who-body').innerHTML = `<h3>Chi sei?</h3><p class="lead-p">Scegli la tua carta: ${feat('mvp') ? 'serve per votare l’MVP e per vedere le tue statistiche' : 'serve per vedere le tue statistiche'}. Resta salvata su questo telefono.</p>
     <div class="who-grid">${ls.map(x => `<button type="button" class="who-opt" data-who="${x.pid}">${avatar(x.p, 'md')}<span>${esc(x.name)}</span></button>`).join('')}</div>
     <div class="who-guest"><button type="button" class="btn ghost" data-action="who-guest">Sono un ospite</button>
       <div id="who-g" hidden><p class="mu sm">Non hai mai giocato ai Comboniani? Scrivi il tuo nome: l’organizzatore lo vedrà negli accessi.</p><div class="row"><input id="who-name" class="field" maxlength="40" placeholder="Nome e cognome" autocomplete="name"><button type="button" class="btn primary" data-action="who-guest-ok">Entra</button></div></div></div>`;
@@ -3312,13 +3317,13 @@ function flow(){
     const fin = rev.find(x => x.vote2 && !seen[x.id] && Date.now() - num(x.createdAt) < 30 * 864e5);
     if(fin){ markFinal(fin.id); showFinal(fin); return; }
     if(me){
-      const pend = rev.find(x => {
+      const pend = !feat('mvp') ? null : rev.find(x => {
         if(!x.vote2 || (ui.voteLater && ui.voteLater[x.id]) || pvHas(x.id)) return false;
         const vi = voteInfo(x);
         return vi.open && vi.eligible.includes(me) && !vi.votes[me] && vi.cands.some(c => c.pid !== me);
       });
       if(pend){ openVoteGate(pend); return; }
-      const pendR = rev.find(x => {
+      const pendR = !feat('ratings') ? null : rev.find(x => {
         if(!x.rate || prHas(x.id) || (ui.voteLater && ui.voteLater['r' + x.id])) return false;
         const inf = rateInfo(x);
         return inf.open && !inf.done[me] && inf.targets(me).length > 0;
@@ -3357,6 +3362,7 @@ function ratingWrites(mid, items){
 const isPermErr = e => /permission/i.test(String((e && (e.code || e.message)) || ''));
 let prBusy = false;
 async function prFlush(){
+  if(!feat('ratings')) return;   /* stelle spente: niente invii (la coda resta ferma sul telefono) */
   if(prBusy || (db && syncState !== 'live') || !dataReady() || !prGet().length) return;
   prBusy = true;
   try{
@@ -3388,6 +3394,7 @@ async function prFlush(){
 setInterval(prFlush, 20000);
 let RT = null;   /* { mid, sel:{ pid: stelle } }: la scelta resta solo in memoria su questo telefono */
 function openRateGate(m){
+  if(!feat('ratings')){ toast('I voti a stelle sono sospesi', 'warn'); return; }
   if(!RT || RT.mid !== m.id) RT = { mid:m.id, sel:{} };
   renderRateGate();
   openModal('#m-rate');
@@ -3423,6 +3430,7 @@ function rateTap(val){
 }
 async function rateSend(){
   if(!RT) return;
+  if(!feat('ratings')){ toast('I voti a stelle sono sospesi', 'warn'); RT = null; closeModal('#m-rate', true); return; }
   const m = store.matches[RT.mid], me = myPid(); if(!m || !me) return;
   const info = rateInfo({ id:RT.mid, ...m }), tg = info.targets(me);
   if(!info.open){ toast('La votazione è chiusa', 'warn'); RT = null; closeModal('#m-rate', true); return; }
@@ -3440,7 +3448,7 @@ async function rateSend(){
 }
 let voteSig = '';
 setInterval(() => {
-  const sig = Object.entries(store.matches || {}).filter(([, m]) => m && m.voteClose && Date.now() < m.voteClose).map(([id]) => id).join(',');
+  const sig = !(feat('mvp') || feat('ratings')) ? '' : Object.entries(store.matches || {}).filter(([, m]) => m && m.voteClose && Date.now() < m.voteClose).map(([id]) => id).join(',');
   if(sig !== voteSig){ voteSig = sig; scheduleRender(); }
 }, 15000);
 
@@ -4031,7 +4039,7 @@ function renderMe(){
   let pt = tierOf(OVR_START);
   for(const x of h){ const nt = tierOf(x.ovr); if(TIER_RANK[nt] > TIER_RANK[pt]) ev.push({ ic:TIERS[nt].i, t:`Promosso a ${TIERS[nt].l}`, d:matchWhen(x.m) }); else if(TIER_RANK[nt] < TIER_RANK[pt]) ev.push({ ic:'⬇️', t:`Sceso a ${TIERS[nt].l}`, d:matchWhen(x.m) }); pt = nt; }
   s.plaques.forEach(id => { const P = plaqueById(id); ev.push({ ic:P.icon, t:`Detiene la targa ${P.name}`, d:'In corso' }); });
-  buildRecordCards(computeRecords(), STATS.matches.length).filter(c => !c.lock && (c.pid === s.pid || (c.pair && c.pair.includes(s.pid)))).forEach(c => ev.push({ ic:c.icon, t:`Primato: ${c.title}`, d:`${c.value} ${c.unit}` }));
+  buildRecordCards(computeRecords(), STATS.matches.length).filter(c => !c.off && !c.lock && (c.pid === s.pid || (c.pair && c.pair.includes(s.pid)))).forEach(c => ev.push({ ic:c.icon, t:`Primato: ${c.title}`, d:`${c.value} ${c.unit}` }));
   const pathBox = ev.length ? `<ol class="me-path">${ev.map(e => `<li><span class="pi">${e.ic}</span><span><b>${esc(e.t)}</b><small>${esc(String(e.d))}</small></span></li>`).join('')}</ol>` : '<p class="mu sm" style="margin:0">Il tuo percorso inizia con la prima gara.</p>';
   const pend = STATS.matches.filter(m => { const vi = voteInfo(m); return vi.open && vi.eligible.includes(s.pid) && !vi.votes[s.pid]; });
   const voteNote = pend.map(m => `<div class="glass me-vote">🗳️ Devi ancora votare l’MVP della giornata ${num(m.day)}<button class="btn sm primary" data-open-match="${m.id}">Vota</button></div>`).join('');
@@ -4039,7 +4047,7 @@ function renderMe(){
   const rateNote = pendR.map(m => `<div class="glass me-vote">⭐ Devi ancora votare i compagni della giornata ${num(m.day)}<button class="btn sm primary" data-action="rate-open" data-mid="${m.id}">Vota</button></div>`).join('');
   /* Voti dei compagni: solo il tuo risultato, mai quello degli altri; a votazione chiusa */
   const sgn = v => (v < 0 ? '−' : '+') + Math.abs(v).toFixed(2).replace('.', ',');
-  const rrows = h.filter(x => x.m.rate).slice(-6).reverse().map(x => {
+  const rrows = !feat('ratings') ? [] : h.filter(x => x.m.rate).slice(-6).reverse().map(x => {
     const info = rateInfo(x.m);
     if(info.open) return `<div><span>Giornata ${num(x.m.day)}<small> votazione in corso</small></span><small>i risultati arrivano alla chiusura</small></div>`;
     const rr = rateResults(x.m)[s.pid];
@@ -4303,7 +4311,7 @@ function renderTrophies(){
       ${rival}<small>${esc(P.desc)}</small></div></div>`;
   }).join('');
   const cards = buildRecordCards(computeRecords(), nM);
-  const recs = cards.map(c => {
+  const recs = cards.filter(c => !c.off).map(c => {
     const sig = c.lock ? 'lock' : (REC_KIND[c.key] === 'event' ? recHolder(c) + '|' + c.value : recHolder(c));
     curR[c.key] = sig;
     const broken = !c.lock && !!seenR && !!seenR[c.key] && seenR[c.key] !== 'lock' && seenR[c.key] !== sig;
@@ -4326,6 +4334,8 @@ function renderTrophies(){
 const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk','rit'];
 /* event = record di una singola impresa (festeggiato anche se lo stesso giocatore si migliora); lead = primato di classifica (festeggiato solo al cambio di detentore) */
 const REC_KIND = { manita:'event', mitra:'event', lampo:'event', scadere:'event', mida:'event', uomo:'event', inarr:'event', goleada:'event', cappotto:'event', cecchino:'lead', fortino:'lead', mina:'lead', come:'lead', down:'lead', eroe:'lead', oro:'lead', intesa:'lead', derby:'lead', bunk:'lead', rit:'lead' };
+/* Primati legati a una funzione: con la funzione spenta la scheda non si mostra e non fa popup */
+const REC_FEAT = { eroe:'mvp' };
 function buildRecordCards(R, nM){
   const none = 'Nessuna gara registrata';
   const need = lbl => nM ? lbl : none;
@@ -4371,7 +4381,7 @@ function buildRecordCards(R, nM){
     ,R.ritard ? { icon:'⏰', title:'Il Ritardatario', desc:'Più ritardi in stagione. Parità: percentuale di ritardi sulle presenze.', pid:R.ritard.pid, sub:`${R.ritard.pres} ${R.ritard.pres === 1 ? 'presenza' : 'presenze'}, ${Math.round(R.ritard.ritardi / R.ritard.pres * 100)}% delle gare`, value:R.ritard.ritardi, unit:R.ritard.ritardi === 1 ? 'ritardo' : 'ritardi' }
       : { icon:'⏰', title:'Il Ritardatario', desc:'Più ritardi in stagione. Parità: percentuale di ritardi sulle presenze.', lock:'Nessun ritardo registrato' }
   ];
-  cards.forEach((c, i) => c.key = REC_KEYS[i]);
+  cards.forEach((c, i) => { c.key = REC_KEYS[i]; if(REC_FEAT[c.key] && !feat(REC_FEAT[c.key])) c.off = true; });   /* le chiavi restano per posizione: una funzione spenta nasconde la scheda, non la toglie */
   return cards;
 }
 function recHolder(c){ return c.pid || (c.pair ? [...c.pair].sort().join('+') : '') || c.label || ''; }
@@ -4385,12 +4395,12 @@ let recQueue = [];
 function checkRecords(){
   const cards = buildRecordCards(computeRecords(), STATS.matches.length);
   const now = {};
-  for(const c of cards) now[c.key] = { sig:c.lock ? 'lock' : (REC_KIND[c.key] === 'event' ? recHolder(c) + '|' + c.value : recHolder(c)), txt:recText(c) };
+  for(const c of cards) if(!c.off) now[c.key] = { sig:c.lock ? 'lock' : (REC_KIND[c.key] === 'event' ? recHolder(c) + '|' + c.value : recHolder(c)), txt:recText(c) };
   let seen = null;
   try{ seen = JSON.parse(localStorage.getItem(REC_SEEN) || 'null'); }catch(e){}
   if(seen && STATS.matches.length >= 5){
     for(const c of cards){
-      if(c.lock || !seen[c.key] || seen[c.key].sig === now[c.key].sig) continue;
+      if(c.off || c.lock || !seen[c.key] || seen[c.key].sig === now[c.key].sig) continue;
       if(recQueue.some(q => q.key === c.key)) continue;
       recQueue.push({ key:c.key, card:c, prev:seen[c.key].sig === 'lock' ? '' : seen[c.key].txt, same:seen[c.key].sig.split('|')[0] === now[c.key].sig.split('|')[0] });
     }
@@ -4408,8 +4418,8 @@ function showFinal(m){
     <div class="fin-k">Fischio finale, giornata ${num(m.day)}</div>
     <div class="fin-board"><div class="fin-t">${kit('white', '')}<span>Bianchi</span></div><div class="fin-s"><b data-cu="${sc.w}" data-dur="1100">0</b><i></i><b data-cu="${sc.b}" data-dur="1100">0</b></div><div class="fin-t">${kit('black', '')}<span>Neri</span></div></div>
     <div class="fin-res">${win ? (win === 'white' ? '🏆 Vittoria Bianchi' : '🏆 Vittoria Neri') : '🤝 Pareggio'}</div>
-    ${mv ? `<div class="fin-mvp">⭐ ${mv.provisional ? 'MVP provvisorio' : 'MVP'} ${esc(pname(mv.pid, mv.n))} <span>${evDesc(mv)}</span></div><div class="fin-mvp" style="animation-delay:1.5s"><span>${m.vote2 ? '🗳️ Subito dopo: vota l’MVP tra i 4 migliori' : '🗳️ Votazione MVP aperta per 24 ore: vota da Partite'}</span></div>` : ''}
-    <div class="row" style="justify-content:center;margin-top:18px;position:relative"><button class="btn primary" data-action="final-close">${m.vote2 ? 'Continua' : 'Vedi tabellino'}</button></div>`;
+    ${mv ? `<div class="fin-mvp">⭐ ${mv.provisional ? 'MVP provvisorio' : 'MVP'} ${esc(pname(mv.pid, mv.n))} <span>${evDesc(mv)}</span></div>${feat('mvp') ? `<div class="fin-mvp" style="animation-delay:1.5s"><span>${m.vote2 ? '🗳️ Subito dopo: vota l’MVP tra i 4 migliori' : '🗳️ Votazione MVP aperta per 24 ore: vota da Partite'}</span></div>` : ''}` : ''}
+    <div class="row" style="justify-content:center;margin-top:18px;position:relative"><button class="btn primary" data-action="final-close">${m.vote2 && feat('mvp') ? 'Continua' : 'Vedi tabellino'}</button></div>`;
   openModal('#m-final');
   countUp($('#fin-body'));
   haptic();
@@ -4464,7 +4474,7 @@ function renderAdmin(){
       <button class="tile quiet" data-action="change-pin"><span class="ic">🔑</span><b>Cambia PIN</b><span>Vale per tutti i dispositivi del torneo.</span></button>
       <button class="tile quiet" data-action="logout"><span class="ic">🚪</span><b>Esci dall’area admin</b><span>Torni in sola lettura su questo dispositivo.</span></button>
     </div>
-    ${ratingsIssue ? `<div class="warnline">${ratingsIssue.kind === 'read'
+    ${ratingsIssue && feat('ratings') ? `<div class="warnline">${ratingsIssue.kind === 'read'
       ? `Il database non permette di leggere «${esc(ratingsIssue.path)}». Per il voto ai compagni aggiungi nelle regole di Firebase i percorsi “ratings” e “ratingsDone” (lettura e scrittura per tutti i dispositivi).`
       : `Il database ha rifiutato la scrittura di un voto ai compagni (percorso «${esc(ratingsIssue.path)}»). Nelle regole di Firebase servono ratings/$gara/$rid e ratingsDone/$gara/$pid con scrittura consentita a tutti i dispositivi.`}</div>` : ''}
     ${!store.settings?.pin ? `<div class="warnline">Stai usando il PIN predefinito ${DEFAULT_PIN}: cambialo prima di condividere il link.</div>` : ''}
