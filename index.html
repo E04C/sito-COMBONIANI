@@ -1891,8 +1891,8 @@ PLAQUES.push({ id:'ultimo', icon:'⏳', name:'Ultimo Respiro', desc:'Più gol ne
   ok:s => s.lateG >= 1, cmp:(a,b) => (b.lateG - a.lateG) || (b.g - a.g), val:s => `${s.lateG} ${s.lateG === 1 ? 'gol nel finale' : 'gol nel finale'}` });
 /* Targhe legate a una funzione (feat): con la funzione spenta non si assegnano, non si mostrano e non contano nel tetto di 2 a testa.
    Il saldo esiste solo sulla stagione intera, quindi negli storici dei trofei queste targhe non risultano mai assegnate. */
-PLAQUES.push({ id:'banco', feat:'casino', icon:'💰', name:'Il Banco', desc:`Il saldo più alto di ${CURRENCY}. Parità: più ${CURRENCY} guadagnate nelle gare.`,
-  ok:s => !!s.mov && s.mov.length > 1 && s.bal > 0, cmp:(a,b) => (b.bal - a.bal) || (b.earn - a.earn), val:s => `${fmtPat(s.bal)} ${CURRENCY}` });
+PLAQUES.push({ id:'banco', feat:'casino', icon:'💰', name:'Il Banco', desc:`Il saldo più alto di ${CURRENCY}, senza contare le spese del Negozio. Parità: più ${CURRENCY} guadagnate nelle gare.`,
+  ok:s => !!s.mov && s.mov.length > 1 && s.balB > 0, cmp:(a,b) => (b.balB - a.balB) || (b.earn - a.earn), val:s => `${fmtPat(s.balB)} ${CURRENCY}` });
 PLAQUES.push({ id:'profeta', feat:'casino', icon:'🔮', name:'Il Profeta', desc:`La percentuale più alta di scommesse vinte (almeno ${CASINO.PROFETA_MIN} concluse, senza monti e rimborsi). Parità: più vittorie.`,
   ok:s => s.betN >= CASINO.PROFETA_MIN, cmp:(a,b) => (b.betPct - a.betPct) || (b.betWon - a.betWon), val:s => `${Math.round(s.betPct)}% vinte (${s.betWon} su ${s.betN})` });
 const plqOn = P => !P.feat || feat(P.feat);
@@ -1923,7 +1923,7 @@ const PLQ_GAP = {
   assist:[s => s.a, 'assist', 'assist', 1, 0], vittoria:[s => s.pct, 'punto %', 'punti %', 5, 0],
   gladiatore:[s => s.mvp, 'MVP', 'MVP', 1, 0], amuleto:[s => s.v - s.s, 'di saldo', 'di saldo', 1, 0],
   roccia:[s => s.ovr, 'OVR', 'OVR', 1, 1], re:[s => s.hat, 'gara da 3+ gol', 'gare da 3+ gol', 1, 0],
-  profeta:[s => s.betPct, 'punto %', 'punti %', 5, 0], muro:[s => s.minConcW, 'gol subito', 'gol subiti', 1, 0], banco:[s => s.bal, CURRENCY1, CURRENCY, 20, 0], treno:[s => s.g + s.a, 'bonus', 'bonus', 1, 0],
+  profeta:[s => s.betPct, 'punto %', 'punti %', 5, 0], muro:[s => s.minConcW, 'gol subito', 'gol subiti', 1, 0], banco:[s => s.balB, CURRENCY1, CURRENCY, 20, 0], treno:[s => s.g + s.a, 'bonus', 'bonus', 1, 0],
   apriscatole:[s => s.firstG, 'primo gol', 'primi gol', 1, 0], ultimo:[s => s.lateG, 'gol', 'gol', 1, 0]
 };
 const METALS = { noexcuses:'steel', cecchino:'gold', assist:'rose', vittoria:'gold', gladiatore:'bronze', amuleto:'emerald', roccia:'titanium', re:'gold', muro:'steel', treno:'copper', apriscatole:'silver', ultimo:'rose', banco:'gold', profeta:'emerald' };
@@ -2569,8 +2569,8 @@ function walletBuild(st){
   walletBetStats(st);
   mov.forEach((x, i) => { x.i = i; });
   mov.sort((a, b) => ((a.t == null ? -Infinity : a.t) - (b.t == null ? -Infinity : b.t)) || (a.i - b.i));
-  let bal = 0; for(const x of mov){ bal += x.delta; x.bal = bal; }
-  st.bal = bal; st.mov = mov;
+  let bal = 0, spent = 0; for(const x of mov){ bal += x.delta; x.bal = bal; if(x.kind === 'shop' || x.kind === 'jersey') spent -= x.delta; }
+  st.bal = bal; st.balB = bal + spent; st.mov = mov;   /* balB: saldo senza le spese cosmetiche, per Il Banco */
 }
 /* Statistiche per Il Profeta: scommesse a quota fissa concluse (non annullate né rimborsate; i monti non contano) */
 function walletBetStats(st){
@@ -2583,6 +2583,7 @@ function walletBetStats(st){
   st.betN = n; st.betWon = won; st.betPct = n ? won / n * 100 : 0;
 }
 function walletExtra(st, mov){
+  for(const b of shopBuys(st.pid)) mov.push({ t:b.at, kind:'shop', label:'Negozio: ' + SHOP_BY_ID[b.item].name, delta:-b.price, ref:b.bid });
   const B = (store.casino && store.casino.bets) || {};
   for(const [mid, bets] of Object.entries(B)){
     const m = store.matches[mid];
@@ -5164,6 +5165,139 @@ async function delDuel(mid, did){
   if(db && syncState !== 'live'){ toast('Serve la connessione', 'warn'); return; }
   const ok = await confirmDlg('Annullare la sfida?', 'Le scelte già fatte vengono rimborsate.', 'Annulla sfida', true); if(!ok) return;
   await commit({ [`casino/duels/${mid}/${did}/void`]:1 }, 'Sfida annullata: scelte rimborsate');
+}
+
+/* =========================================================
+   NEGOZIO (cosmetici). Dati, tutti opzionali:
+   casino/shop/cfg/{item} = { price?, days?, off? }            ritocchi dell'admin al catalogo
+   casino/shop/buys/{pid}/{buyId} = { item, at, price, days, used? }   acquisti (prezzo e durata congelati)
+   casino/shop/active/{pid}/{categoria} = item                 quale oggetto posseduto è attivo
+   Il saldo non si scrive: ogni acquisto è una voce del registro (-prezzo). La scadenza è at + days giorni, sempre calcolata.
+   Niente di ciò che si compra tocca OVR, punteggi, classifica, quote o scommesse: gli oggetti si leggono solo per disegnare.
+   ========================================================= */
+const SHOP_CATS = { trail:'Scia dei gol', frame:'Cornice della figurina', ncol:'Colore del nome', nfx:'Effetto sul nome', holo:'Ologramma alternativo', emblem:'Stemma accanto al nome', icons:'Icone di gol e assist', cheer:'Esultanza nel replay', row:'Riga in classifica', token:'Token formazione' };
+const SHOP_DAYS = 30, DAY_MS = 864e5;
+/* Nomi e disegni inventati: nessun marchio reale. merit = oggetto solo per merito (si tiene finché si detiene la targa o il primato) */
+const SHOP_ITEMS = [
+  { id:'tr_cometa', cat:'trail', name:'Scia Cometa', desc:'I tuoi gol lasciano una coda luminosa nel replay.', price:40 },
+  { id:'tr_neon', cat:'trail', name:'Scia Neon', desc:'Una striscia verde acido dietro il pallone.', price:40 },
+  { id:'tr_brace', cat:'trail', name:'Scia Brace', desc:'Scintille arancioni lungo la traiettoria.', price:60 },
+  { id:'fr_rame', cat:'frame', name:'Cornice Rame', desc:'Bordo di rame lucido attorno alla figurina.', price:50 },
+  { id:'fr_onda', cat:'frame', name:'Cornice Onda', desc:'Bordo azzurro a onde.', price:60 },
+  { id:'fr_scacchi', cat:'frame', name:'Cornice Scacchi', desc:'Bordo a quadretti bianchi e neri.', price:60 },
+  { id:'nc_smeraldo', cat:'ncol', name:'Nome Smeraldo', desc:'Il tuo nome in verde smeraldo.', price:20 },
+  { id:'nc_rubino', cat:'ncol', name:'Nome Rubino', desc:'Il tuo nome in rosso rubino.', price:20 },
+  { id:'nc_cielo', cat:'ncol', name:'Nome Cielo', desc:'Il tuo nome in azzurro cielo.', price:20 },
+  { id:'nc_viola', cat:'ncol', name:'Nome Viola', desc:'Il tuo nome in viola.', price:20 },
+  { id:'nc_ambra', cat:'ncol', name:'Nome Ambra', desc:'Il tuo nome in giallo ambra.', price:20 },
+  { id:'nf_lampo', cat:'nfx', name:'Lampo Oro', desc:'Il nome lampeggia d’oro.', price:50 },
+  { id:'nf_ombra', cat:'nfx', name:'Ombra Profonda', desc:'Il nome ha una grande ombra scura.', price:30 },
+  { id:'nf_aurora', cat:'nfx', name:'Sfumato Aurora', desc:'Il nome ha un gradiente verde-viola.', price:50 },
+  { id:'ho_arcobaleno', cat:'holo', name:'Ologramma Arcobaleno', desc:'Riflessi arcobaleno sulla figurina.', price:80 },
+  { id:'ho_ghiaccio', cat:'holo', name:'Ologramma Ghiaccio', desc:'Riflessi di ghiaccio sulla figurina.', price:80 },
+  { id:'ho_fuoco', cat:'holo', name:'Ologramma Fuoco', desc:'Riflessi di fuoco sulla figurina.', price:80 },
+  { id:'em_stella', cat:'emblem', name:'Stemma Stella', desc:'Una stella accanto al nome.', price:30 },
+  { id:'em_corona', cat:'emblem', name:'Stemma Corona', desc:'Una piccola corona accanto al nome.', price:30 },
+  { id:'em_fulmine', cat:'emblem', name:'Stemma Fulmine', desc:'Un fulmine accanto al nome.', price:30 },
+  { id:'em_luna', cat:'emblem', name:'Stemma Luna', desc:'Una luna accanto al nome.', price:30 },
+  { id:'em_fiore', cat:'emblem', name:'Stemma Fiore', desc:'Un fiore accanto al nome.', price:30 },
+  { id:'ic_cometa', cat:'icons', name:'Set Comete', desc:'Pallone Cometa e Scarpa Fulmine al posto delle icone di gol e assist.', price:70 },
+  { id:'ic_foglia', cat:'icons', name:'Set Foglie', desc:'Pallone Foglia e Scarpa Muschio.', price:70 },
+  { id:'ic_lava', cat:'icons', name:'Set Lava', desc:'Pallone Lava e Scarpa Magma.', price:70 },
+  { id:'ch_fuochi', cat:'cheer', name:'Fuochi d’artificio', desc:'Quando segni nel replay esplodono i fuochi.', price:60 },
+  { id:'ch_coriandoli', cat:'cheer', name:'Coriandoli', desc:'Pioggia di coriandoli quando segni.', price:60 },
+  { id:'ch_onda', cat:'cheer', name:'Onda', desc:'Un’onda di luce attraversa il campo quando segni.', price:60 },
+  { id:'rw_oro', cat:'row', name:'Riga Oro', desc:'La tua riga in classifica ha un fondo dorato.', price:40 },
+  { id:'rw_smeraldo', cat:'row', name:'Riga Smeraldo', desc:'La tua riga in classifica ha un fondo verde.', price:40 },
+  { id:'rw_notte', cat:'row', name:'Riga Notte', desc:'La tua riga in classifica ha un fondo blu notte.', price:40 },
+  { id:'tk_form', cat:'token', name:'Token formazione', desc:'Un gettone simbolico: la formazione si propone all’organizzatore su WhatsApp.', price:50 },
+  /* solo per merito: gratuiti, validi finché si detiene il titolo */
+  { id:'fr_oro', cat:'frame', name:'Cornice d’Oro', desc:'Per chi detiene Il Banco.', price:0, merit:{ plq:'banco' } },
+  { id:'nf_veggente', cat:'nfx', name:'Nome Veggente', desc:'Per chi detiene Il Profeta.', price:0, merit:{ plq:'profeta' } },
+  { id:'em_bersaglio', cat:'emblem', name:'Stemma Bersaglio', desc:'Per chi detiene Il Colpaccio.', price:0, merit:{ rec:'colp' } },
+  { id:'tr_esplosiva', cat:'trail', name:'Scia Esplosiva', desc:'Per chi detiene Il Kamikaze.', price:0, merit:{ rec:'kami' } }
+];
+const SHOP_BY_ID = Object.fromEntries(SHOP_ITEMS.map(x => [x.id, x]));
+const shopNode = () => (store.casino && store.casino.shop) || {};
+/* Prezzo, durata e disponibilità: il catalogo del codice con i ritocchi dell'admin (valori strani ignorati) */
+function shopCfg(id){
+  const it = SHOP_BY_ID[id]; if(!it) return null;
+  const c = (shopNode().cfg && shopNode().cfg[id]) || {};
+  const price = Number.isFinite(Number(c.price)) && Number(c.price) >= 0 && Number(c.price) <= 100000 ? Math.round(Number(c.price)) : it.price;
+  const days = Number.isFinite(Number(c.days)) && Number(c.days) >= 1 && Number(c.days) <= 3650 ? Math.round(Number(c.days)) : SHOP_DAYS;
+  return { price, days, off:c.off === true || c.off === 1 };
+}
+/* Acquisti validi di un giocatore (oggetto esistente, voce ben formata) */
+function shopBuys(pid){
+  const B = (shopNode().buys && shopNode().buys[pid]) || {}, out = [];
+  for(const [bid, b] of Object.entries(B)){
+    if(!b || !SHOP_BY_ID[b.item] || SHOP_BY_ID[b.item].merit) continue;
+    const price = Math.round(Number(b.price)), days = Math.round(Number(b.days)), at = Number(b.at);
+    if(!Number.isFinite(price) || price < 0 || !Number.isFinite(days) || days < 1 || !Number.isFinite(at)) continue;
+    out.push({ bid, item:b.item, at, price, days, until:at + days * DAY_MS, used:!!b.used });
+  }
+  return out.sort((a, b) => a.at - b.at);
+}
+/* Chi detiene i titoli che sbloccano gli oggetti per merito (calcolato una volta per STATS) */
+const meritCache = new WeakMap();
+function meritHolders(){
+  let M = meritCache.get(STATS); if(M) return M;
+  M = { plq:{}, rec:{} };
+  for(const [id, h] of Object.entries(STATS.plaques || {})) M.plq[id] = h.pid;
+  const r = casinoRecords(); if(r.colp) M.rec.colp = r.colp.pid; if(r.kami) M.rec.kami = r.kami.pid;
+  meritCache.set(STATS, M); return M;
+}
+/* Cosa possiede un giocatore adesso: item → { until, bid? }. I titoli valgono finché si detengono (until infinito) */
+function shopOwned(pid, now = Date.now()){
+  const own = {};
+  for(const b of shopBuys(pid)) if(b.until > now && !b.used && (!own[b.item] || own[b.item].until < b.until)) own[b.item] = { until:b.until, bid:b.bid };
+  const M = meritHolders();
+  for(const it of SHOP_ITEMS) if(it.merit && ((it.merit.plq && M.plq[it.merit.plq] === pid) || (it.merit.rec && M.rec[it.merit.rec] === pid))) own[it.id] = { until:Infinity, merit:true };
+  return own;
+}
+/* Oggetti attivi: uno per categoria, scelto tra i posseduti. Con CASiNO spento nessuno si vede, in nessun punto dell'app */
+function cosOf(pid, now = Date.now()){
+  if(!feat('casino') || !pid || !store.players[pid]) return {};
+  const own = shopOwned(pid, now), act = (shopNode().active && shopNode().active[pid]) || {}, out = {};
+  for(const [cat, id] of Object.entries(act)) if(SHOP_CATS[cat] && SHOP_BY_ID[id] && SHOP_BY_ID[id].cat === cat && own[id]) out[cat] = id;
+  return out;
+}
+/* Saldo disponibile per comprare: mai negativo */
+const shopAvail = pid => { const w = walletOf(pid); return w ? Math.max(0, Math.floor(w.bal) - auctionHold(pid)) : 0; };
+const auctionHold = pid => 0;   /* le offerte in testa alle aste trattengono patate (si aggiunge con le aste) */
+const shopBlock = (pid, id) => {
+  const it = SHOP_BY_ID[id], c = shopCfg(id), own = shopOwned(pid);
+  if(!it || it.merit) return 'Oggetto non acquistabile';
+  if(c.off) return 'Oggetto non disponibile';
+  if(own[id]) return 'Lo possiedi già';
+  if(shopAvail(pid) < c.price) return `Servono ${fmtPat(c.price)} ${CURRENCY}`;
+  return '';
+};
+let shopBusy = false;
+/* Acquisto: una voce in casino/shop/buys e, se la categoria non ha un oggetto attivo, l'oggetto diventa attivo */
+async function shopBuy(id){
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  if(db && syncState !== 'live'){ toast('Per comprare serve la connessione', 'warn'); return; }
+  if(shopBusy) return;
+  const me = myPid(); if(!me || !store.players[me]){ toast('Scegli prima la tua carta nella sezione Io', 'warn'); return; }
+  const blk = shopBlock(me, id); if(blk){ toast(blk, 'warn'); return; }
+  const it = SHOP_BY_ID[id], c = shopCfg(id);
+  const ok = await confirmDlg(`Comprare «${it.name}»?`, `Costa ${fmtPat(c.price)} ${CURRENCY} e dura ${c.days} giorni, poi scade. I soldi non si riavranno indietro.`, 'Compra'); if(!ok) return;
+  if(!feat('casino') || (db && syncState !== 'live')){ toast('Non è stato comprato nulla', 'warn'); return; }
+  const blk2 = shopBlock(me, id); if(blk2){ toast(blk2, 'warn'); return; }
+  shopBusy = true;
+  const up = { [`casino/shop/buys/${me}/${newId()}`]:{ item:id, at:Date.now(), price:c.price, days:c.days } };
+  if(!cosOf(me)[it.cat]) up[`casino/shop/active/${me}/${it.cat}`] = id;
+  try{ await commit(up, `Comprato: ${it.name}`); }
+  finally{ shopBusy = false; renderCasino(); }
+}
+/* Scelta dell'oggetto attivo per categoria (solo tra quelli posseduti); id vuoto = nessuno */
+async function shopActivate(cat, id){
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  if(db && syncState !== 'live'){ toast('Serve la connessione', 'warn'); return; }
+  const me = myPid(); if(!me || !store.players[me] || !SHOP_CATS[cat]) return;
+  if(id && (!SHOP_BY_ID[id] || SHOP_BY_ID[id].cat !== cat || !shopOwned(me)[id])){ toast('Non possiedi questo oggetto', 'warn'); return; }
+  await commit({ [`casino/shop/active/${me}/${cat}`]:id || null }, id ? `Attivo: ${SHOP_BY_ID[id].name}` : 'Oggetto disattivato');
 }
 
 /* ---------- Puntare: casino/bets/{mid}/{bid} = { pid, gen, legs:[{k, sel}], stake, odds, at, allin?, bal, v } ---------- */
