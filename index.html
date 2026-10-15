@@ -368,7 +368,7 @@ button.affr:hover{border-color:var(--line)}
 .ed-team h4>span:first-child{display:flex;align-items:center;gap:8px}
 .cnt{font:800 12px var(--body);color:var(--mu);padding:3px 8px;border-radius:7px;background:rgba(255,255,255,.05)}
 .cnt.full{color:var(--or);background:var(--or-soft)}
-.erow{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:8px 10px;padding:9px 4px;border-top:1px solid rgba(255,255,255,.05)}
+.erow{display:grid;grid-template-columns:auto 1fr auto auto auto;align-items:center;gap:8px 10px;padding:9px 4px;border-top:1px solid rgba(255,255,255,.05)}
 .erow .nm{font-weight:800;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .steps{grid-column:1/-1;display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
 .stp{display:inline-flex;align-items:center;border:1px solid var(--hair);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.02)}
@@ -379,6 +379,9 @@ button.affr:hover{border-color:var(--line)}
 .stp.on{border-color:var(--line)}
 .stp.on output{color:var(--or)}
 .capb{width:32px;height:32px;border-radius:9px;border:1px solid var(--hair);background:none;color:var(--mu);font:800 14px var(--body);touch-action:manipulation}
+.latb{width:32px;height:32px;border-radius:9px;border:1px solid var(--hair);background:none;color:var(--mu);font-size:15px;line-height:1;touch-action:manipulation;filter:grayscale(1);opacity:.7}
+.latb[aria-pressed=true]{filter:none;opacity:1;background:rgba(251,191,36,.14);border-color:rgba(251,191,36,.6)}
+.lt-ic{font-style:normal;margin-left:2px}
 .capb[aria-pressed=true]{background:#fbbf24;border-color:#fbbf24;color:#0a0d14}
 .rm{width:32px;height:32px;border-radius:9px;border:1px solid var(--hair);background:none;color:var(--mu);font-size:18px;line-height:1}
 .sticky-actions{position:sticky;bottom:-20px;margin:16px -20px -20px;padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px));background:rgba(11,14,21,.97);border-top:1px solid var(--hair);z-index:3}
@@ -2249,7 +2252,7 @@ function computeStats(upto){
   const S = {};
   for(const [pid, p] of Object.entries(store.players || {})){
     if(!p || typeof p !== 'object') continue;
-    S[pid] = { pid, p, name:p.name || '', pres:0, v:0, pa:0, s:0, g:0, a:0, og:0, mvp:0, mvpPts:0, votesRx:0, firstG:0, lateG:0, hat:0, maxG:0, minConcW:Infinity, bigW:0,
+    S[pid] = { pid, p, name:p.name || '', pres:0, v:0, pa:0, s:0, g:0, a:0, og:0, mvp:0, mvpPts:0, votesRx:0, ritardi:0, firstG:0, lateG:0, hat:0, maxG:0, minConcW:Infinity, bigW:0,
                ovr:OVR_START, last:null, mates:{}, hist:[], prevRank:null };
   }
   const all = sortedMatches();
@@ -2279,6 +2282,7 @@ function computeStats(upto){
       for(const e of es){
         const st = S[e.pid];
         const g = num(e.g), a = num(e.a), og = num(e.og);
+        if(e.late) st.ritardi++;
         st.pres++; st[r]++; st.g += g; st.a += a; st.og += og;
         if(st.pres === 1) st.first = m.id;
         if(g >= 3) st.hat++;
@@ -2291,8 +2295,8 @@ function computeStats(upto){
         const award = awardIds.has(e.pid);
         if(award) st.awards = (st.awards || 0) + 1;
         const preOvr = st.ovr;
-        /* il bonus delle stelle si somma dopo il delta già limitato dai tetti (+5/-3); la variazione mostrata lo include */
-        const d = ovrDelta(st.p.role, st.ovr, { res:r, margin, conceded, g, a, og, mvp:isMvp, award }) + (RR[e.pid] ? RR[e.pid].bonus : 0);
+        /* il bonus delle stelle e il −1 del ritardo si sommano dopo il delta già limitato dai tetti (+5/-3); la variazione mostrata li include */
+        const d = ovrDelta(st.p.role, st.ovr, { res:r, margin, conceded, g, a, og, mvp:isMvp, award }) + (RR[e.pid] ? RR[e.pid].bonus : 0) - (e.late ? 1 : 0);
         st.ovr = Math.max(OVR_MIN, Math.min(OVR_MAX, st.ovr + d));
         st.last = { d, day:num(m.day) };
         (log[m.id] = log[m.id] || {})[e.pid] = { d, ovr:st.ovr, pre:preOvr };
@@ -2746,7 +2750,7 @@ function matchDetailHTML(id){
   const sc = matchScore(m), mv = matchMvp(m);
   const col = team => `<div class="tcol"><h3><span class="dot ${team === 'white' ? 'w' : 'b'}"></span>Squadra ${team === 'white' ? 'Bianca' : 'Nera'}</h3>
     ${evListHTML(teamEvents(m, team))}
-    <div class="lineup">${list(m[team]).map(e => `<button class="lu" data-open-player="${e.pid}" ${store.players[e.pid] ? '' : 'disabled'}>${avatar(store.players[e.pid] || { name:e.n }, 'xs')}${esc(pname(e.pid, e.n))}${e.bench ? '<em class="bn">in più</em>' : ''}</button>`).join('')}</div>
+    <div class="lineup">${list(m[team]).map(e => `<button class="lu" data-open-player="${e.pid}" ${store.players[e.pid] ? '' : 'disabled'}>${avatar(store.players[e.pid] || { name:e.n }, 'xs')}${esc(pname(e.pid, e.n))}${e.late ? '<em class="lt-ic" title="In ritardo">⏰</em>' : ''}${e.bench ? '<em class="bn">in più</em>' : ''}</button>`).join('')}</div>
   </div>`;
   const mvp = mv
     ? `<div class="mvpbox">${avatar(store.players[mv.pid] || { name:mv.n }, 'md')}<div><div class="t">★ ${mv.provisional ? 'MVP provvisorio' : 'MVP della gara'}</div><div class="n">${esc(pname(mv.pid, mv.n))}</div><div class="d">${evDesc(mv)}${mv.vts ? `, ${mv.vts} ${mv.vts === 1 ? 'voto' : 'voti'}` : ''}, squadra ${mv.team === 'white' ? 'Bianca' : 'Nera'}</div></div><div class="pts">${fmtPts(mv.score)}<small>pt</small></div></div>`
@@ -3883,8 +3887,9 @@ function computeRecords(){
   const oro = Object.entries(pairs).filter(([, p]) => p.v > 0).sort(([ka, a], [kb, b]) => (b.v - a.v) || (b.v / b.n - a.v / a.n) || (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it'))[0];
   const derby = Object.entries(opp).sort(([ka, a], [kb, b]) => (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it'))[0];
   const bunk = Object.entries(bunker).filter(([, b]) => b.n >= 2).sort(([ka, a], [kb, b]) => (a.c / a.n - b.c / b.n) || (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it'))[0];
+  const ritard = L.filter(s => s.ritardi > 0).sort((a, b) => (b.ritardi - a.ritardi) || ((b.ritardi / b.pres) - (a.ritardi / a.pres)) || alpha(a, b))[0];
   const intesa = Object.entries(combo).sort(([ka, a], [kb, b]) => (b.c - a.c) || ((b.c / ((pairs[kb] && pairs[kb].n) || 1)) - (a.c / ((pairs[ka] && pairs[ka].n) || 1))) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it'))[0];
-  return { manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, bunkerAny:Object.keys(bunker).length };
+  return { manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, ritard, bunkerAny:Object.keys(bunker).length };
 }
 const matchWhen = m => `Giornata ${num(m.day)}${m.date ? ', ' + fmtDateCap(m.date) : ''}`;
 function recCard(o, x = {}){
@@ -3979,9 +3984,9 @@ function renderTrophies(){
     <div class="rec-grid">${recs}</div>`;
   try{ localStorage.setItem('cmb2627_seenPlq', JSON.stringify(curP)); localStorage.setItem('cmb2627_seenRecV', JSON.stringify(curR)); }catch(e){}
 }
-const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk'];
+const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk','rit'];
 /* event = record di una singola impresa (festeggiato anche se lo stesso giocatore si migliora); lead = primato di classifica (festeggiato solo al cambio di detentore) */
-const REC_KIND = { manita:'event', mitra:'event', lampo:'event', scadere:'event', mida:'event', uomo:'event', inarr:'event', goleada:'event', cappotto:'event', cecchino:'lead', fortino:'lead', mina:'lead', come:'lead', down:'lead', eroe:'lead', oro:'lead', intesa:'lead', derby:'lead', bunk:'lead' };
+const REC_KIND = { manita:'event', mitra:'event', lampo:'event', scadere:'event', mida:'event', uomo:'event', inarr:'event', goleada:'event', cappotto:'event', cecchino:'lead', fortino:'lead', mina:'lead', come:'lead', down:'lead', eroe:'lead', oro:'lead', intesa:'lead', derby:'lead', bunk:'lead', rit:'lead' };
 function buildRecordCards(R, nM){
   const none = 'Nessuna gara registrata';
   const need = lbl => nM ? lbl : none;
@@ -4024,6 +4029,8 @@ function buildRecordCards(R, nM){
       : { icon:'🥊', title:'L’Eterno Derby', desc:'I due che si sono affrontati più volte da avversari.', lock:none },
     R.bunk ? (() => { const [k, b] = R.bunk; return { icon:'🧱', title:'Coppia Bunker', desc:'Coppia di difensori con la media gol subiti più bassa giocando insieme.', pair:k.split('|'), value:(b.c / b.n).toFixed(1), unit:'gol subiti a gara', foot:`${b.n} gare insieme, ${b.c} gol subiti in totale` }; })()
       : { icon:'🧱', title:'Coppia Bunker', desc:'Coppia di difensori con la media gol subiti più bassa giocando insieme.', lock:R.bunkerAny ? 'In attesa di sblocco (min. 2 gare insieme)' : need('Nessuna coppia di difensori schierata insieme') }
+    ,R.ritard ? { icon:'⏰', title:'Il Ritardatario', desc:'Più ritardi in stagione. Parità: percentuale di ritardi sulle presenze.', pid:R.ritard.pid, sub:`${R.ritard.pres} ${R.ritard.pres === 1 ? 'presenza' : 'presenze'}, ${Math.round(R.ritard.ritardi / R.ritard.pres * 100)}% delle gare`, value:R.ritard.ritardi, unit:R.ritard.ritardi === 1 ? 'ritardo' : 'ritardi' }
+      : { icon:'⏰', title:'Il Ritardatario', desc:'Più ritardi in stagione. Parità: percentuale di ritardi sulle presenze.', lock:'Nessun ritardo registrato' }
   ];
   cards.forEach((c, i) => c.key = REC_KEYS[i]);
   return cards;
@@ -4258,7 +4265,7 @@ function setEdMode(mode){
   $('#ed-end-w').hidden = mode === 'scheduled';
   $('#ed-save').textContent = mode === 'scheduled' ? 'Salva gara in programma' : 'Salva risultato';
   if(mode === 'scheduled'){
-    [...ED.white, ...ED.black].forEach(e => { e.g = 0; e.a = 0; e.og = 0; }); ED.goals = []; ED.moves = []; goalFormReset(); moveFormReset();
+    [...ED.white, ...ED.black].forEach(e => { e.g = 0; e.a = 0; e.og = 0; delete e.late; }); ED.goals = []; ED.moves = []; goalFormReset(); moveFormReset();
     /* una gara in programma non ha giocatori "in più": tornano tra i convocati */
     for(const T of ['white', 'black']){ ED.called.push(...ED[T].filter(e => e.bench).map(e => e.pid)); ED[T] = ED[T].filter(e => !e.bench); }
   }
@@ -4267,7 +4274,7 @@ function setEdMode(mode){
 function openMatchEditor(id, mode){
   if(!STATS.list.length){ toast('Aggiungi prima i giocatori alla rosa', 'warn'); return; }
   const m = id ? store.matches[id] : null;
-  const cp = arr => list(arr).map(e => ({ pid:e.pid, n:e.n, g:num(e.g), a:num(e.a), og:num(e.og), ...(e.bench ? { bench:1 } : {}) }));
+  const cp = arr => list(arr).map(e => ({ pid:e.pid, n:e.n, g:num(e.g), a:num(e.a), og:num(e.og), ...(e.bench ? { bench:1 } : {}), ...(e.late ? { late:1 } : {}) }));
   const wasSched = m?.status === 'scheduled';
   ED = { id:id || null, day:m ? num(m.day) : nextDay(), date:m?.date || todayISO(), time:m?.time || '', end:m?.end || '', fmW:m?.fmW || DEF_FM, fmB:m?.fmB || DEF_FM, posW:m?.posW || null, posB:m?.posB || null, balW:null, balB:null, capW:m?.capW || null, capB:m?.capB || null,
          white:cp(m?.white), black:cp(m?.black), called:[], status:mode || (wasSched ? 'scheduled' : 'played'),
@@ -4466,7 +4473,7 @@ function stp(f, ic, label, v){
 function edTeamHTML(T){
   const arr = ED[T];
   return `<h4><span><span class="dot ${T === 'white' ? 'w' : 'b'}"></span>Squadra ${T === 'white' ? 'Bianca' : 'Nera'}</span><span class="cnt ${arr.filter(e => !e.bench).length === MAX_START ? 'full' : ''}">${edCount(T)}</span></h4>` +
-    (arr.length ? arr.map(e => `<div class="erow" data-t="${T}" data-pid="${e.pid}">${avatar(store.players[e.pid] || { name:e.n }, 'xs')}<span class="nm">${esc(pname(e.pid, e.n))}${e.bench ? '<em class="bn">in più</em>' : ''}</span>${e.bench ? '<span></span>' : `<button type="button" class="capb" data-cap aria-pressed="${ED[T === 'white' ? 'capW' : 'capB'] === e.pid}" aria-label="Capitano: ${esc(pname(e.pid, e.n))}" title="Scegli come capitano (tocca di nuovo per tornare all’automatico)">C</button>`}<button type="button" class="rm" data-rm aria-label="Togli ${esc(pname(e.pid, e.n))}">×</button>${ED.seq ? roSteps(e) : `<div class="steps">${stp('g', '⚽', 'Gol', e.g)}${stp('a', '👟', 'Assist', e.a)}${stp('og', '🟥', 'Autogol', e.og)}</div>`}</div>`).join('')
+    (arr.length ? arr.map(e => `<div class="erow" data-t="${T}" data-pid="${e.pid}">${avatar(store.players[e.pid] || { name:e.n }, 'xs')}<span class="nm">${esc(pname(e.pid, e.n))}${e.bench ? '<em class="bn">in più</em>' : ''}</span>${ED.status === 'scheduled' ? '' : `<button type="button" class="latb" data-late aria-pressed="${!!e.late}" aria-label="In ritardo: ${esc(pname(e.pid, e.n))}" title="In ritardo (−1 OVR)">⏰</button>`}${e.bench ? '<span></span>' : `<button type="button" class="capb" data-cap aria-pressed="${ED[T === 'white' ? 'capW' : 'capB'] === e.pid}" aria-label="Capitano: ${esc(pname(e.pid, e.n))}" title="Scegli come capitano (tocca di nuovo per tornare all’automatico)">C</button>`}<button type="button" class="rm" data-rm aria-label="Togli ${esc(pname(e.pid, e.n))}">×</button>${ED.seq ? roSteps(e) : `<div class="steps">${stp('g', '⚽', 'Gol', e.g)}${stp('a', '👟', 'Assist', e.a)}${stp('og', '🟥', 'Autogol', e.og)}</div>`}</div>`).join('')
       : `<p class="mu sm pad">Scegli la squadra qui sopra e tocca i nomi per schierarli.</p>`);
 }
 function renderEditor(){
@@ -4734,7 +4741,7 @@ async function saveMatch(){
     ED.goals = ordered; ED.moves = mvOrd;
     goalsOut = ordered.map(g => ({ s:g.s, ...(g.a && !g.og ? { a:g.a } : {}), ...(g.og ? { og:1 } : {}), ...(g.min != null ? { min:g.min } : {}), ...(g.ts ? { ts:g.ts } : {}) }));
   }
-  const clean = e => ({ pid:e.pid, n:pname(e.pid, e.n), g:sched ? 0 : num(e.g), a:sched ? 0 : num(e.a), og:sched ? 0 : num(e.og), ...(e.bench && !sched ? { bench:1 } : {}) });
+  const clean = e => ({ pid:e.pid, n:pname(e.pid, e.n), g:sched ? 0 : num(e.g), a:sched ? 0 : num(e.a), og:sched ? 0 : num(e.og), ...(e.bench && !sched ? { bench:1 } : {}), ...(e.late && !sched ? { late:1 } : {}) });
   const movesOut = (!sched && ED.seq) ? matchTimeline({ ...ED, goals:goalsOut }).moves.map(x => ({ pid:x.pid, k:x.k, ...(x.min != null ? { min:x.min } : {}), ...(x.ts ? { ts:x.ts } : {}), at:x.slot })) : [];
   const oldM = ED.id ? store.matches[ED.id] : null, newPlayed = !sched && (!oldM || oldM.status === 'scheduled');
   const vHrs = oldM && oldM.voteHrs ? oldM.voteHrs : (newPlayed ? VOTE_HRS_NEW : 0);   /* gare nuove: 12 ore; le esistenti restano a 24 */
@@ -5199,6 +5206,7 @@ document.addEventListener('click', async e => {
   if(d.pool){ edToggle(d.pool); return; }
   if(d.st){ edStep(t, +d.st); return; }
   if('rm' in d){ const row = t.closest('.erow'); if(movesInvolve(row.dataset.pid)){ toast(`${pname(row.dataset.pid)} ha dei cambi registrati: eliminali prima di toglierlo`, 'warn'); return; } if(goalsInvolve(row.dataset.pid)){ toast(`${pname(row.dataset.pid)} ha gol o assist registrati: eliminali dalla cronaca prima di toglierlo`, 'warn'); return; } ED[row.dataset.t] = ED[row.dataset.t].filter(x => x.pid !== row.dataset.pid); edCapFix(); renderEditor(); return; }
+  if('late' in d){ const row = t.closest('.erow'); if(row && ED){ const e = ED[row.dataset.t].find(x => x.pid === row.dataset.pid); if(e){ if(e.late) delete e.late; else e.late = 1; renderEditor(); } } return; }
   if('cap' in d){ const row = t.closest('.erow'); if(row && ED){ const k = row.dataset.t === 'white' ? 'capW' : 'capB'; ED[k] = ED[k] === row.dataset.pid ? null : row.dataset.pid; renderEditor(); } return; }
   if(d.openPlayer && !d.action){ figPlq = null; openFigurina(d.openPlayer); return; }
   if(d.openMatch){ ui.matchId = d.openMatch; renderMatches(); go('matches'); return; }
