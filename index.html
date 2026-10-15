@@ -1732,6 +1732,7 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 <div class="modal" id="m-vote" aria-hidden="true" data-lock="1"><div class="sheet glass vg" role="dialog" aria-modal="true" aria-label="Vota l’MVP" id="vg-body"></div></div>
 <div class="modal" id="m-news" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Novità" style="width:min(620px,100%)"><div id="nw-body"></div><div class="row end sticky-actions"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 <div class="modal" id="m-prof" aria-hidden="true"><div class="sheet glass vi" role="dialog" aria-modal="true" aria-label="Richieste schede giocatore" style="width:min(620px,100%)"><div id="pr-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
+<div class="modal" id="m-dl" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Crea sfida"><div id="dl-body"></div></div></div>
 <div class="modal" id="m-mk" aria-hidden="true"><div class="sheet glass mk" role="dialog" aria-modal="true" aria-label="Apri scommesse" style="width:min(680px,100%)"><div id="mk-body"></div></div></div>
 <div class="modal" id="m-vinfo" aria-hidden="true"><div class="sheet glass vi" role="dialog" aria-modal="true" aria-label="Chi ha votato chi" style="width:min(560px,100%)"><div id="vi-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 
@@ -2549,6 +2550,7 @@ function matchAwards(m){
 /* ---------- Portafoglio: il saldo non si scrive mai, si ricalcola dai movimenti {t, kind, label, delta, ref} ----------
    Saldo iniziale (nessuna data) + bonus giornalieri + guadagni delle gare + rettifiche dell'admin. Le scommesse si aggiungono qui. */
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+let WCTX = null;   /* contesto del calcolo del portafoglio dentro computeStats */
 function walletBuild(st){
   const C = store.casino || {}, mov = st.cmov;
   mov.unshift({ t:null, kind:'start', label:'Saldo iniziale', delta:CASINO.START });
@@ -2573,12 +2575,23 @@ function walletExtra(st, mov){
       mov.push({ t:num(b.at), kind:'bet', label:`Scommessa, giornata ${m ? num(m.day) : '?'}`, delta:-num(b.stake), ref:bid, mid });
     }
   }
+  const PL = (store.casino && store.casino.pools) || {};
+  for(const mid of Object.keys(PL)){
+    const m = store.matches[mid], S = poolStates(mid);
+    for(const [bid, b] of Object.entries(PL[mid] || {})){
+      const x = S[bid]; if(!b || b.pid !== st.pid || !x || x.state === 'void') continue;   /* rimborsato: nessun movimento */
+      const lbl = (b.kind === 'mvp' ? 'Monte MVP' : 'Sfida') + `, giornata ${m ? num(m.day) : '?'}`;
+      mov.push({ t:num(b.at), kind:'pool', label:lbl, delta:-num(b.stake), ref:bid, mid });
+      if(x.state === 'won') mov.push({ t:x.t, kind:'win', label:'Vincita: ' + lbl, delta:x.payout, ref:bid, mid });
+    }
+  }
 }
 const walletOf = pid => { const s = STATS.byId[pid]; return s && s.mov ? { bal:s.bal, mov:s.mov, earn:s.earn } : null; };
 const CUR_ICON = '🥔';
 const fmtPat = n => (n < 0 ? '−' : '') + Math.abs(Math.round(n)).toLocaleString('it-IT');
 function computeStats(upto){
   const S = {}, wal = upto == null;   /* il portafoglio si calcola solo sulla stagione intera: gli storici dei trofei non lo usano */
+  if(wal) WCTX = { mv:{} };
   for(const [pid, p] of Object.entries(store.players || {})){
     if(!p || typeof p !== 'object') continue;
     S[pid] = { pid, p, name:p.name || '', pres:0, v:0, pa:0, s:0, g:0, a:0, og:0, mvp:0, mvpPts:0, votesRx:0, earn:0, cmov:[], ritardi:0, firstG:0, lateG:0, hat:0, maxG:0, minConcW:Infinity, bigW:0,
@@ -2596,6 +2609,7 @@ function computeStats(upto){
     if(mi === ms.length - 1 && ms.length > 1) snapPrev();
     const preFn = pid => (S[pid] ? S[pid].ovr : OVR_START);
     const sc = matchScore(m), mv = matchMvp(m, preFn), aw = matchAwards(m), vi = voteInfo(m, preFn), RR = rateResults(m);
+    if(wal) WCTX.mv[m.id] = { pid:mv ? mv.pid : null, closed:!vi.open };   /* per liquidare i monti con lo stesso MVP calcolato qui */
     if(!vi.open) for(const t of Object.values(vi.votes)) if(S[t]) S[t].votesRx++;
     const awardIds = new Set(Object.values(aw).filter(Boolean).map(c => c.pid));
     const margin = Math.abs(sc.w - sc.b);
@@ -2656,7 +2670,7 @@ function computeStats(upto){
     st.ideal = ideal; st.nemesis = nem;
     return st;
   });
-  if(wal) for(const st of arr) walletBuild(st);
+  if(wal){ for(const st of arr) walletBuild(st); WCTX = null; }
   arr.sort(rankCmp);
   arr.forEach((s, i) => s.rank = i + 1);
   /* Targhe: assegnazione in ordine gerarchico con tetto di 2 per giocatore */
@@ -4891,7 +4905,7 @@ function mkAdminHTML(m){
   else if(st.s === 'void') body = `<span>🎰 Scommesse annullate${st.stale ? ': la formazione è cambiata' : ''}. Le puntate sono rimborsate.</span>${open}`;
   else if(st.s === 'closed') body = '<span>🎰 Scommesse chiuse: la gara è iniziata.</span>';
   else body = open;
-  return `<div class="mk-adm admin-only">${body}</div>`;
+  return `<div class="mk-adm admin-only">${body}</div>${duelAdminHTML(m)}`;
 }
 function mkPreviewHTML(m, P){
   const S = P.snap, nm = pid => esc(pname(pid)), fo = o => o == null ? '' : o.toFixed(2).replace('.', ',');
@@ -4935,6 +4949,151 @@ async function closeMarket(mid){
   if(!ok || mkState(mid).s !== 'open') return;
   await commit({ [`casino/markets/${mid}/status`]:'void' }, 'Scommesse chiuse: puntate rimborsate');
 }
+/* ---------- Monte MVP e sfide: casino/pools/{mid}/{bid} = { pid, kind:'mvp'|'duel', sel, stake, gen, at, did? }; casino/duels/{mid}/{did} = { gen, a, b, metric, stake, at, void? } ----------
+   Puntata fissa, nessuna quota: chi indovina si divide tutto il monte (parte intera, nessuna trattenuta). Nessun vincitore: le puntate si perdono.
+   MVP assente, pareggio o giocatore senza voce nella gara: rimborso. Un rimborso non lascia movimenti nel portafoglio. */
+const duelsOf = mid => (store.casino && store.casino.duels && store.casino.duels[mid]) || {};
+const DUEL_METRIC = { g:'più gol', a:'più assist', ga:'più gol + assist' };
+function duelLive(mid, d){ return !!d && !d.void && mkState(mid).s !== 'none' && mkState(mid).s !== 'void' && num(d.gen) === num(mkOf(mid).gen) && !!d.a && !!d.b && (d.metric === 'g' || (d.a.t === 'p' && d.b.t === 'p')) && (d.metric in DUEL_METRIC) && num(d.stake) >= 1; }
+function poolBetValid(mid, b){
+  if(!b || b.void || !mkOf(mid) || mkState(mid).s === 'void' || num(b.gen) !== num(mkOf(mid).gen)) return false;
+  if(b.kind === 'mvp') return feat('mvp') && num(b.stake) === CASINO.POOL_STAKE;
+  if(b.kind === 'duel'){ const d = duelsOf(mid)[b.did]; return duelLive(mid, d) && num(b.stake) === num(d.stake) && (b.sel === 'a' || b.sel === 'b'); }
+  return false;
+}
+function duelValue(m, side, metric){
+  if(side.t === 't'){ const sc = matchScore(m); return side.id === 'W' ? sc.w : sc.b; }
+  for(const e of [...effEntries(m).white, ...effEntries(m).black]) if(e.pid === side.id) return metric === 'g' ? num(e.g) : metric === 'a' ? num(e.a) : num(e.g) + num(e.a);
+  return null;
+}
+/* Esito di ogni puntata dei monti di una gara: { bid: { state:'pending'|'won'|'lost'|'void', payout, t } } */
+function poolStates(mid){
+  const out = {}, m = store.matches[mid], all = Object.entries((store.casino && store.casino.pools && store.casino.pools[mid]) || {}).filter(([, b]) => poolBetValid(mid, b));
+  const played = !!m && m.status !== 'scheduled';
+  const t0 = m ? (num(m.updatedAt) || num(m.createdAt)) : 0;
+  const split = (rows, win, t) => {   /* win(b) → true/false; null = rimborso di tutti */
+    const pot = rows.reduce((a, [, b]) => a + num(b.stake), 0), W = rows.filter(([, b]) => win(b)), each = W.length ? Math.floor(pot / W.length) : 0;
+    for(const [bid, b] of rows) out[bid] = win(b) ? { state:'won', payout:each, t } : { state:'lost', payout:0, t };
+  };
+  const mv = all.filter(([, b]) => b.kind === 'mvp');
+  if(mv.length){
+    if(!played) for(const [bid] of mv) out[bid] = { state:'pending' };
+    else{
+      const info = (WCTX && WCTX.mv[mid]) || (() => { const mm = { id:mid, ...m }, v = voteInfo(mm), x = matchMvp(mm); return { pid:x ? x.pid : null, closed:!v.open }; })();
+      if(!info.closed) for(const [bid] of mv) out[bid] = { state:'pending' };
+      else if(!info.pid) for(const [bid] of mv) out[bid] = { state:'void' };
+      else split(mv, b => b.sel === info.pid, Math.max(t0, num(m.voteClose)));
+    }
+  }
+  const byDuel = {}; for(const e of all) if(e[1].kind === 'duel') (byDuel[e[1].did] = byDuel[e[1].did] || []).push(e);
+  for(const [did, rows] of Object.entries(byDuel)){
+    if(!played){ for(const [bid] of rows) out[bid] = { state:'pending' }; continue; }
+    const d = duelsOf(mid)[did], va = duelValue(m, d.a, d.metric), vb = duelValue(m, d.b, d.metric);
+    if(va == null || vb == null || va === vb){ for(const [bid] of rows) out[bid] = { state:'void' }; continue; }
+    const winner = va > vb ? 'a' : 'b'; split(rows, b => b.sel === winner, t0);
+  }
+  return out;
+}
+const duelSideName = (side, nm = pname) => side.t === 't' ? (side.id === 'W' ? 'Bianchi' : 'Neri') : nm(side.id);
+const duelTitle = (d, nm) => `${duelSideName(d.a, nm)} contro ${duelSideName(d.b, nm)}: ${DUEL_METRIC[d.metric]}`;
+/* Chi non può puntare: sul monte MVP sé stessi; in una sfida tra giocatori i due coinvolti (in una sfida tra squadre si può scegliere la propria) */
+function poolBlock(mid, me, kind, sel, d){
+  if(kind === 'mvp') return me === sel ? 'Non puoi scegliere te stesso' : '';
+  if(d && d.a.t === 'p' && (d.a.id === me || d.b.id === me)) return 'Sei coinvolto in questa sfida: non puoi puntare';
+  return '';
+}
+let poolBusy = false;
+async function placePool(mid, kind, sel, did){
+  const msg = betAllowedMsg(); if(msg){ toast(msg, 'warn'); return; }
+  if(poolBusy) return;
+  const me = myPid(), w = me && store.players[me] ? walletOf(me) : null; if(!w){ toast('Scegli prima la tua carta nella sezione Io', 'warn'); return; }
+  const st = mkState(mid); if(st.s !== 'open'){ toast('Scommesse chiuse', 'warn'); return; }
+  const m = store.matches[mid]; if(m && kickDate(m) && Date.now() >= kickDate(m).getTime()){ toast('La gara è iniziata: scommesse chiuse', 'warn'); return; }
+  let d = null, stake = CASINO.POOL_STAKE;
+  if(kind === 'mvp'){
+    if(!feat('mvp')){ toast('Il voto MVP è sospeso: il monte non è disponibile', 'warn'); return; }
+    if(!st.mk.m.pl[sel]){ toast('Scelta non valida', 'warn'); return; }
+  }else{
+    d = duelsOf(mid)[did]; if(!duelLive(mid, d) || (sel !== 'a' && sel !== 'b')){ toast('Sfida non disponibile', 'warn'); return; }
+    stake = num(d.stake);
+  }
+  const blk = poolBlock(mid, me, kind, sel, d); if(blk){ toast(blk, 'warn'); return; }
+  const mine = Object.values((store.casino.pools && store.casino.pools[mid]) || {}).find(b => b && b.pid === me && b.kind === kind && (kind === 'mvp' || b.did === did) && poolBetValid(mid, b));
+  if(mine){ toast('Hai già giocato qui: la scelta è definitiva', 'warn'); return; }
+  if(Math.floor(w.bal) < stake){ toast('Non hai abbastanza ' + CURRENCY, 'warn'); return; }
+  const what = kind === 'mvp' ? `${pname(sel)} come MVP` : `${sel === 'a' ? duelSideName(d.a) : duelSideName(d.b)} (${duelTitle(d)})`;
+  const ok = await confirmDlg('Confermi la scelta?', `Punti ${stake} ${CURRENCY} su ${what}. Non potrai cambiarla.`, 'Conferma'); if(!ok) return;
+  const msg2 = betAllowedMsg(); if(msg2 || mkState(mid).s !== 'open'){ toast(msg2 || 'Scommesse chiuse', 'warn'); return; }
+  poolBusy = true;
+  try{ await commit({ [`casino/pools/${mid}/${newId()}`]:{ pid:me, kind, sel, stake, gen:num(st.mk.gen), at:Date.now(), ...(kind === 'duel' ? { did } : {}) } }, `Scelta registrata: ${stake} ${CURRENCY}`); }
+  finally{ poolBusy = false; renderCasino(); }
+}
+function poolSectionHTML(mid, me, S){
+  const P = Object.entries((store.casino.pools && store.casino.pools[mid]) || {}).filter(([, b]) => poolBetValid(mid, b)), nm = pid => esc(pname(pid));
+  let html = '';
+  if(feat('mvp')){
+    const mv = P.filter(([, b]) => b.kind === 'mvp'), cnt = {}; mv.forEach(([, b]) => { cnt[b.sel] = (cnt[b.sel] || 0) + 1; });
+    const mine = me && mv.find(([, b]) => b.pid === me), pids = Object.keys(S.pl).sort((a, b) => (S.pl[a].t === S.pl[b].t ? 0 : S.pl[a].t === 'w' ? -1 : 1));
+    html += `<h4 class="vi-h">🏆 Monte MVP</h4><p class="mu sm">Puntata fissa ${CASINO.POOL_STAKE} ${CURRENCY}. Chi indovina l’MVP si divide tutto il monte. Può vincere solo uno dei 4 candidati MVP della partita. Monte attuale: <b>${fmtPat(mv.length * CASINO.POOL_STAKE)}</b> (${mv.length} ${mv.length === 1 ? 'scelta' : 'scelte'}).</p>
+      ${mine ? `<p class="vb-me">La tua scelta: <b>${nm(mine[1].sel)}</b>. È definitiva.</p>` : ''}
+      <div class="odds">${pids.map(pid => { const blk = me ? poolBlock(mid, me, 'mvp', pid) : ''; return `<button type="button" class="odd" data-pool="mvp|${pid}" data-mid="${mid}" ${mine || blk || !me ? `disabled${blk ? ` title="${blk}"` : ''}` : ''}><span>${nm(pid)}</span><b>${cnt[pid] || 0}</b></button>`; }).join('')}</div>
+      ${mv.length ? `<div class="mu sm" style="margin-top:6px">Scelte: ${mv.map(([, b]) => `${nm(b.pid)} → ${nm(b.sel)}`).join(', ')}</div>` : ''}`;
+  }
+  const ds = Object.entries(duelsOf(mid)).filter(([, d]) => duelLive(mid, d));
+  if(ds.length) html += `<h4 class="vi-h">⚔️ Sfide</h4>` + ds.map(([did, d]) => {
+    const rows = P.filter(([, b]) => b.kind === 'duel' && b.did === did), mine = me && rows.find(([, b]) => b.pid === me), blk = me ? poolBlock(mid, me, 'duel', 'a', d) : '';
+    const side = x => { const c = rows.filter(([, b]) => b.sel === x).length; return `<button type="button" class="odd" data-pool="duel|${did}|${x}" data-mid="${mid}" ${mine || blk || !me ? `disabled${blk ? ` title="${blk}"` : ''}` : ''}><span>${esc(duelSideName(d[x]))}</span><b>${c}</b></button>`; };
+    return `<div class="mk-r"><b>${esc(duelTitle(d))}</b><span class="mu sm">Puntata fissa ${fmtPat(d.stake)} ${CURRENCY}. Pareggio: rimborso.</span><div class="odds">${side('a')}${side('b')}</div>
+      ${mine ? `<span class="vb-me">La tua scelta: <b>${esc(duelSideName(d[mine[1].sel]))}</b>.</span>` : ''}${rows.length ? `<span class="mu sm">Scelte: ${rows.map(([, b]) => `${nm(b.pid)} → ${esc(duelSideName(d[b.sel]))}`).join(', ')}</span>` : ''}</div>`; }).join('');
+  return html;
+}
+/* Admin: creare e annullare sfide */
+function duelAdminHTML(m){
+  if(!ui.admin || !feat('casino') || mkState(m.id).s !== 'open') return '';
+  const ds = Object.entries(duelsOf(m.id)).filter(([, d]) => duelLive(m.id, d));
+  return `<div class="mk-adm admin-only"><span>⚔️ Sfide: ${ds.length}</span><button class="btn" data-action="dl-new" data-mid="${m.id}">Crea sfida</button>${ds.map(([did, d]) => `<span class="mu sm">${esc(duelTitle(d))}</span><button class="btn sm danger" data-action="dl-del" data-mid="${m.id}" data-did="${did}">Annulla</button>`).join('')}</div>`;
+}
+function openDuelForm(mid){
+  if(!ui.admin) return;
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  const st = mkState(mid); if(st.s !== 'open'){ toast('Servono le scommesse aperte', 'warn'); return; }
+  ui.dlForm = { mid, kind:'p' };
+  const opts = Object.keys(st.mk.m.pl).map(pid => `<option value="${pid}">${esc(pname(pid))} (${st.mk.m.pl[pid].t === 'w' ? 'Bianchi' : 'Neri'})</option>`).join('');
+  $('#dl-body').innerHTML = `<h3>Crea sfida</h3>
+    <p class="mu sm">Due giocatori della gara, oppure Bianchi contro Neri. Puntata fissa uguale per tutti; chi indovina si divide il monte. Pareggio: rimborso.</p>
+    <div class="row" style="gap:8px;margin:8px 0"><button type="button" class="btn sm primary" data-dl-kind="p">Due giocatori</button><button type="button" class="btn sm" data-dl-kind="t">Bianchi contro Neri</button></div>
+    <div id="dl-pl"><select id="dl-a" class="field">${opts}</select><select id="dl-b" class="field" style="margin-top:8px">${opts}</select></div>
+    <select id="dl-m" class="field" style="margin-top:8px"><option value="g">Chi fa più gol</option><option value="a">Chi fa più assist</option><option value="ga">Chi fa più gol + assist</option></select>
+    <input id="dl-s" class="field" type="number" inputmode="numeric" min="1" step="1" value="${CASINO.POOL_STAKE}" style="margin-top:8px" aria-label="Puntata">
+    <div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Annulla</button><button type="button" class="btn primary" data-action="dl-save">Crea sfida</button></div>`;
+  openModal('#m-dl');
+}
+async function saveDuel(){
+  const F = ui.dlForm; if(!F || !ui.admin) return;
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  if(db && syncState !== 'live'){ toast('Per creare la sfida serve la connessione', 'warn'); return; }
+  const st = mkState(F.mid); if(st.s !== 'open'){ toast('Servono le scommesse aperte', 'warn'); return; }
+  const stake = Math.floor(Number($('#dl-s').value) || 0), metric = $('#dl-m').value;
+  if(stake < 1 || stake > 100){ toast('Puntata da 1 a 100', 'warn'); return; }
+  let a, b;
+  if(F.kind === 't'){ a = { t:'t', id:'W' }; b = { t:'t', id:'B' }; if(metric !== 'g'){ toast('Tra squadre si può solo contare i gol', 'warn'); return; } }
+  else{
+    const pa = $('#dl-a').value, pb = $('#dl-b').value;
+    if(!pa || !pb || pa === pb){ toast('Scegli due giocatori diversi', 'warn'); return; }
+    if(!st.mk.m.pl[pa] || !st.mk.m.pl[pb]){ toast('Giocatore non in formazione', 'warn'); return; }
+    a = { t:'p', id:pa }; b = { t:'p', id:pb };
+  }
+  closeModal('#m-dl', true); ui.dlForm = null;
+  await commit({ [`casino/duels/${F.mid}/${newId()}`]:{ gen:num(st.mk.gen), a, b, metric, stake, at:Date.now() } }, 'Sfida creata');
+}
+async function delDuel(mid, did){
+  if(!ui.admin) return;
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  if(db && syncState !== 'live'){ toast('Serve la connessione', 'warn'); return; }
+  const ok = await confirmDlg('Annullare la sfida?', 'Le scelte già fatte vengono rimborsate.', 'Annulla sfida', true); if(!ok) return;
+  await commit({ [`casino/duels/${mid}/${did}/void`]:1 }, 'Sfida annullata: scelte rimborsate');
+}
+
 /* ---------- Puntare: casino/bets/{mid}/{bid} = { pid, gen, legs:[{k, sel}], stake, odds, at, allin?, bal, v } ---------- */
 /* Una scommessa conta solo se il mercato esiste, non è annullato e la sua versione (gen) è quella attuale; altrimenti è rimborsata */
 function betLive(mid, b){ return !!b && !b.void && mkState(mid).s !== 'none' && mkState(mid).s !== 'void' && num(b.gen) === num(mkOf(mid).gen); }
@@ -5070,6 +5229,7 @@ function mkCardHTML(mid, me){
     <div class="cs-mt">Bianchi ${S.nW} (OVR ${S.oW}) contro Neri ${S.nB} (OVR ${S.oB}) <button type="button" class="btn sm ghost" data-open-match="${mid}">Vai alla gara</button></div>
     <div class="cs-tabs" role="tablist">${Object.entries(GR).map(([g, t]) => `<button type="button" role="tab" class="cs-tab ${g === tab ? 'on' : ''}" aria-selected="${g === tab}" data-mktab="${g}" data-mid="${mid}">${t}</button>`).join('')}</div>
     ${tbl || '<p class="mu sm">Nessun mercato in questa scheda.</p>'}
+    ${poolSectionHTML(mid, me, S)}
     <h4 class="vi-h">Giocate (${bets.length})</h4>${betRows || '<p class="mu sm" style="margin:0">Ancora nessuna giocata.</p>'}</div>`;
 }
 function betsTabHTML(me){
@@ -6297,6 +6457,8 @@ document.addEventListener('click', async e => {
     renderDashboard(); return;
   }
   if(d.ctab){ if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; } ui.cTab = d.ctab; renderCasino(); renderSlip(); return; }
+  if(d.pool){ const [k, a, b] = d.pool.split('|'); placePool(d.mid, k, k === 'mvp' ? a : b, k === 'duel' ? a : undefined); return; }
+  if(d.dlKind){ if(ui.dlForm){ ui.dlForm.kind = d.dlKind; $('#dl-pl').hidden = d.dlKind === 't'; $$('[data-dl-kind]').forEach(b => b.classList.toggle('primary', b.dataset.dlKind === d.dlKind)); } return; }
   if(d.odd){ const i = d.odd.indexOf('|'); slipToggle(d.mid, d.odd.slice(0, i), d.odd.slice(i + 1)); return; }
   if(d.mktab){ ui.cMk = ui.cMk || {}; ui.cMk[d.mid] = d.mktab; renderCasino(); return; }
   if(d.slipMode){ if(ui.slip){ ui.slip.mode = d.slipMode; renderSlip(); } return; }
@@ -6362,6 +6524,9 @@ document.addEventListener('click', async e => {
     case 'backup-all': if(requireAdmin()) backupAll(); break;
     case 'import-xlsx': if(requireAdmin()){ $('#xlsxInput').value = ''; $('#xlsxInput').click(); } break;
     case 'casino-claim': claimDaily(); break;
+    case 'dl-new': openDuelForm(d.mid); break;
+    case 'dl-save': saveDuel(); break;
+    case 'dl-del': delDuel(d.mid, d.did); break;
     case 'slip-clear': ui.slip = null; renderCasino(); renderSlip(); break;
     case 'slip-confirm': placeBets(); break;
     case 'mk-open': openMarketPreview(d.mid); break;
