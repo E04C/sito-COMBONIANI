@@ -1570,6 +1570,7 @@ const DEFAULT_PIN = '2026';
 const CACHE_KEY = 'cmb2627_cache_v1';
 const ROLES = { ATT:'Attaccante', CEN:'Centrocampista', DIF:'Difensore', JOLLY:'Jolly' };
 const FEET = { DX:'Destro', SX:'Sinistro', AMB:'Ambidestro' };
+const OG_PEN = 1;   /* punti tolti per ogni autogol (OVR, premi di reparto, Uomo Partita) */
 const OVR_START = 75, OVR_MIN = 50, OVR_MAX = 99, OVR_GAIN_CAP = 5, OVR_LOSS_CAP = 3;
 const ROLE_MULT = { ATT:0.8, CEN:1, JOLLY:1, DIF:1.2 };
 /* Half-up solo sull'OVR finale: .00-.49 per difetto, .50-.99 per eccesso (epsilon contro gli errori float) */
@@ -1993,11 +1994,10 @@ function ovrDelta(role, ovr, c){
   if(c.res === 'v') pos += Math.max(0, 2 - 0.1 * c.conceded);
   else if(c.res === 's') loss += c.margin >= 3 ? 2 : 1;
   pos += (c.g * 1 + c.a * 0.5) * ROLE_MULT[R];
-  if(c.mvp) pos += 0.5;
   if(c.award) pos += 0.2;
   if(shown >= 90) pos *= 0.5;
   else if(shown < 65){ pos *= 1.5; loss *= 0.5; }
-  const d = pos - loss - c.og * 1.5;
+  const d = pos - loss - c.og * OG_PEN;
   return Math.max(-OVR_LOSS_CAP, Math.min(OVR_GAIN_CAP, d));
 }
 /* Premi di reparto: solo punti individuali (gol + assist pesati dal ruolo - autogol), niente esito. Parità: gol, assist, alfabeto. */
@@ -2007,7 +2007,7 @@ function matchAwards(m){
   for(const team of ['white','black']) for(const e of list(m[team])){
     const role = ROLES[store.players[e.pid]?.role] ? store.players[e.pid].role : 'JOLLY';
     const g = num(e.g), a = num(e.a), og = num(e.og);
-    const pts = (g + a * 0.5) * ROLE_MULT[role] - og * 1.5;
+    const pts = (g + a * 0.5) * ROLE_MULT[role] - og * OG_PEN;
     if(pts <= 0) continue;
     const k = dept(role), c = { pid:e.pid, n:pname(e.pid, e.n), pts, g, a, team }, b = best[k];
     if(!b || pts > b.pts + 1e-9 || (Math.abs(pts - b.pts) < 1e-9 && (g > b.g || (g === b.g && (a > b.a || (a === b.a && c.n.localeCompare(b.n, 'it') < 0)))))) best[k] = c;
@@ -3380,7 +3380,7 @@ function computeRecords(){
         if(g > 0 && (!manita || g > manita.v)) manita = { pid:e.pid, v:g, m };
         if(a > 0 && (!mida || a > mida.v)) mida = { pid:e.pid, v:a, m };
         const role = ROLES[dept(e.pid)] ? dept(e.pid) : 'JOLLY';
-        const pts = (g + a * 0.5) * ROLE_MULT[role] - og * 1.5;
+        const pts = (g + a * 0.5) * ROLE_MULT[role] - og * OG_PEN;
         if(pts > 0 && (!uomo || pts > uomo.v + 1e-9)) uomo = { pid:e.pid, v:pts, m, g, a };
         conc[e.pid] = (conc[e.pid] || 0) + against;
         const st = streak[e.pid] || (streak[e.pid] = { cur:0, from:null, best:0, bFrom:null, bTo:null });
@@ -4686,6 +4686,13 @@ window.addEventListener('appinstalled', () => { $('#installBtn').hidden = true; 
 })();
 
 { const av = $('#appver'); if(av) av.textContent = 'v' + APP_VERSION; }
+/* Migrazione 1.1.0: l'OVR si ricalcola da zero (autogol -1, niente bonus MVP). Si azzerano i "già visto" per non mostrare popup finti: il codice li ricrea in silenzio */
+try{
+  if(!localStorage.getItem('cmb_mig_v110')){
+    ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr'].forEach(k => localStorage.removeItem(k));
+    localStorage.setItem('cmb_mig_v110', '1');
+  }
+}catch(e){}
 loadCache();
 render();
 initFirebase();
