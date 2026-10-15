@@ -1300,6 +1300,19 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .vg-opt b{font-size:15px;text-align:center}
 .vg-opt small{color:var(--mu);font-weight:700}
 .vg-opt:active{background:var(--or-soft);border-color:var(--or)}
+.rt-count{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+.rt-c{padding:4px 10px;border-radius:9px;background:rgba(255,255,255,.05);font:800 12.5px var(--body);color:var(--mu);font-variant-numeric:tabular-nums}
+.rt-c.full{color:var(--or);background:var(--or-soft)}
+.rt-list{display:grid;gap:6px;margin:8px 0 12px}
+.rt-row{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:4px 10px;padding:8px 10px;border-radius:12px;border:1px solid var(--hair);background:rgba(255,255,255,.03)}
+.rt-row.set{border-color:var(--line)}
+.rt-nm{font-weight:800;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rt-stars{grid-column:1/-1;display:flex;justify-content:space-between;gap:4px}
+.rt-st{flex:1;height:42px;border-radius:10px;border:1px solid var(--hair);background:rgba(255,255,255,.03);color:var(--mu2);font-size:21px;line-height:1;touch-action:manipulation}
+.rt-st.on{color:#fbbf24;border-color:rgba(251,191,36,.45);background:rgba(251,191,36,.1)}
+.rt-st:active{background:var(--or-soft)}
+.rt-note{margin:0 0 8px;font-size:12.5px}
+.rt-send{width:100%}
 .vi-list{display:grid;gap:6px;margin:10px 0}
 .vi-r{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04);font-size:14px}
 .vi-r span{color:var(--or);font-weight:700}
@@ -1499,6 +1512,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 
 <!-- Chi sei, voto obbligatorio, info voti -->
 <div class="modal" id="m-who" aria-hidden="true" data-lock="1"><div class="sheet glass who" role="dialog" aria-modal="true" aria-label="Chi sei?" id="who-body"></div></div>
+<div class="modal" id="m-rate" aria-hidden="true" data-lock="1"><div class="sheet glass vg" role="dialog" aria-modal="true" aria-label="Vota i compagni" id="rt-body"></div></div>
 <div class="modal" id="m-vote" aria-hidden="true" data-lock="1"><div class="sheet glass vg" role="dialog" aria-modal="true" aria-label="Vota l’MVP" id="vg-body"></div></div>
 <div class="modal" id="m-vinfo" aria-hidden="true"><div class="sheet glass vi" role="dialog" aria-modal="true" aria-label="Chi ha votato chi" style="width:min(560px,100%)"><div id="vi-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 
@@ -2408,7 +2422,7 @@ function render(){
   if(ui.duel && $('#m-duel').classList.contains('open')) renderDuel();
   if(openFigPid && Date.now() > figAnimUntil) renderFigurina();   // non interrompe il flip se arrivano dati durante l'animazione
   if(ED && $('#m-match').classList.contains('open')) renderEditor();
-  if(dataReady()){ syncSeenTiers(); checkRecords(); migrateLegacyPhotos(); rankShift(); pvFlush(); flow(); }
+  if(dataReady()){ syncSeenTiers(); checkRecords(); migrateLegacyPhotos(); rankShift(); pvFlush(); prFlush(); flow(); }
 }
 
 function renderDashboard(){
@@ -2903,9 +2917,125 @@ function flow(){
         const vi = voteInfo(x);
         return vi.open && vi.eligible.includes(me) && !vi.votes[me] && vi.cands.some(c => c.pid !== me);
       });
-      if(pend) openVoteGate(pend);
+      if(pend){ openVoteGate(pend); return; }
+      const pendR = rev.find(x => {
+        if(!x.rate || prHas(x.id) || (ui.voteLater && ui.voteLater['r' + x.id])) return false;
+        const inf = rateInfo(x);
+        return inf.open && !inf.done[me] && inf.targets(me).length > 0;
+      });
+      if(pendR) openRateGate(pendR);
     }
   }catch(e){ console.warn('flow', e); }
+}
+/* ---------- Voto anonimo ai compagni (1-5 stelle) ----------
+   ANONIMATO: ogni stella è un record ratings/{gara}/{rid} = { to, s } con rid casuale (crypto.getRandomValues, non push(): le chiavi push
+   contengono l'orario), senza orario né altro che identifichi chi vota. I record di un votante partono in un solo update, in ordine casuale.
+   Chi ha votato è segnato a parte in ratingsDone/{gara}/{pid} = true, con un ritardo casuale: così i due scritture non coincidono nel tempo. */
+const PR_KEY = 'cmb2627_pendingRatings';
+const prGet = () => { try{ return JSON.parse(localStorage.getItem(PR_KEY) || '[]'); }catch(e){ return []; } };
+const prSet = a => { try{ localStorage.setItem(PR_KEY, JSON.stringify(a)); }catch(e){} };
+const prHas = mid => prGet().some(x => x.mid === mid);
+const RID_CH = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const rndBytes = n => { const a = new Uint8Array(n); crypto.getRandomValues(a); return a; };
+function rateRid(){
+  const out = [];
+  while(out.length < 20) for(const b of rndBytes(32)) if(b < 248 && out.length < 20) out.push(RID_CH[b % 62]);   /* 248 = 62 x 4: nessun bias */
+  return out.join('');
+}
+function rateShuffle(arr){
+  const a = [...arr];
+  for(let i = a.length - 1; i > 0; i--){ const r = rndBytes(4), j = ((r[0] << 24 | r[1] << 16 | r[2] << 8 | r[3]) >>> 0) % (i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+/* Gli unici dati scritti per un voto: nessun riferimento a chi lo ha dato */
+function ratingWrites(mid, items){
+  const up = {};
+  for(const it of rateShuffle(items)) up[`ratings/${mid}/${rateRid()}`] = { to:it.to, s:it.s };
+  return up;
+}
+const isPermErr = e => /permission/i.test(String((e && (e.code || e.message)) || ''));
+let prBusy = false;
+async function prFlush(){
+  if(prBusy || (db && syncState !== 'live') || !dataReady() || !prGet().length) return;
+  prBusy = true;
+  try{
+    for(const x of prGet()){
+      const patch = o => prSet(prGet().map(y => (y.mid === x.mid && y.voter === x.voter) ? { ...y, ...o } : y));
+      const drop = () => prSet(prGet().filter(y => !(y.mid === x.mid && y.voter === x.voter)));
+      const m = store.matches[x.mid];
+      if(!m){ drop(); continue; }
+      let cur = x;
+      if(x.stage === 'sending'){ patch({ stage:'sent', items:[], doneAt:Date.now() }); cur = { ...x, stage:'sent', doneAt:Date.now() }; }   /* l'app si è chiusa durante l'invio: meglio un voto perso che doppio */
+      if(cur.stage !== 'sent'){
+        const info = rateInfo({ id:x.mid, ...m });
+        if(!info.open){ drop(); toast('Voto ai compagni non inviato: la votazione era già chiusa', 'warn'); continue; }
+        if(info.done[x.voter]){ drop(); continue; }
+        if(!ratingsValid(x.items, info.targets(x.voter))){ drop(); toast('Voto ai compagni non valido: non inviato', 'err'); continue; }
+        patch({ stage:'sending' });
+        try{ await dbUpdate(ratingWrites(x.mid, x.items)); }
+        catch(err){ patch({ stage:'new' }); if(isPermErr(err)) ratingsProblem('write', 'ratings/' + x.mid); toast(isPermErr(err) ? 'Voto non inviato: il database lo rifiuta. Riprova più tardi.' : 'Voto non inviato: riproverò tra poco.', 'warn'); continue; }
+        cur = { ...x, stage:'sent', doneAt:Date.now() + (db ? 15000 + Math.floor(rndBytes(2)[0] / 255 * 165000) : 0) };
+        patch({ stage:'sent', items:[], doneAt:cur.doneAt });
+        toast('Voti inviati in forma anonima');
+      }
+      if(Date.now() < cur.doneAt){ setTimeout(prFlush, Math.max(1000, cur.doneAt - Date.now() + 500)); continue; }
+      try{ await dbUpdate({ [`ratingsDone/${x.mid}/${x.voter}`]:true }); drop(); }
+      catch(err){ if(isPermErr(err)) ratingsProblem('write', 'ratingsDone/' + x.mid); }
+    }
+  }finally{ prBusy = false; }
+}
+setInterval(prFlush, 20000);
+let RT = null;   /* { mid, sel:{ pid: stelle } }: la scelta resta solo in memoria su questo telefono */
+function openRateGate(m){
+  if(!RT || RT.mid !== m.id) RT = { mid:m.id, sel:{} };
+  renderRateGate();
+  openModal('#m-rate');
+}
+function renderRateGate(){
+  const box = $('#rt-body'); if(!box || !RT) return;
+  const m = store.matches[RT.mid]; if(!m) return;
+  const me = myPid(), tg = rateInfo({ id:RT.mid, ...m }).targets(me);
+  const n5 = tg.filter(p => RT.sel[p] === 5).length, n1 = tg.filter(p => RT.sel[p] === 1).length, done = tg.filter(p => RT.sel[p]).length;
+  const row = pid => `<div class="rt-row ${RT.sel[pid] ? 'set' : ''}">${avatar(store.players[pid], 'sm')}<span class="rt-nm">${esc(pname(pid))}</span>
+    <div class="rt-stars" role="group" aria-label="Stelle a ${esc(pname(pid))}">${[1, 2, 3, 4, 5].map(i => `<button type="button" class="rt-st ${RT.sel[pid] >= i ? 'on' : ''}" data-rt="${pid}|${i}" aria-pressed="${RT.sel[pid] === i}" aria-label="${i} ${i === 1 ? 'stella' : 'stelle'}">★</button>`).join('')}</div></div>`;
+  const top = box.scrollTop;
+  box.innerHTML = `<div class="vg-k">Giornata ${num(m.day)}</div><h3>Vota i tuoi compagni</h3>
+    <p class="lead-p">Da 1 a 5 stelle a ogni compagno di squadra. Il voto è anonimo: nessuno saprà chi ha dato quali stelle. Una volta inviato non si può cambiare né annullare, nemmeno dall’admin.</p>
+    <div class="rt-count"><span class="rt-c ${n5 >= RATE_MAX5 ? 'full' : ''}">5 stelle: ${n5}/${RATE_MAX5}</span><span class="rt-c ${n1 >= RATE_MAX1 ? 'full' : ''}">1 stella: ${n1}/${RATE_MAX1}</span><span class="rt-c">Votati: ${done}/${tg.length}</span></div>
+    <div class="rt-list">${tg.map(row).join('')}</div>
+    <button type="button" class="btn primary rt-send" data-action="rate-send" ${done === tg.length ? '' : 'disabled'}>Invia i voti</button>
+    ${done === tg.length ? '' : '<p class="mu sm rt-note" style="margin-top:8px;text-align:center">Dai un voto a tutti per poter inviare.</p>'}
+    ${syncState === 'error' ? `<div class="row" style="justify-content:center;margin-top:12px"><button type="button" class="btn ghost sm" data-action="rate-later" data-mid="${m.id}">Voterò più tardi</button></div>` : ''}`;
+  box.scrollTop = top;
+}
+function rateTap(val){
+  if(!RT) return;
+  const [pid, v] = val.split('|'), n = +v, tg = rateInfo({ id:RT.mid, ...store.matches[RT.mid] }).targets(myPid());
+  if(!tg.includes(pid)) return;
+  if(RT.sel[pid] === n) delete RT.sel[pid];
+  else{
+    if(n === 5 && tg.filter(p => p !== pid && RT.sel[p] === 5).length >= RATE_MAX5){ toast(`Puoi dare al massimo ${RATE_MAX5} voti da 5 stelle`, 'warn'); return; }
+    if(n === 1 && tg.filter(p => p !== pid && RT.sel[p] === 1).length >= RATE_MAX1){ toast(`Puoi dare al massimo ${RATE_MAX1} voti da 1 stella`, 'warn'); return; }
+    RT.sel[pid] = n;
+  }
+  renderRateGate();
+}
+async function rateSend(){
+  if(!RT) return;
+  const m = store.matches[RT.mid], me = myPid(); if(!m || !me) return;
+  const info = rateInfo({ id:RT.mid, ...m }), tg = info.targets(me);
+  if(!info.open){ toast('La votazione è chiusa', 'warn'); RT = null; closeModal('#m-rate', true); return; }
+  if(info.done[me] || prHas(RT.mid)){ toast('Hai già votato: il voto è definitivo', 'warn'); RT = null; closeModal('#m-rate', true); return; }
+  const items = tg.map(to => ({ to, s:RT.sel[to] }));
+  if(!ratingsValid(items, tg)){ toast(`Dai da 1 a 5 stelle a tutti. Al massimo ${RATE_MAX5} cinque stelle e ${RATE_MAX1} una stella`, 'warn'); return; }
+  const ok = await confirmDlg('Confermi i voti?', 'I voti sono anonimi e definitivi: una volta inviati non potrai cambiarli né annullarli, nemmeno l’admin.', 'Invia i voti');
+  if(!ok || !RT) return;
+  const mid = RT.mid;
+  prSet([...prGet().filter(x => !(x.mid === mid && x.voter === me)), { mid, voter:me, items, stage:'new' }]);
+  RT = null;
+  closeModal('#m-rate', true);
+  if(db && syncState !== 'live') toast('Voti in attesa di invio: partiranno appena torni online', 'warn');
+  prFlush();
 }
 let voteSig = '';
 setInterval(() => {
@@ -4885,6 +5015,7 @@ document.addEventListener('click', async e => {
   if(d.gs !== undefined){ if(GF){ GF.s = GF.s === d.gs ? '' : d.gs; if(GF.s && GF.a && (GF.a === GF.s || (!ED.moves.length && edTeamOf(GF.a) !== edTeamOf(GF.s)))) GF.a = ''; renderGoals(); } return; }
   if(d.ga !== undefined){ if(GF){ GF.a = d.ga; renderGoals(); } return; }
   if(d.gact){ goalAct(d.gact, +d.gi); return; }
+  if(d.rt !== undefined){ rateTap(d.rt); return; }
   if(d.mp !== undefined){ if(MF){ MF.pid = MF.pid === d.mp ? '' : d.mp; renderMoves(); } return; }
   if(d.mk !== undefined){ if(MF){ MF.k = MF.k === d.mk ? '' : d.mk; renderMoves(); } return; }
   if(d.mact){ moveAct(d.mact, +d.mi); return; }
@@ -4940,6 +5071,9 @@ document.addEventListener('click', async e => {
     case 'who-guest-ok': whoGuest(); break;
     case 'vote-info': if(ui.admin){ $('#vi-body').innerHTML = voteInfoHTML(d.mid); openModal('#m-vinfo'); } break;
     case 'vote-cancel': voteCancel(d.mid, d.voter); break;
+    case 'rate-send': rateSend(); break;
+    case 'rate-open': { const m = store.matches[d.mid]; if(m) openRateGate({ id:d.mid, ...m }); break; }
+    case 'rate-later': ui.voteLater = ui.voteLater || {}; ui.voteLater['r' + d.mid] = true; closeModal('#m-rate', true); break;
     case 'vote-later': ui.voteLater = ui.voteLater || {}; ui.voteLater[d.mid] = true; closeModal('#m-vote', true); break;
     case 'rp-open': rpOpen(d.mid); break;
     case 'rp-fs': if(document.fullscreenElement) document.exitFullscreen().catch(() => {}); else if($('#m-replay').requestFullscreen) $('#m-replay').requestFullscreen().catch(() => {}); break;
