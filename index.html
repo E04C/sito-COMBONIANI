@@ -209,6 +209,9 @@ table.cls{width:100%;border-collapse:separate;border-spacing:0;font-variant-nume
 .chamf{clip-path:polygon(var(--c) 0,calc(100% - var(--c)) 0,100% var(--c),100% calc(100% - var(--c)),calc(100% - var(--c)) 100%,var(--c) 100%,0 calc(100% - var(--c)),0 var(--c))}
 .pgrid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 @media (min-width:900px){.pgrid{grid-template-columns:repeat(auto-fill,minmax(195px,1fr))}}
+.mfig-w{position:relative}
+.mfig-turn{position:absolute;right:9px;bottom:9px;z-index:3;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:rgba(10,13,20,.82);color:var(--tx);font-size:16px;line-height:1;touch-action:manipulation}
+.mfig-turn:active{background:var(--or-soft)}
 .mfig{display:block;width:100%;padding:0;border:0;background:none;filter:drop-shadow(0 0 var(--gr) var(--glow));transition:transform .2s var(--ease)}
 .mfig-fr{--c:15px;display:block;padding:2px;background:var(--tier)}
 .mfig:hover{transform:translateY(-3px)}
@@ -767,6 +770,13 @@ body:not(.lit) .holo{animation:holoIdle 6s ease-in-out infinite alternate}
 /* --- Figurina in 3D: palco, flip, inclinazione --- */
 .stage3d{position:relative;perspective:1100px}
 .flip,.tilt{position:relative;transform-style:preserve-3d}
+.flip{transition:transform .6s var(--ease)}
+.flip.turned{transform:rotateY(180deg)}
+.flip.turned .face-front,.flip:not(.turned) .face-back{pointer-events:none}
+.flip.peek{animation:flipPeek 1.9s ease-in-out both}
+@keyframes flipPeek{0%{transform:none}35%,60%{transform:rotateY(180deg)}100%{transform:none}}
+.flip-hint{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:5;padding:6px 14px;border-radius:999px;background:rgba(10,13,20,.88);border:1px solid var(--line-strong);color:var(--tx);font:800 13px var(--body);white-space:nowrap;pointer-events:none;animation:hintOut .4s ease 2.2s forwards}
+@keyframes hintOut{to{opacity:0}}
 .tilt{transition:transform .14s linear}
 .tilt.on-holo{transform:rotateY(calc(var(--tx,0) * 9deg)) rotateX(calc(var(--ty,0) * -9deg));touch-action:none}
 .face-front,.face-back{-webkit-backface-visibility:hidden;backface-visibility:hidden}
@@ -776,6 +786,15 @@ body:not(.lit) .holo{animation:holoIdle 6s ease-in-out infinite alternate}
 .face-back{position:absolute;top:0;left:0;transform:rotateY(180deg)}
 .back-in{align-items:center;justify-content:center;gap:10px;text-align:center;
   background:radial-gradient(circle at 50% 42%,rgba(249,115,22,.22),rgba(10,13,20,0) 55%),repeating-linear-gradient(45deg,rgba(255,255,255,.025) 0 2px,rgba(0,0,0,0) 2px 14px),#07090e}
+.back-in.prof{align-items:stretch;justify-content:flex-start;gap:9px;text-align:left;padding:26px 22px 20px;overflow:auto}
+.back-in.prof>b{font:italic 800 28px/1 var(--disp);color:var(--tier-ink);margin-bottom:4px}
+.pb-row{display:flex;gap:11px;align-items:flex-start}
+.pb-row i{font-style:normal;font-size:19px;line-height:1.2}
+.pb-row span{display:flex;flex-direction:column;min-width:0;letter-spacing:0;text-transform:none;font-size:inherit}
+.back-in .pb-row small{font:700 11px var(--body);color:var(--mu);letter-spacing:.08em;text-transform:uppercase}
+.back-in .pb-row b{font:700 15px/1.25 var(--body);color:var(--tx);overflow-wrap:anywhere}
+.pb-bio{margin:4px 0 0;padding-top:10px;border-top:1px dashed rgba(255,255,255,.12);font:500 14px/1.4 var(--body);color:var(--tx);overflow-wrap:anywhere}
+.back-in.prof .btn,.back-in .btn{align-self:center;margin-top:auto;letter-spacing:0;text-transform:none}
 .back-in svg{width:42%;height:auto;filter:drop-shadow(0 0 26px rgba(249,115,22,.55))}
 .back-in b{font:italic 800 34px/1 var(--disp);color:var(--tier-ink)}
 .back-in span{font:700 13px var(--body);color:var(--mu);letter-spacing:.18em;text-transform:uppercase}
@@ -1322,6 +1341,26 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .rt-st:active{background:var(--or-soft)}
 .rt-note{margin:0 0 8px;font-size:12.5px}
 .rt-send{width:100%}
+.bday{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:18px;border-color:rgba(251,191,36,.45);background:linear-gradient(100deg,rgba(251,191,36,.16),rgba(12,16,24,.66) 60%)}
+.bday .bd-ic{font-size:26px}
+.bday>div{flex:1;min-width:0;font-weight:700;font-size:14px}
+.bday .lk{border:0;background:none;color:var(--or);font:800 14px var(--body);padding:0;text-decoration:underline}
+.bday .bd-x{width:32px;height:32px;border-radius:9px;border:1px solid var(--hair);background:none;color:var(--mu);font-size:14px}
+.prof-form{display:grid;gap:10px}
+.prof-form label{display:grid;gap:4px;font:700 12.5px var(--body);color:var(--mu)}
+.prof-form .field{width:100%}
+.prof-form textarea.field{min-height:78px;resize:vertical;font-family:var(--body)}
+.prof-st{padding:9px 12px;border-radius:12px;font-weight:700;font-size:13.5px;background:rgba(255,255,255,.04)}
+.prof-st.ok{color:#86efac;background:rgba(74,222,128,.08)}
+.prof-st.no{color:#fda4af;background:rgba(251,113,133,.08)}
+.prof-st.wait{color:#fde68a;background:rgba(251,191,36,.08)}
+.pr-item{padding:12px;margin-top:10px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);display:grid;gap:8px}
+.pr-item h4{margin:0;font:italic 800 20px/1 var(--disp)}
+.pr-r{display:flex;flex-direction:column;font-size:13.5px;overflow-wrap:anywhere}
+.pr-r small{color:var(--mu);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.pr-r s{color:var(--mu)}
+.pr-act{display:flex;flex-wrap:wrap;gap:8px}
+.cbadge{display:inline-block;min-width:20px;padding:0 6px;margin-left:6px;border-radius:999px;background:var(--or);color:#1a0a00;font:800 12px/20px var(--body);text-align:center}
 .me-rt{display:grid;gap:6px}
 .me-rt>div{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.03);font-weight:700;font-size:13.5px}
 .me-rt small{color:var(--mu);font-weight:600}
@@ -1528,6 +1567,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 <div class="modal" id="m-who" aria-hidden="true" data-lock="1"><div class="sheet glass who" role="dialog" aria-modal="true" aria-label="Chi sei?" id="who-body"></div></div>
 <div class="modal" id="m-rate" aria-hidden="true" data-lock="1"><div class="sheet glass vg" role="dialog" aria-modal="true" aria-label="Vota i compagni" id="rt-body"></div></div>
 <div class="modal" id="m-vote" aria-hidden="true" data-lock="1"><div class="sheet glass vg" role="dialog" aria-modal="true" aria-label="Vota l’MVP" id="vg-body"></div></div>
+<div class="modal" id="m-prof" aria-hidden="true"><div class="sheet glass vi" role="dialog" aria-modal="true" aria-label="Richieste schede giocatore" style="width:min(620px,100%)"><div id="pr-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 <div class="modal" id="m-vinfo" aria-hidden="true"><div class="sheet glass vi" role="dialog" aria-modal="true" aria-label="Chi ha votato chi" style="width:min(560px,100%)"><div id="vi-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 
 <!-- Replay a schermo intero -->
@@ -1705,7 +1745,7 @@ const COLS = [
 /* =========================================================
    STATE
    ========================================================= */
-const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{} };
+const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{} };
 const loaded = { players:false, matches:false };
 let localMode = false;
 const ui = {
@@ -1768,7 +1808,7 @@ function evDesc(x){
 function loadCache(){
   try{
     const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    if(c){ store.players = c.players || {}; store.matches = c.matches || {}; store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; }
+    if(c){ store.players = c.players || {}; store.matches = c.matches || {}; store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; }
   }catch(e){}
 }
 let cacheT;
@@ -1781,7 +1821,7 @@ function saveCache(){
       const { photo, ...rest } = p;
       return [k, (!rest.photoV && photo) ? p : rest];
     }));
-    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, photos:localMode ? store.photos : {} };
+    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, profileReq:store.profileReq, photos:localMode ? store.photos : {} };
     try{ localStorage.setItem(CACHE_KEY, JSON.stringify(data)); }
     catch(e){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, players:Object.fromEntries(Object.entries(players).map(([k, p]) => { const { photo, ...r } = p || {}; return [k, r]; })) })); }catch(e2){} }
   }, 400);
@@ -2449,7 +2489,7 @@ function boardHTML(sc){
 let rq = false;
 function scheduleRender(){ if(rq) return; rq = true; requestAnimationFrame(() => { rq = false; render(); }); }
 function render(){
-  watchRatings();
+  watchRatings(); watchProfileReq();
   /* Ruolo Portiere eliminato: i POR già salvati valgono come DIF solo in memoria, nel database non si riscrive nulla */
   for(const id in store.players){ const p = store.players[id]; if(p && p.role === 'POR') p.role = 'DIF'; }
   attachPhotos();
@@ -2461,6 +2501,8 @@ function render(){
   if(ui.duel && $('#m-duel').classList.contains('open')) renderDuel();
   if(openFigPid && Date.now() > figAnimUntil) renderFigurina();   // non interrompe il flip se arrivano dati durante l'animazione
   if(ED && $('#m-match').classList.contains('open')) renderEditor();
+  if($('#m-prof') && $('#m-prof').classList.contains('open') && ui.admin) $('#pr-body').innerHTML = profListHTML();
+  profToast();
   if(dataReady()){ syncSeenTiers(); checkRecords(); migrateLegacyPhotos(); rankShift(); pvFlush(); prFlush(); flow(); }
 }
 
@@ -2507,7 +2549,7 @@ function renderDashboardInner(){
   const next = nx ? `<div class="glass next" role="button" tabindex="0" data-open-match="${nx.id}" aria-label="Apri la gara in programma">
       <span class="tag">🗓️ Prossima gara</span><b>Giornata ${num(nx.day)}</b><span class="mu">${esc(whenLabel(nx) || 'Data da definire')}</span>
       <span class="mu">OVR medio ${teamMean(nx.white).toFixed(1)} contro ${teamMean(nx.black).toFixed(1)}</span>${cdSpan(nx)}<span class="go">Scopri dove giochi</span>${list(nx.white).length || list(nx.black).length ? `<span class="capsrow"><span class="capside">${kit('white')}${capInfoHTML(nx, 'white')}</span><span class="capside">${kit('black')}${capInfoHTML(nx, 'black')}</span></span>` : ''}</div>` : '';
-  $('#dash').innerHTML = `<div class="dash">${next}${hero}
+  $('#dash').innerHTML = `<div class="dash">${bdayHTML()}${next}${hero}
     <section class="glass">
       <div class="panel-h"><h2>Classifica generale</h2><span class="mu sm">Tocca un giocatore per aprire la figurina</span></div>
       ${podiumHTML()}
@@ -2600,7 +2642,7 @@ function renderPlayers(){
     .sort((a, b) => cmp(a, b) || a.name.localeCompare(b.name, 'it'));
   $('#pcount').textContent = `${ps.length} ${ps.length === 1 ? 'giocatore' : 'giocatori'}${ui.pRole === 'CEN' ? ' (Jolly inclusi)' : ''}`;
   const key = { ovr:null, g:'g', a:'a', pres:'pres', az:null }[ui.pSort];
-  grid.innerHTML = ps.map(s => `<button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}${roleChip(s.p.role)}${ovrPlate(s.ovr, 'sm')}${holoSpan(s.ovr)}<span class="mfig-b"><span class="mfig-n">${esc(s.name)}</span><span class="mfig-s"><span${key === 'g' ? ' style="color:var(--or)"' : ''}><b>${s.g}</b>gol</span><span${key === 'a' ? ' style="color:var(--or)"' : ''}><b>${s.a}</b>ass</span><span${key === 'pres' ? ' style="color:var(--or)"' : ''}><b>${s.pres}</b>pres</span></span></span></span></span></button>`).join('')
+  grid.innerHTML = ps.map(s => `<div class="mfig-w"><button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}${roleChip(s.p.role)}${ovrPlate(s.ovr, 'sm')}${holoSpan(s.ovr)}<span class="mfig-b"><span class="mfig-n">${esc(s.name)}</span><span class="mfig-s"><span${key === 'g' ? ' style="color:var(--or)"' : ''}><b>${s.g}</b>gol</span><span${key === 'a' ? ' style="color:var(--or)"' : ''}><b>${s.a}</b>ass</span><span${key === 'pres' ? ' style="color:var(--or)"' : ''}><b>${s.pres}</b>pres</span></span></span></span></span></button><button type="button" class="mfig-turn" data-action="fig-back" data-pid="${s.pid}" aria-label="Retro della figurina di ${esc(s.name)}" title="Retro della figurina">↻</button></div>`).join('')
     || `<p class="mu" style="grid-column:1/-1">Nessun giocatore${ui.pRole !== 'ALL' ? ' ' + ui.pRole : ''}${raw ? ` corrisponde a “${esc(raw)}”` : ' in questo ruolo'}.</p>`;
 }
 
@@ -2632,7 +2674,195 @@ function figCounters(pid){
   seen[pid] = ov; try{ localStorage.setItem(SEEN_OVR, JSON.stringify(seen)); }catch(e){}
   countUp($('#fig-body'));
 }
-function openFigurina(pid){
+/* =========================================================
+   SCHEDE GIOCATORE, COMPLEANNI, RETRO DELLA FIGURINA
+   Approvata: players/{pid}/profile = { bd:'AAAA-MM-GG', bplace, nat, pos, bio }.
+   Richiesta: profileReq/{pid} = { campi, at, status:'pending'|'rejected', note? }. Tutti i campi sono facoltativi.
+   Pubblica solo l'età calcolata, mai la data. Ogni testo passa da esc().
+   ========================================================= */
+const POS_BY = { DIF:['terzino destro', 'terzino sinistro', 'difensore centrale', 'libero'], CEN:['mediano', 'regista', 'mezzala', 'esterno', 'trequartista'], ATT:['ala', 'seconda punta', 'centravanti', 'punta'] };
+const POS_ALL = [...POS_BY.DIF, ...POS_BY.CEN, ...POS_BY.ATT, 'tuttocampista'];
+const PROF_MAX = { bplace:40, nat:30, bio:200 }, PROF_LBL = { bd:'Data di nascita', bplace:'Luogo di nascita', nat:'Nazionalità', pos:'Ruolo preciso', bio:'Descrizione' };
+const pad2 = n => String(n).padStart(2, '0');
+const isoOf = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+function validDate(iso){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); if(!m) return null;
+  const y = +m[1], mo = +m[2], d = +m[3], dt = new Date(y, mo - 1, d);
+  return (dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d && y >= 1900) ? { y, mo, d } : null;
+}
+/* Controlla e pulisce i campi di una scheda: { campi } oppure { err } */
+function profileClean(raw, now){
+  now = now || new Date(); raw = raw && typeof raw === 'object' ? raw : {};
+  const out = {}, t = v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
+  const bd = t(raw.bd);
+  if(bd){
+    if(!validDate(bd)) return { err:'Data di nascita non valida' };
+    if(bd > isoOf(now)) return { err:'La data di nascita non può essere nel futuro' };
+    out.bd = bd;
+  }
+  for(const k of ['bplace', 'nat', 'bio']){
+    const v = t(raw[k]);
+    if(v.length > PROF_MAX[k]) return { err:`${PROF_LBL[k]}: massimo ${PROF_MAX[k]} caratteri` };
+    if(v) out[k] = v;
+  }
+  const pos = t(raw.pos);
+  if(pos){ if(!POS_ALL.includes(pos)) return { err:'Ruolo preciso non valido' }; out.pos = pos; }
+  return { campi:out };
+}
+/* Il 29/02 si festeggia il 28/02 negli anni non bisestili */
+const isLeap = y => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+const bdMD = (v, y) => (v.mo === 2 && v.d === 29 && !isLeap(y)) ? [2, 28] : [v.mo, v.d];
+function ageOf(bd, now){
+  const v = validDate(bd); if(!v) return null;
+  now = now || new Date();
+  const y = now.getFullYear(), [m, d] = bdMD(v, y), cm = now.getMonth() + 1;
+  const a = y - v.y - ((cm < m || (cm === m && now.getDate() < d)) ? 1 : 0);
+  return a >= 0 ? a : null;
+}
+function isBirthday(bd, now){
+  const v = validDate(bd); if(!v) return false;
+  now = now || new Date();
+  const y = now.getFullYear(), [m, d] = bdMD(v, y);
+  return y > v.y && now.getMonth() + 1 === m && now.getDate() === d;
+}
+/* Scheda approvata di un giocatore (campi validi) oppure null */
+function profOf(pid){
+  const r = store.players[pid] && store.players[pid].profile; if(!r || typeof r !== 'object') return null;
+  const c = profileClean(r);
+  return (c.campi && Object.keys(c.campi).length) ? c.campi : null;
+}
+const profPending = () => Object.entries(store.profileReq || {}).filter(([pid, r]) => r && r.status === 'pending' && store.players[pid]);
+/* Banner dei compleanni in dashboard: visibile a tutti, si chiude una volta al giorno */
+function bdayHTML(){
+  const now = new Date(), key = 'cmb_bday_' + isoOf(now);
+  try{ if(localStorage.getItem(key)) return ''; }catch(e){}
+  const who = STATS.list.map(s => ({ s, pr:profOf(s.pid) })).filter(x => x.pr && x.pr.bd && isBirthday(x.pr.bd, now));
+  if(!who.length) return '';
+  return `<div class="glass bday" role="status"><span class="bd-ic" aria-hidden="true">🎂</span><div>${who.map(x => `<div>Oggi compie ${ageOf(x.pr.bd, now)} anni: <button type="button" class="lk" data-open-player="${x.s.pid}">${esc(x.s.name)}</button></div>`).join('')}</div><button type="button" class="bd-x" data-action="bday-close" aria-label="Chiudi">✕</button></div>`;
+}
+/* Retro della figurina: scheda approvata (solo età, luogo, nazionalità, ruolo preciso, descrizione) oppure lo stemma */
+function backHTML(pid, p, backT){
+  const pr = profOf(pid), mine = !!pid && myPid() === pid, now = new Date();
+  const age = pr && pr.bd ? ageOf(pr.bd, now) : null;
+  const row = (ic, k, v) => v ? `<div class="pb-row"><i aria-hidden="true">${ic}</i><span><small>${k}</small><b>${esc(v)}</b></span></div>` : '';
+  const rows = pr ? row('🎂', 'Età', age != null ? `${age} anni` : '') + row('📍', 'Luogo di nascita', pr.bplace) + row('🌍', 'Nazionalità', pr.nat) + row('🎯', 'Ruolo preciso', pr.pos) + (pr.bio ? `<p class="pb-bio">${esc(pr.bio)}</p>` : '') : '';
+  const act = mine ? `<button type="button" class="btn sm" data-action="prof-open">${rows ? '✏️ Modifica scheda' : 'Completa la tua scheda'}</button>` : '';
+  const inner = rows ? `<div class="fig-in chamf back-in prof"><b>${esc(p.name)}</b>${rows}${act}</div>` : `<div class="fig-in chamf back-in">${crestSVG('cgb')}<b>Comboniani</b><span>Stagione 26/27</span>${act}</div>`;
+  return `<div class="fig-glow face-back t-${backT}"><div class="fig chamf">${inner}</div></div>`;
+}
+let figTurned = false;
+function figTurn(){
+  const fl = $('#fig-body .flip'); if(!fl) return;
+  fl.classList.remove('reveal-gold', 'reveal-dia', 'promo', 'peek');   /* il fotogramma finale dell'animazione bloccherebbe il giro */
+  figTurned = !figTurned;
+  fl.classList.toggle('turned', figTurned);
+}
+/* Alla prima apertura la carta fa mezzo giro e torna indietro, con la scritta "Gira la carta" */
+function flipHint(){
+  let seen = true; try{ seen = !!localStorage.getItem('cmb_flipHint'); }catch(e){}
+  const fl = $('#fig-body .flip'), st = $('#fig-body .stage3d');
+  if(seen || figTurned || !fl || !st || (figAnim && figAnim.cls)) return;
+  try{ localStorage.setItem('cmb_flipHint', '1'); }catch(e){}
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    fl.classList.add('peek');
+    fl.addEventListener('animationend', () => fl.classList.remove('peek'), { once:true });
+  }
+  st.insertAdjacentHTML('beforeend', '<div class="flip-hint">↻ Gira la carta</div>');
+  setTimeout(() => { const h = $('#fig-body .flip-hint'); if(h) h.remove(); }, 2700);
+}
+/* "La mia scheda" nella sezione Io */
+let profDraft = null;   /* quello che si sta scrivendo: sopravvive ai ridisegni della pagina */
+function profileSecHTML(pid){
+  const req = store.profileReq && store.profileReq[pid], cur = (store.players[pid] && store.players[pid].profile) || {};
+  const pending = !!req && req.status === 'pending', rejected = !!req && req.status === 'rejected';
+  const base = profDraft || (req && req.campi) || cur || {}, p = store.players[pid] || {};
+  const fmtV = (k, v) => v ? (k === 'bd' ? (validDate(v) ? v.split('-').reverse().join('/') : '') : v) : '';
+  const summary = k => { const v = fmtV(k, base[k]); return v ? `<div class="pb-row"><span><small>${PROF_LBL[k]}</small><b>${esc(v)}</b></span></div>` : ''; };
+  const st = pending ? '<div class="prof-st wait">⏳ Richiesta in attesa di approvazione dell’admin</div>'
+    : rejected ? `<div class="prof-st no">❌ Richiesta rifiutata${req.note ? `: ${esc(req.note)}` : ''}. Puoi correggerla e inviarla di nuovo.</div>`
+    : Object.keys(cur).length ? '<div class="prof-st ok">✅ La tua scheda è pubblicata sul retro della figurina</div>' : '';
+  const grp = POS_BY[p.role];
+  const opt = v => `<option value="${esc(v)}" ${base.pos === v ? 'selected' : ''}>${esc(v)}</option>`;
+  const posOpts = grp ? [...grp, 'tuttocampista'].map(opt).join('') + (base.pos && ![...grp, 'tuttocampista'].includes(base.pos) ? opt(base.pos) : '')
+    : Object.entries(POS_BY).map(([g, l]) => `<optgroup label="${g}">${l.map(opt).join('')}</optgroup>`).join('') + opt('tuttocampista');
+  const form = pending
+    ? ['bd', 'bplace', 'nat', 'pos', 'bio'].map(summary).join('') || '<p class="mu sm" style="margin:0">Richiesta vuota.</p>'
+    : `<form class="prof-form" id="prof-form" autocomplete="off">
+        <label>Data di nascita<input class="field" id="pf2-bd" type="date" min="1900-01-01" max="${isoOf(new Date())}" value="${esc(base.bd || '')}"></label>
+        <label>Luogo di nascita<input class="field" id="pf2-bplace" maxlength="${PROF_MAX.bplace}" value="${esc(base.bplace || '')}"></label>
+        <label>Nazionalità<input class="field" id="pf2-nat" maxlength="${PROF_MAX.nat}" value="${esc(base.nat || '')}"></label>
+        <label>Ruolo preciso<select class="field" id="pf2-pos"><option value="">–</option>${posOpts}</select></label>
+        <label>Descrizione (max ${PROF_MAX.bio} caratteri)<textarea class="field" id="pf2-bio" maxlength="${PROF_MAX.bio}">${esc(base.bio || '')}</textarea></label>
+        <button type="submit" class="btn primary">Invia richiesta all’admin</button>
+      </form>`;
+  return `<section class="glass me-sec wide" id="prof-sec"><h3>🪪 La mia scheda</h3>${st}<div class="prof-form" style="margin-top:10px">${form}</div>
+    <p class="mu sm" style="margin:8px 0 0">L’admin approva ogni modifica. Sul retro della figurina gli altri vedono solo la tua età, mai la data di nascita: la vedi solo tu e l’admin.</p></section>`;
+}
+function profReadForm(){
+  const v = id => { const el = $('#' + id); return el && typeof el.value === 'string' ? el.value : ''; };
+  return { bd:v('pf2-bd'), bplace:v('pf2-bplace'), nat:v('pf2-nat'), pos:v('pf2-pos'), bio:v('pf2-bio') };
+}
+function profSend(){
+  const pid = myPid();
+  if(!pid || !store.players[pid]){ toast('Scegli prima la tua carta in “Chi sei?”', 'warn'); return; }
+  const cur = store.profileReq && store.profileReq[pid];
+  if(cur && cur.status === 'pending'){ toast('Hai già una richiesta in attesa', 'warn'); return; }
+  const c = profileClean(profReadForm());
+  if(c.err){ toast(c.err, 'warn'); return; }
+  if(!Object.keys(c.campi).length){ toast('Compila almeno un campo', 'warn'); return; }
+  profDraft = null;
+  commit({ ['profileReq/' + pid]: { campi:c.campi, at:Date.now(), status:'pending' } }, 'Richiesta inviata: l’admin la rivedrà');
+}
+/* Admin: richieste da rivedere, con valori prima e dopo */
+function profListHTML(){
+  const items = profPending().sort((a, b) => num(a[1].at) - num(b[1].at));
+  if(!items.length) return '<h3>Richieste schede</h3><p class="mu sm">Nessuna richiesta in attesa.</p>';
+  return `<h3>Richieste schede</h3><p class="mu sm">${items.length} ${items.length === 1 ? 'richiesta da rivedere' : 'richieste da rivedere'}. Approvando si scrive la scheda del giocatore.</p>` + items.map(([pid, r]) => {
+    const cur = store.players[pid].profile || {}, nw = r.campi || {};
+    const rows = ['bd', 'bplace', 'nat', 'pos', 'bio'].filter(k => String(cur[k] || '') !== String(nw[k] || '')).map(k => {
+      const f = v => v ? esc(k === 'bd' && validDate(v) ? v.split('-').reverse().join('/') : v) : '—';
+      return `<div class="pr-r"><small>${PROF_LBL[k]}</small><span><s>${f(cur[k])}</s> → <b>${f(nw[k])}</b></span></div>`;
+    }).join('') || '<p class="mu sm" style="margin:0">Nessuna differenza dalla scheda attuale.</p>';
+    return `<div class="pr-item"><h4>${esc(pname(pid))}</h4>${rows}<input class="field" data-prnote="${pid}" maxlength="80" placeholder="Motivo del rifiuto (facoltativo)" aria-label="Motivo del rifiuto"><div class="pr-act"><button type="button" class="btn sm primary" data-action="prof-ok" data-pid="${pid}">Approva</button><button type="button" class="btn sm danger" data-action="prof-no" data-pid="${pid}">Rifiuta</button></div></div>`;
+  }).join('');
+}
+function profApprove(pid){
+  if(!ui.admin) return;
+  const r = store.profileReq && store.profileReq[pid]; if(!r || r.status !== 'pending' || !store.players[pid]) return;
+  const c = profileClean(r.campi);
+  if(c.err || !Object.keys(c.campi).length){ toast('Richiesta non valida: rifiutala o chiedi di correggerla', 'err'); return; }
+  commit({ [`players/${pid}/profile`]: c.campi, [`profileReq/${pid}`]: null }, `Scheda di ${pname(pid)} approvata`);
+}
+function profReject(pid){
+  if(!ui.admin) return;
+  const r = store.profileReq && store.profileReq[pid]; if(!r || r.status !== 'pending') return;
+  const inp = document.querySelector(`[data-prnote="${pid}"]`), note = inp && typeof inp.value === 'string' ? inp.value.replace(/\s+/g, ' ').trim().slice(0, 80) : '';
+  commit({ [`profileReq/${pid}`]: { campi:r.campi || {}, at:r.at || Date.now(), status:'rejected', ...(note ? { note } : {}) } }, `Richiesta di ${pname(pid)} rifiutata`);
+}
+function profToast(){
+  if(!ui.admin || ui.view !== 'admin' || ui.profToasted) return;
+  const n = profPending().length;
+  if(n){ ui.profToasted = true; toast(`${n} ${n === 1 ? 'richiesta di scheda da rivedere' : 'richieste di schede da rivedere'}`, 'warn'); }
+}
+/* Ascolto: il giocatore solo profileReq/{suo pid}, l'admin l'intero nodo. Se le regole lo negano l'app continua a funzionare */
+let profWatch = null;
+function watchProfileReq(){
+  if(!db) return;
+  const me = myPid(), want = ui.admin ? 'all' : (me && store.players[me] ? 'me:' + me : '');
+  if(profWatch && profWatch.key === want) return;
+  if(profWatch){ try{ profWatch.ref.off('value', profWatch.fn); }catch(e){} profWatch = null; store.profileReq = {}; }   /* cambio di ruolo (admin ↔ giocatore): niente richieste altrui in memoria */
+  if(!want) return;
+  const ref = db.ref(want === 'all' ? 'profileReq' : 'profileReq/' + me);
+  const fn = sn => { if(want === 'all') store.profileReq = sn.val() || {}; else { const v = sn.val(); if(v) store.profileReq = { [me]:v }; else store.profileReq = {}; } afterData(); };
+  ref.on('value', fn, () => {});
+  profWatch = { key:want, ref, fn };
+}
+function openProfList(){
+  if(!requireAdmin()) return;
+  $('#pr-body').innerHTML = profListHTML();
+  openModal('#m-prof');
+}
+function openFigurina(pid, turned){
   const s = STATS.byId[pid];
   if(!store.players[pid] || !s) return;
   const t = tierOf(s.ovr);
@@ -2641,10 +2871,12 @@ function openFigurina(pid){
   const promo = prev && TIER_RANK[t] > TIER_RANK[prev] ? { from:prev } : null;
   seen[pid] = t; saveSeenTiers(seen);
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const cls = reduce ? '' : promo ? 'promo' : t === 'dia' ? 'reveal-dia' : t === 'gold' ? 'reveal-gold' : '';
+  const cls = (reduce || turned) ? '' : promo ? 'promo' : t === 'dia' ? 'reveal-dia' : t === 'gold' ? 'reveal-gold' : '';
   figAnim = cls ? { pid, cls, promo } : (promo ? { pid, cls:'', promo } : null);
   if(isHolo(s.ovr)) askGyro();
+  figTurned = !!turned;
   openFigPid = pid; renderFigurina(); openModal('#m-fig'); figCounters(pid);
+  flipHint();
 }
 function renderFigurina(){
   const pid = openFigPid, p = store.players[pid], s = STATS.byId[pid];
@@ -2670,8 +2902,8 @@ function renderFigurina(){
   const burst = anim && anim.cls ? `<div class="burst b-${t}" style="--bd:${bd}">${(t === 'dia' || promo) ? Array.from({ length:12 }, (_, k) => `<i style="--a:${k * 30}deg"></i>`).join('') : ''}</div>` : '';
   const sweep = anim && anim.cls ? `<span class="sweep" style="--sd:${({ 'reveal-gold':'.75s', 'reveal-dia':'1.3s', promo:'2s' }[anim.cls])}"></span>` : '';
   const banner = promo ? `<div class="promo-banner t-${t}"><span>⬆ Promozione</span><b>${TIERS[promo.from].l} → ${TIERS[t].l}</b></div>` : '';
-  const back = `<div class="fig-glow face-back t-${backT}"><div class="fig chamf"><div class="fig-in chamf back-in">${crestSVG('cgb')}<b>Comboniani</b><span>Stagione 26/27</span></div></div></div>`;
-  $('#fig-body').innerHTML = `${banner}<div class="stage3d ${anim && anim.cls ? 'fade' : ''}">${burst}<div class="flip ${anim ? anim.cls : ''}"><div class="tilt ${holo ? 'on-holo' : ''} ${streakCls(s)}"><div class="fig-shadow t-${t}"></div><div class="fig-glow face-front t-${t}"><div class="fig chamf"><div class="fig-in chamf">${holo ? '<span class="holo" aria-hidden="true"></span>' : ''}${sweep}
+  const back = backHTML(pid, p, backT);
+  $('#fig-body').innerHTML = `${banner}<div class="stage3d ${anim && anim.cls ? 'fade' : ''}">${burst}<div class="flip ${anim ? anim.cls : ''}${figTurned ? ' turned' : ''}"><div class="tilt ${holo ? 'on-holo' : ''} ${streakCls(s)}"><div class="fig-shadow t-${t}"></div><div class="fig-glow face-front t-${t}"><div class="fig chamf"><div class="fig-in chamf">${holo ? '<span class="holo" aria-hidden="true"></span>' : ''}${sweep}
     <div class="fig-top">${photoBlock(p)}
       <div class="fig-badges">
         <div class="fig-role">${ovrPlate(s.ovr, 'xl')}<span class="rf">${roleChip(p.role)}<span>${esc(FEET[p.foot] || '')}</span></span></div>
@@ -2693,6 +2925,7 @@ function renderFigurina(){
   </div></div></div>${back}</div></div></div>
   <div class="fig-actions">
     <button class="btn ghost" data-close>Chiudi</button>
+    <button class="btn" data-action="fig-turn">↻ Gira</button>
     <button class="btn primary" data-action="share-fig" data-pid="${pid}">📸 Condividi figurina</button>
     <button class="btn" data-action="duel" data-pid="${pid}">⚔️ Confronta</button>
     <button class="btn admin-only" data-action="edit-player" data-pid="${pid}">✏️ Modifica</button>
@@ -3627,6 +3860,7 @@ document.addEventListener('pointerup', e => { const t = e.target.closest && e.ta
 /* ---------- Il mio giocatore ---------- */
 function renderMe(){
   const el = $('#me'); if(!el) return;
+  const ae = document.activeElement; if(ae && typeof ae.id === 'string' && /^pf2-/.test(ae.id)) return;   /* mentre scrivi la scheda la pagina non si ridisegna */
   const me = localStorage.getItem('cmb_me'), s = me && STATS.byId[me];
   if(!s){
     el.innerHTML = STATS.list.length
@@ -3725,6 +3959,7 @@ function renderMe(){
       <section class="glass me-sec"><h3>🥊 Vittima e incubo</h3>${rivBox}</section>
       <section class="glass me-sec"><h3>📍 Il tuo posto in campo</h3>${posBox}</section>
       ${rateSec}
+      ${profileSecHTML(s.pid)}
       <section class="glass me-sec wide"><h3>⏱️ Quando segni</h3>${histBox}</section>
       <section class="glass me-sec wide"><h3>🧭 Il tuo percorso</h3>${pathBox}</section>
     </div>`;
@@ -4118,6 +4353,7 @@ function renderAdmin(){
     <div class="admin-grid">
       <button class="tile" data-action="new-sched"><span class="ic">🗓️</span><b>Programma gara</b><span>Data, ora e convocati bilanciati: tutti vedono dove giocano.</span></button>
       <button class="tile" data-action="new-match"><span class="ic">📝</span><b>Registra gara</b><span>Schiera le squadre e segna gol, assist e autogol.</span></button>
+      <button class="tile" data-action="prof-list"><span class="ic">🪪</span><b>Richieste schede${profPending().length ? `<span class="cbadge">${profPending().length}</span>` : ''}</b><span>Approva o rifiuta le schede dei giocatori (nascita, nazionalità, ruolo preciso).</span></button>
       <button class="tile" data-action="add-player"><span class="ic">🧑‍🎤</span><b>Aggiungi giocatore</b><span>Nome, ruolo, piede e foto dal rullino.</span></button>
       <button class="tile" data-action="backup-all"><span class="ic">💾</span><b>Backup completo</b><span>Scarica tutti i dati del database in un file .json. Contiene anche il PIN.</span></button>
       <button class="tile" data-action="import-xlsx"><span class="ic">📥</span><b>Importa Excel</b><span>Carica un file con i fogli “Giocatori” e “Partite”. Aggiorna senza cancellare.</span></button>
@@ -4253,7 +4489,7 @@ async function deletePlayer(pid){
     'Elimina giocatore', true);
   if(!ok) return;
   closeModal('#m-fig');
-  commit({ [`players/${pid}`]: null, [`photos/${pid}`]: null }, 'Giocatore eliminato');
+  commit({ [`players/${pid}`]: null, [`photos/${pid}`]: null, [`profileReq/${pid}`]: null }, 'Giocatore eliminato');
 }
 
 /* =========================================================
@@ -4925,7 +5161,7 @@ async function backupAll(){
   backing = true;
   toast('Backup in corso…');
   const data = {}, failed = [];
-  const PATHS = ['players','matches','settings','votes','photos','ratings','ratingsDone'];
+  const PATHS = ['players','matches','settings','votes','photos','ratings','ratingsDone','profileReq'];
   for(const path of PATHS){
     try{ data[path] = (await db.ref(path).once('value')).val(); }
     catch(e){ console.warn('backup', path, e); failed.push(path); }
@@ -5050,7 +5286,7 @@ function closeModal(sel, force){
   const m = $(sel); if(!m) return;
   if(m.dataset.lock && !force) return;
   m.classList.remove('open'); m.setAttribute('aria-hidden', 'true');
-  if(sel === '#m-fig'){ openFigPid = null; figPlq = null; }
+  if(sel === '#m-fig'){ openFigPid = null; figPlq = null; figTurned = false; }
   if(sel === '#m-match') ED = null;
   if(sel === '#m-replay'){ rpStop(); if(document.fullscreenElement) document.exitFullscreen().catch(() => {}); setTimeout(() => { if(!RP) m.innerHTML = ''; }, 320); }
   if(sel === '#m-confirm' && confirmResolve){ const r = confirmResolve; confirmResolve = null; r(false); }
@@ -5169,6 +5405,7 @@ function go(view){
   if(view === 'me'){ const el = $('#me'); el.classList.remove('me-anim'); void el.offsetWidth; el.classList.add('me-anim'); countUp(el); }
   if(view === 'dashboard') rankShift();
   if(view === 'trophies') renderTrophies();
+  if(view === 'admin') setTimeout(profToast, 500);
   anBump('v/' + view);
   if(view === 'admin' && ui.admin) anLoad();
 }
@@ -5227,6 +5464,13 @@ document.addEventListener('click', async e => {
     case 'del-match': if(requireAdmin()) deleteMatch(d.mid); break;
     case 'export-match': exportMatch(d.mid, t); break;
     case 'share-fig': exportFigurina(d.pid, t); break;
+    case 'fig-turn': figTurn(); break;
+    case 'fig-back': openFigurina(d.pid, true); break;
+    case 'prof-open': closeModal('#m-fig'); go('me'); setTimeout(() => { const f = $('#prof-sec'); if(f && f.scrollIntoView) f.scrollIntoView({ block:'start' }); }, 80); break;
+    case 'prof-list': openProfList(); break;
+    case 'prof-ok': profApprove(d.pid); break;
+    case 'prof-no': profReject(d.pid); break;
+    case 'bday-close': try{ localStorage.setItem('cmb_bday_' + isoOf(new Date()), '1'); }catch(e){} renderDashboard(); break;
     case 'duel': openDuel(d.pid); break;
     case 'me-pick': localStorage.setItem('cmb_me', d.pid); anSetMe(d.pid); renderMe(); go('me'); toast('Fatto: questa è la tua sezione'); break;
     case 'me-change': localStorage.removeItem('cmb_me'); renderMe(); break;
@@ -5247,7 +5491,7 @@ document.addEventListener('click', async e => {
     case 'import-xlsx': if(requireAdmin()){ $('#xlsxInput').value = ''; $('#xlsxInput').click(); } break;
     case 'change-pin': if(requireAdmin()){ $('#cpin-form').reset(); openModal('#m-cpin'); } break;
     case 'logout':
-      ui.admin = false; ui.swapMode = false; ui.swapSel = null; sessionStorage.removeItem('cmb_admin');
+      ui.admin = false; ui.profToasted = false; ui.swapMode = false; ui.swapSel = null; sessionStorage.removeItem('cmb_admin');
       toast('Sei tornato in sola lettura'); render(); go('dashboard'); break;
     case 'pf-rm': PF.photo = null; $('#pf-file').value = ''; $('#pf-info').textContent = ''; renderPfPreview(); break;
     case 'ed-save': saveMatch(); break;
@@ -5294,6 +5538,9 @@ document.addEventListener('keydown', e => {
 
 $('#psearch').addEventListener('input', renderPlayers);
 $('#msel').addEventListener('change', e => { ui.matchId = e.target.value; ui.swapSel = null; rerenderMatch(); });
+document.addEventListener('input', e => { const t = e.target; if(t && typeof t.id === 'string' && /^pf2-/.test(t.id)) profDraft = profReadForm(); });
+document.addEventListener('submit', e => { if(e.target && e.target.id === 'prof-form'){ e.preventDefault(); profSend(); } });
+$('#fig-body').addEventListener('animationend', e => { if(e.target.classList && e.target.classList.contains('flip')) e.target.classList.remove('reveal-gold', 'reveal-dia', 'promo', 'peek'); });
 $('#ed-filter').addEventListener('input', renderEditorPick);
 $('#bal-w').addEventListener('input', e => balInput('w', e.target.value));
 $('#bal-b').addEventListener('input', e => balInput('b', e.target.value));

@@ -7,6 +7,7 @@
 - Ritardo: −1 OVR per chi arriva in ritardo (spunta nell'editor gara) e nuovo primato "Il Ritardatario".
 - Cambi: motivo dell'uscita (infortunio o impegno) e rientro di chi è uscito.
 - Schede giocatore con approvazione dell'admin, compleanni e retro della figurina girabile ("↻ Gira").
+- Il backup include anche le richieste di scheda (`profileReq`). Nuovi percorsi del database: `profileReq/{pid}` e `players/{pid}/profile`.
 
 ## 1.3.0
 - Voto anonimo ai compagni da 1 a 5 stelle (solo gare nuove, flag `rate`): la media dà un bonus o malus all'OVR da −0,5 a +0,5, dopo la chiusura della votazione. Servono almeno 3 votanti; ogni giocatore vede solo il proprio risultato, nella sezione Io.
