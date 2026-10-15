@@ -3681,7 +3681,7 @@ function renderAdmin(){
       <button class="tile" data-action="new-sched"><span class="ic">🗓️</span><b>Programma gara</b><span>Data, ora e 16 convocati bilanciati: tutti vedono dove giocano.</span></button>
       <button class="tile" data-action="new-match"><span class="ic">📝</span><b>Registra gara</b><span>Schiera 8 contro 8 e segna gol, assist e autogol.</span></button>
       <button class="tile" data-action="add-player"><span class="ic">🧑‍🎤</span><b>Aggiungi giocatore</b><span>Nome, ruolo, piede e foto dal rullino.</span></button>
-      <button class="tile" data-action="export-xlsx"><span class="ic">📊</span><b>Esporta Excel</b><span>Classifica, rosa e storico gare in un file .xlsx.</span></button>
+      <button class="tile" data-action="backup-all"><span class="ic">💾</span><b>Backup completo</b><span>Scarica tutti i dati del database in un file .json. Contiene anche il PIN.</span></button>
       <button class="tile" data-action="import-xlsx"><span class="ic">📥</span><b>Importa Excel</b><span>Carica un file con i fogli “Giocatori” e “Partite”. Aggiorna senza cancellare.</span></button>
       <button class="tile quiet" data-action="optimize-photos"><span class="ic">🗜️</span><b>Ottimizza foto</b><span>Alleggerisce solo le foto oltre ~90 KB, mantenendo l’alta definizione.</span></button>
       <button class="tile quiet" data-action="change-pin"><span class="ic">🔑</span><b>Cambia PIN</b><span>Vale per tutti i dispositivi del torneo.</span></button>
@@ -4264,25 +4264,27 @@ async function exportFigurina(pid, btn){
 /* =========================================================
    EXCEL IMPORT / EXPORT (SheetJS)
    ========================================================= */
-function exportXlsx(){
-  if(!window.XLSX){ toast('Il modulo Excel non si è caricato. Ricarica la pagina.', 'err'); return; }
-  const wb = XLSX.utils.book_new();
-  const cl = STATS.list.map(s => ({ Pos:s.rank, Giocatore:s.name, OVR:roundOvr(s.ovr), Livello:TIERS[tierOf(s.ovr)].l, Targhe:s.plaques.map(id => plaqueById(id).name).join(', '), Ruolo:s.p.role || '', Piede:FEET[s.p.foot] || '', Presenze:s.pres, V:s.v, P:s.pa, S:s.s, '% Vittorie':+s.pct.toFixed(1), Gol:s.g, Assist:s.a, Autogol:s.og, 'Media gol':+s.avg.toFixed(2), MVP:s.mvp }));
-  const gp = Object.entries(store.players).map(([id, p]) => ({ id, nome:p.name, ruolo:p.role || '', piede:p.foot || '' }));
-  const pr = [];
-  for(const m of STATS.matches) for(const team of ['white','black']) for(const e of list(m[team]))
-    pr.push({ partita_id:m.id, giornata:num(m.day), data:m.date || '', squadra:team === 'white' ? 'Bianca' : 'Nera', giocatore_id:e.pid, giocatore:pname(e.pid, e.n), gol:num(e.g), assist:num(e.a), autogol:num(e.og) });
-  const add = (rows, name, header) => {
-    const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [], header ? { header } : undefined);
-    if(!rows.length && header) XLSX.utils.sheet_add_aoa(ws, [header]);
-    ws['!cols'] = (header || Object.keys(rows[0] || {})).map(k => ({ wch:Math.max(8, String(k).length + 4) }));
-    XLSX.utils.book_append_sheet(wb, ws, name);
-  };
-  add(cl, 'Classifica', ['Pos','Giocatore','OVR','Livello','Targhe','Ruolo','Piede','Presenze','V','P','S','% Vittorie','Gol','Assist','Autogol','Media gol','MVP']);
-  add(gp, 'Giocatori', ['id','nome','ruolo','piede']);
-  add(pr, 'Partite', ['partita_id','giornata','data','squadra','giocatore_id','giocatore','gol','assist','autogol']);
-  XLSX.writeFile(wb, `comboniani-2627_${todayISO()}.xlsx`);
-  toast('File Excel scaricato');
+/* Backup completo: legge uno per uno i percorsi (non la radice, le regole potrebbero negarla). Solo lettura, non scrive nulla */
+let backing = false;
+async function backupAll(){
+  if(backing) return;
+  if(!db){ toast('Il backup legge il database: serve la connessione a Firebase.', 'err'); return; }
+  backing = true;
+  toast('Backup in corso…');
+  const data = {}, failed = [];
+  for(const path of ['players','matches','settings','votes','photos']){
+    try{ data[path] = (await db.ref(path).once('value')).val(); }
+    catch(e){ console.warn('backup', path, e); failed.push(path); }
+  }
+  backing = false;
+  if(failed.length === 5){ toast('Backup non riuscito: nessun percorso leggibile.', 'err'); return; }
+  const blob = new Blob([JSON.stringify({ version:APP_VERSION, exportedAt:new Date().toISOString(), data })], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = `comboniani-backup_${todayISO()}.json`;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+  if(failed.length) toast(`Backup scaricato, ma mancano: ${failed.join(', ')}. Il file contiene il PIN: conservalo con cura.`, 'warn');
+  else toast('Backup scaricato. Il file contiene il PIN: conservalo con cura.');
 }
 function F(r, ...keys){
   for(const k of keys) for(const rk of Object.keys(r)) if(norm(rk) === norm(k)) return r[rk];
@@ -4320,7 +4322,7 @@ async function importXlsx(file){
   catch(e){ toast('Il file non è un Excel leggibile.', 'err'); return; }
   const findSheet = name => wb.SheetNames.find(n => norm(n) === norm(name));
   const shP = findSheet('Giocatori'), shM = findSheet('Partite');
-  if(!shP && !shM){ toast('Servono i fogli “Giocatori” e/o “Partite”. Usa come modello il file di Esporta Excel.', 'err'); return; }
+  if(!shP && !shM){ toast('Servono i fogli “Giocatori” e/o “Partite”. Controlla i nomi dei fogli e delle colonne.', 'err'); return; }
   const rowsP = shP ? XLSX.utils.sheet_to_json(wb.Sheets[shP], { defval:'' }) : [];
   const rowsM = shM ? XLSX.utils.sheet_to_json(wb.Sheets[shM], { defval:'' }) : [];
 
@@ -4581,7 +4583,7 @@ document.addEventListener('click', async e => {
     case 'export-pitch': exportPitch(d.mid, t); break;
     case 'record-result': if(requireAdmin()) openMatchEditor(d.mid, 'played'); break;
     case 'optimize-photos': if(requireAdmin()) optimizeStoredPhotos(); break;
-    case 'export-xlsx': if(requireAdmin()) exportXlsx(); break;
+    case 'backup-all': if(requireAdmin()) backupAll(); break;
     case 'import-xlsx': if(requireAdmin()){ $('#xlsxInput').value = ''; $('#xlsxInput').click(); } break;
     case 'change-pin': if(requireAdmin()){ $('#cpin-form').reset(); openModal('#m-cpin'); } break;
     case 'logout':
