@@ -366,6 +366,8 @@ button.affr:hover{border-color:var(--line)}
 .sh-row{background:linear-gradient(90deg,rgba(251,191,36,.35),rgba(251,191,36,.05))!important}
 .sh-row.rw-smeraldo{background:linear-gradient(90deg,rgba(52,211,153,.35),rgba(52,211,153,.05))!important}
 .sh-row.rw-notte{background:linear-gradient(90deg,rgba(96,165,250,.35),rgba(96,165,250,.05))!important}
+.jn{margin-left:.3em;font:800 .75em var(--body);color:var(--or);opacity:.9;white-space:nowrap}
+.jn-big{font:italic 800 18px var(--disp);color:var(--or)}
 .ldot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#22c55e;margin-left:2px;box-shadow:0 0 0 2px rgba(34,197,94,.3)}
 .msg-r{padding:10px 0;border-top:1px solid var(--hair)}
 .msg-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
@@ -2654,6 +2656,7 @@ function walletBetStats(st){
   st.betN = n; st.betWon = won; st.betPct = n ? won / n * 100 : 0;
 }
 function walletExtra(st, mov){
+  for(const a of auctionList()) if(a.status === 'closed' && a.winner === st.pid && a.closedAt) mov.push({ t:a.closedAt, kind:'jersey', label:`Maglia numero ${a.num}`, delta:-a.price, ref:a.aid });
   for(const b of shopBuys(st.pid)) mov.push({ t:b.at, kind:'shop', label:'Negozio: ' + SHOP_BY_ID[b.item].name, delta:-b.price, ref:b.bid });
   const B = (store.casino && store.casino.bets) || {};
   for(const [mid, bets] of Object.entries(B)){
@@ -5185,7 +5188,7 @@ async function placePool(mid, kind, sel, did){
   const blk = poolBlock(mid, me, kind, sel, d); if(blk){ toast(blk, 'warn'); return; }
   const mine = Object.values((store.casino.pools && store.casino.pools[mid]) || {}).find(b => b && b.pid === me && b.kind === kind && (kind === 'mvp' || b.did === did) && poolBetValid(mid, b));
   if(mine){ toast('Hai già giocato qui: la scelta è definitiva', 'warn'); return; }
-  if(Math.floor(w.bal) < stake){ toast('Non hai abbastanza ' + CURRENCY, 'warn'); return; }
+  if(shopAvail(me) < stake){ toast('Non hai abbastanza ' + CURRENCY, 'warn'); return; }
   const what = kind === 'mvp' ? `${pname(sel)} come MVP` : `${sel === 'a' ? duelSideName(d.a) : duelSideName(d.b)} (${duelTitle(d)})`;
   const ok = await confirmDlg('Confermi la scelta?', `Punti ${stake} ${CURRENCY} su ${what}. Non potrai cambiarla.`, 'Conferma'); if(!ok) return;
   const msg2 = betAllowedMsg(); if(msg2 || mkState(mid).s !== 'open'){ toast(msg2 || 'Scommesse chiuse', 'warn'); return; }
@@ -5355,8 +5358,10 @@ function cosOf(pid, now = Date.now()){
   return out;
 }
 /* Saldo disponibile per comprare: mai negativo */
+/* Saldo spendibile: saldo meno le patate trattenute; vale per acquisti, puntate, monti e offerte */
 const shopAvail = pid => { const w = walletOf(pid); return w ? Math.max(0, Math.floor(w.bal) - auctionHold(pid)) : 0; };
-const auctionHold = pid => 0;   /* le offerte in testa alle aste trattengono patate (si aggiunge con le aste) */
+/* Patate trattenute dalle offerte più alte nelle aste aperte: derivate, mai scritte. Chi viene superato le riottiene subito */
+const auctionHold = pid => auctionList().filter(a => a.status === 'open').reduce((t, a) => { const top = auctionTop(a); return t + (top && top.pid === pid ? top.amt : 0); }, 0);
 const shopBlock = (pid, id) => {
   const it = SHOP_BY_ID[id], c = shopCfg(id), own = shopOwned(pid);
   if(!it || it.merit) return 'Oggetto non acquistabile';
@@ -5365,6 +5370,120 @@ const shopBlock = (pid, id) => {
   if(shopAvail(pid) < c.price) return `Servono ${fmtPat(c.price)} ${CURRENCY}`;
   return '';
 };
+/* ---------- Aste dei numeri di maglia (solo l'admin le gestisce) ----------
+   casino/auctions/{aid} = { num, status:'open'|'closed'|'void', openedAt, minBid, winner?, price?, closedAt? }
+   casino/auctions/{aid}/bids/{id} = { pid, amt, at }. Il numero dura come gli altri oggetti (30 giorni dall'assegnazione), poi torna libero. */
+const JERSEY_MIN = 1, JERSEY_MAX = 99;
+const jerseyDays = () => { const c = shopNode().cfg && shopNode().cfg.jersey; const d = Math.round(Number(c && c.days)); return Number.isFinite(d) && d >= 1 && d <= 3650 ? d : SHOP_DAYS; };
+function auctionList(){
+  const A = (store.casino && store.casino.auctions) || {}, out = [];
+  for(const [aid, a] of Object.entries(A)){
+    if(!a || !Number.isInteger(Number(a.num)) || a.num < JERSEY_MIN || a.num > JERSEY_MAX || !['open', 'closed', 'void'].includes(a.status)) continue;
+    out.push({ aid, num:Number(a.num), status:a.status, openedAt:Number(a.openedAt) || 0, minBid:Math.max(1, Math.round(Number(a.minBid)) || 1), winner:a.winner, price:Math.max(0, Math.round(Number(a.price)) || 0), closedAt:Number(a.closedAt) || 0, bids:a.bids || {} });
+  }
+  return out;
+}
+/* Offerte valide in ordine di tempo: ognuna deve superare quella in testa in quel momento (e il minimo). In testa: la più alta, a parità la prima */
+function auctionBids(a){
+  const rows = Object.entries(a.bids || {}).filter(([, b]) => b && typeof b.pid === 'string' && store.players[b.pid] && Number.isInteger(Number(b.amt)) && Number(b.amt) >= 1 && Number.isFinite(Number(b.at)))
+    .map(([id, b]) => ({ id, pid:b.pid, amt:Number(b.amt), at:Number(b.at) })).sort((x, y) => x.at - y.at || x.amt - y.amt), ok = []; let top = 0;
+  for(const b of rows) if(b.amt >= a.minBid && b.amt > top){ ok.push(b); top = b.amt; }
+  return ok;
+}
+const auctionTop = a => { const b = auctionBids(a); return b.length ? b[b.length - 1] : null; };
+/* Numeri assegnati e ancora validi: { numero: { pid, until } } */
+function jerseyOwners(now = Date.now()){
+  const own = {};
+  for(const a of auctionList().filter(x => x.status === 'closed' && store.players[x.winner] && x.closedAt).sort((x, y) => x.closedAt - y.closedAt)){
+    const until = a.closedAt + jerseyDays() * DAY_MS; if(until > now) own[a.num] = { pid:a.winner, until }; else if(own[a.num] && own[a.num].until <= now) delete own[a.num];
+  }
+  return own;
+}
+function jerseyOf(pid, now = Date.now()){
+  if(!feat('casino') || !pid) return null;
+  let best = null; for(const [n, o] of Object.entries(jerseyOwners(now))) if(o.pid === pid && (!best || o.until > best.until)) best = { num:Number(n), until:o.until };
+  return best;
+}
+function bidBlock(pid, a, amt){
+  if(!a || a.status !== 'open') return 'L’asta è chiusa';
+  if(jerseyOf(pid)) return 'Hai già un numero di maglia attivo';
+  const top = auctionTop(a);
+  if(top && top.pid === pid) return 'Sei già in testa';
+  if(!Number.isInteger(amt) || amt < 1) return 'Scrivi un’offerta intera';
+  if(amt < a.minBid) return `Offerta minima ${fmtPat(a.minBid)}`;
+  if(top && amt <= top.amt) return `Devi offrire più di ${fmtPat(top.amt)}`;
+  if(amt > shopAvail(pid)) return 'Non hai abbastanza ' + CURRENCY;
+  return '';
+}
+let bidBusy = false;
+async function placeBid(aid, amt){
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  if(db && syncState !== 'live'){ toast('Per offrire serve la connessione', 'warn'); return; }
+  if(bidBusy) return;
+  const me = myPid(); if(!me || !store.players[me]){ toast('Scegli prima la tua carta nella sezione Io', 'warn'); return; }
+  const a = auctionList().find(x => x.aid === aid), blk = bidBlock(me, a, amt); if(blk){ toast(blk, 'warn'); return; }
+  const ok = await confirmDlg(`Offrire ${fmtPat(amt)} ${CURRENCY}?`, `Per il numero ${a.num}. Le patate restano trattenute finché sei in testa; se qualcuno offre di più le riottieni subito. Se vinci, si pagano.`, 'Offri'); if(!ok) return;
+  if(!feat('casino') || (db && syncState !== 'live')){ toast('Nessuna offerta inviata', 'warn'); return; }
+  const a2 = auctionList().find(x => x.aid === aid), blk2 = bidBlock(me, a2, amt); if(blk2){ toast(blk2, 'warn'); return; }
+  bidBusy = true;
+  try{ await commit({ [`casino/auctions/${aid}/bids/${newId()}`]:{ pid:me, amt, at:Date.now() } }, `Offerta di ${fmtPat(amt)} ${CURRENCY} per il numero ${a.num}`); }
+  finally{ bidBusy = false; renderCasino(); }
+}
+function auctionsHTML(me){
+  const open = auctionList().filter(a => a.status === 'open').sort((a, b) => a.num - b.num), owners = jerseyOwners(), guest = !me || !store.players[me], off = !!db && syncState !== 'live';
+  const mine = guest ? null : jerseyOf(me);
+  const rows = open.map(a => { const top = auctionTop(a), min = top ? top.amt + 1 : a.minBid, blk = guest ? 'Scegli la tua carta' : bidBlock(me, a, min);
+    return `<div class="sh-r"><span class="sh-pv jn-big" aria-hidden="true">#${a.num}</span><span class="sh-t"><b>Numero ${a.num}</b><small>${top ? `In testa: ${esc(pname(top.pid))} con ${fmtPat(top.amt)} ${CURRENCY}` : `Nessuna offerta (minimo ${fmtPat(a.minBid)})`}</small>
+      ${guest ? '' : `<div class="sl-in"><input class="field sl-i" type="number" inputmode="numeric" min="${min}" step="1" value="${min}" id="bid-${a.aid}" aria-label="Offerta per il numero ${a.num}"><button type="button" class="btn sm primary" data-action="bid" data-aid="${a.aid}" ${off ? 'disabled' : ''}>Offri</button></div>${blk && !off ? `<small class="sl-e">${esc(blk)}</small>` : ''}`}</span></div>`; }).join('');
+  const own = Object.entries(owners).sort((a, b) => a[0] - b[0]).map(([n, o]) => `<span class="mu sm">#${n} ${esc(pname(o.pid))} (${dayLeft(o.until)})</span>`).join(' · ');
+  if(!open.length && !own) return '';
+  return `<div class="glass cs-hist"><h3>Numeri di maglia</h3>${mine ? `<p class="vb-me">Il tuo numero: <b>#${mine.num}</b> (${dayLeft(mine.until)})</p>` : ''}${rows || '<p class="mu sm" style="margin:0 0 6px">Nessuna asta aperta.</p>'}${own ? `<div style="margin-top:8px">Assegnati: ${own}</div>` : ''}<p class="mu sm" style="margin:8px 0 0">I numeri si ottengono solo all’asta. Le patate dell’offerta in testa restano trattenute.</p></div>`;
+}
+/* Admin: crea, chiudi e assegna, annulla */
+function auctionAdminHTML(){
+  const L = auctionList().sort((a, b) => b.openedAt - a.openedAt), open = L.filter(a => a.status === 'open'), recent = L.filter(a => a.status !== 'open').slice(0, 6), owners = jerseyOwners();
+  return `<h3>Aste dei numeri</h3><p class="mu sm">Il numero dura ${jerseyDays()} giorni dall’assegnazione. Le offerte si pagano alla chiusura; chi è superato riottiene subito le patate.</p>
+    <div class="sl-in"><input class="field sl-i" id="au-n" type="number" inputmode="numeric" min="${JERSEY_MIN}" max="${JERSEY_MAX}" step="1" placeholder="Numero (1-99)" aria-label="Numero"><input class="field sl-i" id="au-m" type="number" inputmode="numeric" min="1" step="1" value="10" aria-label="Offerta minima"><button type="button" class="btn sm primary" data-action="au-new">Apri asta</button></div>
+    <h4 class="vi-h">Aste aperte</h4>${open.length ? open.map(a => { const top = auctionTop(a); return `<div class="vi-r"><b>#${a.num}</b><span>${top ? `${esc(pname(top.pid))}: ${fmtPat(top.amt)}` : 'nessuna offerta'} · ${auctionBids(a).length} offerte</span><button type="button" class="btn sm primary" data-action="au-close" data-aid="${a.aid}" ${top ? '' : 'disabled'}>Chiudi e assegna</button><button type="button" class="btn sm ghost" data-action="au-void" data-aid="${a.aid}">Annulla</button></div>`; }).join('') : '<p class="mu sm">Nessuna.</p>'}
+    <h4 class="vi-h">Numeri assegnati</h4>${Object.keys(owners).length ? Object.entries(owners).map(([n, o]) => `<div class="vi-l">#${n}: ${esc(pname(o.pid))}, ${dayLeft(o.until)}</div>`).join('') : '<p class="mu sm">Nessuno.</p>'}
+    ${recent.length ? `<h4 class="vi-h">Ultime aste</h4>${recent.map(a => `<div class="vi-l">#${a.num}: ${a.status === 'closed' ? `assegnato a ${esc(pname(a.winner))} per ${fmtPat(a.price)}` : 'annullata'}</div>`).join('')}` : ''}`;
+}
+const refreshAuctionAdmin = () => { if($('#m-ca').classList.contains('open') && /<h3>Aste dei numeri<\/h3>/.test($('#ca-body').innerHTML)) $('#ca-body').innerHTML = auctionAdminHTML(); };
+function openAuctionAdmin(){
+  if(!ui.admin) return;
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  $('#ca-body').innerHTML = auctionAdminHTML(); openModal('#m-ca');
+}
+function auctionGuard(){
+  if(!ui.admin) return false;
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return false; }
+  if(db && syncState !== 'live'){ toast('Serve la connessione', 'warn'); return false; }
+  return true;
+}
+async function auctionNew(){
+  if(!auctionGuard()) return;
+  const n = Math.round(Number($('#au-n').value)), min = Math.round(Number($('#au-m').value));
+  if(!Number.isInteger(n) || n < JERSEY_MIN || n > JERSEY_MAX){ toast(`Il numero va da ${JERSEY_MIN} a ${JERSEY_MAX}`, 'warn'); return; }
+  if(!Number.isInteger(min) || min < 1 || min > 100000){ toast('Offerta minima non valida', 'warn'); return; }
+  if(jerseyOwners()[n]){ toast('Quel numero è già assegnato', 'warn'); return; }
+  if(auctionList().some(a => a.status === 'open' && a.num === n)){ toast('C’è già un’asta aperta per quel numero', 'warn'); return; }
+  await commit({ [`casino/auctions/${newId()}`]:{ num:n, status:'open', openedAt:Date.now(), minBid:min } }, `Asta aperta per il numero ${n}`); refreshAuctionAdmin();
+}
+async function auctionClose(aid){
+  if(!auctionGuard()) return;
+  const a = auctionList().find(x => x.aid === aid); if(!a || a.status !== 'open') return;
+  const top = auctionTop(a); if(!top){ toast('Nessuna offerta: annulla l’asta', 'warn'); return; }
+  if(jerseyOf(top.pid)){ toast(pname(top.pid) + ' ha già un numero attivo: annulla l’asta', 'warn'); return; }
+  const ok = await confirmDlg(`Assegnare il numero ${a.num}?`, `Va a ${pname(top.pid)} per ${fmtPat(top.amt)} ${CURRENCY}, che vengono addebitate subito.`, 'Assegna'); if(!ok) return;
+  const a2 = auctionList().find(x => x.aid === aid), t2 = a2 && auctionTop(a2); if(!a2 || a2.status !== 'open' || !t2 || t2.id !== top.id){ toast('Le offerte sono cambiate: ricontrolla', 'warn'); refreshAuctionAdmin(); return; }
+  await commit({ [`casino/auctions/${aid}/status`]:'closed', [`casino/auctions/${aid}/winner`]:top.pid, [`casino/auctions/${aid}/price`]:top.amt, [`casino/auctions/${aid}/closedAt`]:Date.now() }, `Numero ${a.num} assegnato a ${pname(top.pid)}`); refreshAuctionAdmin();
+}
+async function auctionVoid(aid){
+  if(!auctionGuard()) return;
+  const a = auctionList().find(x => x.aid === aid); if(!a || a.status !== 'open') return;
+  const ok = await confirmDlg('Annullare l’asta?', 'Le offerte decadono e tutte le patate trattenute tornano disponibili.', 'Annulla asta', true); if(!ok) return;
+  await commit({ [`casino/auctions/${aid}/status`]:'void' }, `Asta del numero ${a.num} annullata`); refreshAuctionAdmin();
+}
 let shopBusy = false;
 /* Acquisto: una voce in casino/shop/buys e, se la categoria non ha un oggetto attivo, l'oggetto diventa attivo */
 async function shopBuy(id){
@@ -5404,10 +5523,10 @@ const EMBLEMS = {
 const emblemSVG = id => EMBLEMS[id] ? `<svg class="emb emb-${id.slice(3)}" viewBox="0 0 24 24" fill="currentColor" role="img" aria-label="${esc(SHOP_BY_ID[id].name)}">${EMBLEMS[id]}</svg>` : '';
 /* Il nome di un giocatore con colore, effetto e stemma scelti. Senza oggetti attivi restituisce il solo testo: l'HTML di prima, identico */
 function nameHTML(pid, text){
-  const t = text != null ? text : pname(pid), c = cosOf(pid);
-  if(!c.ncol && !c.nfx && !c.emblem) return esc(t);
+  const t = text != null ? text : pname(pid), c = cosOf(pid), j = jerseyOf(pid), jn = j ? `<span class="jn" title="Numero di maglia">#${j.num}</span>` : '';
+  if(!c.ncol && !c.nfx && !c.emblem) return esc(t) + jn;
   const cls = ['nmx', c.ncol && 'nc-' + c.ncol.slice(3), c.nfx && 'nf-' + c.nfx.slice(3)].filter(Boolean).join(' ');
-  return `<span class="${cls}">${esc(t)}</span>${c.emblem ? emblemSVG(c.emblem) : ''}`;
+  return `<span class="${cls}">${esc(t)}</span>${c.emblem ? emblemSVG(c.emblem) : ''}${jn}`;
 }
 /* Cornice e ologramma alternativo della figurina: sono strati in più sopra la figurina. Livello (Bronzo/Argento/Oro/Diamante) e OVR restano quelli di sempre */
 function cardFx(pid){
@@ -5455,7 +5574,7 @@ function shopTabHTML(me){
       const hold = it.merit ? (it.merit.plq ? (STATS.plaques[it.merit.plq] || {}).pid : (casinoRecords()[it.merit.rec] || {}).pid) : null, btn = it.merit ? `<span class="mu sm">Solo per merito${hold ? ' · lo detiene ' + esc(pname(hold)) : ''}</span>` : o ? `<span class="mu sm">Posseduto, ${dayLeft(o.until)}</span>` : `<button type="button" class="btn sm primary" data-action="shop-buy" data-item="${it.id}" ${blk || off ? 'disabled' : ''}>${fmtPat(c.price)} ${CURRENCY}</button>`;
       return `<div class="sh-r">${shopPreviewHTML(it.id)}<span class="sh-t"><b>${esc(it.name)}</b><small>${esc(it.desc)}${it.merit ? '' : ` · dura ${c.days} giorni`}</small>${!o && blk && !guest && !it.merit ? `<small class="sl-e">${esc(blk)}</small>` : ''}</span>${btn}</div>`; }).join('')}</div>`;
   }).join('');
-  return `${guest ? '<div class="glass cs-note">Puoi guardare il negozio. Per comprare scegli la tua carta nella sezione Io.</div>' : `<div class="glass cs-note">Puoi spendere <b>${fmtPat(avail)}</b> ${CURRENCY}. Ogni oggetto dura 30 giorni dall’acquisto, poi scade. Uno solo per categoria è attivo: scegli quale.${off ? ' Per comprare serve la connessione.' : ''}</div>`}${myHTML}${cats}`;
+  return `${guest ? '<div class="glass cs-note">Puoi guardare il negozio. Per comprare scegli la tua carta nella sezione Io.</div>' : `<div class="glass cs-note">Puoi spendere <b>${fmtPat(avail)}</b> ${CURRENCY}. Ogni oggetto dura 30 giorni dall’acquisto, poi scade. Uno solo per categoria è attivo: scegli quale.${off ? ' Per comprare serve la connessione.' : ''}</div>`}${myHTML}${auctionsHTML(me)}${cats}`;
 }
 /* Admin: prezzi, durata e disponibilità di ogni oggetto */
 function shopAdminHTML(){
@@ -5509,7 +5628,7 @@ function slipCheck(){
   if(!w){ err.push('Per puntare scegli prima la tua carta nella sezione Io'); return out; }
   if(st.s !== 'open'){ err.push('Le scommesse di questa gara sono chiuse'); return out; }
   if(m && kickDate(m) && Date.now() >= kickDate(m).getTime()){ err.push('La gara è iniziata: scommesse chiuse'); return out; }
-  const S = mk.m; out.bal = Math.max(0, Math.floor(w.bal));
+  const S = mk.m; out.bal = shopAvail(me);   /* senza le patate trattenute dalle aste */
   for(const l of sl.legs){ const b = betLegBlock(S, me, l); if(b) err.push(b); }
   if(err.length) return out;
   const groups = sl.mode === 'combo' && sl.legs.length > 1 ? [sl.legs] : sl.legs.map(l => [l]);
@@ -5928,7 +6047,8 @@ function renderAdmin(){
       <button class="tile" data-action="new-match"><span class="ic">📝</span><b>Registra gara</b><span>Schiera le squadre e segna gol, assist e autogol.</span></button>
       <button class="tile" data-action="stars-view"><span class="ic">⭐</span><b>Voti a stelle</b><span>Per ogni gara: quanti voti ha preso ognuno, la media e il bonus. Mai chi ha votato.</span></button>
       ${feat('messages') ? `<button class="tile" data-action="msg-admin"><span class="ic">✉️</span><b>Richieste${msgNew() ? `<span class="cbadge">${msgNew()}</span>` : ''}</b><span>Messaggi degli amici: leggi, segna come risolti, archivia.</span></button>` : ''}
-      ${feat('casino') ? `<button class="tile" data-action="shop-admin"><span class="ic">🛍️</span><b>Negozio</b><span>Prezzi, durata e disponibilità di ogni oggetto.</span></button>
+      ${feat('casino') ? `<button class="tile" data-action="auction-admin"><span class="ic">🔢</span><b>Aste dei numeri</b><span>Apri, chiudi e assegna i numeri di maglia.</span></button>
+      <button class="tile" data-action="shop-admin"><span class="ic">🛍️</span><b>Negozio</b><span>Prezzi, durata e disponibilità di ogni oggetto.</span></button>
       <button class="tile" data-action="bets-admin"><span class="ic">🎰</span><b>Scommesse</b><span>Elenco delle scommesse di ogni gara, con “Annulla scommessa”.</span></button>
       <button class="tile" data-action="adj-admin"><span class="ic">🥔</span><b>Rettifica saldo</b><span>Aggiungi o togli ${CURRENCY} a un giocatore, con un motivo.</span></button>` : ''}
       <button class="tile" data-action="prof-list"><span class="ic">🪪</span><b>Richieste schede${profPending().length ? `<span class="cbadge">${profPending().length}</span>` : ''}</b><span>Approva o rifiuta le schede dei giocatori (nascita, nazionalità, ruolo preciso).</span></button>
@@ -7104,6 +7224,11 @@ document.addEventListener('click', async e => {
     case 'msg-st': msgSetSt(d.id, d.st); break;
     case 'msg-arch': msgSetArch(d.id, d.v === '1'); break;
     case 'msg-del': msgDelete(d.id); break;
+    case 'auction-admin': openAuctionAdmin(); break;
+    case 'au-new': auctionNew(); break;
+    case 'au-close': auctionClose(d.aid); break;
+    case 'au-void': auctionVoid(d.aid); break;
+    case 'bid': { const el = $('#bid-' + d.aid); placeBid(d.aid, Math.round(Number(el && el.value))); break; }
     case 'shop-admin': openShopAdmin(); break;
     case 'shop-buy': shopBuy(d.item); break;
     case 'shop-act': shopActivate(d.cat, d.item); break;
