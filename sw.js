@@ -1,8 +1,9 @@
 /* Service worker Comboniani 26/27.
-   - Pagina: prima la rete (così gli aggiornamenti arrivano subito), senza rete la copia salvata.
+   - Pagina (index.html, anche se richiesta come / o /index.html): prima la rete, senza HTTP cache, così gli aggiornamenti arrivano subito; senza rete la copia salvata.
    - Librerie e font dai CDN: copia salvata subito, aggiornata in background.
    - Il database Firebase non passa mai da qui: resta sempre in tempo reale. */
-const VERSION = 'cmb2627-v9';
+/* Nome della cache = "cmb-v" + APP_VERSION di index.html: da aggiornare insieme a ogni release */
+const VERSION = 'cmb-v1.1.0';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'];
 const CDN = /(^|\.)gstatic\.com$|(^|\.)cdnjs\.cloudflare\.com$|(^|\.)fonts\.googleapis\.com$|(^|\.)cdn\.jsdelivr\.net$/;
 
@@ -20,10 +21,10 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   if(/firebasedatabase\.app$|firebaseio\.com$/.test(url.hostname)) return;
 
-  if(req.mode === 'navigate'){
-    e.respondWith(fetch(req).then(res => {
-      const copy = res.clone();
-      caches.open(VERSION).then(c => c.put('./index.html', copy));
+  const isPage = req.mode === 'navigate' || (url.origin === self.location.origin && /(^|\/)(index\.html)?$/.test(url.pathname));
+  if(isPage){
+    e.respondWith(fetch(req, { cache:'no-cache' }).then(res => {
+      if(res && res.ok){ const copy = res.clone(); caches.open(VERSION).then(c => c.put('./index.html', copy)); }
       return res;
     }).catch(() => caches.match('./index.html')));
     return;

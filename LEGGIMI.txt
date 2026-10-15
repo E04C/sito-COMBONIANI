@@ -20,4 +20,4 @@ INSTALLAZIONE SUL TELEFONO
 
 AGGIORNAMENTI
 Ripubblica la cartella: tutti ricevono la nuova versione alla prossima apertura.
-Se cambi solo grafica o logica, puoi anche aumentare VERSION in sw.js per svuotare le vecchie cache.
+A ogni release aggiorna VERSION in sw.js ("cmb-v" + APP_VERSION di index.html): le vecchie cache vengono cancellate all'attivazione.
