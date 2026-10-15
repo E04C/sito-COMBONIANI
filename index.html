@@ -68,7 +68,19 @@ body:not(.is-admin) .admin-only{display:none!important}
   padding:calc(env(safe-area-inset-top,0px) + 10px) max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));
   background:linear-gradient(180deg,rgba(5,6,8,.94),rgba(5,6,8,.74));
   -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--hair)}
-.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brand{position:relative;display:flex;align-items:center;gap:11px;min-width:0}
+/* Lo stemma è un pulsante da 44x44 px: i margini negativi lo tengono largo 38 come prima, la barra non cambia */
+.crest-btn{position:relative;flex:none;width:44px;height:44px;margin:-3px;padding:3px;border:0;border-radius:50%;background:none;color:inherit;display:grid;place-items:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.crest-btn:focus-visible{outline:2px solid var(--or);outline-offset:1px}
+.crest-btn::before{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid #22c55e;opacity:0;pointer-events:none}
+.crest-btn::after{content:"!";position:absolute;top:-2px;right:-4px;width:17px;height:17px;border-radius:50%;background:#22c55e;color:#04210f;font:900 11px/17px var(--body);text-align:center;opacity:0;pointer-events:none}
+.crest-btn.on::before{opacity:1;box-shadow:0 0 12px rgba(34,197,94,.55);animation:newsPulse 2.6s ease-in-out infinite}
+.crest-btn.on::after{opacity:1}
+@keyframes newsPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.1);opacity:.5}}
+@media (prefers-reduced-motion:reduce){.crest-btn.on::before{animation:none}}
+.news-hint{position:absolute;left:0;top:calc(100% + 10px);z-index:45;padding:7px 12px;border-radius:12px;background:rgba(10,13,20,.97);border:1px solid rgba(34,197,94,.55);color:var(--tx);font:700 12.5px/1.2 var(--body);white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.45);opacity:0;transform:translateY(-4px);pointer-events:none;transition:opacity .25s,transform .25s}
+.news-hint::before{content:"";position:absolute;left:15px;top:-6px;width:10px;height:10px;background:rgba(10,13,20,.97);border-left:1px solid rgba(34,197,94,.55);border-top:1px solid rgba(34,197,94,.55);transform:rotate(45deg)}
+.news-hint.show{opacity:1;transform:none}
 .crest{width:38px;height:38px;flex:none;filter:drop-shadow(0 0 12px rgba(249,115,22,.35))}
 .brand h1{margin:0;font:italic 800 25px/.95 var(--disp);letter-spacing:.005em}
 .brand small{display:block;color:var(--mu);font:600 12.5px/1.2 var(--body);margin-top:3px;white-space:nowrap}
@@ -305,7 +317,8 @@ button.affr:hover{border-color:var(--line)}
 .locked p{color:var(--mu);margin:0 auto 18px;max-width:40ch}
 .db-info{margin-top:16px;padding:14px 18px;display:flex;flex-wrap:wrap;gap:8px 22px;color:var(--mu);font-size:13.5px;font-weight:600}
 .db-info b{color:var(--tx)}
-.appver{margin:22px 0 0;text-align:center;font-size:11.5px;font-weight:600;color:var(--mu2)}
+.appver{display:block;margin:12px auto 0;min-height:44px;padding:0 16px;border:0;background:none;text-align:center;font:600 11.5px/44px var(--body);color:var(--mu2);text-decoration:underline dotted;text-underline-offset:3px;-webkit-tap-highlight-color:transparent}
+.appver:hover{color:var(--mu)}
 .warnline{margin-top:12px;padding:12px 16px;border-radius:14px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.07);color:#fde68a;font-weight:600;font-size:13.5px}
 
 /* ---------- Modals ---------- */
@@ -1415,7 +1428,8 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 
 <header class="topbar">
   <div class="brand">
-    <svg class="crest" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbbf24"/><stop offset=".45" stop-color="#f97316"/><stop offset="1" stop-color="#ea580c"/></linearGradient></defs><path d="M16 2h16l14 14v16L32 46H16L2 32V16z" fill="#0a0d14" stroke="url(#cg)" stroke-width="2.5"/><path d="M24 11l3.8 9.2L37 24l-9.2 3.8L24 37l-3.8-9.2L11 24l9.2-3.8z" fill="url(#cg)"/></svg>
+    <button type="button" id="newsBtn" class="crest-btn" data-action="open-news" aria-label="Novità"><svg class="crest" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbbf24"/><stop offset=".45" stop-color="#f97316"/><stop offset="1" stop-color="#ea580c"/></linearGradient></defs><path d="M16 2h16l14 14v16L32 46H16L2 32V16z" fill="#0a0d14" stroke="url(#cg)" stroke-width="2.5"/><path d="M24 11l3.8 9.2L37 24l-9.2 3.8L24 37l-3.8-9.2L11 24l9.2-3.8z" fill="url(#cg)"/></svg></button>
+    <span class="news-hint" id="newsHint" role="status">Tocca lo stemma per le novità</span>
     <div><h1>Comboniani</h1><small>Stagione 26/27, calciotto</small></div>
   </div>
   <div class="grow"></div>
@@ -1480,7 +1494,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
   <section id="view-trophies" class="view" aria-label="Trofei e primati" hidden><div id="troph"></div></section>
 
   <section id="view-admin" class="view" aria-label="Area admin" hidden><div id="admin"></div></section>
-  <div class="appver" id="appver"></div>
+  <button type="button" class="appver" id="appver" data-action="open-news"></button>
 </main>
 
 <!-- Figurina giocatore -->
@@ -3237,6 +3251,7 @@ function flow(){
       });
       if(pendR) openRateGate(pendR);
     }
+    newsHintShow();   /* solo se nessuna finestra obbligatoria si è aperta */
   }catch(e){ console.warn('flow', e); }
 }
 /* ---------- Voto anonimo ai compagni (1-5 stelle) ----------
@@ -5688,6 +5703,19 @@ let newsSeenMem = '';
 function newsSeenGet(){ try{ return localStorage.getItem(NEWS_KEY) || newsSeenMem; }catch(e){ return newsSeenMem; } }
 function newsSeenSet(v){ newsSeenMem = v; try{ localStorage.setItem(NEWS_KEY, v); }catch(e){} }
 const newsHasNew = () => verCmp(APP_VERSION, newsSeenGet()) > 0;
+/* Scritta di scoperta, una sola volta (cmb_newsHint): non durante la splash né con una finestra aperta (chi sei, voto, risultato…).
+   Sparisce da sola dopo 6 secondi o al primo tocco. Con localStorage bloccato non compare (non potremmo ricordarla). */
+let newsHintT = 0;
+function newsHintHide(){ clearTimeout(newsHintT); const h = $('#newsHint'); if(h) h.classList.remove('show'); }
+function newsHintShow(){
+  let seen = true; try{ seen = !!localStorage.getItem('cmb_newsHint'); }catch(e){}
+  const h = $('#newsHint');
+  if(seen || !h || $('#splash') || document.querySelector('.modal.open')) return;
+  try{ localStorage.setItem('cmb_newsHint', '1'); }catch(e){ return; }
+  h.classList.add('show');
+  newsHintT = setTimeout(newsHintHide, 6000);
+  document.addEventListener('pointerdown', newsHintHide, { once:true, capture:true });
+}
 /* Lo stemma si accende (classe "on") quando ci sono novità non ancora aperte */
 function newsPaint(){ const b = $('#newsBtn'); if(b) b.classList.toggle('on', newsHasNew()); }
 /* Versioni dalla più recente; "Nuovo" su quelle più recenti dell'ultima aperta (alla prima visita solo sull'ultima) */
@@ -5698,6 +5726,7 @@ function newsHTML(seen){
   }).join('');
 }
 function openNews(){
+  newsHintHide();
   const seen = newsSeenGet();                       /* prima di aggiornarla: serve a mostrare cosa è nuovo */
   $('#nw-body').innerHTML = newsHTML(seen);
   newsSeenSet(APP_VERSION); newsPaint();
@@ -5730,7 +5759,8 @@ window.addEventListener('appinstalled', () => { $('#installBtn').hidden = true; 
   if(ios && !standalone && !localStorage.getItem('cmb_iosHint')) setTimeout(() => { $('#ios-hint').hidden = false; }, 4500);
 })();
 
-{ const av = $('#appver'); if(av) av.textContent = 'v' + APP_VERSION; }
+{ const av = $('#appver'); if(av) av.textContent = 'v' + APP_VERSION + ' · Novità'; }
+newsPaint();
 /* Migrazione 1.1.0: l'OVR si ricalcola da zero (autogol -1, niente bonus MVP). Si azzerano i "già visto" per non mostrare popup finti: il codice li ricrea in silenzio */
 try{
   if(!localStorage.getItem('cmb_mig_v110')){
