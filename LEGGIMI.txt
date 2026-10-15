@@ -1,0 +1,23 @@
+COMBONIANI 26/27 - COME PUBBLICARE L'APP
+
+La cartella contiene tutto: index.html, manifest.webmanifest, sw.js, icons/ e la configurazione di Firebase Hosting.
+Pubblica SEMPRE l'intera cartella: con il solo index.html l'app funziona ma non si installa.
+
+OPZIONE A - Firebase Hosting (consigliata, stesso progetto del database)
+1. Installa Node.js da nodejs.org
+2. Da terminale:  npm install -g firebase-tools
+3. firebase login
+4. Entra nella cartella dell'app:  cd percorso/comboniani-app
+5. firebase deploy --only hosting
+   L'app sara' online su https://comboniani-noexcuses.web.app
+
+OPZIONE B - Netlify Drop (zero installazioni)
+Vai su app.netlify.com/drop e trascina l'intera cartella.
+
+INSTALLAZIONE SUL TELEFONO
+- Android (Chrome): compare il pulsante "Installa" in alto, oppure menu > Installa app.
+- iPhone (Safari): Condividi > Aggiungi alla schermata Home.
+
+AGGIORNAMENTI
+Ripubblica la cartella: tutti ricevono la nuova versione alla prossima apertura.
+Se cambi solo grafica o logica, puoi anche aumentare VERSION in sw.js per svuotare le vecchie cache.
