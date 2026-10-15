@@ -317,6 +317,21 @@ button.affr:hover{border-color:var(--line)}
 .locked p{color:var(--mu);margin:0 auto 18px;max-width:40ch}
 .db-info{margin-top:16px;padding:14px 18px;display:flex;flex-wrap:wrap;gap:8px 22px;color:var(--mu);font-size:13.5px;font-weight:600}
 .db-info b{color:var(--tx)}
+.fx-box{padding:16px 18px;margin-bottom:14px}
+.fx-box h3{margin:0 0 4px;font:italic 800 23px/1 var(--disp)}
+.fx-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--hair)}
+.fx-box h3+p+.fx-row{margin-top:8px}
+.fx-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.fx-tx b{font-size:15px}
+.fx-tx span{color:var(--mu);font-size:13px;line-height:1.35}
+.fx-tx small{color:var(--mu2);font-size:12px;font-weight:600}
+.sw{flex:none;position:relative;width:60px;min-height:44px;height:44px;padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sw::before{content:"";position:absolute;left:0;top:8px;width:60px;height:28px;border-radius:14px;background:rgba(255,255,255,.14);border:1px solid var(--line-strong);transition:background .2s,border-color .2s}
+.sw i{position:absolute;left:4px;top:12px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s var(--ease)}
+.sw.on::before{background:var(--or);border-color:var(--or)}
+.sw.on i{transform:translateX(32px)}
+.sw.dis{opacity:.5}
+.sw:focus-visible{outline:2px solid var(--or);outline-offset:2px;border-radius:14px}
 .appver{display:block;margin:12px auto 0;min-height:44px;padding:0 16px;border:0;background:none;text-align:center;font:600 11.5px/44px var(--body);color:var(--mu2);text-decoration:underline dotted;text-underline-offset:3px;-webkit-tap-highlight-color:transparent}
 .appver:hover{color:var(--mu)}
 .warnline{margin-top:12px;padding:12px 16px;border-radius:14px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.07);color:#fde68a;font-weight:600;font-size:13.5px}
@@ -1678,6 +1693,14 @@ const firebaseConfig = {
 };
 const APP_VERSION = '1.5.0';
 const DEFAULT_PIN = '2026';
+/* Interruttori delle funzioni: li accende e spegne l'admin (settings/features/{chiave}), valgono per tutti i dispositivi.
+   Il codice legge sempre e solo feat(chiave). Spenta = nascosta e disattivata; codice e dati restano, riaccesa torna tutto com'era. */
+const FEATURE_DEFAULTS = { casino:true, mvp:true, ratings:true };
+const FEATURES = [
+  { k:'casino',  name:'CASiNO',                       desc:'La sezione con portafoglio, scommesse e premi.' },
+  { k:'mvp',     name:'Voto MVP',                     desc:'La votazione dei giocatori per scegliere l’MVP di ogni gara.' },
+  { k:'ratings', name:'Voti a stelle ai compagni',    desc:'Le stelle anonime ai compagni di squadra e il bonus/malus nell’OVR.' }
+];
 const CACHE_KEY = 'cmb2627_cache_v1';
 const ROLES = { ATT:'Attaccante', CEN:'Centrocampista', DIF:'Difensore', JOLLY:'Jolly' };
 const FEET = { DX:'Destro', SX:'Sinistro', AMB:'Ambidestro' };
@@ -1771,7 +1794,7 @@ const COLS = [
    STATE
    ========================================================= */
 const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{} };
-const loaded = { players:false, matches:false };
+const loaded = { players:false, matches:false, settings:false };
 let localMode = false;
 const ui = {
   view:'dashboard',
@@ -1830,6 +1853,56 @@ function evDesc(x){
 /* =========================================================
    DATA LAYER (Firebase + cache locale di resilienza)
    ========================================================= */
+/* ---------- Interruttori ---------- */
+function feat(k){
+  const v = store.settings && store.settings.features && store.settings.features[k];
+  return typeof v === 'boolean' ? v : !!FEATURE_DEFAULTS[k];
+}
+const featSig = () => FEATURES.map(F => F.k + ':' + (feat(F.k) ? 1 : 0)).join(',');
+let featLocalAt = 0;
+/* Quando cambia una funzione (anche da un altro dispositivo): si azzerano i "già visto" prima del disegno, così il codice li ricrea in silenzio
+   e non compaiono popup finti di record, targhe o livelli. Agli spettatori arriva un avviso. Si agisce solo a impostazioni lette dal database. */
+function featSync(){
+  if(!(loaded.settings || localMode)) return;
+  const sig = featSig();
+  let old = null; try{ old = localStorage.getItem('cmb_featSig'); }catch(e){}
+  if(old === sig) return;
+  try{
+    ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr'].forEach(k => localStorage.removeItem(k));
+    localStorage.setItem('cmb_featSig', sig);
+  }catch(e){}
+  if(!old || Date.now() - featLocalAt < 6000) return;
+  const was = {}; old.split(',').forEach(x => { const [k, v] = x.split(':'); was[k] = v === '1'; });
+  const ch = FEATURES.filter(F => Object.prototype.hasOwnProperty.call(was, F.k) && was[F.k] !== feat(F.k));
+  if(ch.length) toast(ch.map(F => `L’organizzatore ha ${feat(F.k) ? 'acceso' : 'spento'}: ${F.name}`).join('. '), 'warn');
+}
+async function toggleFeature(k){
+  if(!ui.admin) return;
+  const F = FEATURES.find(x => x.k === k); if(!F) return;
+  if(db && syncState !== 'live'){ toast('Per cambiare le funzioni serve la connessione', 'warn'); return; }
+  const next = !feat(k);
+  const effect = {
+    casino:  next ? 'La sezione CASiNO ricompare per tutti, con saldi e dati com’erano.' : 'La sezione sparisce per tutti. I dati e i saldi restano e tornano se la riaccendi.',
+    mvp:     next ? 'Torna la votazione dell’MVP: l’MVP si decide di nuovo anche con i voti già dati.' : 'L’MVP sarà deciso solo dai punti. I voti già dati non contano finché è spento.',
+    ratings: next ? 'Ricompare la schermata dei voti a stelle e il bonus/malus torna nell’OVR.' : 'Spariscono i voti a stelle e il bonus/malus esce dall’OVR. I voti già dati restano salvati.'
+  }[k];
+  const ok = await confirmDlg(`${next ? 'Accendere' : 'Spegnere'} «${F.name}»?`, `${effect} Vale per tutti i dispositivi.`, next ? 'Accendi' : 'Spegni', !next);
+  if(!ok) return;
+  if(db && syncState !== 'live'){ toast('Connessione persa: non è stato cambiato nulla', 'warn'); return; }
+  featLocalAt = Date.now();
+  await commit({ ['settings/features/' + k]:next, ['settings/featuresAt/' + k]:Date.now() }, `${F.name}: ${next ? 'attiva' : 'spenta'}`);
+}
+function featuresHTML(){
+  const off = !!db && syncState !== 'live', at = store.settings && store.settings.featuresAt || {};
+  const fmt = t => t ? new Date(num(t)).toLocaleString('it-IT', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+  return `<div class="glass fx-box"><h3>Funzioni</h3>
+    <p class="mu sm">Accendi o spegni una funzione per tutti i dispositivi. Spenta sparisce e non fa nulla; i dati restano e, riaccesa, torna tutto com’era.</p>
+    ${FEATURES.map(F => { const on = feat(F.k), t = fmt(at[F.k]); return `<div class="fx-row">
+      <div class="fx-tx"><b>${F.name}</b><span>${F.desc}</span><small>${on ? 'Attiva' : 'Spenta'} · ${t ? 'modificato il ' + t : 'mai modificata'}${off ? ' · serve la connessione' : ''}</small></div>
+      <button type="button" class="sw ${on ? 'on' : ''} ${off ? 'dis' : ''}" role="switch" aria-checked="${on}" aria-label="${F.name}: ${on ? 'attiva' : 'spenta'}" data-action="feat-toggle" data-fx="${F.k}"><i></i></button>
+    </div>`; }).join('')}</div>`;
+}
+
 function loadCache(){
   try{
     const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
@@ -1911,7 +1984,7 @@ function initFirebase(){
   const onErr = err => { console.error(err); setSync('error'); toast('Lettura dal database negata. Controlla le regole di Firebase.', 'err'); };
   db.ref('players').on('value',  s => { store.players  = s.val() || {}; loaded.players = true; afterData(); }, onErr);
   db.ref('matches').on('value',  s => { store.matches  = s.val() || {}; loaded.matches = true; afterData(); }, onErr);
-  db.ref('settings').on('value', s => { store.settings = s.val() || {}; afterData(); }, onErr);
+  db.ref('settings').on('value', s => { store.settings = s.val() || {}; loaded.settings = true; afterData(); }, onErr);
   db.ref('votes').on('value', s => { store.votes = s.val() || {}; afterData(); }, onErr);
   /* Voto ai compagni: se le regole non permettono questi percorsi l'app continua a funzionare e l'admin vede il motivo nel pannello */
   db.ref('ratingsDone').on('value', s => { store.ratingsDone = s.val() || {}; loaded.ratingsDone = true; afterData(); }, () => { loaded.ratingsDone = true; ratingsProblem('read', 'ratingsDone'); });
@@ -2514,6 +2587,7 @@ function boardHTML(sc){
 let rq = false;
 function scheduleRender(){ if(rq) return; rq = true; requestAnimationFrame(() => { rq = false; render(); }); }
 function render(){
+  featSync();
   watchRatings(); watchProfileReq();
   /* Ruolo Portiere eliminato: i POR già salvati valgono come DIF solo in memoria, nel database non si riscrive nulla */
   for(const id in store.players){ const p = store.players[id]; if(p && p.role === 'POR') p.role = 'DIF'; }
@@ -4178,7 +4252,7 @@ const lockSVG = st => `<svg class="lk" viewBox="0 0 24 24" aria-hidden="true"><p
 /* Ricalcola targhe e primati dopo ogni gara (k = 1..N) per avere regno, storia e passaggi di mano */
 let histCache = { key:null, data:[] };
 function trophyHistory(){
-  const key = STATS.matches.map(m => m.id + ':' + (m.updatedAt || '')).join(',') + '|' + Object.keys(store.players).length + '|' + JSON.stringify(store.votes || {}).length + '|' + Object.values(store.players).map(p => p && p.role).join('');
+  const key = STATS.matches.map(m => m.id + ':' + (m.updatedAt || '')).join(',') + '|' + Object.keys(store.players).length + '|' + JSON.stringify(store.votes || {}).length + '|' + Object.values(store.players).map(p => p && p.role).join('') + '|' + featSig();
   if(histCache.key === key) return histCache.data;
   const keep = STATS, steps = [];
   try{
@@ -4378,6 +4452,7 @@ function renderAdmin(){
   }
   const mode = db ? (syncState === 'live' ? 'Firebase, sincronizzato' : 'Firebase, in attesa di connessione') : 'Solo su questo dispositivo';
   el.innerHTML = `<div class="toolbar"><h2 class="vtitle">Pannello admin</h2></div>
+    ${featuresHTML()}
     <div class="admin-grid">
       <button class="tile" data-action="new-sched"><span class="ic">🗓️</span><b>Programma gara</b><span>Data, ora e convocati bilanciati: tutti vedono dove giocano.</span></button>
       <button class="tile" data-action="new-match"><span class="ic">📝</span><b>Registra gara</b><span>Schiera le squadre e segna gol, assist e autogol.</span></button>
@@ -5517,6 +5592,7 @@ document.addEventListener('click', async e => {
     case 'optimize-photos': if(requireAdmin()) optimizeStoredPhotos(); break;
     case 'backup-all': if(requireAdmin()) backupAll(); break;
     case 'import-xlsx': if(requireAdmin()){ $('#xlsxInput').value = ''; $('#xlsxInput').click(); } break;
+    case 'feat-toggle': toggleFeature(d.fx); break;
     case 'change-pin': if(requireAdmin()){ $('#cpin-form').reset(); openModal('#m-cpin'); } break;
     case 'logout':
       ui.admin = false; ui.profToasted = false; ui.swapMode = false; ui.swapSel = null; sessionStorage.removeItem('cmb_admin');
