@@ -1659,7 +1659,7 @@ const COLS = [
 /* =========================================================
    STATE
    ========================================================= */
-const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{} };
+const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{} };
 const loaded = { players:false, matches:false };
 let localMode = false;
 const ui = {
@@ -1722,7 +1722,7 @@ function evDesc(x){
 function loadCache(){
   try{
     const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    if(c){ store.players = c.players || {}; store.matches = c.matches || {}; store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; }
+    if(c){ store.players = c.players || {}; store.matches = c.matches || {}; store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; }
   }catch(e){}
 }
 let cacheT;
@@ -1735,7 +1735,7 @@ function saveCache(){
       const { photo, ...rest } = p;
       return [k, (!rest.photoV && photo) ? p : rest];
     }));
-    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, photos:localMode ? store.photos : {} };
+    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, photos:localMode ? store.photos : {} };
     try{ localStorage.setItem(CACHE_KEY, JSON.stringify(data)); }
     catch(e){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, players:Object.fromEntries(Object.entries(players).map(([k, p]) => { const { photo, ...r } = p || {}; return [k, r]; })) })); }catch(e2){} }
   }, 400);
@@ -1802,6 +1802,8 @@ function initFirebase(){
   db.ref('matches').on('value',  s => { store.matches  = s.val() || {}; loaded.matches = true; afterData(); }, onErr);
   db.ref('settings').on('value', s => { store.settings = s.val() || {}; afterData(); }, onErr);
   db.ref('votes').on('value', s => { store.votes = s.val() || {}; afterData(); }, onErr);
+  /* Voto ai compagni: se le regole non permettono questi percorsi l'app continua a funzionare e l'admin vede il motivo nel pannello */
+  db.ref('ratingsDone').on('value', s => { store.ratingsDone = s.val() || {}; loaded.ratingsDone = true; afterData(); }, () => { loaded.ratingsDone = true; ratingsProblem('read', 'ratingsDone'); });
   db.ref('.info/connected').on('value', s => {
     if(s.val()){ everConnected = true; setSync('live'); anStart(); }
     else setSync(everConnected ? 'offline' : 'connecting');
@@ -1809,7 +1811,25 @@ function initFirebase(){
   setTimeout(() => { if(!everConnected && syncState === 'connecting') setSync('offline'); }, 9000);
 }
 function afterData(){ saveCache(); scheduleRender(); }
-const dataReady = () => localMode || (loaded.players && loaded.matches);
+const dataReady = () => localMode || (loaded.players && loaded.matches && ratingsReady());
+/* ---------- Voto anonimo ai compagni: percorsi ratings/{gara}/{rid} e ratingsDone/{gara}/{pid} ---------- */
+let ratingsIssue = null;           /* { kind:'read'|'write', path } se il database rifiuta questi percorsi: lo vede l'admin */
+const ratingsLoaded = {}, ratingsWatch = {};
+function ratingsProblem(kind, path){ ratingsIssue = { kind, path }; scheduleRender(); }
+/* Le stelle di una gara si scaricano solo a votazione chiusa: finché è aperta nessun dispositivo le riceve */
+function watchRatings(){
+  if(!db) return;
+  for(const [id, m] of Object.entries(store.matches || {})){
+    if(!m || !m.rate || m.status === 'scheduled' || ratingsWatch[id] || rateInfo({ id, ...m }).open) continue;
+    ratingsWatch[id] = 1;
+    db.ref('ratings/' + id).on('value', sn => { store.ratings[id] = sn.val() || {}; ratingsLoaded[id] = true; afterData(); }, () => { ratingsLoaded[id] = true; ratingsProblem('read', 'ratings/' + id); });
+  }
+}
+/* Pronti a calcolare l'OVR: per le gare con voto chiuso servono già le stelle (altrimenti l'OVR salterebbe a caricamento finito) */
+function ratingsReady(){
+  if(!db || ratingsIssue) return true;
+  return Object.entries(store.matches || {}).every(([id, m]) => !m || !m.rate || m.status === 'scheduled' || ratingsLoaded[id] || rateInfo({ id, ...m }).open);
+}
 
 /* ---------- FOTO SEPARATE: /photos/{pid} su Firebase, cache in IndexedDB per versione ---------- */
 const photoMem = {}, photoPending = {};
@@ -2070,6 +2090,47 @@ function voteInfo(m, preFn){
   const open = m.status !== 'scheduled' && !!m.voteClose && Date.now() < m.voteClose && n < eligible.length;
   return { eligible, votes, n, open, cands, candIds };
 }
+/* ---------- Voto ai compagni (1-5 stelle, anonimo). Solo gare con rate:1 ----------
+   Vota chi ha giocato (in rosa), tutti i compagni della stessa squadra effettiva (effTeam), se stesso escluso.
+   Massimo 3 voti da 5 stelle e 2 da 1 stella. Chiude a voteClose o quando hanno votato tutti. Bonus OVR = (media - 3) x 0,25, con almeno 3 votanti. */
+const RATE_MAX5 = 3, RATE_MAX1 = 2, RATE_MIN_N = 3, RATE_STEP = 0.25;
+function rateInfo(m){
+  const EE = effEntries(m), teamOf = {}, by = { white:[], black:[] };
+  for(const t of ['white', 'black']) for(const e of EE[t]) if(store.players[e.pid] && !(e.pid in teamOf)){ teamOf[e.pid] = t; by[t].push(e.pid); }
+  const targets = pid => (by[teamOf[pid]] || []).filter(p => p !== pid);
+  const voters = Object.keys(teamOf).filter(p => targets(p).length);
+  const done = (store.ratingsDone && store.ratingsDone[m.id]) || {};
+  const n = voters.filter(p => done[p]).length;
+  const open = !!m.rate && m.status !== 'scheduled' && !!m.voteClose && Date.now() < m.voteClose && n < voters.length;
+  return { voters, targets, teamOf, done, n, open };
+}
+/* Un voto è valido se dà una valutazione 1-5 a ciascun compagno (una sola volta), con al massimo 3 cinque stelle e 2 una stella */
+function ratingsValid(items, targets){
+  if(!Array.isArray(items) || items.length !== targets.length) return false;
+  const seen = new Set();
+  for(const it of items){
+    if(!it || !targets.includes(it.to) || seen.has(it.to) || !Number.isInteger(it.s) || it.s < 1 || it.s > 5) return false;
+    seen.add(it.to);
+  }
+  return items.filter(x => x.s === 5).length <= RATE_MAX5 && items.filter(x => x.s === 1).length <= RATE_MAX1;
+}
+/* Risultati di una gara a votazione chiusa: { pid: { n, avg, bonus } }. Aperta (o senza rate): vuoto */
+function rateResults(m){
+  const out = {};
+  if(!m.rate || m.status === 'scheduled') return out;
+  const info = rateInfo(m); if(info.open) return out;
+  const acc = {};
+  for(const rec of Object.values((store.ratings && store.ratings[m.id]) || {})){
+    if(!rec || !(rec.to in info.teamOf)) continue;                 /* verso chi non è più in distinta: ignorato */
+    const v = Number(rec.s); if(!Number.isInteger(v) || v < 1 || v > 5) continue;
+    (acc[rec.to] = acc[rec.to] || []).push(v);
+  }
+  for(const [pid, arr] of Object.entries(acc)){
+    const avg = arr.reduce((t, v) => t + v, 0) / arr.length;
+    out[pid] = { n:arr.length, avg, bonus:arr.length >= RATE_MIN_N ? (avg - 3) * RATE_STEP : 0 };
+  }
+  return out;
+}
 function matchMvp(m, preFn){
   if(!m.top4) return matchMvpLegacy(m);
   const sc = matchScore(m), vi = voteInfo(m, preFn), cnt = {};
@@ -2155,7 +2216,7 @@ function computeStats(upto){
     const m = ms[mi];
     if(mi === ms.length - 1 && ms.length > 1) snapPrev();
     const preFn = pid => (S[pid] ? S[pid].ovr : OVR_START);
-    const sc = matchScore(m), mv = matchMvp(m, preFn), aw = matchAwards(m), vi = voteInfo(m, preFn);
+    const sc = matchScore(m), mv = matchMvp(m, preFn), aw = matchAwards(m), vi = voteInfo(m, preFn), RR = rateResults(m);
     if(!vi.open) for(const t of Object.values(vi.votes)) if(S[t]) S[t].votesRx++;
     const awardIds = new Set(Object.values(aw).filter(Boolean).map(c => c.pid));
     const margin = Math.abs(sc.w - sc.b);
@@ -2183,7 +2244,8 @@ function computeStats(upto){
         const award = awardIds.has(e.pid);
         if(award) st.awards = (st.awards || 0) + 1;
         const preOvr = st.ovr;
-        const d = ovrDelta(st.p.role, st.ovr, { res:r, margin, conceded, g, a, og, mvp:isMvp, award });
+        /* il bonus delle stelle si somma dopo il delta già limitato dai tetti (+5/-3); la variazione mostrata lo include */
+        const d = ovrDelta(st.p.role, st.ovr, { res:r, margin, conceded, g, a, og, mvp:isMvp, award }) + (RR[e.pid] ? RR[e.pid].bonus : 0);
         st.ovr = Math.max(OVR_MIN, Math.min(OVR_MAX, st.ovr + d));
         st.last = { d, day:num(m.day) };
         (log[m.id] = log[m.id] || {})[e.pid] = { d, ovr:st.ovr, pre:preOvr };
@@ -2334,6 +2396,7 @@ function boardHTML(sc){
 let rq = false;
 function scheduleRender(){ if(rq) return; rq = true; requestAnimationFrame(() => { rq = false; render(); }); }
 function render(){
+  watchRatings();
   /* Ruolo Portiere eliminato: i POR già salvati valgono come DIF solo in memoria, nel database non si riscrive nulla */
   for(const id in store.players){ const p = store.players[id]; if(p && p.role === 'POR') p.role = 'DIF'; }
   attachPhotos();
