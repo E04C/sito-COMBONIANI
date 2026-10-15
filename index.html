@@ -368,7 +368,7 @@ button.affr:hover{border-color:var(--line)}
 .ed-team h4>span:first-child{display:flex;align-items:center;gap:8px}
 .cnt{font:800 12px var(--body);color:var(--mu);padding:3px 8px;border-radius:7px;background:rgba(255,255,255,.05)}
 .cnt.full{color:var(--or);background:var(--or-soft)}
-.erow{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px 10px;padding:9px 4px;border-top:1px solid rgba(255,255,255,.05)}
+.erow{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:8px 10px;padding:9px 4px;border-top:1px solid rgba(255,255,255,.05)}
 .erow .nm{font-weight:800;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .steps{grid-column:1/-1;display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
 .stp{display:inline-flex;align-items:center;border:1px solid var(--hair);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.02)}
@@ -378,6 +378,8 @@ button.affr:hover{border-color:var(--line)}
 .stp output{min-width:26px;text-align:center;font:italic 800 19px var(--disp);font-variant-numeric:tabular-nums}
 .stp.on{border-color:var(--line)}
 .stp.on output{color:var(--or)}
+.capb{width:32px;height:32px;border-radius:9px;border:1px solid var(--hair);background:none;color:var(--mu);font:800 14px var(--body);touch-action:manipulation}
+.capb[aria-pressed=true]{background:#fbbf24;border-color:#fbbf24;color:#0a0d14}
 .rm{width:32px;height:32px;border-radius:9px;border:1px solid var(--hair);background:none;color:var(--mu);font-size:18px;line-height:1}
 .sticky-actions{position:sticky;bottom:-20px;margin:16px -20px -20px;padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px));background:rgba(11,14,21,.97);border-top:1px solid var(--hair);z-index:3}
 
@@ -571,6 +573,14 @@ button.pcard:active .pc-fr{transform:scale(.96)}
 @media (min-width:1100px){.next{grid-column:1/-1}}
 .vs{display:flex;align-items:center;justify-content:center;gap:18px;margin:14px 0 6px}
 .vs .side-n{font-size:28px}
+.capsrow{display:flex;flex-basis:100%;flex-wrap:wrap;justify-content:center;gap:8px 22px}
+.capside{display:inline-flex;align-items:center;gap:8px;min-width:0}
+.capside .kit{width:30px}
+.capinfo{display:inline-flex;align-items:center;gap:7px;min-width:0;text-align:left}
+.capinfo>span{display:flex;flex-direction:column;gap:2px;min-width:0;line-height:1.1}
+.capinfo .cn{font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+.capinfo small{font:700 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--mu)}
+.vs .capinfo{margin-top:2px}
 .vs .vv{font:italic 800 42px/1 var(--disp);color:var(--or)}
 .ovbar{display:flex;align-items:center;gap:10px;margin:8px auto 4px;max-width:420px;font:italic 800 22px var(--disp)}
 .ovbar .bar{flex:1;height:8px;border-radius:4px;background:#1d2027;overflow:hidden;display:flex}
@@ -2259,7 +2269,7 @@ function renderDashboardInner(){
   const nx = STATS.scheduled[0];
   const next = nx ? `<div class="glass next" role="button" tabindex="0" data-open-match="${nx.id}" aria-label="Apri la gara in programma">
       <span class="tag">🗓️ Prossima gara</span><b>Giornata ${num(nx.day)}</b><span class="mu">${esc(whenLabel(nx) || 'Data da definire')}</span>
-      <span class="mu">OVR medio ${teamMean(nx.white).toFixed(1)} contro ${teamMean(nx.black).toFixed(1)}</span>${cdSpan(nx)}<span class="go">Scopri dove giochi</span></div>` : '';
+      <span class="mu">OVR medio ${teamMean(nx.white).toFixed(1)} contro ${teamMean(nx.black).toFixed(1)}</span>${cdSpan(nx)}<span class="go">Scopri dove giochi</span>${list(nx.white).length || list(nx.black).length ? `<span class="capsrow"><span class="capside">${kit('white')}${capInfoHTML(nx, 'white')}</span><span class="capside">${kit('black')}${capInfoHTML(nx, 'black')}</span></span>` : ''}</div>` : '';
   $('#dash').innerHTML = `<div class="dash">${next}${hero}
     <section class="glass">
       <div class="panel-h"><h2>Classifica generale</h2><span class="mu sm">Tocca un giocatore per aprire la figurina</span></div>
@@ -2712,7 +2722,7 @@ function scheduledDetailHTML(m){
     <div class="lineup" style="margin-top:0;padding-top:0;border:0">${list(m[team]).map(e => `<button class="lu" data-open-player="${e.pid}" ${store.players[e.pid] ? '' : 'disabled'}>${avatar(store.players[e.pid] || { name:e.n }, 'xs')}${esc(pname(e.pid, e.n))}</button>`).join('') || '<span class="mu sm">Nessun convocato</span>'}</div></div>`;
   return `<div class="mgrid sch"><article class="glass tab">
     <div class="hero-meta"><span class="tag">🗓️ In programma</span><span>Giornata ${num(m.day)}</span><span>${esc(whenLabel(m) || 'Data da definire')}</span>${cdSpan(m)}<span class="sum">${list(m.white).length} contro ${list(m.black).length}</span></div>
-    <div class="vs"><div class="side">${kit('white')}<span class="side-n">Bianchi</span></div><span class="vv">VS</span><div class="side">${kit('black')}<span class="side-n">Neri</span></div></div>
+    <div class="vs"><div class="side">${kit('white')}<span class="side-n">Bianchi</span>${capInfoHTML(m, 'white')}</div><span class="vv">VS</span><div class="side">${kit('black')}<span class="side-n">Neri</span>${capInfoHTML(m, 'black')}</div></div>
     <div class="ovbar" aria-label="OVR medio Bianchi ${mW.toFixed(1)}, Neri ${mB.toFixed(1)}"><span>${mW.toFixed(1)}</span><span class="bar"><i style="width:${share}%"></i><em></em></span><span>${mB.toFixed(1)}</span></div>
     <p class="mu sm" style="text-align:center;margin:0 0 12px">OVR medio delle due squadre</p>
     <div class="tab-cols">${col('white')}${col('black')}</div>
@@ -2728,6 +2738,17 @@ function scheduledDetailHTML(m){
 function captainOf(entries){
   const l = list(entries); if(!l.length) return null;
   return [...l].sort((a, b) => ((STATS.byId[b.pid]?.pres || 0) - (STATS.byId[a.pid]?.pres || 0)) || (ovrOf(b.pid) - ovrOf(a.pid)) || pname(a.pid, a.n).localeCompare(pname(b.pid, b.n), 'it'))[0].pid;
+}
+/* Capitano scelto dall'admin (capW / capB) se è ancora in quella squadra, altrimenti la regola automatica */
+function captainFor(m, team){
+  const pid = m[team === 'white' ? 'capW' : 'capB'];
+  if(pid && list(m[team]).some(e => e.pid === pid)) return pid;
+  return captainOf(m[team]);
+}
+function capInfoHTML(m, team){
+  const pid = captainFor(m, team); if(!pid) return '';
+  const e = list(m[team]).find(x => x.pid === pid);
+  return `<span class="capinfo">${avatar(store.players[pid] || { name:e?.n }, 'xs')}<span><span class="cn">${esc(pname(pid, e?.n))}</span><small>Capitano</small></span></span>`;
 }
 function autoOrder(entries){
   return [...list(entries)].sort((a, b) =>
@@ -2804,7 +2825,7 @@ function pitchHTML(m){
   const topT = ui.flip ? 'white' : 'black', botT = ui.flip ? 'black' : 'white';
   /* card alta ~24,5cqw su un campo di 220cqw: porta al 6%, linea d'attacco al 40,2% */
   const half = (team, pos) => {
-    const cap = captainOf(m[team]);
+    const cap = captainFor(m, team);
     return placeTeam(m, team).map(({ e, li, j, cnt, n }) => {
       const yTop = 6 + (n > 1 ? li * (34.2 / (n - 1)) : 0);
       const y = pos === 'top' ? yTop : 100 - yTop;
@@ -2848,7 +2869,7 @@ function pitchPanelHTML(m){
     </div>
     ${ui.admin && ui.swapMode ? `<div class="swap-hint">${ui.swapSel ? `Selezionato <b>${esc(pname(ui.swapSel.pid))}</b>: tocca il giocatore con cui scambiarlo.` : `Tocca due giocatori per scambiarli di posto${pre ? ', anche tra Bianchi e Neri' : ' (stessa squadra)'}. La disposizione si salva da sola.`}</div>` : ''}
     <div class="pp-wrap">${pitchHTML(m)}</div>
-    <p class="legend">In cima alla card la targa principale. C capitano (più presenze), 🌱 debutto, numero OVR${pre ? '' : ' dopo la gara con variazione, ⚽ gol, 👟 assist, 🟥 autogol, ⭐ MVP, 🏅 premio di reparto'}.</p>
+    <p class="legend">In cima alla card la targa principale. C capitano, 🌱 debutto, numero OVR${pre ? '' : ' dopo la gara con variazione, ⚽ gol, 👟 assist, 🟥 autogol, ⭐ MVP, 🏅 premio di reparto'}.</p>
   </section>`;
 }
 
@@ -2881,7 +2902,7 @@ function cPitchHTML(m, o = {}){
   const pre = !!o.pre, mv = pre ? null : matchMvp(m), awards = pre ? {} : matchAwards(m);
   const topT = o.flip ? 'white' : 'black', botT = o.flip ? 'black' : 'white';
   const half = (team, pos) => {
-    const cap = captainOf(m[team]);
+    const cap = captainFor(m, team);
     return placeTeam(m, team).map(({ e, li, j, cnt, n }) => {
       const yc = CP_Y0 + (n > 1 ? li * ((CP_Y1 - CP_Y0) / (n - 1)) : 0), yp = yc / CP_H * 100;
       const y = pos === 'top' ? yp : 100 - yp, x = cnt === 1 ? 50 : 14 + j * (72 / (cnt - 1));
@@ -3812,7 +3833,7 @@ function openMatchEditor(id, mode){
   const m = id ? store.matches[id] : null;
   const cp = arr => list(arr).map(e => ({ pid:e.pid, n:e.n, g:num(e.g), a:num(e.a), og:num(e.og) }));
   const wasSched = m?.status === 'scheduled';
-  ED = { id:id || null, day:m ? num(m.day) : nextDay(), date:m?.date || todayISO(), time:m?.time || '', end:m?.end || '', fmW:m?.fmW || DEF_FM, fmB:m?.fmB || DEF_FM, posW:m?.posW || null, posB:m?.posB || null,
+  ED = { id:id || null, day:m ? num(m.day) : nextDay(), date:m?.date || todayISO(), time:m?.time || '', end:m?.end || '', fmW:m?.fmW || DEF_FM, fmB:m?.fmB || DEF_FM, posW:m?.posW || null, posB:m?.posB || null, capW:m?.capW || null, capB:m?.capB || null,
          white:cp(m?.white), black:cp(m?.black), called:[], status:mode || (wasSched ? 'scheduled' : 'played'),
          goals:list(m?.goals).map(g => ({ s:g.s, a:g.a || '', og:!!num(g.og), min:(g.min == null ? null : num(g.min)), ts:g.ts || '' })),
          seq:!m || wasSched || list(m.goals).length > 0 || [...list(m.white), ...list(m.black)].every(e => !num(e.g) && !num(e.a) && !num(e.og)) };
@@ -3922,10 +3943,11 @@ function stp(f, ic, label, v){
 function edTeamHTML(T){
   const arr = ED[T];
   return `<h4><span><span class="dot ${T === 'white' ? 'w' : 'b'}"></span>Squadra ${T === 'white' ? 'Bianca' : 'Nera'}</span><span class="cnt ${arr.length === 8 ? 'full' : ''}">${arr.length}/8</span></h4>` +
-    (arr.length ? arr.map(e => `<div class="erow" data-t="${T}" data-pid="${e.pid}">${avatar(store.players[e.pid] || { name:e.n }, 'xs')}<span class="nm">${esc(pname(e.pid, e.n))}</span><button type="button" class="rm" data-rm aria-label="Togli ${esc(pname(e.pid, e.n))}">×</button>${ED.seq ? roSteps(e) : `<div class="steps">${stp('g', '⚽', 'Gol', e.g)}${stp('a', '👟', 'Assist', e.a)}${stp('og', '🟥', 'Autogol', e.og)}</div>`}</div>`).join('')
+    (arr.length ? arr.map(e => `<div class="erow" data-t="${T}" data-pid="${e.pid}">${avatar(store.players[e.pid] || { name:e.n }, 'xs')}<span class="nm">${esc(pname(e.pid, e.n))}</span><button type="button" class="capb" data-cap aria-pressed="${ED[T === 'white' ? 'capW' : 'capB'] === e.pid}" aria-label="Capitano: ${esc(pname(e.pid, e.n))}" title="Scegli come capitano (tocca di nuovo per tornare all’automatico)">C</button><button type="button" class="rm" data-rm aria-label="Togli ${esc(pname(e.pid, e.n))}">×</button>${ED.seq ? roSteps(e) : `<div class="steps">${stp('g', '⚽', 'Gol', e.g)}${stp('a', '👟', 'Assist', e.a)}${stp('og', '🟥', 'Autogol', e.og)}</div>`}</div>`).join('')
       : `<p class="mu sm pad">Scegli la squadra qui sopra e tocca i nomi per schierarli.</p>`);
 }
 function renderEditor(){
+  if(ED) edCapFix();
   renderEditorScore(); renderEditorPick();
   $('#ed-white').innerHTML = edTeamHTML('white');
   $('#ed-black').innerHTML = edTeamHTML('black');
@@ -4036,6 +4058,11 @@ async function goalsToSeq(){
   if(!ok || !ED) return;
   ED.seq = true; ED.goals = []; goalFormReset(); syncCounts(); renderEditor();
 }
+/* Se il capitano scelto non è più nella sua squadra, il campo si svuota */
+function edCapFix(){
+  if(ED.capW && !ED.white.some(e => e.pid === ED.capW)) ED.capW = null;
+  if(ED.capB && !ED.black.some(e => e.pid === ED.capB)) ED.capB = null;
+}
 function edStep(btn, d){
   const row = btn.closest('.erow'); if(!row) return;
   const e = ED[row.dataset.t].find(x => x.pid === row.dataset.pid); if(!e) return;
@@ -4062,6 +4089,7 @@ async function saveMatch(){
     const ok = await confirmDlg('Formazioni incomplete', `Bianchi ${w}, Neri ${b}. Il calciotto si gioca 8 contro 8: vuoi salvare comunque?`, 'Salva comunque');
     if(!ok) return;
   }
+  edCapFix();
   const id = ED.id || newId();
   const sched = ED.status === 'scheduled';
   let goalsOut = [];
@@ -4075,6 +4103,7 @@ async function saveMatch(){
   const payload = {
     status:sched ? 'scheduled' : 'played', time:ED.time, ...(!sched && ED.end ? { end:ED.end } : {}), fmW:ED.fmW || DEF_FM, fmB:ED.fmB || DEF_FM,
     ...(ED.posW ? { posW:list(ED.posW) } : {}), ...(ED.posB ? { posB:list(ED.posB) } : {}),
+    ...(ED.capW ? { capW:ED.capW } : {}), ...(ED.capB ? { capB:ED.capB } : {}),
     day:ED.day, date:ED.date,
     white:ED.white.map(clean), black:ED.black.map(clean),
     ...(goalsOut.length ? { goals:goalsOut } : {}),
@@ -4082,6 +4111,11 @@ async function saveMatch(){
     voteClose:sched ? null : (store.matches[ED.id]?.voteClose || ((!ED.id || store.matches[ED.id]?.status === 'scheduled') ? Date.now() + VOTE_WINDOW : null)),
     updatedAt:Date.now()
   };
+  /* Gara giocata senza capitano scelto: si salva quello automatico di adesso, così non cambia nelle settimane dopo */
+  if(!sched){
+    if(!payload.capW){ const c = captainOf(payload.white); if(c) payload.capW = c; }
+    if(!payload.capB){ const c = captainOf(payload.black); if(c) payload.capB = c; }
+  }
   const old = ED.id ? store.matches[ED.id] : null;
   if(!sched && (!old || old.status === 'scheduled' || old.top4)){
     payload.top4 = 1;
@@ -4515,7 +4549,8 @@ document.addEventListener('click', async e => {
   if(d.gact){ goalAct(d.gact, +d.gi); return; }
   if(d.pool){ edToggle(d.pool); return; }
   if(d.st){ edStep(t, +d.st); return; }
-  if('rm' in d){ const row = t.closest('.erow'); if(goalsInvolve(row.dataset.pid)){ toast(`${pname(row.dataset.pid)} ha gol o assist registrati: eliminali dalla cronaca prima di toglierlo`, 'warn'); return; } ED[row.dataset.t] = ED[row.dataset.t].filter(x => x.pid !== row.dataset.pid); renderEditor(); return; }
+  if('rm' in d){ const row = t.closest('.erow'); if(goalsInvolve(row.dataset.pid)){ toast(`${pname(row.dataset.pid)} ha gol o assist registrati: eliminali dalla cronaca prima di toglierlo`, 'warn'); return; } ED[row.dataset.t] = ED[row.dataset.t].filter(x => x.pid !== row.dataset.pid); edCapFix(); renderEditor(); return; }
+  if('cap' in d){ const row = t.closest('.erow'); if(row && ED){ const k = row.dataset.t === 'white' ? 'capW' : 'capB'; ED[k] = ED[k] === row.dataset.pid ? null : row.dataset.pid; renderEditor(); } return; }
   if(d.openPlayer && !d.action){ figPlq = null; openFigurina(d.openPlayer); return; }
   if(d.openMatch){ ui.matchId = d.openMatch; renderMatches(); go('matches'); return; }
 
