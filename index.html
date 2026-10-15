@@ -40,7 +40,7 @@
 html{-webkit-text-size-adjust:100%;background:var(--bg0)}
 body{margin:0;min-height:100vh;min-height:100dvh;color:var(--tx);font:500 15px/1.5 var(--body);background:var(--bg0);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 body.noscroll{overflow:hidden}
-button,input,select{font:inherit;color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 button:disabled{opacity:.55;cursor:default}
 [hidden]{display:none!important}
@@ -366,6 +366,13 @@ button.affr:hover{border-color:var(--line)}
 .sh-row{background:linear-gradient(90deg,rgba(251,191,36,.35),rgba(251,191,36,.05))!important}
 .sh-row.rw-smeraldo{background:linear-gradient(90deg,rgba(52,211,153,.35),rgba(52,211,153,.05))!important}
 .sh-row.rw-notte{background:linear-gradient(90deg,rgba(96,165,250,.35),rgba(96,165,250,.05))!important}
+.ldot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#22c55e;margin-left:2px;box-shadow:0 0 0 2px rgba(34,197,94,.3)}
+.msg-r{padding:10px 0;border-top:1px solid var(--hair)}
+.msg-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.msg-st{margin-left:auto;font:800 11.5px var(--body);padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.08)}
+.msg-st.st-new{background:rgba(34,197,94,.2);color:#86efac}
+.msg-st.st-done{color:var(--mu)}
+.msg-t{margin:6px 0 8px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
 .sh-r{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--hair);min-height:56px}
 .sh-pv{flex:none;width:44px;height:44px;display:grid;place-items:center;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid var(--hair);font-size:22px;overflow:hidden}
 .sh-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
@@ -1631,9 +1638,10 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
   <div class="grow"></div>
   <span id="sync" class="sync" data-state="connecting" title="Connessione al database in corso"><i></i><span>Connessione…</span></span>
   <button class="lockbtn" id="installBtn" data-action="install" hidden>📲 Installa</button>
+  <button class="lockbtn" id="msgBtn" data-action="msg-open" aria-label="Scrivi all’organizzatore" title="Scrivi all’organizzatore" hidden>✉️</button>
   <button class="lockbtn" data-action="admin" aria-label="Area admin">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path id="lock-shackle" d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-    <span id="lock-label">Ospite</span>
+    <span id="lock-label">Ospite</span><i class="ldot" id="lock-dot" hidden aria-label="Messaggi nuovi"></i>
   </button>
 </header>
 
@@ -1791,6 +1799,7 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 <div class="modal" id="m-vote" aria-hidden="true" data-lock="1"><div class="sheet glass vg" role="dialog" aria-modal="true" aria-label="Vota l’MVP" id="vg-body"></div></div>
 <div class="modal" id="m-news" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Novità" style="width:min(620px,100%)"><div id="nw-body"></div><div class="row end sticky-actions"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 <div class="modal" id="m-prof" aria-hidden="true"><div class="sheet glass vi" role="dialog" aria-modal="true" aria-label="Richieste schede giocatore" style="width:min(620px,100%)"><div id="pr-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
+<div class="modal" id="m-msg" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Scrivi all’organizzatore"><div id="msg-body"></div></div></div>
 <div class="modal" id="m-ca" aria-hidden="true"><div class="sheet glass vi" role="dialog" aria-modal="true" aria-label="Scommesse" style="width:min(560px,100%)"><div id="ca-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 <div class="modal" id="m-dl" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Crea sfida"><div id="dl-body"></div></div></div>
 <div class="modal" id="m-mk" aria-hidden="true"><div class="sheet glass mk" role="dialog" aria-modal="true" aria-label="Apri scommesse" style="width:min(680px,100%)"><div id="mk-body"></div></div></div>
@@ -1895,11 +1904,12 @@ function cparam(key){
 }
 /* Interruttori delle funzioni: li accende e spegne l'admin (settings/features/{chiave}), valgono per tutti i dispositivi.
    Il codice legge sempre e solo feat(chiave). Spenta = nascosta e disattivata; codice e dati restano, riaccesa torna tutto com'era. */
-const FEATURE_DEFAULTS = { casino:true, mvp:true, ratings:true };
+const FEATURE_DEFAULTS = { casino:true, mvp:true, ratings:true, messages:false };
 const FEATURES = [
   { k:'casino',  name:'CASiNO',                       desc:'La sezione con portafoglio, scommesse e premi.' },
   { k:'mvp',     name:'Voto MVP',                     desc:'La votazione dei giocatori per scegliere l’MVP di ogni gara.' },
-  { k:'ratings', name:'Voti a stelle ai compagni',    desc:'Le stelle anonime ai compagni di squadra e il bonus/malus nell’OVR.' }
+  { k:'ratings', name:'Voti a stelle ai compagni',    desc:'Le stelle anonime ai compagni di squadra e il bonus/malus nell’OVR.' },
+  { k:'messages', name:'Messaggi',                    desc:'La finestra per scrivere all’organizzatore e la zona Richieste nel pannello admin.' }
 ];
 const CACHE_KEY = 'cmb2627_cache_v1';
 const ROLES = { ATT:'Attaccante', CEN:'Centrocampista', DIF:'Difensore', JOLLY:'Jolly' };
@@ -2000,7 +2010,7 @@ const COLS = [
 /* =========================================================
    STATE
    ========================================================= */
-const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{}, casino:{} };
+const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{}, casino:{}, messages:{} };
 const loaded = { players:false, matches:false, settings:false };
 let localMode = false;
 const ui = {
@@ -2091,7 +2101,8 @@ async function toggleFeature(k){
   const effect = {
     casino:  next ? 'La sezione CASiNO ricompare per tutti, con saldi e dati com’erano.' : 'La sezione sparisce per tutti. I dati e i saldi restano e tornano se la riaccendi.',
     mvp:     next ? 'Torna la votazione dell’MVP: l’MVP si decide di nuovo anche con i voti già dati.' : 'L’MVP sarà deciso solo dai punti. I voti già dati non contano finché è spento.',
-    ratings: next ? 'Ricompare la schermata dei voti a stelle e il bonus/malus torna nell’OVR.' : 'Spariscono i voti a stelle e il bonus/malus esce dall’OVR. I voti già dati restano salvati.'
+    ratings: next ? 'Ricompare la schermata dei voti a stelle e il bonus/malus torna nell’OVR.' : 'Spariscono i voti a stelle e il bonus/malus esce dall’OVR. I voti già dati restano salvati.',
+    messages: next ? 'Compare per tutti il pulsante ✉️ per scrivere all’organizzatore, e nel pannello admin la zona Richieste.' : 'Sparisce il pulsante ✉️ per tutti e la zona Richieste. I messaggi già inviati restano salvati.'
   }[k];
   const ok = await confirmDlg(`${next ? 'Accendere' : 'Spegnere'} «${F.name}»?`, `${effect} Vale per tutti i dispositivi.`, next ? 'Accendi' : 'Spegni', !next);
   if(!ok) return;
@@ -2194,6 +2205,8 @@ function initFirebase(){
   db.ref('settings').on('value', s => { store.settings = s.val() || {}; loaded.settings = true; afterData(); }, onErr);
   db.ref('votes').on('value', s => { store.votes = s.val() || {}; afterData(); }, onErr);
   /* CASiNO: se le regole non permettono questo percorso l'app continua a funzionare e l'admin vede il motivo nel pannello */
+  /* Messaggi all'admin: se le regole non permettono questo percorso l'app continua a funzionare */
+  db.ref('messages').on('value', s => { store.messages = s.val() || {}; messagesIssue = false; afterData(); }, () => { messagesIssue = true; scheduleRender(); });
   db.ref('casino').on('value', s => { store.casino = s.val() || {}; casinoIssue = false; afterData(); }, () => { casinoIssue = true; scheduleRender(); });
   /* Voto ai compagni: se le regole non permettono questi percorsi l'app continua a funzionare e l'admin vede il motivo nel pannello */
   db.ref('ratingsDone').on('value', s => { store.ratingsDone = s.val() || {}; loaded.ratingsDone = true; afterData(); }, () => { loaded.ratingsDone = true; ratingsProblem('read', 'ratingsDone'); });
@@ -2206,6 +2219,7 @@ function initFirebase(){
 function afterData(){ saveCache(); scheduleRender(); }
 const dataReady = () => localMode || (loaded.players && loaded.matches && ratingsReady());
 /* ---------- Voto anonimo ai compagni: percorsi ratings/{gara}/{rid} e ratingsDone/{gara}/{pid} ---------- */
+let messagesIssue = false;        /* true se il database rifiuta la lettura di «messages» */
 let casinoIssue = false;          /* true se il database rifiuta la lettura di «casino» */
 let ratingsIssue = null;           /* { kind:'read'|'write', path } se il database rifiuta questi percorsi: lo vede l'admin */
 const ratingsLoaded = {}, ratingsWatch = {};
@@ -2885,6 +2899,8 @@ function render(){
   $('#lock-shackle').setAttribute('d', ui.admin ? 'M8 11V8a4 4 0 0 1 7.5-2' : 'M8 11V8a4 4 0 0 1 8 0v3');
   const cOn = feat('casino');
   $('#nav-casino').hidden = !cOn;
+  $('#msgBtn').hidden = !feat('messages');
+  $('#lock-dot').hidden = !(ui.admin && feat('messages') && msgNew() > 0);
   if(ui.view === 'casino' && !cOn) go('dashboard'); else applyTheme();
   renderDashboard(); renderPlayers(); renderMatches(); renderMe(); if(ui.view === 'trophies') renderTrophies(); if(ui.view === 'casino') renderCasino(); renderAdmin();
   if(ui.duel && $('#m-duel').classList.contains('open')) renderDuel();
@@ -5621,6 +5637,92 @@ async function claimDaily(){
   const w = walletOf(me); ui.cFrom = w ? w.bal : 0; ui.cAnim = true; ui.cPop = CASINO.DAILY;
   await commit({ [`casino/claims/${me}/${day}`]:true }, `Riscosse ${CASINO.DAILY} ${CURRENCY}`);
 }
+/* ---------- Messaggi all'admin: messages/{id} = { from, text, at, st:'new'|'read'|'done', arch? } ----------
+   Il mittente si sceglie dall'elenco e NON è verificato: il database è aperto a tutti. Limiti contro lo spam: 280 caratteri, 3 messaggi al giorno
+   per mittente, 30 secondi tra uno e l'altro, mai due testi uguali di fila. I limiti sono controlli del client. */
+const MSG_MAX = 280, MSG_PER_DAY = 3, MSG_GAP = 30e3;
+const MSG_ST = { new:'Nuovo', read:'Letto', done:'Risolto' };
+function msgList(){
+  const o = store.messages || {};
+  return Object.entries(o).filter(([, m]) => m && typeof m.from === 'string' && typeof m.text === 'string' && Number.isFinite(Number(m.at)))
+    .map(([id, m]) => ({ id, from:m.from, text:m.text, at:Number(m.at), st:MSG_ST[m.st] ? m.st : 'new', arch:!!m.arch })).sort((a, b) => b.at - a.at);
+}
+const msgNew = () => msgList().filter(m => m.st === 'new' && !m.arch).length;
+const dayKey = t => { const d = new Date(t); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+function msgCheck(pid, text){
+  if(!feat('messages')) return 'I messaggi sono sospesi';
+  if(!store.players[pid]) return 'Scegli chi sei';
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  if(t.length < 3) return 'Scrivi almeno 3 caratteri';
+  if(t.length > MSG_MAX) return `Al massimo ${MSG_MAX} caratteri`;
+  const mine = msgList().filter(m => m.from === pid), today = dayKey(Date.now());
+  let local = {}; try{ local = JSON.parse(localStorage.getItem('cmb_msgLog') || '{}'); }catch(e){}
+  const n = Math.max(mine.filter(m => dayKey(m.at) === today).length, local[pid + '|' + today] || 0);
+  if(n >= MSG_PER_DAY) return `Hai già mandato ${MSG_PER_DAY} messaggi oggi: riprova domani`;
+  const last = Math.max(mine.length ? mine[0].at : 0, Number(local['last|' + pid]) || 0);
+  if(Date.now() - last < MSG_GAP) return `Aspetta ${Math.ceil((MSG_GAP - (Date.now() - last)) / 1000)} secondi prima del prossimo messaggio`;
+  if(mine.length && mine[0].text.replace(/\s+/g, ' ').trim().toLowerCase() === t.toLowerCase()) return 'Hai già mandato questo messaggio';
+  return '';
+}
+function openMsg(){
+  if(!feat('messages')){ toast('I messaggi sono sospesi', 'warn'); return; }
+  const me = myPid(), ls = [...Object.entries(store.players)].filter(([, p]) => p).sort((a, b) => (a[1].name || '').localeCompare(b[1].name || '', 'it'));
+  $('#msg-body').innerHTML = `<h3>Scrivi all’organizzatore</h3><p class="mu sm">Per segnalare un problema o fare una richiesta. Scegli chi sei: il nome non è verificato. Al massimo ${MSG_PER_DAY} messaggi al giorno.</p>
+    <select id="msg-from" class="field" aria-label="Chi sei"><option value="">Chi sei?</option>${ls.map(([id, p]) => `<option value="${id}" ${id === me ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>
+    <textarea id="msg-text" class="field" rows="5" maxlength="${MSG_MAX}" placeholder="Il tuo messaggio" style="margin-top:8px;resize:vertical" aria-label="Messaggio"></textarea>
+    <div class="mu sm" id="msg-n" style="text-align:right">0 / ${MSG_MAX}</div>
+    <div class="row end" style="margin-top:8px"><button type="button" class="btn ghost" data-close>Chiudi</button><button type="button" class="btn primary" data-action="msg-send">Invia</button></div>`;
+  openModal('#m-msg');
+}
+let msgBusy = false;
+async function sendMsg(){
+  if(msgBusy) return;
+  const pid = ($('#msg-from') || {}).value, text = ($('#msg-text') || {}).value;
+  const err = msgCheck(pid, text); if(err){ toast(err, 'warn'); return; }
+  if(db && syncState !== 'live'){ toast('Per inviare serve la connessione', 'warn'); return; }
+  msgBusy = true;
+  const t = String(text).replace(/\s+/g, ' ').trim(), now = Date.now();
+  try{
+    await commit({ ['messages/' + newId()]:{ from:pid, text:t, at:now, st:'new' } }, 'Messaggio inviato');
+    let local = {}; try{ local = JSON.parse(localStorage.getItem('cmb_msgLog') || '{}'); }catch(e){}
+    const k = pid + '|' + dayKey(now); local[k] = (local[k] || 0) + 1; local['last|' + pid] = now;
+    try{ localStorage.setItem('cmb_msgLog', JSON.stringify(local)); }catch(e){}
+    closeModal('#m-msg', true);
+  }finally{ msgBusy = false; }
+}
+/* Admin: zona Richieste */
+function msgAdminHTML(){
+  const f = ui.msgF || 'new', all = msgList(), rows = all.filter(m => f === 'arch' ? m.arch : f === 'all' ? !m.arch : (!m.arch && m.st === 'new'));
+  const tab = (k, l, n) => `<button type="button" class="btn sm ${f === k ? 'primary' : ''}" data-msgf="${k}">${l}${n ? ` (${n})` : ''}</button>`;
+  const fmt = t => new Date(t).toLocaleString('it-IT', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+  return `<h3>Richieste</h3><p class="mu sm">I mittenti non sono verificati: chiunque può scegliere un nome qualsiasi.</p>
+    <div class="row" style="gap:6px;margin:8px 0">${tab('new', 'Nuove', all.filter(m => m.st === 'new' && !m.arch).length)}${tab('all', 'Tutte', all.filter(m => !m.arch).length)}${tab('arch', 'Archiviate', all.filter(m => m.arch).length)}</div>
+    ${rows.length ? rows.map(m => `<div class="msg-r ${m.st}"><div class="msg-h"><b>${esc(pname(m.from, 'Ex giocatore'))}</b><span class="mu sm">${fmt(m.at)}</span><span class="msg-st st-${m.st}">${MSG_ST[m.st]}</span></div>
+      <p class="msg-t">${esc(m.text)}</p><div class="row" style="gap:6px;flex-wrap:wrap">${['new', 'read', 'done'].filter(k => k !== m.st).map(k => `<button type="button" class="btn sm" data-action="msg-st" data-id="${m.id}" data-st="${k}">${k === 'new' ? 'Da leggere' : k === 'read' ? 'Letto' : 'Risolto'}</button>`).join('')}
+      <button type="button" class="btn sm ghost" data-action="msg-arch" data-id="${m.id}" data-v="${m.arch ? 0 : 1}">${m.arch ? 'Ripristina' : 'Archivia'}</button><button type="button" class="btn sm danger" data-action="msg-del" data-id="${m.id}">Elimina</button></div></div>`).join('') : '<p class="mu sm">Nessun messaggio qui.</p>'}`;
+}
+function refreshMsgAdmin(){ if($('#m-ca').classList.contains('open') && /<h3>Richieste<\/h3>/.test($('#ca-body').innerHTML)) $('#ca-body').innerHTML = msgAdminHTML(); }
+function openMsgAdmin(){
+  if(!ui.admin) return;
+  if(!feat('messages')){ toast('I messaggi sono sospesi', 'warn'); return; }
+  $('#ca-body').innerHTML = msgAdminHTML(); openModal('#m-ca');
+}
+async function msgWrite(up, ok){
+  if(!ui.admin) return;
+  if(!feat('messages')){ toast('I messaggi sono sospesi', 'warn'); return; }
+  if(db && syncState !== 'live'){ toast('Serve la connessione', 'warn'); return; }
+  await commit(up, ok); refreshMsgAdmin();
+}
+const msgExists = id => !!(store.messages && store.messages[id]);
+function msgSetSt(id, st){ if(!msgExists(id) || !MSG_ST[st]) return; return msgWrite({ [`messages/${id}/st`]:st }); }
+function msgSetArch(id, v){ if(!msgExists(id)) return; return msgWrite({ [`messages/${id}/arch`]:v ? 1 : null }); }
+async function msgDelete(id){
+  if(!ui.admin || !msgExists(id)) return;
+  if(!feat('messages')){ toast('I messaggi sono sospesi', 'warn'); return; }
+  const ok = await confirmDlg('Eliminare il messaggio?', 'Sparisce per sempre.', 'Elimina', true); if(!ok) return;
+  return msgWrite({ [`messages/${id}`]:null }, 'Messaggio eliminato');
+}
+
 const CTABS = [ { k:'wallet', l:'Portafoglio' }, { k:'bets', l:'Scommesse' }, { k:'hist', l:'Storico e premi' }, { k:'shop', l:'Negozio' } ];
 const BET_STATE = { pending:'In corso', won:'Vinta', lost:'Persa', void:'Rimborsata' };
 /* Le giocate di una persona (scommesse e scelte dei monti) con esito e netto */
@@ -5825,6 +5927,7 @@ function renderAdmin(){
       <button class="tile" data-action="new-sched"><span class="ic">🗓️</span><b>Programma gara</b><span>Data, ora e convocati bilanciati: tutti vedono dove giocano.</span></button>
       <button class="tile" data-action="new-match"><span class="ic">📝</span><b>Registra gara</b><span>Schiera le squadre e segna gol, assist e autogol.</span></button>
       <button class="tile" data-action="stars-view"><span class="ic">⭐</span><b>Voti a stelle</b><span>Per ogni gara: quanti voti ha preso ognuno, la media e il bonus. Mai chi ha votato.</span></button>
+      ${feat('messages') ? `<button class="tile" data-action="msg-admin"><span class="ic">✉️</span><b>Richieste${msgNew() ? `<span class="cbadge">${msgNew()}</span>` : ''}</b><span>Messaggi degli amici: leggi, segna come risolti, archivia.</span></button>` : ''}
       ${feat('casino') ? `<button class="tile" data-action="shop-admin"><span class="ic">🛍️</span><b>Negozio</b><span>Prezzi, durata e disponibilità di ogni oggetto.</span></button>
       <button class="tile" data-action="bets-admin"><span class="ic">🎰</span><b>Scommesse</b><span>Elenco delle scommesse di ogni gara, con “Annulla scommessa”.</span></button>
       <button class="tile" data-action="adj-admin"><span class="ic">🥔</span><b>Rettifica saldo</b><span>Aggiungi o togli ${CURRENCY} a un giocatore, con un motivo.</span></button>` : ''}
@@ -6648,7 +6751,7 @@ async function backupAll(){
   backing = true;
   toast('Backup in corso…');
   const data = {}, failed = [];
-  const PATHS = ['players','matches','settings','votes','photos','ratings','ratingsDone','profileReq','casino'];
+  const PATHS = ['players','matches','settings','votes','photos','ratings','ratingsDone','profileReq','casino','messages'];
   for(const path of PATHS){
     try{ data[path] = (await db.ref(path).once('value')).val(); }
     catch(e){ console.warn('backup', path, e); failed.push(path); }
@@ -6929,6 +7032,7 @@ document.addEventListener('click', async e => {
   if(d.ctab){ if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; } ui.cTab = d.ctab; renderCasino(); renderSlip(); return; }
   if(d.pool){ const [k, a, b] = d.pool.split('|'); placePool(d.mid, k, k === 'mvp' ? a : b, k === 'duel' ? a : undefined); return; }
   if(d.dlKind){ if(ui.dlForm){ ui.dlForm.kind = d.dlKind; $('#dl-pl').hidden = d.dlKind === 't'; $$('[data-dl-kind]').forEach(b => b.classList.toggle('primary', b.dataset.dlKind === d.dlKind)); } return; }
+  if(d.msgf){ ui.msgF = d.msgf; refreshMsgAdmin(); return; }
   if(d.odd){ const i = d.odd.indexOf('|'); slipToggle(d.mid, d.odd.slice(0, i), d.odd.slice(i + 1)); return; }
   if(d.mktab){ ui.cMk = ui.cMk || {}; ui.cMk[d.mid] = d.mktab; renderCasino(); return; }
   if(d.slipMode){ if(ui.slip){ ui.slip.mode = d.slipMode; renderSlip(); } return; }
@@ -6994,6 +7098,12 @@ document.addEventListener('click', async e => {
     case 'backup-all': if(requireAdmin()) backupAll(); break;
     case 'import-xlsx': if(requireAdmin()){ $('#xlsxInput').value = ''; $('#xlsxInput').click(); } break;
     case 'casino-claim': claimDaily(); break;
+    case 'msg-open': openMsg(); break;
+    case 'msg-send': sendMsg(); break;
+    case 'msg-admin': openMsgAdmin(); break;
+    case 'msg-st': msgSetSt(d.id, d.st); break;
+    case 'msg-arch': msgSetArch(d.id, d.v === '1'); break;
+    case 'msg-del': msgDelete(d.id); break;
     case 'shop-admin': openShopAdmin(); break;
     case 'shop-buy': shopBuy(d.item); break;
     case 'shop-act': shopActivate(d.cat, d.item); break;
@@ -7062,6 +7172,7 @@ document.addEventListener('keydown', e => {
 });
 
 $('#psearch').addEventListener('input', renderPlayers);
+document.addEventListener('input', e => { const t = e.target; if(t && t.id === 'msg-text'){ const n = $('#msg-n'); if(n) n.textContent = t.value.length + ' / ' + MSG_MAX; } });
 document.addEventListener('input', e => { const t = e.target; if(t && t.dataset && t.dataset.slipI !== undefined && ui.slip){ ui.slip.stakes[t.dataset.slipI] = Math.floor(Number(t.value) || 0); slipRefreshNums(); } });
 $('#msel').addEventListener('change', e => { ui.matchId = e.target.value; ui.swapSel = null; rerenderMatch(); });
 document.addEventListener('input', e => { const t = e.target; if(t && typeof t.id === 'string' && /^pf2-/.test(t.id)) profDraft = profReadForm(); });
