@@ -1313,6 +1313,11 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .rt-st:active{background:var(--or-soft)}
 .rt-note{margin:0 0 8px;font-size:12.5px}
 .rt-send{width:100%}
+.me-rt{display:grid;gap:6px}
+.me-rt>div{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.03);font-weight:700;font-size:13.5px}
+.me-rt small{color:var(--mu);font-weight:600}
+.me-rt b{font:italic 800 17px var(--disp);color:var(--or);white-space:nowrap}
+.me-rt b.neg{color:#fda4af}
 .vi-list{display:grid;gap:6px;margin:10px 0}
 .vi-r{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04);font-size:14px}
 .vi-r span{color:var(--or);font-weight:700}
@@ -2725,7 +2730,7 @@ function matchDetailHTML(id){
     ${boardHTML(sc)}
     <div class="tab-cols">${col('white')}${col('black')}</div>
     ${cambiHTML(m)}${chronHTML(m)}
-    ${mvp}${awards}${voteBoxHTML(m)}
+    ${mvp}${awards}${voteBoxHTML(m)}${rateBoxHTML(m)}
     <div class="tab-actions">
       <button class="btn primary" data-action="export-match" data-mid="${id}">📸 Esporta Grafica Gara HD</button>
       <button class="btn admin-only" data-action="edit-match" data-mid="${id}">✏️ Modifica gara</button>
@@ -2770,6 +2775,21 @@ function voteBoxHTML(m){
   return `<div class="vbox closed ${reveal ? 'reveal' : ''}"><div class="vb-h"><h4>🗳️ Voti svelati</h4><span class="mu sm">${vi.n} ${vi.n === 1 ? 'voto' : 'voti'}</span></div>
     ${rows.map(([t, vs], i) => `<div class="vr" style="--d:${(i * 0.12).toFixed(2)}s"><div class="vr-top">${avatar(store.players[t], 'xs')}<b>${nm(t)}</b><span class="vr-n">${vs.length}</span></div><div class="vr-bar"><i style="width:${(vs.length / max * 100).toFixed(0)}%"></i></div><div class="vr-who">Votato da: ${vs.map(nm).join(', ')}</div></div>`).join('')}
     ${missing.length ? `<p class="mu sm">Non hanno votato: ${missing.map(nm).join(', ')}</p>` : ''}</div>`;
+}
+/* Riquadro del voto ai compagni nella gara: avanzamento e, solo all'admin, chi manca. Nessun risultato */
+function rateBoxHTML(m){
+  if(!m.rate || m.status === 'scheduled') return '';
+  const info = rateInfo(m); if(!info.voters.length) return '';
+  const me = myPid(), inMatch = !!me && info.voters.includes(me), nm = pid => esc(pname(pid));
+  if(!info.open) return `<div class="vbox closed"><div class="vb-h"><h4>⭐ Voto ai compagni chiuso</h4></div><p class="mu sm" style="margin:0">I voti sono anonimi e restano privati: ognuno vede solo il proprio bonus, nella sezione Io.</p></div>`;
+  const left = info.voters.filter(p => !info.done[p]);
+  const mine = !inMatch ? '' : (info.done[me] || prHas(m.id))
+    ? '<p class="vb-me">Hai votato i compagni. Il voto è anonimo e definitivo.</p>'
+    : `<button class="btn sm primary" data-action="rate-open" data-mid="${m.id}">Vota i compagni</button>`;
+  return `<div class="vbox"><div class="vb-h"><h4>⭐ Voto ai compagni</h4><span class="cd" data-cd="${m.voteClose}" data-t="0">${cdText(m.voteClose, false)}</span></div>
+    <p class="mu sm">Da 1 a 5 stelle ai compagni di squadra, in forma anonima. Nessuno vede i risultati: a votazione chiusa ognuno scopre solo il proprio bonus nella sezione Io. Chiude 24 ore dopo la gara o appena votano tutti.</p>
+    <div class="vb-prog"><i style="width:${(info.n / info.voters.length * 100).toFixed(0)}%"></i></div>
+    <p class="mu sm">${info.n} su ${info.voters.length} hanno votato${ui.admin && left.length ? `. Mancano: ${left.map(nm).join(', ')}` : ''}</p>${mine}</div>`;
 }
 /* ---------- Votazione MVP (regola v2): voto definitivo, barre del punteggio, Info per l'admin ---------- */
 const PV_KEY = 'cmb2627_pendingVotes';
@@ -3607,7 +3627,20 @@ function renderMe(){
   const pathBox = ev.length ? `<ol class="me-path">${ev.map(e => `<li><span class="pi">${e.ic}</span><span><b>${esc(e.t)}</b><small>${esc(String(e.d))}</small></span></li>`).join('')}</ol>` : '<p class="mu sm" style="margin:0">Il tuo percorso inizia con la prima gara.</p>';
   const pend = STATS.matches.filter(m => { const vi = voteInfo(m); return vi.open && vi.eligible.includes(s.pid) && !vi.votes[s.pid]; });
   const voteNote = pend.map(m => `<div class="glass me-vote">🗳️ Devi ancora votare l’MVP della giornata ${num(m.day)}<button class="btn sm primary" data-open-match="${m.id}">Vota</button></div>`).join('');
-  el.innerHTML = `${voteNote}<div class="me-head glass"><div class="me-card">${miniFigHTML(s)}</div><div class="me-info"><span class="mu sm">Il mio giocatore</span><h2>${esc(s.name)}</h2>
+  const pendR = STATS.matches.filter(m => { if(!m.rate || prHas(m.id)) return false; const i = rateInfo(m); return i.open && !i.done[s.pid] && i.targets(s.pid).length > 0; });
+  const rateNote = pendR.map(m => `<div class="glass me-vote">⭐ Devi ancora votare i compagni della giornata ${num(m.day)}<button class="btn sm primary" data-action="rate-open" data-mid="${m.id}">Vota</button></div>`).join('');
+  /* Voti dei compagni: solo il tuo risultato, mai quello degli altri; a votazione chiusa */
+  const sgn = v => (v < 0 ? '−' : '+') + Math.abs(v).toFixed(2).replace('.', ',');
+  const rrows = h.filter(x => x.m.rate).slice(-6).reverse().map(x => {
+    const info = rateInfo(x.m);
+    if(info.open) return `<div><span>Giornata ${num(x.m.day)}<small> votazione in corso</small></span><small>i risultati arrivano alla chiusura</small></div>`;
+    const rr = rateResults(x.m)[s.pid];
+    return rr && rr.n >= RATE_MIN_N
+      ? `<div><span>Giornata ${num(x.m.day)}<small> media ${rr.avg.toFixed(1).replace('.', ',')} stelle</small></span><b class="${rr.bonus < 0 ? 'neg' : ''}">${sgn(rr.bonus)} OVR</b></div>`
+      : `<div><span>Giornata ${num(x.m.day)}</span><small>voti insufficienti: servono almeno ${RATE_MIN_N} votanti</small></div>`;
+  });
+  const rateSec = rrows.length ? `<section class="glass me-sec wide"><h3>⭐ Voti dei compagni</h3><div class="me-rt">${rrows.join('')}</div><p class="mu sm" style="margin:8px 0 0">Solo tu vedi questi numeri. I voti sono anonimi: media e bonus sono tutto ciò che si sa.</p></section>` : '';
+  el.innerHTML = `${voteNote}${rateNote}<div class="me-head glass"><div class="me-card">${miniFigHTML(s)}</div><div class="me-info"><span class="mu sm">Il mio giocatore</span><h2>${esc(s.name)}</h2>
       <div class="me-chips">${roleChip(s.p.role)}<span class="tierlbl t-${t}">${TIERS[t].i} ${TIERS[t].l}</span>${streakChip(s)}</div>
       <div class="me-big"><div>${cu(rov)}<span>OVR</span></div><div>${cu(s.rank, 0, '°')}<span>in classifica</span></div><div>${cu(s.pres)}<span>presenze</span></div></div>
       <div class="row"><button class="btn sm" data-open-player="${s.pid}">Apri figurina</button><button class="btn sm ghost" data-action="me-change">Cambia giocatore</button></div></div></div>
@@ -3619,6 +3652,7 @@ function renderMe(){
       <section class="glass me-sec"><h3>🎖️ Corsa alle targhe</h3>${raceBox}</section>
       <section class="glass me-sec"><h3>🥊 Vittima e incubo</h3>${rivBox}</section>
       <section class="glass me-sec"><h3>📍 Il tuo posto in campo</h3>${posBox}</section>
+      ${rateSec}
       <section class="glass me-sec wide"><h3>⏱️ Quando segni</h3>${histBox}</section>
       <section class="glass me-sec wide"><h3>🧭 Il tuo percorso</h3>${pathBox}</section>
     </div>`;
@@ -4016,6 +4050,9 @@ function renderAdmin(){
       <button class="tile quiet" data-action="change-pin"><span class="ic">🔑</span><b>Cambia PIN</b><span>Vale per tutti i dispositivi del torneo.</span></button>
       <button class="tile quiet" data-action="logout"><span class="ic">🚪</span><b>Esci dall’area admin</b><span>Torni in sola lettura su questo dispositivo.</span></button>
     </div>
+    ${ratingsIssue ? `<div class="warnline">${ratingsIssue.kind === 'read'
+      ? `Il database non permette di leggere «${esc(ratingsIssue.path)}». Per il voto ai compagni aggiungi nelle regole di Firebase i percorsi “ratings” e “ratingsDone” (lettura e scrittura per tutti i dispositivi).`
+      : `Il database ha rifiutato la scrittura di un voto ai compagni (percorso «${esc(ratingsIssue.path)}»). Nelle regole di Firebase servono ratings/$gara/$rid e ratingsDone/$gara/$pid con scrittura consentita a tutti i dispositivi.`}</div>` : ''}
     ${!store.settings?.pin ? `<div class="warnline">Stai usando il PIN predefinito ${DEFAULT_PIN}: cambialo prima di condividere il link.</div>` : ''}
     <div class="glass db-info"><span>Archivio: <b>${mode}</b></span><span>Giocatori: <b>${STATS.list.length}</b></span><span>Gare: <b>${STATS.matches.length}</b></span><span>Versione: <b>v${APP_VERSION}</b></span></div>
     ${anHTML()}`;
