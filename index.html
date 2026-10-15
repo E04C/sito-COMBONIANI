@@ -4450,6 +4450,8 @@ async function saveMatch(){
     if(!payload.capB){ const c = captainOf(payload.black.filter(e => !e.bench)); if(c) payload.capB = c; }
   }
   const old = ED.id ? store.matches[ED.id] : null;
+  /* Voto anonimo ai compagni: solo per le gare nuove (primo salvataggio da giocata, o programmata che diventa giocata) */
+  if(!sched && (!old || old.status === 'scheduled' || old.rate)) payload.rate = 1;
   if(!sched && (!old || old.status === 'scheduled' || old.top4)){
     payload.top4 = 1;
     if(!old || old.status === 'scheduled' || old.vote2) payload.vote2 = 1;
@@ -4472,7 +4474,7 @@ async function deleteMatch(id){
   const ok = await confirmDlg(`Eliminare la giornata ${num(m.day)}?`, 'Risultato e statistiche di questa gara spariranno da classifica e figurine.', 'Elimina gara', true);
   if(!ok) return;
   ui.matchId = null;
-  commit({ [`matches/${id}`]: null, [`votes/${id}`]: null }, 'Gara eliminata');
+  commit({ [`matches/${id}`]: null, [`votes/${id}`]: null, [`ratings/${id}`]: null, [`ratingsDone/${id}`]: null }, 'Gara eliminata');
 }
 
 /* =========================================================
@@ -4605,12 +4607,13 @@ async function backupAll(){
   backing = true;
   toast('Backup in corso…');
   const data = {}, failed = [];
-  for(const path of ['players','matches','settings','votes','photos']){
+  const PATHS = ['players','matches','settings','votes','photos','ratings','ratingsDone'];
+  for(const path of PATHS){
     try{ data[path] = (await db.ref(path).once('value')).val(); }
     catch(e){ console.warn('backup', path, e); failed.push(path); }
   }
   backing = false;
-  if(failed.length === 5){ toast('Backup non riuscito: nessun percorso leggibile.', 'err'); return; }
+  if(failed.length === PATHS.length){ toast('Backup non riuscito: nessun percorso leggibile.', 'err'); return; }
   const blob = new Blob([JSON.stringify({ version:APP_VERSION, exportedAt:new Date().toISOString(), data })], { type:'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = `comboniani-backup_${todayISO()}.json`;
