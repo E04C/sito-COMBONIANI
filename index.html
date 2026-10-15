@@ -317,6 +317,21 @@ button.affr:hover{border-color:var(--line)}
 .locked p{color:var(--mu);margin:0 auto 18px;max-width:40ch}
 .db-info{margin-top:16px;padding:14px 18px;display:flex;flex-wrap:wrap;gap:8px 22px;color:var(--mu);font-size:13.5px;font-weight:600}
 .db-info b{color:var(--tx)}
+.fx-box{padding:16px 18px;margin-bottom:14px}
+.fx-box h3{margin:0 0 4px;font:italic 800 23px/1 var(--disp)}
+.fx-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--hair)}
+.fx-box h3+p+.fx-row{margin-top:8px}
+.fx-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.fx-tx b{font-size:15px}
+.fx-tx span{color:var(--mu);font-size:13px;line-height:1.35}
+.fx-tx small{color:var(--mu2);font-size:12px;font-weight:600}
+.sw{flex:none;position:relative;width:60px;min-height:44px;height:44px;padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sw::before{content:"";position:absolute;left:0;top:8px;width:60px;height:28px;border-radius:14px;background:rgba(255,255,255,.14);border:1px solid var(--line-strong);transition:background .2s,border-color .2s}
+.sw i{position:absolute;left:4px;top:12px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s var(--ease)}
+.sw.on::before{background:var(--or);border-color:var(--or)}
+.sw.on i{transform:translateX(32px)}
+.sw.dis{opacity:.5}
+.sw:focus-visible{outline:2px solid var(--or);outline-offset:2px;border-radius:14px}
 .appver{display:block;margin:12px auto 0;min-height:44px;padding:0 16px;border:0;background:none;text-align:center;font:600 11.5px/44px var(--body);color:var(--mu2);text-decoration:underline dotted;text-underline-offset:3px;-webkit-tap-highlight-color:transparent}
 .appver:hover{color:var(--mu)}
 .warnline{margin-top:12px;padding:12px 16px;border-radius:14px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.07);color:#fde68a;font-weight:600;font-size:13.5px}
@@ -1398,6 +1413,85 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .vi-h{margin:14px 0 6px;font:800 12px var(--body);color:var(--mu);text-transform:uppercase;letter-spacing:.05em}
 .vi-l{font-size:13px;color:var(--mu);padding:4px 0;border-top:1px solid rgba(255,255,255,.05)}
 .vi-l b{color:var(--tx)}
+/* ---------- CASiNO: sezione e tema (feltro verde, accenti oro) ---------- */
+.cs-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;margin:0 0 4px;scrollbar-width:none}
+.cs-tabs::-webkit-scrollbar{display:none}
+.cs-tab{flex:none;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--hair);background:rgba(255,255,255,.04);color:var(--mu);font:700 14px var(--body);white-space:nowrap;transition:color .2s,background .2s,border-color .2s}
+.cs-tab.on{color:var(--or);border-color:var(--line-strong);background:var(--or-soft)}
+.cs-empty{padding:26px 20px;text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center}
+.cs-empty b{font:italic 800 24px/1.1 var(--disp)}
+.cs-empty span{color:var(--mu);font-size:14px;max-width:38ch}
+.cs-note{padding:12px 16px;margin-bottom:12px;color:var(--mu);font-size:13.5px;font-weight:600}
+.linkbtn{display:inline;min-height:44px;padding:0 4px;border:0;background:none;color:var(--or);font-weight:800;font-size:inherit;font-family:inherit;text-decoration:underline}
+body{transition:background-color .3s}
+.cs-bal{padding:20px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:12px}
+.cs-big{position:relative;display:flex;align-items:baseline;gap:8px;font:italic 800 56px/1 var(--disp);color:var(--gold)}
+.cs-big b{font-variant-numeric:tabular-nums}
+.cs-big small{font:700 15px var(--body);font-style:normal;color:var(--mu)}
+.cs-big.neg b{color:var(--bad)}
+.cs-claim{min-width:190px}
+.cs-pop{position:absolute;left:100%;top:-6px;margin-left:6px;font:800 22px var(--body);color:#22c55e;animation:csPop 1.3s ease-out both;pointer-events:none}
+@keyframes csPop{0%{opacity:0;transform:translateY(8px) scale(.8)}20%{opacity:1}100%{opacity:0;transform:translateY(-26px) scale(1.15)}}
+@media (prefers-reduced-motion:reduce){.cs-pop{display:none}}
+.cs-hist{padding:14px 18px;margin-bottom:12px}
+.cs-lb{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:6px 4px;border:0;border-top:1px solid var(--hair);background:none;text-align:left;font:600 14px var(--body)}
+.cs-lb .pos{flex:none;width:24px;text-align:center;color:var(--mu2);font-weight:800}
+.cs-lb .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cs-lb b{font-variant-numeric:tabular-nums;color:var(--gold)}
+.cs-lb b.neg{color:var(--bad)}
+.cs-lb.me{background:var(--or-soft);border-radius:10px}
+.cs-hist h3{margin:0 0 6px;font:italic 800 22px/1 var(--disp)}
+.cs-mv{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--hair);min-height:44px}
+.cs-mv .d{flex:none;width:64px;color:var(--mu2);font-size:12.5px;font-weight:700}
+.cs-mv .l{flex:1;min-width:0;font-size:14px;font-weight:600}
+.cs-mv b{font-variant-numeric:tabular-nums;font-weight:800}
+.cs-mv b.pos{color:#22c55e}
+.cs-mv b.neg{color:var(--bad)}
+.bg::after{content:"";position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .3s;
+  background:
+    radial-gradient(1000px 640px at 88% -12%,rgba(34,197,94,.20),transparent 62%),
+    radial-gradient(760px 520px at -8% 108%,rgba(22,163,74,.16),transparent 60%),
+    radial-gradient(600px 420px at 50% 55%,rgba(245,197,66,.06),transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='84' viewBox='0 0 84 84'%3E%3Cg fill='none' stroke-width='1'%3E%3Cpath d='M42 16l7.4 18.6L68 42l-18.6 7.4L42 68l-7.4-18.6L16 42l18.6-7.4z' stroke='rgba(245,197,66,0.08)'/%3E%3C/g%3E%3C/svg%3E"),
+    linear-gradient(180deg,#072216 0%,#04140c 75%)}
+body.theme-casino .bg::after{opacity:1}
+body.theme-casino{
+  --bg0:#04140c; --bg1:#072216; --bg2:#0b2d1d;
+  --panel:rgba(8,36,22,.7);
+  --line:rgba(245,197,66,.22); --line-strong:rgba(245,197,66,.5); --hair:rgba(255,255,255,.09);
+  --or:#f5c542; --or2:#d9a21b; --or-soft:rgba(245,197,66,.12);
+  --gold:#fbbf24; --gold2:#f5c542;
+  --tx:#ffffff; --mu:#9fc3ae; --mu2:#6c9680;
+  background-color:#04140c}
+body.theme-casino .bg .pitch *{stroke:rgba(255,255,255,.02)}
+body.theme-casino .topbar{background:linear-gradient(180deg,rgba(4,20,12,.95),rgba(4,20,12,.76))}
+body.theme-casino .nav{background:rgba(4,20,12,.92)}
+body.theme-casino .crest{filter:drop-shadow(0 0 12px rgba(245,197,66,.4))}
+body.theme-casino #cg stop:nth-child(2){stop-color:#22c55e}
+body.theme-casino #cg stop:nth-child(3){stop-color:#16a34a}
+body.theme-casino .crest-btn::before{border-color:#f5c542}
+body.theme-casino .crest-btn.on::before{box-shadow:0 0 12px rgba(245,197,66,.6)}
+body.theme-casino .crest-btn::after{background:#f5c542;color:#2a1c00}
+body.theme-casino .sync[data-state=live] i{background:#22c55e;animation-name:pulseG}
+@keyframes pulseG{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 7px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+body.theme-casino .btn{background:rgba(245,197,66,.08)}
+body.theme-casino .btn.primary{background:linear-gradient(180deg,#f5c542,#d9a21b);color:#2a1c00;box-shadow:0 10px 26px -10px rgba(245,197,66,.6)}
+body.theme-casino .btn.primary:hover{box-shadow:0 12px 30px -8px rgba(245,197,66,.8)}
+body.theme-casino .field:focus{box-shadow:0 0 0 3px rgba(245,197,66,.18)}
+body.theme-casino .sheet{background:rgba(5,24,15,.97)}
+body.theme-casino .modal{background:rgba(1,10,6,.78)}
+body.theme-casino .toast{background:rgba(5,24,15,.97)}
+body.theme-casino .rec::before{background:linear-gradient(90deg,rgba(245,197,66,0),var(--or),rgba(245,197,66,0))}
+body.theme-casino .rec.glass{background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.015) 38%,rgba(4,20,12,.86)),rgba(4,20,12,.8)}
+body.theme-casino .rec-val b{text-shadow:0 0 18px rgba(245,197,66,.35)}
+body.theme-casino .rec.mine{border-color:rgba(245,197,66,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 0 1px rgba(245,197,66,.5),0 0 26px rgba(245,197,66,.2)}
+body.theme-casino .plk.mine{box-shadow:0 0 0 1px var(--or),0 0 24px rgba(245,197,66,.25)}
+body.theme-casino .av{background-color:#0b2d1d}
+body.theme-casino .ph-ini{color:rgba(245,197,66,.5)}
+body.theme-casino .role.JOLLY{background:linear-gradient(90deg,rgba(34,197,94,.2),rgba(251,191,36,.2))}
+body.theme-casino .vbox{background:linear-gradient(180deg,rgba(245,197,66,.08),rgba(255,255,255,.02))}
+body.theme-casino .fx-box .sw.on::before{background:var(--or);border-color:var(--or)}
+@media (prefers-reduced-motion:reduce){body{transition:none}.bg::after{transition:none}}
 </style>
 </head>
 <body>
@@ -1447,7 +1541,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
   <button data-go="matches"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5l3.8 2.8-1.4 4.4H9.6l-1.4-4.4z"/><path d="M12 3v4.5M20.6 9.5l-4.8.8M17.5 19.5l-3.1-4.8M6.5 19.5l3.1-4.8M3.4 9.5l4.8.8"/></svg>Partite</button>
   <button data-go="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.8-4 3.8-6 7.5-6s6.7 2 7.5 6"/></svg>Io</button>
   <button data-go="trophies"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/><path d="M12 14v3M8.5 20.5h7M9.5 17.5h5l.5 3h-6z"/></svg>Trofei</button>
-  <button data-go="admin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>Admin</button>
+  <button data-go="casino" id="nav-casino"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v5M12 16v5M3 12h5M16 12h5"/></svg>CASiNO</button>
 </nav>
 
 <main>
@@ -1492,6 +1586,8 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
  <section id="view-me" class="view" aria-label="Il mio giocatore" hidden><div id="me"></div></section>
 
   <section id="view-trophies" class="view" aria-label="Trofei e primati" hidden><div id="troph"></div></section>
+
+  <section id="view-casino" class="view" aria-label="CASiNO" hidden><div id="casino"></div></section>
 
   <section id="view-admin" class="view" aria-label="Area admin" hidden><div id="admin"></div></section>
   <button type="button" class="appver" id="appver" data-action="open-news"></button>
@@ -1678,6 +1774,17 @@ const firebaseConfig = {
 };
 const APP_VERSION = '1.5.0';
 const DEFAULT_PIN = '2026';
+/* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
+const CURRENCY = 'patate', CURRENCY1 = 'patata';
+const CASINO = { START:100, DAILY:10, MATCH:20, GOAL:10, ASSIST:5, CAP:60, MARGIN:0.10, ODDS_MIN:1.10, ODDS_MAX:50, POOL_STAKE:10, PROFETA_MIN:5 };
+/* Interruttori delle funzioni: li accende e spegne l'admin (settings/features/{chiave}), valgono per tutti i dispositivi.
+   Il codice legge sempre e solo feat(chiave). Spenta = nascosta e disattivata; codice e dati restano, riaccesa torna tutto com'era. */
+const FEATURE_DEFAULTS = { casino:true, mvp:true, ratings:true };
+const FEATURES = [
+  { k:'casino',  name:'CASiNO',                       desc:'La sezione con portafoglio, scommesse e premi.' },
+  { k:'mvp',     name:'Voto MVP',                     desc:'La votazione dei giocatori per scegliere l’MVP di ogni gara.' },
+  { k:'ratings', name:'Voti a stelle ai compagni',    desc:'Le stelle anonime ai compagni di squadra e il bonus/malus nell’OVR.' }
+];
 const CACHE_KEY = 'cmb2627_cache_v1';
 const ROLES = { ATT:'Attaccante', CEN:'Centrocampista', DIF:'Difensore', JOLLY:'Jolly' };
 const FEET = { DX:'Destro', SX:'Sinistro', AMB:'Ambidestro' };
@@ -1723,6 +1830,11 @@ PLAQUES.push({ id:'apriscatole', icon:'🥫', name:'L’Apriscatole', desc:'Più
   ok:s => s.firstG >= 1, cmp:(a,b) => (b.firstG - a.firstG) || (b.g - a.g), val:s => `${s.firstG} ${s.firstG === 1 ? 'primo gol' : 'primi gol'}` });
 PLAQUES.push({ id:'ultimo', icon:'⏳', name:'Ultimo Respiro', desc:'Più gol nell’ultimo 20% della gara (servono minuti e ora di fine). Parità: più gol totali.',
   ok:s => s.lateG >= 1, cmp:(a,b) => (b.lateG - a.lateG) || (b.g - a.g), val:s => `${s.lateG} ${s.lateG === 1 ? 'gol nel finale' : 'gol nel finale'}` });
+/* Targhe legate a una funzione (feat): con la funzione spenta non si assegnano, non si mostrano e non contano nel tetto di 2 a testa.
+   Il saldo esiste solo sulla stagione intera, quindi negli storici dei trofei queste targhe non risultano mai assegnate. */
+PLAQUES.push({ id:'banco', feat:'casino', icon:'💰', name:'Il Banco', desc:`Il saldo più alto di ${CURRENCY}. Parità: più ${CURRENCY} guadagnate nelle gare.`,
+  ok:s => !!s.mov && s.mov.length > 1 && s.bal > 0, cmp:(a,b) => (b.bal - a.bal) || (b.earn - a.earn), val:s => `${fmtPat(s.bal)} ${CURRENCY}` });
+const plqOn = P => !P.feat || feat(P.feat);
 /* Moduli per ogni misura di squadra (da 1 a 11 titolari). La prima riga è sempre un solo giocatore "in porta"; massimo 4 righe e 5 per riga.
    Quelli a 8 sono i quattro di sempre. Il menu del modulo mostra solo quelli la cui somma è uguale ai titolari. */
 const FORMATIONS = {
@@ -1750,10 +1862,10 @@ const PLQ_GAP = {
   assist:[s => s.a, 'assist', 'assist', 1, 0], vittoria:[s => s.pct, 'punto %', 'punti %', 5, 0],
   gladiatore:[s => s.mvp, 'MVP', 'MVP', 1, 0], amuleto:[s => s.v - s.s, 'di saldo', 'di saldo', 1, 0],
   roccia:[s => s.ovr, 'OVR', 'OVR', 1, 1], re:[s => s.hat, 'gara da 3+ gol', 'gare da 3+ gol', 1, 0],
-  muro:[s => s.minConcW, 'gol subito', 'gol subiti', 1, 0], treno:[s => s.g + s.a, 'bonus', 'bonus', 1, 0],
+  muro:[s => s.minConcW, 'gol subito', 'gol subiti', 1, 0], banco:[s => s.bal, CURRENCY1, CURRENCY, 20, 0], treno:[s => s.g + s.a, 'bonus', 'bonus', 1, 0],
   apriscatole:[s => s.firstG, 'primo gol', 'primi gol', 1, 0], ultimo:[s => s.lateG, 'gol', 'gol', 1, 0]
 };
-const METALS = { noexcuses:'steel', cecchino:'gold', assist:'rose', vittoria:'gold', gladiatore:'bronze', amuleto:'emerald', roccia:'titanium', re:'gold', muro:'steel', treno:'copper', apriscatole:'silver', ultimo:'rose' };
+const METALS = { noexcuses:'steel', cecchino:'gold', assist:'rose', vittoria:'gold', gladiatore:'bronze', amuleto:'emerald', roccia:'titanium', re:'gold', muro:'steel', treno:'copper', apriscatole:'silver', ultimo:'rose', banco:'gold' };
 const COLS = [
   { k:'ovr',  l:'OVR', t:'Overall dinamico (50-99)' },
   { k:'pres', l:'Pr',  t:'Presenze' },
@@ -1770,8 +1882,8 @@ const COLS = [
 /* =========================================================
    STATE
    ========================================================= */
-const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{} };
-const loaded = { players:false, matches:false };
+const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{}, casino:{} };
+const loaded = { players:false, matches:false, settings:false };
 let localMode = false;
 const ui = {
   view:'dashboard',
@@ -1830,10 +1942,60 @@ function evDesc(x){
 /* =========================================================
    DATA LAYER (Firebase + cache locale di resilienza)
    ========================================================= */
+/* ---------- Interruttori ---------- */
+function feat(k){
+  const v = store.settings && store.settings.features && store.settings.features[k];
+  return typeof v === 'boolean' ? v : !!FEATURE_DEFAULTS[k];
+}
+const featSig = () => FEATURES.map(F => F.k + ':' + (feat(F.k) ? 1 : 0)).join(',');
+let featLocalAt = 0;
+/* Quando cambia una funzione (anche da un altro dispositivo): si azzerano i "già visto" prima del disegno, così il codice li ricrea in silenzio
+   e non compaiono popup finti di record, targhe o livelli. Agli spettatori arriva un avviso. Si agisce solo a impostazioni lette dal database. */
+function featSync(){
+  if(!(loaded.settings || localMode)) return;
+  const sig = featSig();
+  let old = null; try{ old = localStorage.getItem('cmb_featSig'); }catch(e){}
+  if(old === sig) return;
+  try{
+    ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr'].forEach(k => localStorage.removeItem(k));
+    localStorage.setItem('cmb_featSig', sig);
+  }catch(e){}
+  if(!old || Date.now() - featLocalAt < 6000) return;
+  const was = {}; old.split(',').forEach(x => { const [k, v] = x.split(':'); was[k] = v === '1'; });
+  const ch = FEATURES.filter(F => Object.prototype.hasOwnProperty.call(was, F.k) && was[F.k] !== feat(F.k));
+  if(ch.length) toast(ch.map(F => `L’organizzatore ha ${feat(F.k) ? 'acceso' : 'spento'}: ${F.name}`).join('. '), 'warn');
+}
+async function toggleFeature(k){
+  if(!ui.admin) return;
+  const F = FEATURES.find(x => x.k === k); if(!F) return;
+  if(db && syncState !== 'live'){ toast('Per cambiare le funzioni serve la connessione', 'warn'); return; }
+  const next = !feat(k);
+  const effect = {
+    casino:  next ? 'La sezione CASiNO ricompare per tutti, con saldi e dati com’erano.' : 'La sezione sparisce per tutti. I dati e i saldi restano e tornano se la riaccendi.',
+    mvp:     next ? 'Torna la votazione dell’MVP: l’MVP si decide di nuovo anche con i voti già dati.' : 'L’MVP sarà deciso solo dai punti. I voti già dati non contano finché è spento.',
+    ratings: next ? 'Ricompare la schermata dei voti a stelle e il bonus/malus torna nell’OVR.' : 'Spariscono i voti a stelle e il bonus/malus esce dall’OVR. I voti già dati restano salvati.'
+  }[k];
+  const ok = await confirmDlg(`${next ? 'Accendere' : 'Spegnere'} «${F.name}»?`, `${effect} Vale per tutti i dispositivi.`, next ? 'Accendi' : 'Spegni', !next);
+  if(!ok) return;
+  if(db && syncState !== 'live'){ toast('Connessione persa: non è stato cambiato nulla', 'warn'); return; }
+  featLocalAt = Date.now();
+  await commit({ ['settings/features/' + k]:next, ['settings/featuresAt/' + k]:Date.now() }, `${F.name}: ${next ? 'attiva' : 'spenta'}`);
+}
+function featuresHTML(){
+  const off = !!db && syncState !== 'live', at = store.settings && store.settings.featuresAt || {};
+  const fmt = t => t ? new Date(num(t)).toLocaleString('it-IT', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+  return `<div class="glass fx-box"><h3>Funzioni</h3>
+    <p class="mu sm">Accendi o spegni una funzione per tutti i dispositivi. Spenta sparisce e non fa nulla; i dati restano e, riaccesa, torna tutto com’era.</p>
+    ${FEATURES.map(F => { const on = feat(F.k), t = fmt(at[F.k]); return `<div class="fx-row">
+      <div class="fx-tx"><b>${F.name}</b><span>${F.desc}</span><small>${on ? 'Attiva' : 'Spenta'} · ${t ? 'modificato il ' + t : 'mai modificata'}${off ? ' · serve la connessione' : ''}</small></div>
+      <button type="button" class="sw ${on ? 'on' : ''} ${off ? 'dis' : ''}" role="switch" aria-checked="${on}" aria-label="${F.name}: ${on ? 'attiva' : 'spenta'}" data-action="feat-toggle" data-fx="${F.k}"><i></i></button>
+    </div>`; }).join('')}</div>`;
+}
+
 function loadCache(){
   try{
     const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    if(c){ store.players = c.players || {}; store.matches = c.matches || {}; store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; }
+    if(c){ store.players = c.players || {}; store.matches = c.matches || {}; store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; store.casino = c.casino || {}; }
   }catch(e){}
 }
 let cacheT;
@@ -1846,7 +2008,7 @@ function saveCache(){
       const { photo, ...rest } = p;
       return [k, (!rest.photoV && photo) ? p : rest];
     }));
-    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, profileReq:store.profileReq, photos:localMode ? store.photos : {} };
+    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, profileReq:store.profileReq, casino:store.casino, photos:localMode ? store.photos : {} };
     try{ localStorage.setItem(CACHE_KEY, JSON.stringify(data)); }
     catch(e){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, players:Object.fromEntries(Object.entries(players).map(([k, p]) => { const { photo, ...r } = p || {}; return [k, r]; })) })); }catch(e2){} }
   }, 400);
@@ -1911,8 +2073,10 @@ function initFirebase(){
   const onErr = err => { console.error(err); setSync('error'); toast('Lettura dal database negata. Controlla le regole di Firebase.', 'err'); };
   db.ref('players').on('value',  s => { store.players  = s.val() || {}; loaded.players = true; afterData(); }, onErr);
   db.ref('matches').on('value',  s => { store.matches  = s.val() || {}; loaded.matches = true; afterData(); }, onErr);
-  db.ref('settings').on('value', s => { store.settings = s.val() || {}; afterData(); }, onErr);
+  db.ref('settings').on('value', s => { store.settings = s.val() || {}; loaded.settings = true; afterData(); }, onErr);
   db.ref('votes').on('value', s => { store.votes = s.val() || {}; afterData(); }, onErr);
+  /* CASiNO: se le regole non permettono questo percorso l'app continua a funzionare e l'admin vede il motivo nel pannello */
+  db.ref('casino').on('value', s => { store.casino = s.val() || {}; casinoIssue = false; afterData(); }, () => { casinoIssue = true; scheduleRender(); });
   /* Voto ai compagni: se le regole non permettono questi percorsi l'app continua a funzionare e l'admin vede il motivo nel pannello */
   db.ref('ratingsDone').on('value', s => { store.ratingsDone = s.val() || {}; loaded.ratingsDone = true; afterData(); }, () => { loaded.ratingsDone = true; ratingsProblem('read', 'ratingsDone'); });
   db.ref('.info/connected').on('value', s => {
@@ -1924,12 +2088,13 @@ function initFirebase(){
 function afterData(){ saveCache(); scheduleRender(); }
 const dataReady = () => localMode || (loaded.players && loaded.matches && ratingsReady());
 /* ---------- Voto anonimo ai compagni: percorsi ratings/{gara}/{rid} e ratingsDone/{gara}/{pid} ---------- */
+let casinoIssue = false;          /* true se il database rifiuta la lettura di «casino» */
 let ratingsIssue = null;           /* { kind:'read'|'write', path } se il database rifiuta questi percorsi: lo vede l'admin */
 const ratingsLoaded = {}, ratingsWatch = {};
 function ratingsProblem(kind, path){ ratingsIssue = { kind, path }; scheduleRender(); }
 /* Le stelle di una gara si scaricano solo a votazione chiusa: finché è aperta nessun dispositivo le riceve */
 function watchRatings(){
-  if(!db) return;
+  if(!db || !feat('ratings')) return;
   for(const [id, m] of Object.entries(store.matches || {})){
     if(!m || !m.rate || m.status === 'scheduled' || ratingsWatch[id] || rateInfo({ id, ...m }).open) continue;
     ratingsWatch[id] = 1;
@@ -1938,7 +2103,7 @@ function watchRatings(){
 }
 /* Pronti a calcolare l'OVR: per le gare con voto chiuso servono già le stelle (altrimenti l'OVR salterebbe a caricamento finito) */
 function ratingsReady(){
-  if(!db || ratingsIssue) return true;
+  if(!db || ratingsIssue || !feat('ratings')) return true;
   return Object.entries(store.matches || {}).every(([id, m]) => !m || !m.rate || m.status === 'scheduled' || ratingsLoaded[id] || rateInfo({ id, ...m }).open);
 }
 
@@ -2200,6 +2365,8 @@ function mvpCands(m, preFn){
 function voteInfo(m, preFn){
   const eligible = [...list(m.white), ...list(m.black)].map(e => e.pid).filter(pid => store.players[pid]);
   const cands = m.top4 ? mvpCands(m, preFn) : null, candIds = cands ? cands.map(c => c.pid) : eligible;
+  /* Voto MVP spento: i voti non si rileggono (restano nel database) e la votazione non è mai aperta; l'MVP dipende solo dai punti */
+  if(!feat('mvp')) return { eligible, votes:{}, n:0, open:false, cands, candIds };
   const raw = (m.id && store.votes && store.votes[m.id]) || {};
   const votes = {};
   for(const [voter, target] of Object.entries(raw)) if(eligible.includes(voter) && candIds.includes(target) && voter !== target) votes[voter] = target;
@@ -2218,7 +2385,7 @@ function rateInfo(m){
   const voters = Object.keys(teamOf).filter(p => targets(p).length);
   const done = (store.ratingsDone && store.ratingsDone[m.id]) || {};
   const n = voters.filter(p => done[p]).length;
-  const open = !!m.rate && m.status !== 'scheduled' && !!m.voteClose && Date.now() < m.voteClose && n < voters.length;
+  const open = feat('ratings') && !!m.rate && m.status !== 'scheduled' && !!m.voteClose && Date.now() < m.voteClose && n < voters.length;
   return { voters, targets, teamOf, done, n, open };
 }
 /* Un voto è valido se dà una valutazione 1-5 a ciascun compagno (una sola volta), con al massimo 3 cinque stelle e 2 una stella */
@@ -2234,7 +2401,7 @@ function ratingsValid(items, targets){
 /* Risultati di una gara a votazione chiusa: { pid: { n, avg, bonus } }. Aperta (o senza rate): vuoto */
 function rateResults(m){
   const out = {};
-  if(!m.rate || m.status === 'scheduled') return out;
+  if(!feat('ratings') || !m.rate || m.status === 'scheduled') return out;   /* stelle spente: bonus sempre 0, i voti restano salvati */
   const info = rateInfo(m); if(info.open) return out;
   const acc = {};
   for(const rec of Object.values((store.ratings && store.ratings[m.id]) || {})){
@@ -2315,11 +2482,33 @@ function matchAwards(m){
   }
   return best;
 }
+/* ---------- Portafoglio: il saldo non si scrive mai, si ricalcola dai movimenti {t, kind, label, delta, ref} ----------
+   Saldo iniziale (nessuna data) + bonus giornalieri + guadagni delle gare + rettifiche dell'admin. Le scommesse si aggiungono qui. */
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+function walletBuild(st){
+  const C = store.casino || {}, mov = st.cmov;
+  mov.unshift({ t:null, kind:'start', label:'Saldo iniziale', delta:CASINO.START });
+  const cl = (C.claims && C.claims[st.pid]) || {};
+  for(const day of Object.keys(cl)) if(ISO_DAY.test(day) && cl[day] === true) mov.push({ t:new Date(day + 'T12:00:00').getTime(), kind:'daily', label:'Bonus giornaliero', delta:CASINO.DAILY, ref:day });
+  for(const a of Object.values((C.adj && C.adj[st.pid]) || {})){
+    const d = Math.round(Number(a && a.delta)); if(!Number.isFinite(d) || !d) continue;
+    mov.push({ t:num(a.at), kind:'adj', label:'Rettifica' + (a.why ? ': ' + String(a.why).slice(0, 80) : ''), delta:d });
+  }
+  walletExtra(st, mov);
+  mov.forEach((x, i) => { x.i = i; });
+  mov.sort((a, b) => ((a.t == null ? -Infinity : a.t) - (b.t == null ? -Infinity : b.t)) || (a.i - b.i));
+  let bal = 0; for(const x of mov){ bal += x.delta; x.bal = bal; }
+  st.bal = bal; st.mov = mov;
+}
+function walletExtra(st, mov){}   /* scommesse e vincite si aggiungono qui */
+const walletOf = pid => { const s = STATS.byId[pid]; return s && s.mov ? { bal:s.bal, mov:s.mov, earn:s.earn } : null; };
+const CUR_ICON = '🥔';
+const fmtPat = n => (n < 0 ? '−' : '') + Math.abs(Math.round(n)).toLocaleString('it-IT');
 function computeStats(upto){
-  const S = {};
+  const S = {}, wal = upto == null;   /* il portafoglio si calcola solo sulla stagione intera: gli storici dei trofei non lo usano */
   for(const [pid, p] of Object.entries(store.players || {})){
     if(!p || typeof p !== 'object') continue;
-    S[pid] = { pid, p, name:p.name || '', pres:0, v:0, pa:0, s:0, g:0, a:0, og:0, mvp:0, mvpPts:0, votesRx:0, ritardi:0, firstG:0, lateG:0, hat:0, maxG:0, minConcW:Infinity, bigW:0,
+    S[pid] = { pid, p, name:p.name || '', pres:0, v:0, pa:0, s:0, g:0, a:0, og:0, mvp:0, mvpPts:0, votesRx:0, earn:0, cmov:[], ritardi:0, firstG:0, lateG:0, hat:0, maxG:0, minConcW:Infinity, bigW:0,
                ovr:OVR_START, last:null, mates:{}, hist:[], prevRank:null };
   }
   const all = sortedMatches();
@@ -2350,6 +2539,11 @@ function computeStats(upto){
         const st = S[e.pid];
         const g = num(e.g), a = num(e.a), og = num(e.og);
         if(e.late) st.ritardi++;
+        if(wal && m.px){   /* guadagno della gara (solo gare nuove con px): partecipazione + gol + assist, con tetto. Autogol, risultato e MVP non contano */
+          const d = Math.min(CASINO.CAP, CASINO.MATCH + CASINO.GOAL * g + CASINO.ASSIST * a);
+          st.cmov.push({ t:num(m.createdAt) || (kickDate(m) ? kickDate(m).getTime() : 0), kind:'match', label:`Gara, giornata ${num(m.day)}`, delta:d, ref:m.id });
+          st.earn += d;
+        }
         st.pres++; st[r]++; st.g += g; st.a += a; st.og += og;
         if(st.pres === 1) st.first = m.id;
         if(g >= 3) st.hat++;
@@ -2389,11 +2583,13 @@ function computeStats(upto){
     st.ideal = ideal; st.nemesis = nem;
     return st;
   });
+  if(wal) for(const st of arr) walletBuild(st);
   arr.sort(rankCmp);
   arr.forEach((s, i) => s.rank = i + 1);
   /* Targhe: assegnazione in ordine gerarchico con tetto di 2 per giocatore */
   const held = {}, plaques = {};
   for(const P of PLAQUES){
+    if(!plqOn(P)) continue;
     const cands = arr.filter(P.ok).sort((a, b) => P.cmp(a, b) || a.name.localeCompare(b.name, 'it'));
     const win = cands.find(s => P.free || (held[s.pid] || []).length < 2);
     if(win){ (held[win.pid] = held[win.pid] || []).push(P.id); plaques[P.id] = { pid:win.pid, val:P.val(win) }; }
@@ -2514,6 +2710,7 @@ function boardHTML(sc){
 let rq = false;
 function scheduleRender(){ if(rq) return; rq = true; requestAnimationFrame(() => { rq = false; render(); }); }
 function render(){
+  featSync();
   watchRatings(); watchProfileReq();
   /* Ruolo Portiere eliminato: i POR già salvati valgono come DIF solo in memoria, nel database non si riscrive nulla */
   for(const id in store.players){ const p = store.players[id]; if(p && p.role === 'POR') p.role = 'DIF'; }
@@ -2522,7 +2719,10 @@ function render(){
   document.body.classList.toggle('is-admin', ui.admin);
   $('#lock-label').textContent = ui.admin ? 'Admin' : 'Ospite';
   $('#lock-shackle').setAttribute('d', ui.admin ? 'M8 11V8a4 4 0 0 1 7.5-2' : 'M8 11V8a4 4 0 0 1 8 0v3');
-  renderDashboard(); renderPlayers(); renderMatches(); renderMe(); if(ui.view === 'trophies') renderTrophies(); renderAdmin();
+  const cOn = feat('casino');
+  $('#nav-casino').hidden = !cOn;
+  if(ui.view === 'casino' && !cOn) go('dashboard'); else applyTheme();
+  renderDashboard(); renderPlayers(); renderMatches(); renderMe(); if(ui.view === 'trophies') renderTrophies(); if(ui.view === 'casino') renderCasino(); renderAdmin();
   if(ui.duel && $('#m-duel').classList.contains('open')) renderDuel();
   if(openFigPid && Date.now() > figAnimUntil) renderFigurina();   // non interrompe il flip se arrivano dati durante l'animazione
   if(ED && $('#m-match').classList.contains('open')) renderEditor();
@@ -3038,7 +3238,7 @@ function matchDetailHTML(id){
 
 /* ---------- Votazione MVP ---------- */
 function voteBoxHTML(m){
-  if(m.status === 'scheduled') return '';
+  if(m.status === 'scheduled' || !feat('mvp')) return '';
   const vi = voteInfo(m);
   if(!m.voteClose && !vi.n) return '';
   const me = localStorage.getItem('cmb_me'), inMatch = me && vi.eligible.includes(me), mine = me ? vi.votes[me] : null;
@@ -3074,7 +3274,7 @@ function voteBoxHTML(m){
 }
 /* Riquadro del voto ai compagni nella gara: avanzamento e, solo all'admin, chi manca. Nessun risultato */
 function rateBoxHTML(m){
-  if(!m.rate || m.status === 'scheduled') return '';
+  if(!feat('ratings') || !m.rate || m.status === 'scheduled') return '';
   const info = rateInfo(m); if(!info.voters.length) return '';
   const me = myPid(), inMatch = !!me && info.voters.includes(me), nm = pid => esc(pname(pid));
   if(!info.open) return `<div class="vbox closed"><div class="vb-h"><h4>⭐ Voto ai compagni chiuso</h4></div><p class="mu sm" style="margin:0">I voti sono anonimi e restano privati: ognuno vede solo il proprio bonus, nella sezione Io.</p></div>`;
@@ -3095,6 +3295,7 @@ const pvHas = mid => pvGet().some(x => x.mid === mid);
 const myPid = () => { try{ return localStorage.getItem('cmb_me') || ''; }catch(e){ return ''; } };
 const voteWrites = (mid, voter, target) => ({ [`votes/${mid}/${voter}`]:target, [`votes/${mid}/_m/${voter}`]:Date.now() });
 function pvFlush(){
+  if(!feat('mvp')){ if(pvGet().length) pvSet([]); return; }   /* voto MVP spento: la coda si svuota senza inviare nulla */
   if(db && syncState !== 'live') return;
   const q = pvGet(); if(!q.length) return;
   pvSet([]);
@@ -3141,6 +3342,7 @@ function voteBox2HTML(m, vi, me, inMatch, mine, pend){
     ${missing.length && trows.length ? `<p class="mu sm">Non hanno votato: ${missing.map(nm).join(', ')}</p>` : ''}</div>`;
 }
 async function castVote(mid, target){
+  if(!feat('mvp')){ toast('Il voto MVP è sospeso', 'warn'); return false; }
   const m = store.matches[mid]; if(!m) return false;
   const me = myPid();
   let vi = voteInfo({ id:mid, ...m });
@@ -3189,6 +3391,7 @@ function extendVote(mid){
 }
 async function voteCancel(mid, voter){
   if(!ui.admin) return;
+  if(!feat('mvp')){ toast('Il voto MVP è sospeso', 'warn'); return; }
   const m = store.matches[mid]; if(!m) return;
   const vi = voteInfo({ id:mid, ...m }), t = vi.votes[voter]; if(!t) return;
   const ok = await confirmDlg(`Annullare il voto di ${pname(voter)}?`, `Aveva votato ${pname(t)}. Potrà votare di nuovo e l’annullamento viene registrato.`, 'Annulla voto', true);
@@ -3205,7 +3408,7 @@ const seenFinal = () => { try{ return JSON.parse(localStorage.getItem('cmb2627_s
 function markFinal(mid){ const x = seenFinal(); x[mid] = 1; try{ localStorage.setItem('cmb2627_seenFinal', JSON.stringify(x)); }catch(e){} }
 function openWho(){
   const ls = [...STATS.list].sort((a, b) => a.name.localeCompare(b.name, 'it'));
-  $('#who-body').innerHTML = `<h3>Chi sei?</h3><p class="lead-p">Scegli la tua carta: serve per votare l’MVP e per vedere le tue statistiche. Resta salvata su questo telefono.</p>
+  $('#who-body').innerHTML = `<h3>Chi sei?</h3><p class="lead-p">Scegli la tua carta: ${feat('mvp') ? 'serve per votare l’MVP e per vedere le tue statistiche' : 'serve per vedere le tue statistiche'}. Resta salvata su questo telefono.</p>
     <div class="who-grid">${ls.map(x => `<button type="button" class="who-opt" data-who="${x.pid}">${avatar(x.p, 'md')}<span>${esc(x.name)}</span></button>`).join('')}</div>
     <div class="who-guest"><button type="button" class="btn ghost" data-action="who-guest">Sono un ospite</button>
       <div id="who-g" hidden><p class="mu sm">Non hai mai giocato ai Comboniani? Scrivi il tuo nome: l’organizzatore lo vedrà negli accessi.</p><div class="row"><input id="who-name" class="field" maxlength="40" placeholder="Nome e cognome" autocomplete="name"><button type="button" class="btn primary" data-action="who-guest-ok">Entra</button></div></div></div>`;
@@ -3238,13 +3441,13 @@ function flow(){
     const fin = rev.find(x => x.vote2 && !seen[x.id] && Date.now() - num(x.createdAt) < 30 * 864e5);
     if(fin){ markFinal(fin.id); showFinal(fin); return; }
     if(me){
-      const pend = rev.find(x => {
+      const pend = !feat('mvp') ? null : rev.find(x => {
         if(!x.vote2 || (ui.voteLater && ui.voteLater[x.id]) || pvHas(x.id)) return false;
         const vi = voteInfo(x);
         return vi.open && vi.eligible.includes(me) && !vi.votes[me] && vi.cands.some(c => c.pid !== me);
       });
       if(pend){ openVoteGate(pend); return; }
-      const pendR = rev.find(x => {
+      const pendR = !feat('ratings') ? null : rev.find(x => {
         if(!x.rate || prHas(x.id) || (ui.voteLater && ui.voteLater['r' + x.id])) return false;
         const inf = rateInfo(x);
         return inf.open && !inf.done[me] && inf.targets(me).length > 0;
@@ -3283,6 +3486,7 @@ function ratingWrites(mid, items){
 const isPermErr = e => /permission/i.test(String((e && (e.code || e.message)) || ''));
 let prBusy = false;
 async function prFlush(){
+  if(!feat('ratings')) return;   /* stelle spente: niente invii (la coda resta ferma sul telefono) */
   if(prBusy || (db && syncState !== 'live') || !dataReady() || !prGet().length) return;
   prBusy = true;
   try{
@@ -3314,6 +3518,7 @@ async function prFlush(){
 setInterval(prFlush, 20000);
 let RT = null;   /* { mid, sel:{ pid: stelle } }: la scelta resta solo in memoria su questo telefono */
 function openRateGate(m){
+  if(!feat('ratings')){ toast('I voti a stelle sono sospesi', 'warn'); return; }
   if(!RT || RT.mid !== m.id) RT = { mid:m.id, sel:{} };
   renderRateGate();
   openModal('#m-rate');
@@ -3349,6 +3554,7 @@ function rateTap(val){
 }
 async function rateSend(){
   if(!RT) return;
+  if(!feat('ratings')){ toast('I voti a stelle sono sospesi', 'warn'); RT = null; closeModal('#m-rate', true); return; }
   const m = store.matches[RT.mid], me = myPid(); if(!m || !me) return;
   const info = rateInfo({ id:RT.mid, ...m }), tg = info.targets(me);
   if(!info.open){ toast('La votazione è chiusa', 'warn'); RT = null; closeModal('#m-rate', true); return; }
@@ -3366,7 +3572,7 @@ async function rateSend(){
 }
 let voteSig = '';
 setInterval(() => {
-  const sig = Object.entries(store.matches || {}).filter(([, m]) => m && m.voteClose && Date.now() < m.voteClose).map(([id]) => id).join(',');
+  const sig = !(feat('mvp') || feat('ratings')) ? '' : Object.entries(store.matches || {}).filter(([, m]) => m && m.voteClose && Date.now() < m.voteClose).map(([id]) => id).join(',');
   if(sig !== voteSig){ voteSig = sig; scheduleRender(); }
 }, 15000);
 
@@ -3911,7 +4117,7 @@ function renderMe(){
   const best = h.length ? [...h].sort((a, b) => (b.d - a.d) || ((b.g + b.a * .5) - (a.g + a.a * .5)))[0] : null;
   const bestBox = best ? (() => { const sc = matchScore(best.m); return `<div class="me-best"><b>${fmtD(best.d)}</b><span>OVR</span></div><p><b>${esc(matchWhen(best.m))}</b><br>${(best.g || best.a) ? evDesc(best) : 'Senza gol né assist'}, ${best.r === 'v' ? 'vittoria' : best.r === 's' ? 'sconfitta' : 'pareggio'} ${sc.w}–${sc.b}</p>`; })()
     : '<p class="mu sm" style="margin:0">Ancora nessuna gara giocata.</p>';
-  const race = PLAQUES.map(P => {
+  const race = PLAQUES.filter(plqOn).map(P => {
     const c = STATS.list.filter(P.ok).sort((a, b) => P.cmp(a, b) || a.name.localeCompare(b.name, 'it'));
     const i = c.findIndex(x => x.pid === s.pid); if(i < 0) return null;
     const hold = STATS.plaques[P.id];
@@ -3957,7 +4163,7 @@ function renderMe(){
   let pt = tierOf(OVR_START);
   for(const x of h){ const nt = tierOf(x.ovr); if(TIER_RANK[nt] > TIER_RANK[pt]) ev.push({ ic:TIERS[nt].i, t:`Promosso a ${TIERS[nt].l}`, d:matchWhen(x.m) }); else if(TIER_RANK[nt] < TIER_RANK[pt]) ev.push({ ic:'⬇️', t:`Sceso a ${TIERS[nt].l}`, d:matchWhen(x.m) }); pt = nt; }
   s.plaques.forEach(id => { const P = plaqueById(id); ev.push({ ic:P.icon, t:`Detiene la targa ${P.name}`, d:'In corso' }); });
-  buildRecordCards(computeRecords(), STATS.matches.length).filter(c => !c.lock && (c.pid === s.pid || (c.pair && c.pair.includes(s.pid)))).forEach(c => ev.push({ ic:c.icon, t:`Primato: ${c.title}`, d:`${c.value} ${c.unit}` }));
+  buildRecordCards(computeRecords(), STATS.matches.length).filter(c => !c.off && !c.lock && (c.pid === s.pid || (c.pair && c.pair.includes(s.pid)))).forEach(c => ev.push({ ic:c.icon, t:`Primato: ${c.title}`, d:`${c.value} ${c.unit}` }));
   const pathBox = ev.length ? `<ol class="me-path">${ev.map(e => `<li><span class="pi">${e.ic}</span><span><b>${esc(e.t)}</b><small>${esc(String(e.d))}</small></span></li>`).join('')}</ol>` : '<p class="mu sm" style="margin:0">Il tuo percorso inizia con la prima gara.</p>';
   const pend = STATS.matches.filter(m => { const vi = voteInfo(m); return vi.open && vi.eligible.includes(s.pid) && !vi.votes[s.pid]; });
   const voteNote = pend.map(m => `<div class="glass me-vote">🗳️ Devi ancora votare l’MVP della giornata ${num(m.day)}<button class="btn sm primary" data-open-match="${m.id}">Vota</button></div>`).join('');
@@ -3965,7 +4171,7 @@ function renderMe(){
   const rateNote = pendR.map(m => `<div class="glass me-vote">⭐ Devi ancora votare i compagni della giornata ${num(m.day)}<button class="btn sm primary" data-action="rate-open" data-mid="${m.id}">Vota</button></div>`).join('');
   /* Voti dei compagni: solo il tuo risultato, mai quello degli altri; a votazione chiusa */
   const sgn = v => (v < 0 ? '−' : '+') + Math.abs(v).toFixed(2).replace('.', ',');
-  const rrows = h.filter(x => x.m.rate).slice(-6).reverse().map(x => {
+  const rrows = !feat('ratings') ? [] : h.filter(x => x.m.rate).slice(-6).reverse().map(x => {
     const info = rateInfo(x.m);
     if(info.open) return `<div><span>Giornata ${num(x.m.day)}<small> votazione in corso</small></span><small>i risultati arrivano alla chiusura</small></div>`;
     const rr = rateResults(x.m)[s.pid];
@@ -4178,7 +4384,7 @@ const lockSVG = st => `<svg class="lk" viewBox="0 0 24 24" aria-hidden="true"><p
 /* Ricalcola targhe e primati dopo ogni gara (k = 1..N) per avere regno, storia e passaggi di mano */
 let histCache = { key:null, data:[] };
 function trophyHistory(){
-  const key = STATS.matches.map(m => m.id + ':' + (m.updatedAt || '')).join(',') + '|' + Object.keys(store.players).length + '|' + JSON.stringify(store.votes || {}).length + '|' + Object.values(store.players).map(p => p && p.role).join('');
+  const key = STATS.matches.map(m => m.id + ':' + (m.updatedAt || '')).join(',') + '|' + Object.keys(store.players).length + '|' + JSON.stringify(store.votes || {}).length + '|' + Object.values(store.players).map(p => p && p.role).join('') + '|' + featSig();
   if(histCache.key === key) return histCache.data;
   const keep = STATS, steps = [];
   try{
@@ -4202,7 +4408,8 @@ function renderTrophies(){
   let seenP = null, seenR = null;
   try{ seenP = JSON.parse(localStorage.getItem('cmb2627_seenPlq') || 'null'); seenR = JSON.parse(localStorage.getItem('cmb2627_seenRecV') || 'null'); }catch(e){}
   const curP = {}, curR = {};
-  const plk = PLAQUES.map((P, i) => {
+  const PL = PLAQUES.filter(plqOn);
+  const plk = PL.map((P, i) => {
     const h = STATS.plaques[P.id], s = h && STATS.byId[h.pid];
     curP[P.id] = h ? h.pid : null;
     const plate = `<span class="plate"><span class="plk-ic">${P.icon}</span><span class="plk-t">${P.name}</span><span class="plk-n">${String(i + 1).padStart(2, '0')}</span></span>`;
@@ -4225,11 +4432,11 @@ function renderTrophies(){
     const mine = me === s.pid;
     return `<div class="plk ${metal} ${mine ? 'mine' : ''}">${plate}<div class="plk-body">
       <button class="plk-hold ${changed ? 'swap' : ''}" data-open-player="${s.pid}"><span class="hos">${changed && store.players[old] ? `<span class="ho old">${avatar(store.players[old], 'md')}</span>` : ''}<span class="ho new">${avatar(s.p, 'md')}</span></span><span class="hn"><span class="nm">${esc(s.name)}</span><span class="vl">${esc(h.val)}</span></span>${ovrPlate(s.ovr, 'pill')}</button>
-      <span class="plk-meta"><span class="reign ${st}" title="Gare consecutive in cui detiene la targa">${lockSVG(st)}<span>${reign} ${reign === 1 ? 'gara' : 'gare'}</span>${st === 'danger' ? '<em>In pericolo</em>' : st === 'open' ? '<em>Nuovo detentore</em>' : ''}</span>${mine ? '<span class="tua">Tua</span>' : ''}</span>
+      <span class="plk-meta"><span class="reign ${st}" title="Gare consecutive in cui detiene la targa">${lockSVG(st)}<span>${P.feat ? '—' : `${reign} ${reign === 1 ? 'gara' : 'gare'}`}</span>${st === 'danger' ? '<em>In pericolo</em>' : st === 'open' ? '<em>Nuovo detentore</em>' : ''}</span>${mine ? '<span class="tua">Tua</span>' : ''}</span>
       ${rival}<small>${esc(P.desc)}</small></div></div>`;
   }).join('');
   const cards = buildRecordCards(computeRecords(), nM);
-  const recs = cards.map(c => {
+  const recs = cards.filter(c => !c.off).map(c => {
     const sig = c.lock ? 'lock' : (REC_KIND[c.key] === 'event' ? recHolder(c) + '|' + c.value : recHolder(c));
     curR[c.key] = sig;
     const broken = !c.lock && !!seenR && !!seenR[c.key] && seenR[c.key] !== 'lock' && seenR[c.key] !== sig;
@@ -4242,8 +4449,8 @@ function renderTrophies(){
     const mine = !!me && (c.pid === me || (c.pair && c.pair.includes(me)));
     return recCard(c, { broken, chain, mine });
   }).join('');
-  el.innerHTML = `<div class="glass th-hero"><h2>🏆 Trofei & Primati</h2><p>Le ${PLAQUES.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa meglio.</p></div>
-    <div class="th-sec"><h3>Le ${PLAQUES.length} targhe stagionali</h3><span>Leader in tempo reale</span></div>
+  el.innerHTML = `<div class="glass th-hero"><h2>🏆 Trofei & Primati</h2><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa meglio.</p></div>
+    <div class="th-sec"><h3>Le ${PL.length} targhe stagionali</h3><span>Leader in tempo reale</span></div>
     <div class="plk-grid">${plk}</div>
     <div class="th-sec"><h3>Bacheca dei primati storici</h3><span>${nM} ${nM === 1 ? 'gara analizzata' : 'gare analizzate'}</span></div>
     <div class="rec-grid">${recs}</div>`;
@@ -4252,6 +4459,8 @@ function renderTrophies(){
 const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk','rit'];
 /* event = record di una singola impresa (festeggiato anche se lo stesso giocatore si migliora); lead = primato di classifica (festeggiato solo al cambio di detentore) */
 const REC_KIND = { manita:'event', mitra:'event', lampo:'event', scadere:'event', mida:'event', uomo:'event', inarr:'event', goleada:'event', cappotto:'event', cecchino:'lead', fortino:'lead', mina:'lead', come:'lead', down:'lead', eroe:'lead', oro:'lead', intesa:'lead', derby:'lead', bunk:'lead', rit:'lead' };
+/* Primati legati a una funzione: con la funzione spenta la scheda non si mostra e non fa popup */
+const REC_FEAT = { eroe:'mvp' };
 function buildRecordCards(R, nM){
   const none = 'Nessuna gara registrata';
   const need = lbl => nM ? lbl : none;
@@ -4297,7 +4506,7 @@ function buildRecordCards(R, nM){
     ,R.ritard ? { icon:'⏰', title:'Il Ritardatario', desc:'Più ritardi in stagione. Parità: percentuale di ritardi sulle presenze.', pid:R.ritard.pid, sub:`${R.ritard.pres} ${R.ritard.pres === 1 ? 'presenza' : 'presenze'}, ${Math.round(R.ritard.ritardi / R.ritard.pres * 100)}% delle gare`, value:R.ritard.ritardi, unit:R.ritard.ritardi === 1 ? 'ritardo' : 'ritardi' }
       : { icon:'⏰', title:'Il Ritardatario', desc:'Più ritardi in stagione. Parità: percentuale di ritardi sulle presenze.', lock:'Nessun ritardo registrato' }
   ];
-  cards.forEach((c, i) => c.key = REC_KEYS[i]);
+  cards.forEach((c, i) => { c.key = REC_KEYS[i]; if(REC_FEAT[c.key] && !feat(REC_FEAT[c.key])) c.off = true; });   /* le chiavi restano per posizione: una funzione spenta nasconde la scheda, non la toglie */
   return cards;
 }
 function recHolder(c){ return c.pid || (c.pair ? [...c.pair].sort().join('+') : '') || c.label || ''; }
@@ -4311,12 +4520,12 @@ let recQueue = [];
 function checkRecords(){
   const cards = buildRecordCards(computeRecords(), STATS.matches.length);
   const now = {};
-  for(const c of cards) now[c.key] = { sig:c.lock ? 'lock' : (REC_KIND[c.key] === 'event' ? recHolder(c) + '|' + c.value : recHolder(c)), txt:recText(c) };
+  for(const c of cards) if(!c.off) now[c.key] = { sig:c.lock ? 'lock' : (REC_KIND[c.key] === 'event' ? recHolder(c) + '|' + c.value : recHolder(c)), txt:recText(c) };
   let seen = null;
   try{ seen = JSON.parse(localStorage.getItem(REC_SEEN) || 'null'); }catch(e){}
   if(seen && STATS.matches.length >= 5){
     for(const c of cards){
-      if(c.lock || !seen[c.key] || seen[c.key].sig === now[c.key].sig) continue;
+      if(c.off || c.lock || !seen[c.key] || seen[c.key].sig === now[c.key].sig) continue;
       if(recQueue.some(q => q.key === c.key)) continue;
       recQueue.push({ key:c.key, card:c, prev:seen[c.key].sig === 'lock' ? '' : seen[c.key].txt, same:seen[c.key].sig.split('|')[0] === now[c.key].sig.split('|')[0] });
     }
@@ -4334,8 +4543,8 @@ function showFinal(m){
     <div class="fin-k">Fischio finale, giornata ${num(m.day)}</div>
     <div class="fin-board"><div class="fin-t">${kit('white', '')}<span>Bianchi</span></div><div class="fin-s"><b data-cu="${sc.w}" data-dur="1100">0</b><i></i><b data-cu="${sc.b}" data-dur="1100">0</b></div><div class="fin-t">${kit('black', '')}<span>Neri</span></div></div>
     <div class="fin-res">${win ? (win === 'white' ? '🏆 Vittoria Bianchi' : '🏆 Vittoria Neri') : '🤝 Pareggio'}</div>
-    ${mv ? `<div class="fin-mvp">⭐ ${mv.provisional ? 'MVP provvisorio' : 'MVP'} ${esc(pname(mv.pid, mv.n))} <span>${evDesc(mv)}</span></div><div class="fin-mvp" style="animation-delay:1.5s"><span>${m.vote2 ? '🗳️ Subito dopo: vota l’MVP tra i 4 migliori' : '🗳️ Votazione MVP aperta per 24 ore: vota da Partite'}</span></div>` : ''}
-    <div class="row" style="justify-content:center;margin-top:18px;position:relative"><button class="btn primary" data-action="final-close">${m.vote2 ? 'Continua' : 'Vedi tabellino'}</button></div>`;
+    ${mv ? `<div class="fin-mvp">⭐ ${mv.provisional ? 'MVP provvisorio' : 'MVP'} ${esc(pname(mv.pid, mv.n))} <span>${evDesc(mv)}</span></div>${feat('mvp') ? `<div class="fin-mvp" style="animation-delay:1.5s"><span>${m.vote2 ? '🗳️ Subito dopo: vota l’MVP tra i 4 migliori' : '🗳️ Votazione MVP aperta per 24 ore: vota da Partite'}</span></div>` : ''}` : ''}
+    <div class="row" style="justify-content:center;margin-top:18px;position:relative"><button class="btn primary" data-action="final-close">${m.vote2 && feat('mvp') ? 'Continua' : 'Vedi tabellino'}</button></div>`;
   openModal('#m-final');
   countUp($('#fin-body'));
   haptic();
@@ -4365,6 +4574,78 @@ function showNextRec(){
 }
 
 /* ---------- Admin ---------- */
+/* ---------- CASiNO ---------- */
+async function claimDaily(){
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  const me = myPid(); if(!me || !store.players[me]){ toast('Scegli prima la tua carta nella sezione Io', 'warn'); return; }
+  if(db && syncState !== 'live'){ toast('Per riscuotere serve la connessione', 'warn'); return; }
+  const day = todayISO(), had = store.casino && store.casino.claims && store.casino.claims[me] && store.casino.claims[me][day];
+  if(had){ toast('Oggi hai già riscosso', 'warn'); return; }
+  const w = walletOf(me); ui.cFrom = w ? w.bal : 0; ui.cAnim = true; ui.cPop = CASINO.DAILY;
+  await commit({ [`casino/claims/${me}/${day}`]:true }, `Riscosse ${CASINO.DAILY} ${CURRENCY}`);
+}
+const CTABS = [ { k:'wallet', l:'Portafoglio' }, { k:'bets', l:'Scommesse' }, { k:'hist', l:'Storico e premi' }, { k:'shop', l:'Negozio' } ];
+function casinoTabHTML(tab, me){
+  if(tab === 'bets') return `<div class="glass cs-empty"><b>Nessuna scommessa aperta</b><span>Quando l’organizzatore apre le scommesse di una gara le trovi qui.</span></div>`;
+  if(tab === 'hist') return `<div class="glass cs-empty"><b>Ancora niente nello storico</b><span>Qui compariranno le tue scommesse concluse e i premi.</span></div>`;
+  if(tab === 'shop') return `<div class="glass cs-empty"><b>Il negozio è ancora vuoto</b></div>`;
+  return walletHTML(me);
+}
+/* Andamento del saldo dopo ogni movimento (stesso disegno del grafico OVR) */
+function balChartHTML(w){
+  const m = w.mov;
+  if(m.length < 2) return '<p class="mu sm" style="margin:0">Il grafico compare dopo il primo movimento.</p>';
+  const pts = m.map(x => x.bal), W = 340, H = 150, L = 34, R = 8, T = 12, B = 22;
+  let lo = Math.min(...pts), hi = Math.max(...pts);
+  const pad = Math.max(5, Math.round((hi - lo) * 0.1)); lo -= pad; hi += pad;
+  const X = i => L + i * (W - L - R) / (pts.length - 1), Y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+  const line = pts.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(' ');
+  const area = `${line} L${X(pts.length - 1).toFixed(1)} ${H - B} L${X(0).toFixed(1)} ${H - B} Z`;
+  const zero = lo < 0 && hi > 0 ? `<line x1="${L}" x2="${W - R}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}" stroke="#fb7185" stroke-dasharray="3 4" opacity=".55"/>` : '';
+  const yl = [lo, hi].map(v => `<text x="${L - 5}" y="${(Y(v) + 3).toFixed(1)}" text-anchor="end" fill="#6c9680" font-size="9">${Math.round(v)}</text>`).join('');
+  const stp = Math.max(1, Math.ceil(pts.length / 7));
+  const dl = t => t == null ? 'Inizio' : new Date(t).toLocaleDateString('it-IT', { day:'numeric', month:'short' });
+  const xl = pts.map((_, i) => (i % stp === 0 || i === pts.length - 1) ? `<text x="${X(i).toFixed(1)}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle'}" fill="#6c9680" font-size="9">${dl(m[i].t)}</text>` : '').join('');
+  const dots = pts.map((v, i) => `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${i === pts.length - 1 ? 4.5 : 2.5}" fill="${i === pts.length - 1 ? '#f5c542' : '#04140c'}" stroke="#f5c542" stroke-width="1.5"/>`).join('');
+  return `<svg class="ovrchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Andamento del saldo: da ${pts[0]} a ${pts[pts.length - 1]} ${CURRENCY}"><defs><linearGradient id="bca" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22c55e" stop-opacity=".35"/><stop offset="1" stop-color="#22c55e" stop-opacity="0"/></linearGradient></defs>${zero}${yl}${xl}<path d="${area}" fill="url(#bca)"/><path d="${line}" fill="none" stroke="#f5c542" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>${dots}</svg>`;
+}
+/* Classifica dei saldi di tutta la rosa: la vedono tutti */
+function bancoBoardHTML(me){
+  const rows = STATS.list.filter(s => s.mov).sort((a, b) => (b.bal - a.bal) || (b.earn - a.earn) || a.name.localeCompare(b.name, 'it'));
+  if(!rows.length) return '';
+  return `<div class="glass cs-hist"><h3>Classifica dei saldi</h3>${rows.map((s, i) => `<button type="button" class="cs-lb ${s.pid === me ? 'me' : ''}" data-open-player="${s.pid}"><span class="pos">${i + 1}</span>${avatar(s.p, 'xs')}<span class="nm">${esc(s.name)}</span><b class="${s.bal < 0 ? 'neg' : ''}">${fmtPat(s.bal)}</b></button>`).join('')}</div>`;
+}
+function walletHTML(me){
+  const w = me ? walletOf(me) : null;
+  if(!w) return `<div class="glass cs-empty"><b>Il tuo portafoglio</b><span>Scegli la tua carta nella sezione Io per avere il tuo portafoglio.</span></div>${bancoBoardHTML('')}`;
+  const day = todayISO(), done = !!(store.casino && store.casino.claims && store.casino.claims[me] && store.casino.claims[me][day] === true);
+  const off = !!db && syncState !== 'live';
+  const from = ui.cAnim ? (ui.cFrom != null ? ui.cFrom : 0) : w.bal;
+  const big = ui.cAnim ? `<b data-cu="${w.bal}" data-from="${from}" data-dur="900">${fmtPat(from)}</b>` : `<b>${fmtPat(w.bal)}</b>`;
+  const pop = ui.cPop ? `<span class="cs-pop" aria-hidden="true">+${ui.cPop}</span>` : '';
+  const fmt = t => t == null ? 'Inizio' : new Date(t).toLocaleDateString('it-IT', { day:'numeric', month:'short' });
+  const rows = [...w.mov].reverse().map(x => `<div class="cs-mv"><span class="d">${fmt(x.t)}</span><span class="l">${esc(x.label)}</span><b class="${x.delta < 0 ? 'neg' : 'pos'}">${x.delta < 0 ? '−' : '+'}${fmtPat(Math.abs(x.delta))}</b></div>`).join('');
+  return `<div class="glass cs-bal"><span class="mu sm">Il tuo saldo</span>
+      <div class="cs-big ${w.bal < 0 ? 'neg' : ''}">${CUR_ICON} ${big}<small>${CURRENCY}</small>${pop}</div>
+      <button type="button" class="btn primary cs-claim" data-action="casino-claim" ${done || off ? 'disabled' : ''}>${done ? 'Già riscosso oggi' : `Riscuoti ${CASINO.DAILY}`}</button>
+      <span class="mu sm">${done ? 'Il prossimo bonus è disponibile domani.' : off ? 'Per riscuotere serve la connessione.' : `Un bonus di ${CASINO.DAILY} ${CURRENCY} al giorno.`}</span></div>
+    <div class="glass cs-hist"><h3>Andamento del saldo</h3>${balChartHTML(w)}</div>
+    ${bancoBoardHTML(me)}
+    <div class="glass cs-hist"><h3>Movimenti</h3>${rows}</div>`;
+}
+function renderCasino(){
+  const el = $('#casino'); if(!el) return;
+  if(!feat('casino')){ el.innerHTML = ''; return; }
+  const me = myPid(), tab = CTABS.some(t => t.k === ui.cTab) ? ui.cTab : 'wallet';
+  const guest = !me || !store.players[me];
+  el.innerHTML = `<div class="toolbar"><h2 class="vtitle">🎰 CASiNO</h2></div>
+    ${guest ? `<div class="glass cs-note">Stai guardando in sola lettura. Per avere il tuo portafoglio scegli la tua carta nella sezione <button type="button" class="linkbtn" data-go="me">Io</button>.</div>` : ''}
+    <div class="cs-tabs" role="tablist" aria-label="CASiNO">${CTABS.map(t => `<button type="button" role="tab" class="cs-tab ${t.k === tab ? 'on' : ''}" aria-selected="${t.k === tab}" data-ctab="${t.k}">${t.l}</button>`).join('')}</div>
+    <div class="cs-body" role="tabpanel">${casinoTabHTML(tab, guest ? '' : me)}</div>`;
+  if(ui.cAnim){ countUp(el); ui.cAnim = false; }
+  ui.cPop = 0;
+}
+
 function renderAdmin(){
   const el = $('#admin');
   if(!ui.admin){
@@ -4378,6 +4659,7 @@ function renderAdmin(){
   }
   const mode = db ? (syncState === 'live' ? 'Firebase, sincronizzato' : 'Firebase, in attesa di connessione') : 'Solo su questo dispositivo';
   el.innerHTML = `<div class="toolbar"><h2 class="vtitle">Pannello admin</h2></div>
+    ${featuresHTML()}
     <div class="admin-grid">
       <button class="tile" data-action="new-sched"><span class="ic">🗓️</span><b>Programma gara</b><span>Data, ora e convocati bilanciati: tutti vedono dove giocano.</span></button>
       <button class="tile" data-action="new-match"><span class="ic">📝</span><b>Registra gara</b><span>Schiera le squadre e segna gol, assist e autogol.</span></button>
@@ -4389,9 +4671,10 @@ function renderAdmin(){
       <button class="tile quiet" data-action="change-pin"><span class="ic">🔑</span><b>Cambia PIN</b><span>Vale per tutti i dispositivi del torneo.</span></button>
       <button class="tile quiet" data-action="logout"><span class="ic">🚪</span><b>Esci dall’area admin</b><span>Torni in sola lettura su questo dispositivo.</span></button>
     </div>
-    ${ratingsIssue ? `<div class="warnline">${ratingsIssue.kind === 'read'
+    ${ratingsIssue && feat('ratings') ? `<div class="warnline">${ratingsIssue.kind === 'read'
       ? `Il database non permette di leggere «${esc(ratingsIssue.path)}». Per il voto ai compagni aggiungi nelle regole di Firebase i percorsi “ratings” e “ratingsDone” (lettura e scrittura per tutti i dispositivi).`
       : `Il database ha rifiutato la scrittura di un voto ai compagni (percorso «${esc(ratingsIssue.path)}»). Nelle regole di Firebase servono ratings/$gara/$rid e ratingsDone/$gara/$pid con scrittura consentita a tutti i dispositivi.`}</div>` : ''}
+    ${casinoIssue && feat('casino') ? `<div class="warnline">Il database non permette di leggere «casino». Per il CASiNO aggiungi nelle regole di Firebase il percorso “casino” (lettura e scrittura per tutti i dispositivi).</div>` : ''}
     ${!store.settings?.pin ? `<div class="warnline">Stai usando il PIN predefinito ${DEFAULT_PIN}: cambialo prima di condividere il link.</div>` : ''}
     <div class="glass db-info"><span>Archivio: <b>${mode}</b></span><span>Giocatori: <b>${STATS.list.length}</b></span><span>Gare: <b>${STATS.matches.length}</b></span><span>Versione: <b>v${APP_VERSION}</b></span></div>
     ${anHTML()}`;
@@ -5034,6 +5317,8 @@ async function saveMatch(){
   const old = ED.id ? store.matches[ED.id] : null;
   /* Voto anonimo ai compagni: solo per le gare nuove (primo salvataggio da giocata, o programmata che diventa giocata) */
   if(!sched && (!old || old.status === 'scheduled' || old.rate)) payload.rate = 1;
+  /* px: la gara dà patate ai giocatori. Solo per le gare che diventano giocate adesso (con CASiNO acceso o spento); le vecchie restano senza */
+  if(!sched && (!old || old.status === 'scheduled' || old.px)) payload.px = 1;
   if(!sched && (!old || old.status === 'scheduled' || old.top4)){
     payload.top4 = 1;
     if(!old || old.status === 'scheduled' || old.vote2) payload.vote2 = 1;
@@ -5189,7 +5474,7 @@ async function backupAll(){
   backing = true;
   toast('Backup in corso…');
   const data = {}, failed = [];
-  const PATHS = ['players','matches','settings','votes','photos','ratings','ratingsDone','profileReq'];
+  const PATHS = ['players','matches','settings','votes','photos','ratings','ratingsDone','profileReq','casino'];
   for(const path of PATHS){
     try{ data[path] = (await db.ref(path).once('value')).val(); }
     catch(e){ console.warn('backup', path, e); failed.push(path); }
@@ -5404,7 +5689,7 @@ function anHTML(){
   const hMax = Math.max(1, ...hours);
   const views = {}, feats = {};
   S.forEach(x => { for(const [k, v] of Object.entries(x.v || {})) views[k] = (views[k] || 0) + num(v); for(const [k, v] of Object.entries(x.f || {})) feats[k] = (feats[k] || 0) + num(v); });
-  const VL = { dashboard:'Classifica', players:'Giocatori', matches:'Partite', me:'Io', trophies:'Trofei', admin:'Admin' }, FL = { replay:'Replay dei gol', export:'Immagini esportate', vote:'Voti MVP', news:'Novità aperte' };
+  const VL = { dashboard:'Classifica', players:'Giocatori', matches:'Partite', me:'Io', trophies:'Trofei', casino:'CASiNO', admin:'Admin' }, FL = { replay:'Replay dei gol', export:'Immagini esportate', vote:'Voti MVP', news:'Novità aperte' };
   const vTot = Object.values(views).reduce((a, b) => a + b, 0) || 1;
   const nm = x => x.pid && store.players[x.pid] ? store.players[x.pid].name : (x.guest ? 'Ospite · ' + x.guest : 'Ospite');
   const fmt = ts => ts ? new Date(num(ts)).toLocaleString('it-IT', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '–';
@@ -5425,14 +5710,24 @@ function anHTML(){
       <p class="mu sm" style="margin:6px 0 0">Si registra orario, dispositivo, sezioni aperte e, se scelto in “Io”, il giocatore. I tuoi dispositivi admin sono esclusi. Dati conservati 60 giorni.</p>
     </div></section>`;
 }
+/* Tema CASiNO: solo mentre si è nella sezione. Si toglie all'uscita (o se la funzione viene spenta) e si riporta il colore della barra del telefono */
+function applyTheme(){
+  const on = ui.view === 'casino' && feat('casino');
+  document.body.classList.toggle('theme-casino', on);
+  const mt = document.querySelector('meta[name="theme-color"]');
+  if(mt) mt.setAttribute('content', on ? '#04140c' : '#050608');
+}
 function go(view){
+  if(view === 'casino' && !feat('casino')){ toast('CASiNO sospeso', 'warn'); view = 'dashboard'; }
   ui.view = view;
+  applyTheme();
   $$('.view').forEach(v => v.hidden = v.id !== 'view-' + view);
   $$('.nav [data-go]').forEach(b => b.setAttribute('aria-current', b.dataset.go === view ? 'page' : 'false'));
   window.scrollTo(0, 0);
   if(view === 'me'){ const el = $('#me'); el.classList.remove('me-anim'); void el.offsetWidth; el.classList.add('me-anim'); countUp(el); }
   if(view === 'dashboard') rankShift();
   if(view === 'trophies') renderTrophies();
+  if(view === 'casino'){ ui.cAnim = true; ui.cFrom = null; renderCasino(); }
   if(view === 'admin') setTimeout(profToast, 500);
   anBump('v/' + view);
   if(view === 'admin' && ui.admin) anLoad();
@@ -5457,6 +5752,7 @@ document.addEventListener('click', async e => {
     else ui.sort = { key:d.sort, dir:d.sort === 'rank' ? 1 : -1 };
     renderDashboard(); return;
   }
+  if(d.ctab){ if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; } ui.cTab = d.ctab; renderCasino(); return; }
   if(d.edteam){ edTeam = d.edteam; renderEditorPick(); return; }
   if(d.edmode){ if(ED) setEdMode(d.edmode); return; }
   if(d.rpg !== undefined){ rpGoto(+d.rpg); return; }
@@ -5517,6 +5813,8 @@ document.addEventListener('click', async e => {
     case 'optimize-photos': if(requireAdmin()) optimizeStoredPhotos(); break;
     case 'backup-all': if(requireAdmin()) backupAll(); break;
     case 'import-xlsx': if(requireAdmin()){ $('#xlsxInput').value = ''; $('#xlsxInput').click(); } break;
+    case 'casino-claim': claimDaily(); break;
+    case 'feat-toggle': toggleFeature(d.fx); break;
     case 'change-pin': if(requireAdmin()){ $('#cpin-form').reset(); openModal('#m-cpin'); } break;
     case 'logout':
       ui.admin = false; ui.profToasted = false; ui.swapMode = false; ui.swapSel = null; sessionStorage.removeItem('cmb_admin');
