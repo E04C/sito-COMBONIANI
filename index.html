@@ -317,6 +317,20 @@ button.affr:hover{border-color:var(--line)}
 .locked p{color:var(--mu);margin:0 auto 18px;max-width:40ch}
 .db-info{margin-top:16px;padding:14px 18px;display:flex;flex-wrap:wrap;gap:8px 22px;color:var(--mu);font-size:13.5px;font-weight:600}
 .db-info b{color:var(--tx)}
+.frm{position:absolute;top:0;left:0;right:0;bottom:0;z-index:6;padding:6px;pointer-events:none;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+.mfig-in .frm{padding:3px}
+.frm-rame{background:linear-gradient(135deg,#7c2d12,#f59e0b 25%,#fde68a 45%,#b45309 65%,#f59e0b 85%,#7c2d12)}
+.frm-onda{background:repeating-linear-gradient(45deg,#0ea5e9 0 7px,#7dd3fc 7px 14px,#0369a1 14px 21px)}
+.frm-scacchi{background:repeating-conic-gradient(#0b0f17 0 25%,#f1f5f9 0 50%) 0 0/12px 12px}
+.frm-oro{background:linear-gradient(120deg,#b45309,#fde047 30%,#fff7c2 50%,#f59e0b 70%,#92400e);background-size:200% 200%;animation:frmShine 5s ease-in-out infinite alternate}
+@keyframes frmShine{to{background-position:100% 100%}}
+.holo-x{position:absolute;top:0;left:0;right:0;bottom:0;z-index:4;pointer-events:none;mix-blend-mode:screen;opacity:.34;background-size:220% 220%;animation:hxMove 7s ease-in-out infinite alternate}
+@keyframes hxMove{to{background-position:100% 100%}}
+.hx-arcobaleno{background-image:linear-gradient(115deg,#ff3b3b,#ffd23b,#3bff6b,#3bd5ff,#6b3bff,#ff3bd5,#ff3b3b)}
+.hx-ghiaccio{background-image:linear-gradient(115deg,#e0f2fe,#7dd3fc,#ffffff,#38bdf8,#e0f2fe);opacity:.3}
+.hx-fuoco{background-image:linear-gradient(115deg,#7f1d1d,#ef4444,#fb923c,#fde047,#ef4444,#7f1d1d)}
+.sh-fr{position:relative}
+.sh-fr .holo-x{opacity:.9;mix-blend-mode:normal}
 .emb{display:inline-block;width:.85em;height:.85em;margin-left:.3em;vertical-align:-.1em;color:#fbbf24;flex:none}
 .nmx{display:inline}
 .nc-smeraldo{color:#34d399}.nc-rubino{color:#f87171}.nc-cielo{color:#60a5fa}.nc-viola{color:#c084fc}.nc-ambra{color:#fbbf24}
@@ -2999,7 +3013,7 @@ function renderPlayers(){
     .sort((a, b) => cmp(a, b) || a.name.localeCompare(b.name, 'it'));
   $('#pcount').textContent = `${ps.length} ${ps.length === 1 ? 'giocatore' : 'giocatori'}${ui.pRole === 'CEN' ? ' (Jolly inclusi)' : ''}`;
   const key = { ovr:null, g:'g', a:'a', pres:'pres', az:null }[ui.pSort];
-  grid.innerHTML = ps.map(s => `<div class="mfig-w"><button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}${roleChip(s.p.role)}${ovrPlate(s.ovr, 'sm')}${holoSpan(s.ovr)}<span class="mfig-b"><span class="mfig-n">${nameHTML(s.pid)}</span><span class="mfig-s"><span${key === 'g' ? ' style="color:var(--or)"' : ''}><b>${s.g}</b>gol</span><span${key === 'a' ? ' style="color:var(--or)"' : ''}><b>${s.a}</b>ass</span><span${key === 'pres' ? ' style="color:var(--or)"' : ''}><b>${s.pres}</b>pres</span></span></span></span></span></button><button type="button" class="mfig-turn" data-action="fig-back" data-pid="${s.pid}" aria-label="Retro della figurina di ${esc(s.name)}" title="Retro della figurina">↻</button></div>`).join('')
+  grid.innerHTML = ps.map(s => `<div class="mfig-w"><button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}${roleChip(s.p.role)}${ovrPlate(s.ovr, 'sm')}${holoSpan(s.ovr)}${cardFx(s.pid).hx}${cardFx(s.pid).frm}<span class="mfig-b"><span class="mfig-n">${nameHTML(s.pid)}</span><span class="mfig-s"><span${key === 'g' ? ' style="color:var(--or)"' : ''}><b>${s.g}</b>gol</span><span${key === 'a' ? ' style="color:var(--or)"' : ''}><b>${s.a}</b>ass</span><span${key === 'pres' ? ' style="color:var(--or)"' : ''}><b>${s.pres}</b>pres</span></span></span></span></span></button><button type="button" class="mfig-turn" data-action="fig-back" data-pid="${s.pid}" aria-label="Retro della figurina di ${esc(s.name)}" title="Retro della figurina">↻</button></div>`).join('')
     || `<p class="mu" style="grid-column:1/-1">Nessun giocatore${ui.pRole !== 'ALL' ? ' ' + ui.pRole : ''}${raw ? ` corrisponde a “${esc(raw)}”` : ' in questo ruolo'}.</p>`;
 }
 
@@ -3262,7 +3276,7 @@ function renderFigurina(){
   const sweep = anim && anim.cls ? `<span class="sweep" style="--sd:${({ 'reveal-gold':'.75s', 'reveal-dia':'1.3s', promo:'2s' }[anim.cls])}"></span>` : '';
   const banner = promo ? `<div class="promo-banner t-${t}"><span>⬆ Promozione</span><b>${TIERS[promo.from].l} → ${TIERS[t].l}</b></div>` : '';
   const back = backHTML(pid, p, backT);
-  $('#fig-body').innerHTML = `${banner}<div class="stage3d ${anim && anim.cls ? 'fade' : ''}">${burst}<div class="flip ${anim ? anim.cls : ''}${figTurned ? ' turned' : ''}"><div class="tilt ${holo ? 'on-holo' : ''} ${streakCls(s)}"><div class="fig-shadow t-${t}"></div><div class="fig-glow face-front t-${t}"><div class="fig chamf"><div class="fig-in chamf">${holo ? '<span class="holo" aria-hidden="true"></span>' : ''}${sweep}
+  $('#fig-body').innerHTML = `${banner}<div class="stage3d ${anim && anim.cls ? 'fade' : ''}">${burst}<div class="flip ${anim ? anim.cls : ''}${figTurned ? ' turned' : ''}"><div class="tilt ${holo ? 'on-holo' : ''} ${streakCls(s)}"><div class="fig-shadow t-${t}"></div><div class="fig-glow face-front t-${t}"><div class="fig chamf"><div class="fig-in chamf">${holo ? '<span class="holo" aria-hidden="true"></span>' : ''}${cardFx(pid).hx}${cardFx(pid).frm}${sweep}
     <div class="fig-top">${photoBlock(p)}
       <div class="fig-badges">
         <div class="fig-role">${ovrPlate(s.ovr, 'xl')}<span class="rf">${roleChip(p.role)}<span>${esc(FEET[p.foot] || '')}</span></span></div>
@@ -5342,6 +5356,11 @@ function nameHTML(pid, text){
   const cls = ['nmx', c.ncol && 'nc-' + c.ncol.slice(3), c.nfx && 'nf-' + c.nfx.slice(3)].filter(Boolean).join(' ');
   return `<span class="${cls}">${esc(t)}</span>${c.emblem ? emblemSVG(c.emblem) : ''}`;
 }
+/* Cornice e ologramma alternativo della figurina: sono strati in più sopra la figurina. Livello (Bronzo/Argento/Oro/Diamante) e OVR restano quelli di sempre */
+function cardFx(pid){
+  const c = cosOf(pid);
+  return { frm:c.frame ? `<span class="frm frm-${c.frame.slice(3)}" aria-hidden="true"></span>` : '', hx:c.holo ? `<span class="holo-x hx-${c.holo.slice(3)}" aria-hidden="true"></span>` : '' };
+}
 const rowCls = pid => { const c = cosOf(pid); return c.row ? 'rw-' + c.row.slice(3) : ''; };
 const SHOP_CAT_ICON = { trail:'☄️', frame:'🖼️', ncol:'🎨', nfx:'✨', holo:'🌈', emblem:'🏅', icons:'⚽', cheer:'🎆', row:'📊', token:'🎟️' };
 /* Anteprima di un oggetto (si arricchisce man mano che gli oggetti hanno un loro disegno) */
@@ -5349,6 +5368,8 @@ function shopPreviewHTML(id){
   const it = SHOP_BY_ID[id];
   if(it.cat === 'ncol' || it.cat === 'nfx') return `<span class="sh-pv" aria-hidden="true"><span class="nmx ${it.cat === 'ncol' ? 'nc-' : 'nf-'}${id.slice(3)}">Aa</span></span>`;
   if(it.cat === 'emblem') return `<span class="sh-pv" aria-hidden="true">${emblemSVG(id)}</span>`;
+  if(it.cat === 'frame') return `<span class="sh-pv sh-fr" aria-hidden="true"><span class="frm frm-${id.slice(3)}"></span></span>`;
+  if(it.cat === 'holo') return `<span class="sh-pv sh-fr" aria-hidden="true"><span class="holo-x hx-${id.slice(3)}"></span></span>`;
   if(it.cat === 'row') return `<span class="sh-pv sh-row rw-${id.slice(3)}" aria-hidden="true"></span>`;
   return `<span class="sh-pv" aria-hidden="true">${SHOP_CAT_ICON[it.cat]}</span>`;
 }
