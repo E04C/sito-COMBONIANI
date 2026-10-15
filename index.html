@@ -1413,6 +1413,62 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .vi-h{margin:14px 0 6px;font:800 12px var(--body);color:var(--mu);text-transform:uppercase;letter-spacing:.05em}
 .vi-l{font-size:13px;color:var(--mu);padding:4px 0;border-top:1px solid rgba(255,255,255,.05)}
 .vi-l b{color:var(--tx)}
+/* ---------- CASiNO: sezione e tema (feltro verde, accenti oro) ---------- */
+.cs-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;margin:0 0 4px;scrollbar-width:none}
+.cs-tabs::-webkit-scrollbar{display:none}
+.cs-tab{flex:none;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--hair);background:rgba(255,255,255,.04);color:var(--mu);font:700 14px var(--body);white-space:nowrap;transition:color .2s,background .2s,border-color .2s}
+.cs-tab.on{color:var(--or);border-color:var(--line-strong);background:var(--or-soft)}
+.cs-empty{padding:26px 20px;text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center}
+.cs-empty b{font:italic 800 24px/1.1 var(--disp)}
+.cs-empty span{color:var(--mu);font-size:14px;max-width:38ch}
+.cs-note{padding:12px 16px;margin-bottom:12px;color:var(--mu);font-size:13.5px;font-weight:600}
+.linkbtn{display:inline;min-height:44px;padding:0 4px;border:0;background:none;color:var(--or);font-weight:800;font-size:inherit;font-family:inherit;text-decoration:underline}
+body{transition:background-color .3s}
+.bg::after{content:"";position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .3s;
+  background:
+    radial-gradient(1000px 640px at 88% -12%,rgba(34,197,94,.20),transparent 62%),
+    radial-gradient(760px 520px at -8% 108%,rgba(22,163,74,.16),transparent 60%),
+    radial-gradient(600px 420px at 50% 55%,rgba(245,197,66,.06),transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='84' viewBox='0 0 84 84'%3E%3Cg fill='none' stroke-width='1'%3E%3Cpath d='M42 16l7.4 18.6L68 42l-18.6 7.4L42 68l-7.4-18.6L16 42l18.6-7.4z' stroke='rgba(245,197,66,0.08)'/%3E%3C/g%3E%3C/svg%3E"),
+    linear-gradient(180deg,#072216 0%,#04140c 75%)}
+body.theme-casino .bg::after{opacity:1}
+body.theme-casino{
+  --bg0:#04140c; --bg1:#072216; --bg2:#0b2d1d;
+  --panel:rgba(8,36,22,.7);
+  --line:rgba(245,197,66,.22); --line-strong:rgba(245,197,66,.5); --hair:rgba(255,255,255,.09);
+  --or:#f5c542; --or2:#d9a21b; --or-soft:rgba(245,197,66,.12);
+  --gold:#fbbf24; --gold2:#f5c542;
+  --tx:#ffffff; --mu:#9fc3ae; --mu2:#6c9680;
+  background-color:#04140c}
+body.theme-casino .bg .pitch *{stroke:rgba(255,255,255,.02)}
+body.theme-casino .topbar{background:linear-gradient(180deg,rgba(4,20,12,.95),rgba(4,20,12,.76))}
+body.theme-casino .nav{background:rgba(4,20,12,.92)}
+body.theme-casino .crest{filter:drop-shadow(0 0 12px rgba(245,197,66,.4))}
+body.theme-casino #cg stop:nth-child(2){stop-color:#22c55e}
+body.theme-casino #cg stop:nth-child(3){stop-color:#16a34a}
+body.theme-casino .crest-btn::before{border-color:#f5c542}
+body.theme-casino .crest-btn.on::before{box-shadow:0 0 12px rgba(245,197,66,.6)}
+body.theme-casino .crest-btn::after{background:#f5c542;color:#2a1c00}
+body.theme-casino .sync[data-state=live] i{background:#22c55e;animation-name:pulseG}
+@keyframes pulseG{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 7px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+body.theme-casino .btn{background:rgba(245,197,66,.08)}
+body.theme-casino .btn.primary{background:linear-gradient(180deg,#f5c542,#d9a21b);color:#2a1c00;box-shadow:0 10px 26px -10px rgba(245,197,66,.6)}
+body.theme-casino .btn.primary:hover{box-shadow:0 12px 30px -8px rgba(245,197,66,.8)}
+body.theme-casino .field:focus{box-shadow:0 0 0 3px rgba(245,197,66,.18)}
+body.theme-casino .sheet{background:rgba(5,24,15,.97)}
+body.theme-casino .modal{background:rgba(1,10,6,.78)}
+body.theme-casino .toast{background:rgba(5,24,15,.97)}
+body.theme-casino .rec::before{background:linear-gradient(90deg,rgba(245,197,66,0),var(--or),rgba(245,197,66,0))}
+body.theme-casino .rec.glass{background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.015) 38%,rgba(4,20,12,.86)),rgba(4,20,12,.8)}
+body.theme-casino .rec-val b{text-shadow:0 0 18px rgba(245,197,66,.35)}
+body.theme-casino .rec.mine{border-color:rgba(245,197,66,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 0 1px rgba(245,197,66,.5),0 0 26px rgba(245,197,66,.2)}
+body.theme-casino .plk.mine{box-shadow:0 0 0 1px var(--or),0 0 24px rgba(245,197,66,.25)}
+body.theme-casino .av{background-color:#0b2d1d}
+body.theme-casino .ph-ini{color:rgba(245,197,66,.5)}
+body.theme-casino .role.JOLLY{background:linear-gradient(90deg,rgba(34,197,94,.2),rgba(251,191,36,.2))}
+body.theme-casino .vbox{background:linear-gradient(180deg,rgba(245,197,66,.08),rgba(255,255,255,.02))}
+body.theme-casino .fx-box .sw.on::before{background:var(--or);border-color:var(--or)}
+@media (prefers-reduced-motion:reduce){body{transition:none}.bg::after{transition:none}}
 </style>
 </head>
 <body>
@@ -1462,7 +1518,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
   <button data-go="matches"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5l3.8 2.8-1.4 4.4H9.6l-1.4-4.4z"/><path d="M12 3v4.5M20.6 9.5l-4.8.8M17.5 19.5l-3.1-4.8M6.5 19.5l3.1-4.8M3.4 9.5l4.8.8"/></svg>Partite</button>
   <button data-go="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.8-4 3.8-6 7.5-6s6.7 2 7.5 6"/></svg>Io</button>
   <button data-go="trophies"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/><path d="M12 14v3M8.5 20.5h7M9.5 17.5h5l.5 3h-6z"/></svg>Trofei</button>
-  <button data-go="admin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>Admin</button>
+  <button data-go="casino" id="nav-casino"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v5M12 16v5M3 12h5M16 12h5"/></svg>CASiNO</button>
 </nav>
 
 <main>
@@ -1507,6 +1563,8 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
  <section id="view-me" class="view" aria-label="Il mio giocatore" hidden><div id="me"></div></section>
 
   <section id="view-trophies" class="view" aria-label="Trofei e primati" hidden><div id="troph"></div></section>
+
+  <section id="view-casino" class="view" aria-label="CASiNO" hidden><div id="casino"></div></section>
 
   <section id="view-admin" class="view" aria-label="Area admin" hidden><div id="admin"></div></section>
   <button type="button" class="appver" id="appver" data-action="open-news"></button>
@@ -1695,6 +1753,9 @@ const APP_VERSION = '1.5.0';
 const DEFAULT_PIN = '2026';
 /* Interruttori delle funzioni: li accende e spegne l'admin (settings/features/{chiave}), valgono per tutti i dispositivi.
    Il codice legge sempre e solo feat(chiave). Spenta = nascosta e disattivata; codice e dati restano, riaccesa torna tutto com'era. */
+/* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
+const CURRENCY = 'patate';
+const CASINO = { START:100, DAILY:10, MATCH:20, GOAL:10, ASSIST:5, CAP:60, MARGIN:0.10, ODDS_MIN:1.10, ODDS_MAX:50, POOL_STAKE:10, PROFETA_MIN:5 };
 const FEATURE_DEFAULTS = { casino:true, mvp:true, ratings:true };
 const FEATURES = [
   { k:'casino',  name:'CASiNO',                       desc:'La sezione con portafoglio, scommesse e premi.' },
@@ -2598,7 +2659,10 @@ function render(){
   document.body.classList.toggle('is-admin', ui.admin);
   $('#lock-label').textContent = ui.admin ? 'Admin' : 'Ospite';
   $('#lock-shackle').setAttribute('d', ui.admin ? 'M8 11V8a4 4 0 0 1 7.5-2' : 'M8 11V8a4 4 0 0 1 8 0v3');
-  renderDashboard(); renderPlayers(); renderMatches(); renderMe(); if(ui.view === 'trophies') renderTrophies(); renderAdmin();
+  const cOn = feat('casino');
+  $('#nav-casino').hidden = !cOn;
+  if(ui.view === 'casino' && !cOn) go('dashboard'); else applyTheme();
+  renderDashboard(); renderPlayers(); renderMatches(); renderMe(); if(ui.view === 'trophies') renderTrophies(); if(ui.view === 'casino') renderCasino(); renderAdmin();
   if(ui.duel && $('#m-duel').classList.contains('open')) renderDuel();
   if(openFigPid && Date.now() > figAnimUntil) renderFigurina();   // non interrompe il flip se arrivano dati durante l'animazione
   if(ED && $('#m-match').classList.contains('open')) renderEditor();
@@ -4449,6 +4513,25 @@ function showNextRec(){
 }
 
 /* ---------- Admin ---------- */
+/* ---------- CASiNO ---------- */
+const CTABS = [ { k:'wallet', l:'Portafoglio' }, { k:'bets', l:'Scommesse' }, { k:'hist', l:'Storico e premi' }, { k:'shop', l:'Negozio' } ];
+function casinoTabHTML(tab, me){
+  if(tab === 'bets') return `<div class="glass cs-empty"><b>Nessuna scommessa aperta</b><span>Quando l’organizzatore apre le scommesse di una gara le trovi qui.</span></div>`;
+  if(tab === 'hist') return `<div class="glass cs-empty"><b>Ancora niente nello storico</b><span>Qui compariranno le tue scommesse concluse e i premi.</span></div>`;
+  if(tab === 'shop') return `<div class="glass cs-empty"><b>Il negozio è ancora vuoto</b></div>`;
+  return `<div class="glass cs-empty"><b>Il tuo portafoglio</b><span>${me ? 'Qui vedrai il saldo e i movimenti.' : 'Scegli la tua carta nella sezione Io per avere il tuo portafoglio.'}</span></div>`;
+}
+function renderCasino(){
+  const el = $('#casino'); if(!el) return;
+  if(!feat('casino')){ el.innerHTML = ''; return; }
+  const me = myPid(), tab = CTABS.some(t => t.k === ui.cTab) ? ui.cTab : 'wallet';
+  const guest = !me || !store.players[me];
+  el.innerHTML = `<div class="toolbar"><h2 class="vtitle">🎰 CASiNO</h2></div>
+    ${guest ? `<div class="glass cs-note">Stai guardando in sola lettura. Per avere il tuo portafoglio scegli la tua carta nella sezione <button type="button" class="linkbtn" data-go="me">Io</button>.</div>` : ''}
+    <div class="cs-tabs" role="tablist" aria-label="CASiNO">${CTABS.map(t => `<button type="button" role="tab" class="cs-tab ${t.k === tab ? 'on' : ''}" aria-selected="${t.k === tab}" data-ctab="${t.k}">${t.l}</button>`).join('')}</div>
+    <div class="cs-body" role="tabpanel">${casinoTabHTML(tab, guest ? '' : me)}</div>`;
+}
+
 function renderAdmin(){
   const el = $('#admin');
   if(!ui.admin){
@@ -5489,7 +5572,7 @@ function anHTML(){
   const hMax = Math.max(1, ...hours);
   const views = {}, feats = {};
   S.forEach(x => { for(const [k, v] of Object.entries(x.v || {})) views[k] = (views[k] || 0) + num(v); for(const [k, v] of Object.entries(x.f || {})) feats[k] = (feats[k] || 0) + num(v); });
-  const VL = { dashboard:'Classifica', players:'Giocatori', matches:'Partite', me:'Io', trophies:'Trofei', admin:'Admin' }, FL = { replay:'Replay dei gol', export:'Immagini esportate', vote:'Voti MVP', news:'Novità aperte' };
+  const VL = { dashboard:'Classifica', players:'Giocatori', matches:'Partite', me:'Io', trophies:'Trofei', casino:'CASiNO', admin:'Admin' }, FL = { replay:'Replay dei gol', export:'Immagini esportate', vote:'Voti MVP', news:'Novità aperte' };
   const vTot = Object.values(views).reduce((a, b) => a + b, 0) || 1;
   const nm = x => x.pid && store.players[x.pid] ? store.players[x.pid].name : (x.guest ? 'Ospite · ' + x.guest : 'Ospite');
   const fmt = ts => ts ? new Date(num(ts)).toLocaleString('it-IT', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '–';
@@ -5510,14 +5593,24 @@ function anHTML(){
       <p class="mu sm" style="margin:6px 0 0">Si registra orario, dispositivo, sezioni aperte e, se scelto in “Io”, il giocatore. I tuoi dispositivi admin sono esclusi. Dati conservati 60 giorni.</p>
     </div></section>`;
 }
+/* Tema CASiNO: solo mentre si è nella sezione. Si toglie all'uscita (o se la funzione viene spenta) e si riporta il colore della barra del telefono */
+function applyTheme(){
+  const on = ui.view === 'casino' && feat('casino');
+  document.body.classList.toggle('theme-casino', on);
+  const mt = document.querySelector('meta[name="theme-color"]');
+  if(mt) mt.setAttribute('content', on ? '#04140c' : '#050608');
+}
 function go(view){
+  if(view === 'casino' && !feat('casino')){ toast('CASiNO sospeso', 'warn'); view = 'dashboard'; }
   ui.view = view;
+  applyTheme();
   $$('.view').forEach(v => v.hidden = v.id !== 'view-' + view);
   $$('.nav [data-go]').forEach(b => b.setAttribute('aria-current', b.dataset.go === view ? 'page' : 'false'));
   window.scrollTo(0, 0);
   if(view === 'me'){ const el = $('#me'); el.classList.remove('me-anim'); void el.offsetWidth; el.classList.add('me-anim'); countUp(el); }
   if(view === 'dashboard') rankShift();
   if(view === 'trophies') renderTrophies();
+  if(view === 'casino') renderCasino();
   if(view === 'admin') setTimeout(profToast, 500);
   anBump('v/' + view);
   if(view === 'admin' && ui.admin) anLoad();
@@ -5542,6 +5635,7 @@ document.addEventListener('click', async e => {
     else ui.sort = { key:d.sort, dir:d.sort === 'rank' ? 1 : -1 };
     renderDashboard(); return;
   }
+  if(d.ctab){ if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; } ui.cTab = d.ctab; renderCasino(); return; }
   if(d.edteam){ edTeam = d.edteam; renderEditorPick(); return; }
   if(d.edmode){ if(ED) setEdMode(d.edmode); return; }
   if(d.rpg !== undefined){ rpGoto(+d.rpg); return; }
