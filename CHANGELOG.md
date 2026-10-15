@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.7.0
+- Negozio del CASiNO (dietro l'interruttore CASiNO): catalogo di oggetti cosmetici con nomi e disegni originali, acquisti in `casino/shop/buys` (prezzo e durata congelati, scadenza a 30 giorni dalla data d'acquisto, voce `shop` nel registro, saldo mai negativo), un oggetto attivo per categoria (`casino/shop/active`), prezzi, durata e disponibilità modificabili dall'admin (`casino/shop/cfg`).
+- Oggetti: colore, effetto e stemma del nome, riga in classifica, cornici e ologrammi alternativi della figurina, scia dei gol, esultanza e set di icone di gol e assist nel replay, cronaca e tabellino. Solo estetica: nessun effetto su OVR, punteggi, classifica, quote o scommesse.
+- Oggetti per merito (cornice d'oro, nome Veggente, stemma Bersaglio, scia Esplosiva) validi finché si detiene Il Banco, Il Profeta, Il Colpaccio o Il Kamikaze.
+- Aste dei numeri di maglia gestite dall'admin (`casino/auctions`): offerte intere e crescenti, patate dell'offerta in testa trattenute (derivate, non spendibili altrove), addebito alla chiusura, annullamento con rimborso, numero unico per 30 giorni, mostrato come #N accanto al nome.
+- Token formazione simbolico (nessun rimborso, elenco per l'admin con "Segna come usato").
+- Il Banco e la classifica dei saldi non contano le spese cosmetiche per Il Banco.
+- Messaggi all'admin: nuovo interruttore "Messaggi" (spento di default), pulsante ✉️, limiti anti-spam (280 caratteri, 3 al giorno, 30 secondi), zona "Richieste" in Admin con stati Nuovo/Letto/Risolto, archivio ed eliminazione (`messages`). Il backup include `messages`.
+
 ## 1.6.2
 - Include il CASiNO e gli interruttori della v1.6, mai numerati: sezione con portafoglio (saldo calcolato dai movimenti, bonus giornaliero, guadagni di gara), grafico, classifica dei saldi e targa "Il Banco"; interruttori CASiNO, Voto MVP e Voti a stelle nel pannello admin.
 - Il ritardo costa 0,3 punti OVR (`LATE_PEN`, prima 1). Il bonus dei voti a stelle va da −0,2 a +0,2 (`RATE_STEP` 0,1, prima 0,25). Gli OVR si ricalcolano da soli.

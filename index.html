@@ -1889,7 +1889,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.6.2';
+const APP_VERSION = '1.7.0';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -7402,6 +7402,15 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.7.0', date:'2026-10-15', items:[
+    `🛍️ Nel CASiNO c’è il Negozio: con le patate compri oggetti per personalizzare la tua figurina e il tuo nome. Ogni oggetto dura 30 giorni, poi scade e puoi ricomprarlo; per ogni categoria ne tieni attivo uno solo.`,
+    `✨ Ci sono colori e effetti per il nome, stemmi, righe colorate in classifica, cornici e ologrammi per la figurina, scie dei gol e esultanze nel replay, e icone speciali per gol e assist.`,
+    `🏆 Chi detiene una targa o un primato del CASiNO sblocca un oggetto riservato, che tiene finché resta il detentore.`,
+    `🔢 Il numero di maglia si conquista solo all’asta, aperta e chiusa dall’organizzatore. Le patate dell’offerta in testa restano bloccate finché non vieni superato.`,
+    `🎟️ C’è anche il token formazione, un gettone simbolico: la formazione si propone sempre su WhatsApp.`,
+    `✉️ Quando l’organizzatore lo accende, compare in alto un pulsante per scrivergli un messaggio.`,
+    `Nessun oggetto cambia punteggi, OVR, classifica o scommesse: sono solo estetica.`
+  ] },
   { v:'1.6.2', date:'2026-10-15', items:[
     `🎰 CASiNO: nella barra in basso c’è la sezione con il tuo portafoglio. Si parte con 100 patate, ogni giorno puoi riscuoterne 10 e ogni partita nuova ne fa guadagnare, di più se segni o fai assist. Vedi il grafico del tuo saldo e la classifica di tutti.`,
     `🎲 Quando l’organizzatore apre le scommesse di una partita, puoi puntare le tue patate su tantissime cose: chi vince, quanti gol, chi segna, chi fa assist… Puoi giocare da solo o mettere insieme più scelte della stessa partita. Non puoi puntare su di te: chi gioca non può scommettere su ciò che fa lui stesso. C’è anche il Monte MVP (10 patate a testa, chi indovina l’MVP si divide il monte) e le sfide tra due giocatori o tra Bianchi e Neri.`,
