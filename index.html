@@ -1893,6 +1893,8 @@ PLAQUES.push({ id:'ultimo', icon:'⏳', name:'Ultimo Respiro', desc:'Più gol ne
    Il saldo esiste solo sulla stagione intera, quindi negli storici dei trofei queste targhe non risultano mai assegnate. */
 PLAQUES.push({ id:'banco', feat:'casino', icon:'💰', name:'Il Banco', desc:`Il saldo più alto di ${CURRENCY}. Parità: più ${CURRENCY} guadagnate nelle gare.`,
   ok:s => !!s.mov && s.mov.length > 1 && s.bal > 0, cmp:(a,b) => (b.bal - a.bal) || (b.earn - a.earn), val:s => `${fmtPat(s.bal)} ${CURRENCY}` });
+PLAQUES.push({ id:'profeta', feat:'casino', icon:'🔮', name:'Il Profeta', desc:`La percentuale più alta di scommesse vinte (almeno ${CASINO.PROFETA_MIN} concluse, senza monti e rimborsi). Parità: più vittorie.`,
+  ok:s => s.betN >= CASINO.PROFETA_MIN, cmp:(a,b) => (b.betPct - a.betPct) || (b.betWon - a.betWon), val:s => `${Math.round(s.betPct)}% vinte (${s.betWon} su ${s.betN})` });
 const plqOn = P => !P.feat || feat(P.feat);
 /* Moduli per ogni misura di squadra (da 1 a 11 titolari). La prima riga è sempre un solo giocatore "in porta"; massimo 4 righe e 5 per riga.
    Quelli a 8 sono i quattro di sempre. Il menu del modulo mostra solo quelli la cui somma è uguale ai titolari. */
@@ -1921,10 +1923,10 @@ const PLQ_GAP = {
   assist:[s => s.a, 'assist', 'assist', 1, 0], vittoria:[s => s.pct, 'punto %', 'punti %', 5, 0],
   gladiatore:[s => s.mvp, 'MVP', 'MVP', 1, 0], amuleto:[s => s.v - s.s, 'di saldo', 'di saldo', 1, 0],
   roccia:[s => s.ovr, 'OVR', 'OVR', 1, 1], re:[s => s.hat, 'gara da 3+ gol', 'gare da 3+ gol', 1, 0],
-  muro:[s => s.minConcW, 'gol subito', 'gol subiti', 1, 0], banco:[s => s.bal, CURRENCY1, CURRENCY, 20, 0], treno:[s => s.g + s.a, 'bonus', 'bonus', 1, 0],
+  profeta:[s => s.betPct, 'punto %', 'punti %', 5, 0], muro:[s => s.minConcW, 'gol subito', 'gol subiti', 1, 0], banco:[s => s.bal, CURRENCY1, CURRENCY, 20, 0], treno:[s => s.g + s.a, 'bonus', 'bonus', 1, 0],
   apriscatole:[s => s.firstG, 'primo gol', 'primi gol', 1, 0], ultimo:[s => s.lateG, 'gol', 'gol', 1, 0]
 };
-const METALS = { noexcuses:'steel', cecchino:'gold', assist:'rose', vittoria:'gold', gladiatore:'bronze', amuleto:'emerald', roccia:'titanium', re:'gold', muro:'steel', treno:'copper', apriscatole:'silver', ultimo:'rose', banco:'gold' };
+const METALS = { noexcuses:'steel', cecchino:'gold', assist:'rose', vittoria:'gold', gladiatore:'bronze', amuleto:'emerald', roccia:'titanium', re:'gold', muro:'steel', treno:'copper', apriscatole:'silver', ultimo:'rose', banco:'gold', profeta:'emerald' };
 const COLS = [
   { k:'ovr',  l:'OVR', t:'Overall dinamico (50-99)' },
   { k:'pres', l:'Pr',  t:'Presenze' },
@@ -2564,10 +2566,21 @@ function walletBuild(st){
     mov.push({ t:num(a.at), kind:'adj', label:'Rettifica' + (a.why ? ': ' + String(a.why).slice(0, 80) : ''), delta:d });
   }
   walletExtra(st, mov);
+  walletBetStats(st);
   mov.forEach((x, i) => { x.i = i; });
   mov.sort((a, b) => ((a.t == null ? -Infinity : a.t) - (b.t == null ? -Infinity : b.t)) || (a.i - b.i));
   let bal = 0; for(const x of mov){ bal += x.delta; x.bal = bal; }
   st.bal = bal; st.mov = mov;
+}
+/* Statistiche per Il Profeta: scommesse a quota fissa concluse (non annullate né rimborsate; i monti non contano) */
+function walletBetStats(st){
+  let n = 0, won = 0;
+  for(const [mid, bets] of Object.entries((store.casino && store.casino.bets) || {})) for(const b of Object.values(bets || {})){
+    if(!b || b.pid !== st.pid || !betLive(mid, b)) continue;
+    const r = settleBet(b, mkOf(mid), store.matches[mid]);
+    if(r.state === 'won' || r.state === 'lost'){ n++; if(r.state === 'won') won++; }
+  }
+  st.betN = n; st.betWon = won; st.betPct = n ? won / n * 100 : 0;
 }
 function walletExtra(st, mov){
   const B = (store.casino && store.casino.bets) || {};
@@ -4360,6 +4373,22 @@ function renderDuel(){
 }
 
 /* ---------- Trofei & Primati ---------- */
+/* Primati delle scommesse: solo scommesse a quota fissa vinte, di gare già contate in STATS (così anche gli storici sono coerenti) */
+function casinoRecords(){
+  const inK = new Set(STATS.matches.map(m => m.id)); let colp = null, kami = null;
+  for(const [mid, bets] of Object.entries((store.casino && store.casino.bets) || {})){
+    if(!inK.has(mid)) continue;
+    const m = store.matches[mid], mk = mkOf(mid);
+    for(const b of Object.values(bets || {})){
+      if(!b || !store.players[b.pid] || !betLive(mid, b)) continue;
+      const r = settleBet(b, mk, m); if(r.state !== 'won') continue;
+      const stake = num(b.stake), net = r.payout - stake, x = { pid:b.pid, m, net, stake, payout:r.payout, mult:r.payout / stake, at:num(b.at), legs:list(b.legs), S:mk.m };
+      if(!colp || net > colp.net || (net === colp.net && (x.at < colp.at || (x.at === colp.at && x.pid < colp.pid)))) colp = x;
+      if(b.allin && (!kami || x.mult > kami.mult + 1e-9 || (Math.abs(x.mult - kami.mult) < 1e-9 && (stake > kami.stake || (stake === kami.stake && (x.at < kami.at || (x.at === kami.at && x.pid < kami.pid))))))) kami = x;
+    }
+  }
+  return { colp, kami };
+}
 function computeRecords(){
   const known = pid => !!store.players[pid];
   const dept = pid => store.players[pid]?.role;
@@ -4454,7 +4483,8 @@ function computeRecords(){
   const bunk = Object.entries(bunker).filter(([, b]) => b.n >= 2).sort(([ka, a], [kb, b]) => (a.c / a.n - b.c / b.n) || (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it'))[0];
   const ritard = L.filter(s => s.ritardi > 0).sort((a, b) => (b.ritardi - a.ritardi) || ((b.ritardi / b.pres) - (a.ritardi / a.pres)) || alpha(a, b))[0];
   const intesa = Object.entries(combo).sort(([ka, a], [kb, b]) => (b.c - a.c) || ((b.c / ((pairs[kb] && pairs[kb].n) || 1)) - (a.c / ((pairs[ka] && pairs[ka].n) || 1))) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it'))[0];
-  return { manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, ritard, bunkerAny:Object.keys(bunker).length };
+  const { colp, kami } = casinoRecords();
+  return { colp, kami, manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, ritard, bunkerAny:Object.keys(bunker).length };
 }
 const matchWhen = m => `Giornata ${num(m.day)}${m.date ? ', ' + fmtDateCap(m.date) : ''}`;
 function recCard(o, x = {}){
@@ -4550,11 +4580,11 @@ function renderTrophies(){
     <div class="rec-grid">${recs}</div>`;
   try{ localStorage.setItem('cmb2627_seenPlq', JSON.stringify(curP)); localStorage.setItem('cmb2627_seenRecV', JSON.stringify(curR)); }catch(e){}
 }
-const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk','rit'];
+const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk','rit','colp','kami'];
 /* event = record di una singola impresa (festeggiato anche se lo stesso giocatore si migliora); lead = primato di classifica (festeggiato solo al cambio di detentore) */
-const REC_KIND = { manita:'event', mitra:'event', lampo:'event', scadere:'event', mida:'event', uomo:'event', inarr:'event', goleada:'event', cappotto:'event', cecchino:'lead', fortino:'lead', mina:'lead', come:'lead', down:'lead', eroe:'lead', oro:'lead', intesa:'lead', derby:'lead', bunk:'lead', rit:'lead' };
+const REC_KIND = { manita:'event', mitra:'event', lampo:'event', scadere:'event', mida:'event', uomo:'event', inarr:'event', goleada:'event', cappotto:'event', cecchino:'lead', fortino:'lead', mina:'lead', come:'lead', down:'lead', eroe:'lead', oro:'lead', intesa:'lead', derby:'lead', bunk:'lead', rit:'lead', colp:'event', kami:'event' };
 /* Primati legati a una funzione: con la funzione spenta la scheda non si mostra e non fa popup */
-const REC_FEAT = { eroe:'mvp' };
+const REC_FEAT = { eroe:'mvp', colp:'casino', kami:'casino' };
 function buildRecordCards(R, nM){
   const none = 'Nessuna gara registrata';
   const need = lbl => nM ? lbl : none;
@@ -4599,6 +4629,10 @@ function buildRecordCards(R, nM){
       : { icon:'🧱', title:'Coppia Bunker', desc:'Coppia di difensori con la media gol subiti più bassa giocando insieme.', lock:R.bunkerAny ? 'In attesa di sblocco (min. 2 gare insieme)' : need('Nessuna coppia di difensori schierata insieme') }
     ,R.ritard ? { icon:'⏰', title:'Il Ritardatario', desc:'Più ritardi in stagione. Parità: percentuale di ritardi sulle presenze.', pid:R.ritard.pid, sub:`${R.ritard.pres} ${R.ritard.pres === 1 ? 'presenza' : 'presenze'}, ${Math.round(R.ritard.ritardi / R.ritard.pres * 100)}% delle gare`, value:R.ritard.ritardi, unit:R.ritard.ritardi === 1 ? 'ritardo' : 'ritardi' }
       : { icon:'⏰', title:'Il Ritardatario', desc:'Più ritardi in stagione. Parità: percentuale di ritardi sulle presenze.', lock:'Nessun ritardo registrato' }
+    ,R.colp ? { icon:'🎯', title:'Il Colpaccio', desc:'La vincita netta più grande in una singola scommessa.', pid:R.colp.pid, sub:matchWhen(R.colp.m), value:'+' + fmtPat(R.colp.net), unit:`${CURRENCY} in una scommessa`, foot:`${fmtPat(R.colp.stake)} a ${(Math.round(R.colp.payout / R.colp.stake * 100) / 100).toFixed(2).replace('.', ',')}: ${R.colp.legs.map(l => esc(bmLegText(R.colp.S, l, pid => pname(pid)))).join(' + ')}` }
+      : { icon:'🎯', title:'Il Colpaccio', desc:'La vincita netta più grande in una singola scommessa.', lock:'Ancora nessuna scommessa vinta' }
+    ,R.kami ? { icon:'💣', title:'Il Kamikaze', desc:'L’all-in vinto con il moltiplicatore più alto. Parità: puntata più alta.', pid:R.kami.pid, sub:matchWhen(R.kami.m), value:'×' + (Math.round(R.kami.mult * 100) / 100).toFixed(2).replace('.', ','), unit:'la puntata', foot:`${fmtPat(R.kami.stake)} ${CURRENCY} diventate ${fmtPat(R.kami.payout)}` }
+      : { icon:'💣', title:'Il Kamikaze', desc:'L’all-in vinto con il moltiplicatore più alto. Parità: puntata più alta.', lock:'Ancora nessun all-in vinto' }
   ];
   cards.forEach((c, i) => { c.key = REC_KEYS[i]; if(REC_FEAT[c.key] && !feat(REC_FEAT[c.key])) c.off = true; });   /* le chiavi restano per posizione: una funzione spenta nasconde la scheda, non la toglie */
   return cards;
@@ -4994,7 +5028,7 @@ const duelsOf = mid => (store.casino && store.casino.duels && store.casino.duels
 const DUEL_METRIC = { g:'più gol', a:'più assist', ga:'più gol + assist' };
 function duelLive(mid, d){ return !!d && !d.void && mkState(mid).s !== 'none' && mkState(mid).s !== 'void' && num(d.gen) === num(mkOf(mid).gen) && !!d.a && !!d.b && (d.metric === 'g' || (d.a.t === 'p' && d.b.t === 'p')) && (d.metric in DUEL_METRIC) && num(d.stake) >= 1; }
 function poolBetValid(mid, b){
-  if(!b || b.void || !mkOf(mid) || mkState(mid).s === 'void' || num(b.gen) !== num(mkOf(mid).gen)) return false;
+  if(!b || b.void || !store.matches[mid] || !mkOf(mid) || mkState(mid).s === 'void' || num(b.gen) !== num(mkOf(mid).gen)) return false;
   if(b.kind === 'mvp') return feat('mvp') && num(b.stake) === CASINO.POOL_STAKE;
   if(b.kind === 'duel'){ const d = duelsOf(mid)[b.did]; return duelLive(mid, d) && num(b.stake) === num(d.stake) && (b.sel === 'a' || b.sel === 'b'); }
   return false;
@@ -5134,7 +5168,7 @@ async function delDuel(mid, did){
 
 /* ---------- Puntare: casino/bets/{mid}/{bid} = { pid, gen, legs:[{k, sel}], stake, odds, at, allin?, bal, v } ---------- */
 /* Una scommessa conta solo se il mercato esiste, non è annullato e la sua versione (gen) è quella attuale; altrimenti è rimborsata */
-function betLive(mid, b){ return !!b && !b.void && mkState(mid).s !== 'none' && mkState(mid).s !== 'void' && num(b.gen) === num(mkOf(mid).gen); }
+function betLive(mid, b){ return !!b && !b.void && !!store.matches[mid] && mkState(mid).s !== 'none' && mkState(mid).s !== 'void' && num(b.gen) === num(mkOf(mid).gen); }
 /* Divieto di puntare su sé stessi: chi gioca non può scegliere selezioni che lo riguardano (né l'autogol generico), neppure in una combo */
 function betLegBlock(S, me, leg){
   if(!S.pl[me]) return '';
@@ -5311,7 +5345,8 @@ function myBetRows(me){
 function casinoPrizesHTML(){
   const cards = PLAQUES.filter(P => P.feat === 'casino' && plqOn(P)).map(P => { const h = STATS.plaques[P.id];
     return h ? recCard({ icon:P.icon, title:P.name, desc:P.desc, pid:h.pid, sub:'Targa stagionale', value:esc(h.val), unit:'' }) : recCard({ icon:P.icon, title:P.name, desc:P.desc, lock:'In palio: nessun giocatore la soddisfa ancora' }); });
-  return cards.join('');
+  const recs = buildRecordCards(computeRecords(), STATS.matches.length).filter(c => (c.key === 'colp' || c.key === 'kami') && !c.off).map(c => recCard(c));
+  return cards.concat(recs).join('');
 }
 function histHTML(me){
   const rows = me ? myBetRows(me) : [];
@@ -6174,7 +6209,10 @@ async function deleteMatch(id){
   const ok = await confirmDlg(`Eliminare la giornata ${num(m.day)}?`, 'Risultato e statistiche di questa gara spariranno da classifica e figurine.', 'Elimina gara', true);
   if(!ok) return;
   ui.matchId = null;
-  commit({ [`matches/${id}`]: null, [`votes/${id}`]: null, [`ratings/${id}`]: null, [`ratingsDone/${id}`]: null }, 'Gara eliminata');
+  /* Con la gara spariscono anche mercati, scommesse, scelte dei monti e sfide (sempre, anche a CASiNO spento: si toglie, non si crea) */
+  const up = { [`matches/${id}`]: null, [`votes/${id}`]: null, [`ratings/${id}`]: null, [`ratingsDone/${id}`]: null };
+  for(const k of ['markets', 'bets', 'pools', 'duels']) if(store.casino && store.casino[k] && store.casino[k][id]) up[`casino/${k}/${id}`] = null;
+  commit(up, 'Gara eliminata');
 }
 
 /* =========================================================
