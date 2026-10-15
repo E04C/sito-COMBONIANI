@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Comboniani">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<title>Stagione Comboniani 26/27 · Calciotto 8 vs 8</title>
+<title>Stagione Comboniani 26/27 · Calciotto</title>
 <link rel="icon" type="image/png" href="icons/favicon-32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -469,6 +469,12 @@ button.arow:hover{background:rgba(255,255,255,.035)}
 .pchip.w .co{color:#475569}
 .bal{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:space-between;padding:10px 12px;border-radius:14px;border:1px dashed rgba(251,191,36,.35);background:rgba(251,191,36,.05)}
 .bal span{font-weight:700;font-size:13.5px;color:#fde68a}
+.bal-sz{display:inline-flex;align-items:center;gap:6px}
+.bal-sz label{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:12.5px;color:#fde68a}
+.bal-sz input{width:56px;height:34px;padding:0 4px;text-align:center}
+.bal-sz b{color:var(--mu)}
+.pcard.r5 .pc-name{max-width:17cqw}
+.cc.r5 .cc-nm{max-width:calc(var(--cw) * 1.3)}
 .ed-score .t small b{color:var(--tx)}
 
 /* ---------- Share figurina (4:5, 1080x1350) ---------- */
@@ -1358,7 +1364,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 <header class="topbar">
   <div class="brand">
     <svg class="crest" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbbf24"/><stop offset=".45" stop-color="#f97316"/><stop offset="1" stop-color="#ea580c"/></linearGradient></defs><path d="M16 2h16l14 14v16L32 46H16L2 32V16z" fill="#0a0d14" stroke="url(#cg)" stroke-width="2.5"/><path d="M24 11l3.8 9.2L37 24l-9.2 3.8L24 37l-3.8-9.2L11 24l9.2-3.8z" fill="url(#cg)"/></svg>
-    <div><h1>Comboniani</h1><small>Stagione 26/27, calciotto 8 vs 8</small></div>
+    <div><h1>Comboniani</h1><small>Stagione 26/27, calciotto</small></div>
   </div>
   <div class="grow"></div>
   <span id="sync" class="sync" data-state="connecting" title="Connessione al database in corso"><i></i><span>Connessione…</span></span>
@@ -1479,7 +1485,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 <div class="modal" id="m-match" aria-hidden="true">
   <div class="sheet glass wide" role="dialog" aria-modal="true" aria-labelledby="mm-t">
     <div class="mm-head">
-      <div><h3 id="mm-t">Registro gara</h3><p class="lead-p" style="margin:0">Spunta i 16 convocati e bilancia, oppure schiera a mano. Poi inserisci i gol uno alla volta, nell’ordine in cui sono avvenuti.</p></div>
+      <div><h3 id="mm-t">Registro gara</h3><p class="lead-p" style="margin:0">Spunta i convocati e bilancia, oppure schiera a mano. Poi inserisci i gol uno alla volta, nell’ordine in cui sono avvenuti.</p></div>
       <div class="mm-meta">
         <label>Giornata<input id="ed-day" class="field" type="number" min="1" max="99" inputmode="numeric"></label>
         <label>Data<input id="ed-date" class="field" type="date"></label>
@@ -1499,7 +1505,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
         <button type="button" class="tt" data-edteam="black" aria-pressed="false"><span class="dot b"></span>Neri</button>
         <input id="ed-filter" class="field" type="search" placeholder="Filtra giocatori" aria-label="Filtra giocatori" autocomplete="off">
       </div>
-      <div class="bal"><span id="ed-called">Convocati 0/16</span><button type="button" class="btn sm primary" data-action="balance" id="ed-bal">⚖️ Bilancia squadre</button></div>
+      <div class="bal"><span id="ed-called">Convocati 0</span><span class="bal-sz"><label>Bianchi <input id="bal-w" class="field" type="number" min="1" max="11" inputmode="numeric" aria-label="Giocatori dei Bianchi"></label><b>/</b><label>Neri <input id="bal-b" class="field" type="number" min="1" max="11" inputmode="numeric" aria-label="Giocatori dei Neri"></label></span><button type="button" class="btn sm primary" data-action="balance" id="ed-bal">⚖️ Bilancia squadre</button></div>
       <div id="ed-pool" class="pool"></div>
     </div>
     <div class="ed-teams">
@@ -1649,8 +1655,26 @@ PLAQUES.push({ id:'apriscatole', icon:'🥫', name:'L’Apriscatole', desc:'Più
   ok:s => s.firstG >= 1, cmp:(a,b) => (b.firstG - a.firstG) || (b.g - a.g), val:s => `${s.firstG} ${s.firstG === 1 ? 'primo gol' : 'primi gol'}` });
 PLAQUES.push({ id:'ultimo', icon:'⏳', name:'Ultimo Respiro', desc:'Più gol nell’ultimo 20% della gara (servono minuti e ora di fine). Parità: più gol totali.',
   ok:s => s.lateG >= 1, cmp:(a,b) => (b.lateG - a.lateG) || (b.g - a.g), val:s => `${s.lateG} ${s.lateG === 1 ? 'gol nel finale' : 'gol nel finale'}` });
-const FORMATIONS = { '1-3-3-1':[1,3,3,1], '1-3-2-2':[1,3,2,2], '1-2-3-2':[1,2,3,2], '1-2-4-1':[1,2,4,1] };
+/* Moduli per ogni misura di squadra (da 1 a 11 titolari). La prima riga è sempre un solo giocatore "in porta"; massimo 4 righe e 5 per riga.
+   Quelli a 8 sono i quattro di sempre. Il menu del modulo mostra solo quelli la cui somma è uguale ai titolari. */
+const FORMATIONS = {
+  '1-4-4-2':[1,4,4,2], '1-4-3-3':[1,4,3,3], '1-3-5-2':[1,3,5,2],
+  '1-4-3-2':[1,4,3,2], '1-3-4-2':[1,3,4,2], '1-4-4-1':[1,4,4,1],
+  '1-3-3-2':[1,3,3,2], '1-4-3-1':[1,4,3,1], '1-3-4-1':[1,3,4,1],
+  '1-3-3-1':[1,3,3,1], '1-3-2-2':[1,3,2,2], '1-2-3-2':[1,2,3,2], '1-2-4-1':[1,2,4,1],
+  '1-3-2-1':[1,3,2,1], '1-2-3-1':[1,2,3,1], '1-2-2-2':[1,2,2,2],
+  '1-2-2-1':[1,2,2,1], '1-3-1-1':[1,3,1,1], '1-2-1-2':[1,2,1,2],
+  '1-2-2':[1,2,2], '1-3-1':[1,3,1], '1-2-1-1':[1,2,1,1],
+  '1-2-1':[1,2,1], '1-1-2':[1,1,2], '1-3':[1,3],
+  '1-2':[1,2], '1-1-1':[1,1,1],
+  '1-1':[1,1],
+  '1':[1]
+};
 const DEF_FM = '1-3-3-1';
+const MAX_START = 11, MAX_BENCH = 2;                          /* titolari e giocatori "in più" per squadra */
+const MAX_CALLED = 2 * (MAX_START + MAX_BENCH);               /* 26 giocatori in distinta; 22 per una gara in programma */
+const fmSize = k => (FORMATIONS[k] || []).reduce((t, v) => t + v, 0);
+const fmOptions = n => Object.keys(FORMATIONS).filter(k => fmSize(k) === n);
 const ROLE_ORDER = { DIF:1, CEN:2, JOLLY:2.5, ATT:3 };
 /* [valore, unità singolare, plurale, soglia "in pericolo", decimali] */
 const PLQ_GAP = {
@@ -3108,13 +3132,20 @@ function autoOrder(entries){
 }
 /* Ordine degli slot (porta → attacco, sinistra → destra): quello salvato dall'admin, poi i nuovi in automatico */
 function orderFor(m, team){
-  const entries = starters(m, team);   /* il campo è sempre 8 contro 8: solo i titolari, nella squadra di partenza */
+  const entries = starters(m, team);   /* il campo ha solo i titolari, nella squadra di partenza */
   const ids = new Set(entries.map(e => e.pid));
   const saved = list(m[team === 'white' ? 'posW' : 'posB']).filter((pid, i, a) => ids.has(pid) && a.indexOf(pid) === i);
   return [...saved, ...autoOrder(entries).filter(pid => !saved.includes(pid))];
 }
+/* Modulo da usare: quello salvato se la somma coincide con i titolari, altrimenti il primo valido per quel numero (senza riscrivere la gara) */
+function fmFor(m, team){
+  const n = starters(m, team).length, saved = m[team === 'white' ? 'fmW' : 'fmB'];
+  if(saved && FORMATIONS[saved] && fmSize(saved) === n) return saved;
+  const ok = fmOptions(n);
+  return ok.length ? ok[0] : (saved && FORMATIONS[saved] ? saved : DEF_FM);
+}
 function placeTeam(m, team){
-  const lines = FORMATIONS[team === 'white' ? (m.fmW || DEF_FM) : (m.fmB || DEF_FM)] || FORMATIONS[DEF_FM];
+  const lines = FORMATIONS[fmFor(m, team)] || FORMATIONS[DEF_FM];
   const byId = Object.fromEntries(starters(m, team).map(e => [e.pid, e]));
   const ord = orderFor(m, team);
   const out = []; let k = 0;
@@ -3181,7 +3212,8 @@ function pitchHTML(m){
       const yTop = 6 + (n > 1 ? li * (34.2 / (n - 1)) : 0);
       const y = pos === 'top' ? yTop : 100 - yTop;
       const x = cnt === 1 ? 50 : 14 + j * (72 / (cnt - 1));
-      return pitchCardHTML(e, m, team, cap, pre, mv, awards)(x.toFixed(2), y.toFixed(2));
+      const h = pitchCardHTML(e, m, team, cap, pre, mv, awards)(x.toFixed(2), y.toFixed(2));
+      return cnt >= 5 ? h.replace('class="pcard ', 'class="pcard r5 ') : h;   /* 5 per riga: il nome non deve sovrapporsi ai vicini */
     }).join('');
   };
   const stripes = Array.from({ length:8 }, (_, i) => `<i style="top:${i * 12.5}%"></i>`).join('');
@@ -3204,10 +3236,10 @@ function pitchHTML(m){
 function pitchPanelHTML(m){
   const pre = m.status === 'scheduled';
   const fmCtl = (team, key) => {
-    const cur = m[key] || DEF_FM;
+    const team_ = key === 'fmW' ? 'white' : 'black', cur = fmFor(m, team_), opts = fmOptions(starters(m, team_).length);
     const lbl = `<span class="dot ${team === 'white' ? 'w' : 'b'}"></span>${team === 'white' ? 'Bianchi' : 'Neri'}`;
     return ui.admin
-      ? `<label>${lbl}<select class="field" data-fm="${key}" data-mid="${m.id}" aria-label="Modulo ${team === 'white' ? 'Bianchi' : 'Neri'}">${Object.keys(FORMATIONS).map(f => `<option ${f === cur ? 'selected' : ''}>${f}</option>`).join('')}</select></label>`
+      ? `<label>${lbl}<select class="field" data-fm="${key}" data-mid="${m.id}" aria-label="Modulo ${team === 'white' ? 'Bianchi' : 'Neri'}">${(opts.length ? opts : [cur]).map(f => `<option ${f === cur ? 'selected' : ''}>${f}</option>`).join('')}</select></label>`
       : `<span class="fmtag">${lbl} ${cur}</span>`;
   };
   return `<section class="glass pp">
@@ -3257,7 +3289,8 @@ function cPitchHTML(m, o = {}){
     return placeTeam(m, team).map(({ e, li, j, cnt, n }) => {
       const yc = CP_Y0 + (n > 1 ? li * ((CP_Y1 - CP_Y0) / (n - 1)) : 0), yp = yc / CP_H * 100;
       const y = pos === 'top' ? yp : 100 - yp, x = cnt === 1 ? 50 : 14 + j * (72 / (cnt - 1));
-      return cCardHTML(e, m, team, { pre, mv, awards, cap, ph:o.ph, ev:o.ev })(x.toFixed(2), y.toFixed(2));
+      const h = cCardHTML(e, m, team, { pre, mv, awards, cap, ph:o.ph, ev:o.ev })(x.toFixed(2), y.toFixed(2));
+      return cnt >= 5 ? h.replace('class="cc ', 'class="cc r5 ') : h;
     }).join('');
   };
   const stripes = Array.from({ length:8 }, (_, i) => `<i style="top:${i * 12.5}%"></i>`).join('');
@@ -3477,7 +3510,7 @@ function exportPitchHTML(mm, ph){
   return `<div class="pcx">
     <div class="pcx-head">${crestSVG('cgp')}<div><div class="a">Torneo Comboniani</div><div class="b">Giornata ${num(mm.day)}</div></div><div class="c">${pre ? 'Formazioni ufficiali' : 'Risultato finale'}<br>${esc(whenLabel(mm))}</div></div>
     ${cPitchHTML(mm, { pre, ph, ev:true, mid:true, flip:ui.flip })}
-    <div class="pcx-foot">Stagione Comboniani 26/27<span>Bianchi ${mm.fmW || DEF_FM}, Neri ${mm.fmB || DEF_FM}</span></div>
+    <div class="pcx-foot">Stagione Comboniani 26/27<span>Bianchi ${fmFor(mm, 'white')}, Neri ${fmFor(mm, 'black')}</span></div>
   </div>`;
 }
 
@@ -4060,8 +4093,8 @@ function renderAdmin(){
   const mode = db ? (syncState === 'live' ? 'Firebase, sincronizzato' : 'Firebase, in attesa di connessione') : 'Solo su questo dispositivo';
   el.innerHTML = `<div class="toolbar"><h2 class="vtitle">Pannello admin</h2></div>
     <div class="admin-grid">
-      <button class="tile" data-action="new-sched"><span class="ic">🗓️</span><b>Programma gara</b><span>Data, ora e 16 convocati bilanciati: tutti vedono dove giocano.</span></button>
-      <button class="tile" data-action="new-match"><span class="ic">📝</span><b>Registra gara</b><span>Schiera 8 contro 8 e segna gol, assist e autogol.</span></button>
+      <button class="tile" data-action="new-sched"><span class="ic">🗓️</span><b>Programma gara</b><span>Data, ora e convocati bilanciati: tutti vedono dove giocano.</span></button>
+      <button class="tile" data-action="new-match"><span class="ic">📝</span><b>Registra gara</b><span>Schiera le squadre e segna gol, assist e autogol.</span></button>
       <button class="tile" data-action="add-player"><span class="ic">🧑‍🎤</span><b>Aggiungi giocatore</b><span>Nome, ruolo, piede e foto dal rullino.</span></button>
       <button class="tile" data-action="backup-all"><span class="ic">💾</span><b>Backup completo</b><span>Scarica tutti i dati del database in un file .json. Contiene anche il PIN.</span></button>
       <button class="tile" data-action="import-xlsx"><span class="ic">📥</span><b>Importa Excel</b><span>Carica un file con i fogli “Giocatori” e “Partite”. Aggiorna senza cancellare.</span></button>
@@ -4201,7 +4234,7 @@ async function deletePlayer(pid){
 }
 
 /* =========================================================
-   MATCH EDITOR (8 vs 8)
+   MATCH EDITOR
    ========================================================= */
 function nextDay(){ return sortedMatches().reduce((m, x) => Math.max(m, num(x.day)), 0) + 1; }
 function setEdMode(mode){
@@ -4212,7 +4245,7 @@ function setEdMode(mode){
   $('#ed-save').textContent = mode === 'scheduled' ? 'Salva gara in programma' : 'Salva risultato';
   if(mode === 'scheduled'){
     [...ED.white, ...ED.black].forEach(e => { e.g = 0; e.a = 0; e.og = 0; }); ED.goals = []; ED.moves = []; goalFormReset(); moveFormReset();
-    /* una gara in programma è 8 contro 8: i giocatori "in più" tornano tra i convocati */
+    /* una gara in programma non ha giocatori "in più": tornano tra i convocati */
     for(const T of ['white', 'black']){ ED.called.push(...ED[T].filter(e => e.bench).map(e => e.pid)); ED[T] = ED[T].filter(e => !e.bench); }
   }
   renderEditor();
@@ -4222,7 +4255,7 @@ function openMatchEditor(id, mode){
   const m = id ? store.matches[id] : null;
   const cp = arr => list(arr).map(e => ({ pid:e.pid, n:e.n, g:num(e.g), a:num(e.a), og:num(e.og), ...(e.bench ? { bench:1 } : {}) }));
   const wasSched = m?.status === 'scheduled';
-  ED = { id:id || null, day:m ? num(m.day) : nextDay(), date:m?.date || todayISO(), time:m?.time || '', end:m?.end || '', fmW:m?.fmW || DEF_FM, fmB:m?.fmB || DEF_FM, posW:m?.posW || null, posB:m?.posB || null, capW:m?.capW || null, capB:m?.capB || null,
+  ED = { id:id || null, day:m ? num(m.day) : nextDay(), date:m?.date || todayISO(), time:m?.time || '', end:m?.end || '', fmW:m?.fmW || DEF_FM, fmB:m?.fmB || DEF_FM, posW:m?.posW || null, posB:m?.posB || null, balW:null, balB:null, capW:m?.capW || null, capB:m?.capB || null,
          white:cp(m?.white), black:cp(m?.black), called:[], status:mode || (wasSched ? 'scheduled' : 'played'),
          goals:list(m?.goals).map(g => ({ s:g.s, a:g.a || '', og:!!num(g.og), min:(g.min == null ? null : num(g.min)), ts:g.ts || '' })),
          moves:list(m?.moves).map(x => ({ pid:x.pid, k:x.k, min:(x.min == null ? null : num(x.min)), ts:x.ts || '', at:num(x.at) })),
@@ -4244,8 +4277,9 @@ function edFind(pid){
   if(ED.called.includes(pid)) return 'called';
   return null;
 }
-/* "8/8" oppure "8/8 +1 in più" */
-const edCount = T => { const n = ED[T].filter(e => !e.bench).length, b = ED[T].length - n; return `${n}/8${b ? ` +${b} in più` : ''}`; };
+/* "9 giocatori" oppure "9 giocatori +1 in più" */
+const edCount = T => { const n = ED[T].filter(e => !e.bench).length, b = ED[T].length - n; return `${n} ${n === 1 ? 'giocatore' : 'giocatori'}${b ? ` +${b} in più` : ''}`; };
+const edCap = () => ED.status === 'scheduled' ? 2 * MAX_START : MAX_CALLED;
 const edTotal = () => ED.white.length + ED.black.length + ED.called.length;
 const ovrOf = pid => STATS.byId[pid]?.ovr ?? OVR_START;
 function edToggle(pid){
@@ -4258,20 +4292,19 @@ function edToggle(pid){
   };
   if(cur === T){ pull(cur); renderEditor(); return; }
   if(T === 'called'){
-    if(!cur && edTotal() >= 16){ toast('Hai già 16 convocati', 'warn'); return; }
+    if(!cur && edTotal() >= edCap()){ toast(`Hai già ${edCap()} convocati`, 'warn'); return; }
     if(cur) pull(cur);
     ED.called.push(pid);
   }else{
     const tn = T === 'white' ? 'I Bianchi' : 'I Neri', nStart = ED[T].filter(x => !x.bench).length, nBench = ED[T].length - nStart;
     let asBench = false;
-    if(nStart >= 8){
-      if(ED.status === 'scheduled'){ toast(`${tn} hanno già 8 giocatori`, 'warn'); return; }
-      if(!ED.seq){ toast(`${tn} hanno già 8 giocatori. Per aggiungere giocatori in più passa all’inserimento dei gol in sequenza`, 'warn'); return; }
-      if(nBench >= 2){ toast(`${tn} hanno già 8 titolari e 2 giocatori in più`, 'warn'); return; }
+    if(nStart >= MAX_START){
+      if(ED.status === 'scheduled'){ toast(`${tn} hanno già ${MAX_START} giocatori`, 'warn'); return; }
+      if(!ED.seq){ toast(`${tn} hanno già ${MAX_START} giocatori. Per aggiungere giocatori in più passa all’inserimento dei gol in sequenza`, 'warn'); return; }
+      if(nBench >= MAX_BENCH){ toast(`${tn} hanno già ${MAX_START} titolari e ${MAX_BENCH} giocatori in più`, 'warn'); return; }
       asBench = true;
     }
-    const cap = ED.status === 'scheduled' ? 16 : 20;
-    if(!cur && edTotal() >= cap){ toast(`Hai già ${cap} giocatori in distinta`, 'warn'); return; }
+    if(!cur && edTotal() >= edCap()){ toast(`Hai già ${edCap()} giocatori in distinta`, 'warn'); return; }
     const e = (cur && pull(cur)) || { pid, n:pname(pid), g:0, a:0, og:0 };
     if(asBench) e.bench = 1; else delete e.bench;
     ED[T].push(e);
@@ -4279,8 +4312,68 @@ function edToggle(pid){
   }
   renderEditor();
 }
-/* Bilanciatore: prova tutte le divisioni (2^n, n ≤ 16) e minimizza lo scarto di OVR medio.
-   A parità quasi perfetta distribuisce i ruoli; tra le soluzioni equivalenti ne sceglie una a caso. */
+/* Bilanciatore: divide i giocatori in due squadre di misure kA e n-kA minimizzando la differenza di OVR medio, con un piccolo peso
+   sulla distribuzione dei ruoli (difensori e attaccanti). Assegnazione golosa + scambi di miglioramento, ripetuti da più partenze casuali
+   entro un budget di tempo. Quando le combinazioni possibili sono poche (fino a 16 giocatori) le prova tutte, ma una alla volta (niente 2^n):
+   oltre si usa l'euristica, che regge anche 26 giocatori. Restituisce un array di 0/1 (1 = squadra A); tra le soluzioni quasi equivalenti ne sceglie una a caso. */
+const BAL_EXACT_MAX = 13000;   /* combinazioni al massimo da provare tutte (16 giocatori in 8 + 8: 12870) */
+function balanceSplit(o, role, kA, budgetMs){
+  const n = o.length, kB = n - kA;
+  const out = new Array(n).fill(0);
+  if(kA <= 0 || kB <= 0){ if(kA >= n) out.fill(1); return out; }
+  let combos = 1; for(let i = 1; i <= Math.min(kA, kB); i++) combos = combos * (n - Math.min(kA, kB) + i) / i;
+  if(combos <= BAL_EXACT_MAX && n <= 30) return balanceExact(o, role, kA);
+  const rk = role.map(r => r === 'DIF' ? 0 : r === 'ATT' ? 1 : -1);
+  const total = o.reduce((t, v) => t + v, 0), nD = rk.filter(x => x === 0).length, nT = rk.filter(x => x === 1).length, w = n / 2 * 0.08;
+  const sc = (sA, dA, tA) => Math.abs(sA / kA - (total - sA) / kB) + (Math.abs(dA / kA - (nD - dA) / kB) + Math.abs(tA / kA - (nT - tA) / kB)) * w;
+  const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+  const t0 = now(), seen = new Map();
+  let best = Infinity, tries = 0;
+  while(tries < 12 || (now() - t0 < budgetMs && tries < 600)){
+    tries++;
+    /* partenza: dal più forte al più debole, ognuno nella squadra con la media prevista più bassa (con un po' di rumore) */
+    const idx = o.map((v, i) => [v + Math.random() * 3, i]).sort((a, b) => b[0] - a[0]).map(x => x[1]);
+    const inA = new Array(n).fill(false); let cA = 0, cB = 0, sA = 0, sB = 0, dA = 0, tA = 0;
+    for(const i of idx){
+      const toA = cA >= kA ? false : cB >= kB ? true : (sA / kA) <= (sB / kB);
+      if(toA){ inA[i] = true; cA++; sA += o[i]; if(rk[i] === 0) dA++; if(rk[i] === 1) tA++; } else { cB++; sB += o[i]; }
+    }
+    let cur = sc(sA, dA, tA);
+    for(let it = 0; it < 80; it++){
+      let bi = -1, bj = -1, bs = cur - 1e-9, bsA = 0, bdA = 0, btA = 0;
+      for(let a = 0; a < n; a++){ if(!inA[a]) continue;
+        for(let b = 0; b < n; b++){ if(inA[b]) continue;
+          const s2 = sA - o[a] + o[b], d2 = dA - (rk[a] === 0 ? 1 : 0) + (rk[b] === 0 ? 1 : 0), t2 = tA - (rk[a] === 1 ? 1 : 0) + (rk[b] === 1 ? 1 : 0), v = sc(s2, d2, t2);
+          if(v < bs){ bs = v; bi = a; bj = b; bsA = s2; bdA = d2; btA = t2; }
+        } }
+      if(bi < 0) break;
+      inA[bi] = false; inA[bj] = true; sA = bsA; dA = bdA; tA = btA; cur = bs;
+    }
+    const key = inA.map(x => x ? 1 : 0).join('');
+    if(!seen.has(key)) seen.set(key, cur);
+    if(cur < best) best = cur;
+  }
+  const near = [...seen].filter(([, v]) => v <= best + 0.12);
+  const pick = near[Math.floor(Math.random() * near.length)][0];
+  return [...pick].map(Number);
+}
+/* Prova tutte le divisioni con kA giocatori in A (enumerazione per combinazioni, algoritmo di Gosper) e sceglie a caso tra quelle entro 0,12 dalla migliore */
+function balanceExact(o, role, kA){
+  const n = o.length, kB = n - kA, total = o.reduce((t, v) => t + v, 0);
+  const rk = role.map(r => r === 'DIF' ? 0 : r === 'ATT' ? 1 : -1), nD = rk.filter(x => x === 0).length, nT = rk.filter(x => x === 1).length, w = n / 2 * 0.08;
+  const scoreOf = mask => {
+    let sA = 0, dA = 0, tA = 0;
+    for(let m = mask; m; m &= m - 1){ const i = 31 - Math.clz32(m & -m); sA += o[i]; if(rk[i] === 0) dA++; else if(rk[i] === 1) tA++; }
+    return Math.abs(sA / kA - (total - sA) / kB) + (Math.abs(dA / kA - (nD - dA) / kB) + Math.abs(tA / kA - (nT - tA) / kB)) * w;
+  };
+  const limit = 1 << n, first = (1 << kA) - 1;
+  const next = c => { const x = c & -c, y = c + x; return (((c ^ y) >>> 2) / x | 0) | y; };
+  let best = Infinity;
+  for(let c = first; c < limit; c = next(c)){ const v = scoreOf(c); if(v < best) best = v; }
+  let pick = first, seen = 0;
+  for(let c = first; c < limit; c = next(c)){ if(scoreOf(c) <= best + 0.12 && Math.random() * ++seen < 1) pick = c; }   /* scelta uniforme tra le quasi-equivalenti */
+  return Array.from({ length:n }, (_, i) => (pick >> i) & 1);
+}
 function balanceTeams(){
   if(ED.seq && ED.goals.length){ toast('Ci sono già dei gol in cronaca: ribilanciare cambierebbe le squadre. Elimina prima i gol.', 'warn'); return; }
   if(ED.moves.length){ toast('Ci sono già dei cambi registrati: ribilanciare cambierebbe le squadre. Elimina prima i cambi.', 'warn'); return; }
@@ -4288,37 +4381,41 @@ function balanceTeams(){
   const ids = [...ED.white.filter(e => !e.bench).map(e => e.pid), ...ED.black.filter(e => !e.bench).map(e => e.pid), ...ED.called];
   const n = ids.length;
   if(n < 2){ toast('Spunta almeno 2 convocati', 'warn'); return; }
+  if(n > 2 * MAX_START){ toast(`Il bilanciatore sistema fino a ${2 * MAX_START} titolari (${MAX_START} per squadra): togli ${n - 2 * MAX_START} convocati e aggiungili poi come giocatori in più`, 'warn'); return; }
+  const sz = edSizes(n);
+  if(sz.err){ toast(sz.err, 'warn'); return; }
   const o = ids.map(ovrOf), role = ids.map(id => store.players[id]?.role || 'JOLLY');
-  const kA = Math.ceil(n / 2), kB = n - kA, total = o.reduce((t, v) => t + v, 0);
-  const cnt = r => role.filter(x => x === r).length;
-  let cands = [], best = Infinity;
-  for(let mask = 0; mask < (1 << n); mask++){
-    if(!(mask & 1) && n % 2 === 0) continue;               // simmetria
-    let bits = 0, sA = 0; const rc = { DIF:0, ATT:0 };
-    for(let i = 0; i < n; i++) if(mask >> i & 1){ bits++; sA += o[i]; if(rc[role[i]] !== undefined) rc[role[i]]++; }
-    if(bits !== kA) continue;
-    const diff = Math.abs(sA / kA - (total - sA) / kB);
-    const roleGap = ['DIF','ATT'].reduce((t, r) => t + Math.abs(rc[r] - (cnt(r) - rc[r])) * 0.08, 0);
-    const score = diff + roleGap;
-    if(score < best - 1e-9){ best = score; }
-    cands.push([score, mask]);
-  }
-  cands = cands.filter(c => c[0] <= best + 0.12);
-  const mask = cands[Math.floor(Math.random() * cands.length)][1];
+  const mask = balanceSplit(o, role, sz.w, 120);
   const old = Object.fromEntries([...ED.white, ...ED.black].map(e => [e.pid, e]));
   const mk = id => old[id] || { pid:id, n:pname(id), g:0, a:0, og:0 };
-  ED.white = [...ids.filter((_, i) => mask >> i & 1).map(mk), ...benchW];
-  ED.black = [...ids.filter((_, i) => !(mask >> i & 1)).map(mk), ...benchB];
+  ED.white = [...ids.filter((_, i) => mask[i]).map(mk), ...benchW];
+  ED.black = [...ids.filter((_, i) => !mask[i]).map(mk), ...benchB];
   ED.called = [];
   edTeam = 'white';
   renderEditor();
-  const mean = arr => arr.filter(e => !e.bench).reduce((t, e) => t + ovrOf(e.pid), 0) / (arr.filter(e => !e.bench).length || 1);
-  toast(`Squadre bilanciate: OVR medio ${mean(ED.white).toFixed(1)} contro ${mean(ED.black).toFixed(1)}. Premi di nuovo per un’alternativa.`);
+  const mean = arr => { const l = arr.filter(e => !e.bench); return l.reduce((t, e) => t + ovrOf(e.pid), 0) / (l.length || 1); };
+  toast(`Squadre bilanciate (${sz.w} contro ${sz.b}): OVR medio ${mean(ED.white).toFixed(1)} contro ${mean(ED.black).toFixed(1)}. Premi di nuovo per un’alternativa.`);
+}
+/* Misure scelte per il bilanciatore (campi "Bianchi n / Neri n"); senza scelta: ceil(n/2) e floor(n/2) */
+function balInput(side, v){
+  if(!ED) return;
+  const n = ED.white.filter(e => !e.bench).length + ED.black.filter(e => !e.bench).length + ED.called.length, x = parseInt(v, 10);
+  if(!Number.isFinite(x)) return;
+  const k = Math.max(0, Math.min(n, x)), w = side === 'w' ? k : n - k;
+  ED.balW = w; ED.balB = n - w;
+  const other = $(side === 'w' ? '#bal-b' : '#bal-w'); if(other) other.value = side === 'w' ? n - w : w;   /* l'altro campo si adegua: la somma è sempre n */
+}
+function edSizes(n){
+  let w = ED.balW, b = ED.balB;
+  if(w == null || b == null || w + b !== n){ w = Math.ceil(n / 2); b = n - w; }
+  if(!Number.isInteger(w) || !Number.isInteger(b) || w < 1 || b < 1) return { err:'Servono almeno 1 giocatore per squadra' };
+  if(w > MAX_START || b > MAX_START) return { err:`Al massimo ${MAX_START} titolari per squadra` };
+  return { w, b };
 }
 function renderEditorScore(){
   if(ED.status === 'scheduled'){
     const mean = arr => { const l = arr.filter(e => !e.bench); return l.length ? (l.reduce((t, e) => t + ovrOf(e.pid), 0) / l.length).toFixed(1) : '–'; };
-    $('#ed-score').innerHTML = `<div class="t w">Bianchi<small>${ED.white.length}/8, OVR medio <b>${mean(ED.white)}</b></small></div><div class="s"><span style="color:var(--or)">VS</span></div><div class="t b">Neri<small>${ED.black.length}/8, OVR medio <b>${mean(ED.black)}</b></small></div><div class="note">Gara in programma: gol e assist si inseriscono dopo il fischio finale con “Registra risultato”</div>`;
+    $('#ed-score').innerHTML = `<div class="t w">Bianchi<small>${edCount('white')}, OVR medio <b>${mean(ED.white)}</b></small></div><div class="s"><span style="color:var(--or)">VS</span></div><div class="t b">Neri<small>${ED.black.length}/8, OVR medio <b>${mean(ED.black)}</b></small></div><div class="note">Gara in programma: gol e assist si inseriscono dopo il fischio finale con “Registra risultato”</div>`;
     return;
   }
   const sc = matchScore(ED);
@@ -4332,7 +4429,14 @@ function renderEditorScore(){
 function renderEditorPick(){
   $$('[data-edteam]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.edteam === edTeam)));
   const tot = edTotal();
-  $('#ed-called').textContent = `Convocati ${tot}/16${ED.called.length ? `, ${ED.called.length} da assegnare` : ''}`;
+  $('#ed-called').textContent = `Convocati ${tot}/${edCap()}${ED.called.length ? `, ${ED.called.length} da assegnare` : ''}`;
+  const nBal = ED.white.filter(e => !e.bench).length + ED.black.filter(e => !e.bench).length + ED.called.length;
+  if(ED.balW != null && ED.balW + ED.balB !== nBal){ ED.balW = ED.balB = null; }   /* i convocati sono cambiati: tornano le misure predefinite */
+  const sz0 = { w:ED.balW != null ? ED.balW : Math.ceil(nBal / 2) }; sz0.b = nBal - sz0.w;
+  const iw = $('#bal-w'), ib = $('#bal-b');
+  if(iw && document.activeElement !== iw) iw.value = nBal >= 2 ? sz0.w : '';
+  if(ib && document.activeElement !== ib) ib.value = nBal >= 2 ? sz0.b : '';
+  if(iw) iw.disabled = ib.disabled = nBal < 2;
   $('#ed-bal').disabled = tot < 2;
   const q = norm($('#ed-filter').value);
   const ps = STATS.list.filter(s => !q || norm(s.name).includes(q)).sort((a, b) => a.name.localeCompare(b.name, 'it'));
@@ -4347,7 +4451,7 @@ function stp(f, ic, label, v){
 }
 function edTeamHTML(T){
   const arr = ED[T];
-  return `<h4><span><span class="dot ${T === 'white' ? 'w' : 'b'}"></span>Squadra ${T === 'white' ? 'Bianca' : 'Nera'}</span><span class="cnt ${arr.filter(e => !e.bench).length === 8 ? 'full' : ''}">${edCount(T)}</span></h4>` +
+  return `<h4><span><span class="dot ${T === 'white' ? 'w' : 'b'}"></span>Squadra ${T === 'white' ? 'Bianca' : 'Nera'}</span><span class="cnt ${arr.filter(e => !e.bench).length === MAX_START ? 'full' : ''}">${edCount(T)}</span></h4>` +
     (arr.length ? arr.map(e => `<div class="erow" data-t="${T}" data-pid="${e.pid}">${avatar(store.players[e.pid] || { name:e.n }, 'xs')}<span class="nm">${esc(pname(e.pid, e.n))}${e.bench ? '<em class="bn">in più</em>' : ''}</span>${e.bench ? '<span></span>' : `<button type="button" class="capb" data-cap aria-pressed="${ED[T === 'white' ? 'capW' : 'capB'] === e.pid}" aria-label="Capitano: ${esc(pname(e.pid, e.n))}" title="Scegli come capitano (tocca di nuovo per tornare all’automatico)">C</button>`}<button type="button" class="rm" data-rm aria-label="Togli ${esc(pname(e.pid, e.n))}">×</button>${ED.seq ? roSteps(e) : `<div class="steps">${stp('g', '⚽', 'Gol', e.g)}${stp('a', '👟', 'Assist', e.a)}${stp('og', '🟥', 'Autogol', e.og)}</div>`}</div>`).join('')
       : `<p class="mu sm pad">Scegli la squadra qui sopra e tocca i nomi per schierarli.</p>`);
 }
@@ -4598,9 +4702,9 @@ async function saveMatch(){
     const ok = await confirmDlg('Convocati non assegnati', `${ED.called.length} convocati non sono in nessuna squadra e non verranno salvati. Premi “Bilancia squadre” oppure continua.`, 'Salva senza di loro');
     if(!ok) return;
   }
-  if(!w || !b){ toast('Schiera almeno un giocatore per squadra', 'err'); return; }
-  if(w !== 8 || b !== 8){
-    const ok = await confirmDlg('Formazioni incomplete', `Bianchi ${w}, Neri ${b}. Il calciotto si gioca 8 contro 8: vuoi salvare comunque?`, 'Salva comunque');
+  if(!w && !b){ toast('Schiera almeno un giocatore', 'err'); return; }
+  if(!w || !b){
+    const ok = await confirmDlg('Formazioni incomplete', `Una squadra è vuota (Bianchi ${w}, Neri ${b}): vuoi salvare comunque?`, 'Salva comunque');
     if(!ok) return;
   }
   edCapFix();
@@ -4687,7 +4791,7 @@ function exportCardHTML(m, ph){
   const mp = mv ? store.players[mv.pid] : null;
   return `<div class="xc ${dense ? 'dense' : ''} ${dense2 ? 'dense2' : ''}">
     <div class="xc-glow"></div><div class="xc-lines"></div><div class="xc-edge"></div>
-    <div class="xc-z xc-head">${crestSVG('cgx')}<div><div class="a">Torneo Comboniani</div><div class="b">Giornata ${num(m.day)}</div></div><div class="xc-date">${m.date ? fmtDateCap(m.date) : ''}<br>Calciotto 8 vs 8${len ? ` · ${len}’` : ''}</div></div>
+    <div class="xc-z xc-head">${crestSVG('cgx')}<div><div class="a">Torneo Comboniani</div><div class="b">Giornata ${num(m.day)}</div></div><div class="xc-date">${m.date ? fmtDateCap(m.date) : ''}<br>Calciotto ${starters(m, 'white').length} vs ${starters(m, 'black').length}${len ? ` · ${len}’` : ''}</div></div>
     <div class="xc-z xc-board"><div class="xc-team">${kit('white', '')}<span>Bianchi</span></div><div class="xc-score"><span class="${sc.w < sc.b ? 'lose' : ''}">${sc.w}</span><i></i><span class="${sc.b < sc.w ? 'lose' : ''}">${sc.b}</span></div><div class="xc-team">${kit('black', '')}<span>Neri</span></div></div>
     <div class="xc-z xc-res">${res}</div>
     <div class="xc-z xc-bar"></div>
@@ -5160,6 +5264,8 @@ document.addEventListener('keydown', e => {
 $('#psearch').addEventListener('input', renderPlayers);
 $('#msel').addEventListener('change', e => { ui.matchId = e.target.value; ui.swapSel = null; rerenderMatch(); });
 $('#ed-filter').addEventListener('input', renderEditorPick);
+$('#bal-w').addEventListener('input', e => balInput('w', e.target.value));
+$('#bal-b').addEventListener('input', e => balInput('b', e.target.value));
 $('#ed-day').addEventListener('input', e => { if(ED) ED.day = num(e.target.value); });
 $('#ed-date').addEventListener('input', e => { if(ED) ED.date = e.target.value; });
 $('#ed-time').addEventListener('input', e => { if(ED){ ED.time = e.target.value; if(ED.seq){ ED.goals.forEach(gkey); setGoals(goalOrder(effGoals(ED.goals))); renderGoals(); renderMoves(); } } });
