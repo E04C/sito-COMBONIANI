@@ -5204,13 +5204,13 @@ function poolSectionHTML(mid, me, S){
     const mine = me && mv.find(([, b]) => b.pid === me), pids = Object.keys(S.pl).sort((a, b) => (S.pl[a].t === S.pl[b].t ? 0 : S.pl[a].t === 'w' ? -1 : 1));
     html += `<h4 class="vi-h">🏆 Monte MVP</h4><p class="mu sm">Puntata fissa ${CASINO.POOL_STAKE} ${CURRENCY}. Chi indovina l’MVP si divide tutto il monte. Può vincere solo uno dei 4 candidati MVP della partita. Monte attuale: <b>${fmtPat(mv.length * CASINO.POOL_STAKE)}</b> (${mv.length} ${mv.length === 1 ? 'scelta' : 'scelte'}).</p>
       ${mine ? `<p class="vb-me">La tua scelta: <b>${nm(mine[1].sel)}</b>. È definitiva.</p>` : ''}
-      <div class="odds">${pids.map(pid => { const blk = me ? poolBlock(mid, me, 'mvp', pid) : ''; return `<button type="button" class="odd" data-pool="mvp|${pid}" data-mid="${mid}" ${mine || blk || !me ? `disabled${blk ? ` title="${blk}"` : ''}` : ''}><span>${nm(pid)}</span><b>${cnt[pid] || 0}</b></button>`; }).join('')}</div>
+      <div class="odds">${pids.map(pid => { const blk = me ? poolBlock(mid, me, 'mvp', pid) : ''; return `<button type="button" class="odd" data-mpool="mvp|${pid}" data-mid="${mid}" ${mine || blk || !me ? `disabled${blk ? ` title="${blk}"` : ''}` : ''}><span>${nm(pid)}</span><b>${cnt[pid] || 0}</b></button>`; }).join('')}</div>
       ${mv.length ? `<div class="mu sm" style="margin-top:6px">Scelte: ${mv.map(([, b]) => `${nm(b.pid)} → ${nm(b.sel)}`).join(', ')}</div>` : ''}`;
   }
   const ds = Object.entries(duelsOf(mid)).filter(([, d]) => duelLive(mid, d));
   if(ds.length) html += `<h4 class="vi-h">⚔️ Sfide</h4>` + ds.map(([did, d]) => {
     const rows = P.filter(([, b]) => b.kind === 'duel' && b.did === did), mine = me && rows.find(([, b]) => b.pid === me), blk = me ? poolBlock(mid, me, 'duel', 'a', d) : '';
-    const side = x => { const c = rows.filter(([, b]) => b.sel === x).length; return `<button type="button" class="odd" data-pool="duel|${did}|${x}" data-mid="${mid}" ${mine || blk || !me ? `disabled${blk ? ` title="${blk}"` : ''}` : ''}><span>${esc(duelSideName(d[x]))}</span><b>${c}</b></button>`; };
+    const side = x => { const c = rows.filter(([, b]) => b.sel === x).length; return `<button type="button" class="odd" data-mpool="duel|${did}|${x}" data-mid="${mid}" ${mine || blk || !me ? `disabled${blk ? ` title="${blk}"` : ''}` : ''}><span>${esc(duelSideName(d[x]))}</span><b>${c}</b></button>`; };
     return `<div class="mk-r"><b>${esc(duelTitle(d))}</b><span class="mu sm">Puntata fissa ${fmtPat(d.stake)} ${CURRENCY}. Pareggio: rimborso.</span><div class="odds">${side('a')}${side('b')}</div>
       ${mine ? `<span class="vb-me">La tua scelta: <b>${esc(duelSideName(d[mine[1].sel]))}</b>.</span>` : ''}${rows.length ? `<span class="mu sm">Scelte: ${rows.map(([, b]) => `${nm(b.pid)} → ${esc(duelSideName(d[b.sel]))}`).join(', ')}</span>` : ''}</div>`; }).join('');
   return html;
@@ -7164,7 +7164,7 @@ document.addEventListener('click', async e => {
     renderDashboard(); return;
   }
   if(d.ctab){ if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; } ui.cTab = d.ctab; renderCasino(); renderSlip(); return; }
-  if(d.pool){ const [k, a, b] = d.pool.split('|'); placePool(d.mid, k, k === 'mvp' ? a : b, k === 'duel' ? a : undefined); return; }
+  if(d.mpool){ const [k, a, b] = d.mpool.split('|'); placePool(d.mid, k, k === 'mvp' ? a : b, k === 'duel' ? a : undefined); return; }
   if(d.dlKind){ if(ui.dlForm){ ui.dlForm.kind = d.dlKind; $('#dl-pl').hidden = d.dlKind === 't'; $$('[data-dl-kind]').forEach(b => b.classList.toggle('primary', b.dataset.dlKind === d.dlKind)); } return; }
   if(d.msgf){ ui.msgF = d.msgf; refreshMsgAdmin(); return; }
   if(d.odd){ const i = d.odd.indexOf('|'); slipToggle(d.mid, d.odd.slice(0, i), d.odd.slice(i + 1)); return; }
