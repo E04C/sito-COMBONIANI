@@ -1792,7 +1792,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.6.2';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -6301,6 +6301,14 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.6.2', date:'2026-10-15', items:[
+    `🎰 CASiNO: nella barra in basso c’è la sezione con il tuo portafoglio. Si parte con 100 patate, ogni giorno puoi riscuoterne 10 e ogni partita nuova ne fa guadagnare, di più se segni o fai assist. Vedi il grafico del tuo saldo e la classifica di tutti, e nei Trofei c’è la targa 💰 Il Banco.`,
+    `🟩 Dentro il CASiNO l’aspetto cambia: ora è un vero tavolo da gioco, verde vivo con il bordo dorato.`,
+    `⏰ Il ritardo costa meno: chi arriva in ritardo perde 0,3 punti di OVR invece di 1.`,
+    `⭐ I voti a stelle pesano meno: il bonus o malus all’OVR va da −0,2 a +0,2 (prima da −0,5 a +0,5).`,
+    `🔄 Gli OVR sono stati ricalcolati con queste regole: qualche numero può essere cambiato di poco.`,
+    `📌 Per l’organizzatore: nel pannello c’è la scheda “Voti a stelle” con medie e distribuzione dei voti per gara, senza mai mostrare chi ha dato quali voti.`
+  ] },
   { v:'1.5.0', date:'2026-10-15', items:[
     `🆕 Novità: toccando lo stemma in alto, o la versione in fondo alla pagina, vedi l’elenco degli aggiornamenti. Lo stemma si accende quando c’è qualcosa di nuovo.`
   ] },
@@ -6308,7 +6316,7 @@ const NEWS = [
     `🏟️ Partite di qualsiasi misura: si possono registrare gare 9 contro 8, 7 contro 8 o anche 11 contro 5 (fino a 11 per squadra, più 2 giocatori in più). Campo e formazioni si adattano e il bilanciatore funziona anche con squadre di misura diversa.`,
     `📌 Per l’organizzatore: spostando i giocatori nel campo la pagina non torna più in cima.`,
     `🔄 Cambi in partita più completi: quando un giocatore esce si indica se è per infortunio (🤕) o per impegno (📅), e chi è uscito può rientrare.`,
-    `⏰ Chi arriva in ritardo perde 1 punto di OVR in quella partita (poi resta nel suo OVR come ogni altra variazione). Non cambia MVP, risultati né le altre statistiche. Nei Trofei c’è il nuovo primato “Il Ritardatario”.`,
+    `⏰ Chi arriva in ritardo perde 0,3 punti di OVR in quella partita (poi resta nel suo OVR come ogni altra variazione). Non cambia MVP, risultati né le altre statistiche. Nei Trofei c’è il nuovo primato “Il Ritardatario”.`,
     `🗳️ Votazioni più veloci: per le partite nuove i voti restano aperti 12 ore invece di 24. Finché sono aperti l’organizzatore può allungarli, e da quel momento restano aperti almeno altre 6 ore.`,
     `🪪 La tua scheda personale: dalla sezione Io puoi aggiungere data e luogo di nascita, nazionalità, ruolo preciso e una breve descrizione. È tutto facoltativo e serve l’approvazione dell’organizzatore. Del compleanno si vede solo l’età.`,
     `↻ Il retro della figurina: con il pulsante “Gira” (o l’icona ↻ sulle card della rosa) scopri la scheda dei giocatori che l’hanno compilata.`,
@@ -6317,7 +6325,7 @@ const NEWS = [
   ] },
   { v:'1.3.0', date:'2026-10-15', items:[
     `⭐ Voto ai compagni: dopo ogni partita nuova compare una schermata in cui dai da 1 a 5 stelle ai compagni della tua squadra (al massimo tre voti da 5 stelle e due da 1). Una volta inviato, il voto non si cambia.`,
-    `📈 Quando la votazione si chiude, la media delle stelle dà un piccolo bonus o malus all’OVR, da −0,5 a +0,5 (servono almeno 3 voti). Ognuno vede solo il proprio risultato, nella sezione Io.`,
+    `📈 Quando la votazione si chiude, la media delle stelle dà un piccolo bonus o malus all’OVR, da −0,2 a +0,2 (servono almeno 3 voti). Ognuno vede solo il proprio risultato, nella sezione Io.`,
     `🔒 Privacy: il voto per l’MVP lo vede l’organizzatore. Le stelle ai compagni non sono collegate a chi le ha date, ma l’anonimato non è assoluto: con pochi votanti, o con accesso ai dati, qualcosa si può intuire.`
   ] },
   { v:'1.2.0', date:'2026-10-15', items:[
