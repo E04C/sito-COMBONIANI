@@ -303,6 +303,7 @@ button.affr:hover{border-color:var(--line)}
 .locked p{color:var(--mu);margin:0 auto 18px;max-width:40ch}
 .db-info{margin-top:16px;padding:14px 18px;display:flex;flex-wrap:wrap;gap:8px 22px;color:var(--mu);font-size:13.5px;font-weight:600}
 .db-info b{color:var(--tx)}
+.appver{margin:22px 0 0;text-align:center;font-size:11.5px;font-weight:600;color:var(--mu2)}
 .warnline{margin-top:12px;padding:12px 16px;border-radius:14px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.07);color:#fde68a;font-weight:600;font-size:13.5px}
 
 /* ---------- Modals ---------- */
@@ -1388,6 +1389,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
   <section id="view-trophies" class="view" aria-label="Trofei e primati" hidden><div id="troph"></div></section>
 
   <section id="view-admin" class="view" aria-label="Area admin" hidden><div id="admin"></div></section>
+  <div class="appver" id="appver"></div>
 </main>
 
 <!-- Figurina giocatore -->
@@ -1566,6 +1568,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
+const APP_VERSION = '1.1.0';
 const DEFAULT_PIN = '2026';
 const CACHE_KEY = 'cmb2627_cache_v1';
 const ROLES = { ATT:'Attaccante', CEN:'Centrocampista', DIF:'Difensore', POR:'Portiere', JOLLY:'Jolly' };
@@ -3665,7 +3668,7 @@ function renderAdmin(){
       <button class="tile quiet" data-action="logout"><span class="ic">🚪</span><b>Esci dall’area admin</b><span>Torni in sola lettura su questo dispositivo.</span></button>
     </div>
     ${!store.settings?.pin ? `<div class="warnline">Stai usando il PIN predefinito ${DEFAULT_PIN}: cambialo prima di condividere il link.</div>` : ''}
-    <div class="glass db-info"><span>Archivio: <b>${mode}</b></span><span>Giocatori: <b>${STATS.list.length}</b></span><span>Gare: <b>${STATS.matches.length}</b></span></div>
+    <div class="glass db-info"><span>Archivio: <b>${mode}</b></span><span>Giocatori: <b>${STATS.list.length}</b></span><span>Gare: <b>${STATS.matches.length}</b></span><span>Versione: <b>v${APP_VERSION}</b></span></div>
     ${anHTML()}`;
 }
 
@@ -4682,6 +4685,7 @@ window.addEventListener('appinstalled', () => { $('#installBtn').hidden = true; 
   if(ios && !standalone && !localStorage.getItem('cmb_iosHint')) setTimeout(() => { $('#ios-hint').hidden = false; }, 4500);
 })();
 
+{ const av = $('#appver'); if(av) av.textContent = 'v' + APP_VERSION; }
 loadCache();
 render();
 initFirebase();
