@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.0
+- Pulsante "Novità": toccando lo stemma in alto, o la versione in fondo alla pagina, si apre l'elenco degli aggiornamenti. Lo stemma si accende (anello verde) quando c'è qualcosa di nuovo.
+- L'elenco delle novità (`NEWS`) sta dentro `index.html`, quindi funziona anche offline. Nessuna modifica a punteggi o dati.
+
 ## 1.4.0
 - Sposta giocatori: la pagina non salta più in cima (si ridisegna solo il campo e la posizione viene ripristinata).
 - Squadre di qualsiasi misura: da 1 a 11 titolari più 2 "in più" per squadra, fino a 26 giocatori; moduli per ogni numero; bilanciatore veloce con "Bianchi n / Neri n"; testi dinamici.
