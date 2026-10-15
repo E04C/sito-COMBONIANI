@@ -30,7 +30,7 @@
   --or:#f97316; --or2:#ea580c; --or-soft:rgba(249,115,22,.1);
   --gold:#fbbf24; --gold2:#f59e0b;
   --tx:#eef1f6; --mu:#8a93a6; --mu2:#586074;
-  --bad:#fb7185;
+  --bad:#fb7185; --pos:#22c55e;
   --disp:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;
   --body:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;
   --ease:cubic-bezier(.2,.8,.2,1);
@@ -1436,14 +1436,14 @@ body{transition:background-color .3s}
 .cs-big small{font:700 15px var(--body);font-style:normal;color:var(--mu)}
 .cs-big.neg b{color:var(--bad)}
 .cs-claim{min-width:190px}
-.cs-pop{position:absolute;left:100%;top:-6px;margin-left:6px;font:800 22px var(--body);color:#22c55e;animation:csPop 1.3s ease-out both;pointer-events:none}
+.cs-pop{position:absolute;left:100%;top:-6px;margin-left:6px;font:800 22px var(--body);color:var(--pos);animation:csPop 1.3s ease-out both;pointer-events:none}
 @keyframes csPop{0%{opacity:0;transform:translateY(8px) scale(.8)}20%{opacity:1}100%{opacity:0;transform:translateY(-26px) scale(1.15)}}
 @media (prefers-reduced-motion:reduce){.cs-pop{display:none}}
 .cs-hist{padding:14px 18px;margin-bottom:12px}
 .cs-lb{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:6px 4px;border:0;border-top:1px solid var(--hair);background:none;text-align:left;font:600 14px var(--body)}
 .cs-lb .pos{flex:none;width:24px;text-align:center;color:var(--mu2);font-weight:800}
 .cs-lb .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cs-lb b{font-variant-numeric:tabular-nums;color:var(--gold)}
+.cs-lb b{font-variant-numeric:tabular-nums;color:var(--or)}
 .cs-lb b.neg{color:var(--bad)}
 .cs-lb.me{background:var(--or-soft);border-radius:10px}
 .cs-hist h3{margin:0 0 6px;font:italic 800 22px/1 var(--disp)}
@@ -1451,53 +1451,59 @@ body{transition:background-color .3s}
 .cs-mv .d{flex:none;width:64px;color:var(--mu2);font-size:12.5px;font-weight:700}
 .cs-mv .l{flex:1;min-width:0;font-size:14px;font-weight:600}
 .cs-mv b{font-variant-numeric:tabular-nums;font-weight:800}
-.cs-mv b.pos{color:#22c55e}
+.cs-mv b.pos{color:var(--pos)}
 .cs-mv b.neg{color:var(--bad)}
+/* Tema CASiNO "tavolo da gioco": panno verde acceso, oro, bordo cucito. Vale solo con body.theme-casino (nessuna logica) */
 .bg::after{content:"";position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .3s;
   background:
-    radial-gradient(1000px 640px at 88% -12%,rgba(34,197,94,.20),transparent 62%),
-    radial-gradient(760px 520px at -8% 108%,rgba(22,163,74,.16),transparent 60%),
-    radial-gradient(600px 420px at 50% 55%,rgba(245,197,66,.06),transparent 70%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='84' viewBox='0 0 84 84'%3E%3Cg fill='none' stroke-width='1'%3E%3Cpath d='M42 16l7.4 18.6L68 42l-18.6 7.4L42 68l-7.4-18.6L16 42l18.6-7.4z' stroke='rgba(245,197,66,0.08)'/%3E%3C/g%3E%3C/svg%3E"),
-    linear-gradient(180deg,#072216 0%,#04140c 75%)}
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.08'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 700' preserveAspectRatio='xMidYMin slice'%3E%3Cg fill='none' stroke='white' stroke-opacity='.09' stroke-width='2'%3E%3Cpath d='M-60 130A260 260 0 0 0 460 130'/%3E%3Cpath d='M-20 170A220 220 0 0 0 420 170'/%3E%3Ccircle cx='200' cy='360' r='46'/%3E%3Ccircle cx='80' cy='330' r='30'/%3E%3Ccircle cx='320' cy='330' r='30'/%3E%3Cpath d='M0 560A260 260 0 0 1 400 560'/%3E%3C/g%3E%3C/svg%3E") center top/cover no-repeat,
+    radial-gradient(ellipse 110% 100% at 50% 45%,rgba(0,40,20,0) 58%,rgba(0,40,20,.42) 100%),
+    radial-gradient(ellipse 85% 55% at 50% 30%,rgba(19,138,78,.9),rgba(19,138,78,0) 75%),
+    linear-gradient(180deg,#0d6e40 0%,#0a5c36 100%)}
 body.theme-casino .bg::after{opacity:1}
+body::after{content:"";position:fixed;z-index:39;left:8px;right:8px;top:calc(env(safe-area-inset-top,0px) + 8px);bottom:calc(env(safe-area-inset-bottom,0px) + 8px);
+  border:2px dashed rgba(245,197,66,.6);border-radius:16px;pointer-events:none;opacity:0;transition:opacity .3s}
+body.theme-casino::after{opacity:1}
 body.theme-casino{
-  --bg0:#04140c; --bg1:#072216; --bg2:#0b2d1d;
-  --panel:rgba(8,36,22,.7);
-  --line:rgba(245,197,66,.22); --line-strong:rgba(245,197,66,.5); --hair:rgba(255,255,255,.09);
-  --or:#f5c542; --or2:#d9a21b; --or-soft:rgba(245,197,66,.12);
+  --bg0:#0a5c36; --bg1:#0d6e40; --bg2:#108048;
+  --panel:rgba(255,255,255,.07);
+  --line:rgba(245,197,66,.3); --line-strong:rgba(245,197,66,.6); --hair:rgba(255,255,255,.14);
+  --or:#ffdf70; --or2:#d9a21b; --or-soft:rgba(245,197,66,.16);
   --gold:#fbbf24; --gold2:#f5c542;
-  --tx:#ffffff; --mu:#9fc3ae; --mu2:#6c9680;
-  background-color:#04140c}
-body.theme-casino .bg .pitch *{stroke:rgba(255,255,255,.02)}
-body.theme-casino .topbar{background:linear-gradient(180deg,rgba(4,20,12,.95),rgba(4,20,12,.76))}
-body.theme-casino .nav{background:rgba(4,20,12,.92)}
-body.theme-casino .crest{filter:drop-shadow(0 0 12px rgba(245,197,66,.4))}
-body.theme-casino #cg stop:nth-child(2){stop-color:#22c55e}
+  --tx:#ffffff; --mu:#d3ead9; --mu2:#a9d3b8;
+  --bad:#ffc4cc; --pos:#c8f7d6;
+  background-color:#0a5c36}
+body.theme-casino .bg .pitch{opacity:0}
+body.theme-casino .topbar{background:linear-gradient(180deg,rgba(7,76,44,.96),rgba(8,84,49,.84))}
+body.theme-casino .nav{background:rgba(7,76,44,.95)}
+body.theme-casino .crest{filter:drop-shadow(0 0 12px rgba(245,197,66,.45))}
+body.theme-casino #cg stop:nth-child(2){stop-color:#4ade80}
 body.theme-casino #cg stop:nth-child(3){stop-color:#16a34a}
 body.theme-casino .crest-btn::before{border-color:#f5c542}
 body.theme-casino .crest-btn.on::before{box-shadow:0 0 12px rgba(245,197,66,.6)}
 body.theme-casino .crest-btn::after{background:#f5c542;color:#2a1c00}
-body.theme-casino .sync[data-state=live] i{background:#22c55e;animation-name:pulseG}
-@keyframes pulseG{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 7px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
-body.theme-casino .btn{background:rgba(245,197,66,.08)}
-body.theme-casino .btn.primary{background:linear-gradient(180deg,#f5c542,#d9a21b);color:#2a1c00;box-shadow:0 10px 26px -10px rgba(245,197,66,.6)}
-body.theme-casino .btn.primary:hover{box-shadow:0 12px 30px -8px rgba(245,197,66,.8)}
-body.theme-casino .field:focus{box-shadow:0 0 0 3px rgba(245,197,66,.18)}
-body.theme-casino .sheet{background:rgba(5,24,15,.97)}
-body.theme-casino .modal{background:rgba(1,10,6,.78)}
-body.theme-casino .toast{background:rgba(5,24,15,.97)}
+body.theme-casino .sync[data-state=live] i{background:#4ade80;animation-name:pulseG}
+@keyframes pulseG{0%{box-shadow:0 0 0 0 rgba(74,222,128,.6)}70%{box-shadow:0 0 0 7px rgba(74,222,128,0)}100%{box-shadow:0 0 0 0 rgba(74,222,128,0)}}
+body.theme-casino .btn{background:rgba(245,197,66,.1)}
+body.theme-casino .btn.primary{background:linear-gradient(180deg,#f5c542,#d9a21b);color:#2a1c00;box-shadow:0 10px 26px -10px rgba(0,30,15,.6)}
+body.theme-casino .btn.primary:hover{box-shadow:0 12px 30px -8px rgba(0,30,15,.7)}
+body.theme-casino .btn:disabled,body.theme-casino .btn.primary:disabled{opacity:1;background:rgba(255,255,255,.14);color:#ecf8f0;border:1px solid var(--line);box-shadow:none}
+body.theme-casino .field:focus{box-shadow:0 0 0 3px rgba(245,197,66,.25)}
+body.theme-casino .sheet{background:rgba(8,82,48,.98)}
+body.theme-casino .modal{background:rgba(2,34,18,.72)}
+body.theme-casino .toast{background:rgba(8,82,48,.98)}
 body.theme-casino .rec::before{background:linear-gradient(90deg,rgba(245,197,66,0),var(--or),rgba(245,197,66,0))}
-body.theme-casino .rec.glass{background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.015) 38%,rgba(4,20,12,.86)),rgba(4,20,12,.8)}
+body.theme-casino .rec.glass{background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.03) 38%,rgba(6,66,38,.86)),rgba(6,66,38,.8)}
 body.theme-casino .rec-val b{text-shadow:0 0 18px rgba(245,197,66,.35)}
-body.theme-casino .rec.mine{border-color:rgba(245,197,66,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 0 1px rgba(245,197,66,.5),0 0 26px rgba(245,197,66,.2)}
+body.theme-casino .rec.mine{border-color:rgba(245,197,66,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 0 1px rgba(245,197,66,.5),0 0 26px rgba(245,197,66,.2)}
 body.theme-casino .plk.mine{box-shadow:0 0 0 1px var(--or),0 0 24px rgba(245,197,66,.25)}
-body.theme-casino .av{background-color:#0b2d1d}
-body.theme-casino .ph-ini{color:rgba(245,197,66,.5)}
-body.theme-casino .role.JOLLY{background:linear-gradient(90deg,rgba(34,197,94,.2),rgba(251,191,36,.2))}
-body.theme-casino .vbox{background:linear-gradient(180deg,rgba(245,197,66,.08),rgba(255,255,255,.02))}
-body.theme-casino .fx-box .sw.on::before{background:var(--or);border-color:var(--or)}
-@media (prefers-reduced-motion:reduce){body{transition:none}.bg::after{transition:none}}
+body.theme-casino .av{background-color:#0d6e40}
+body.theme-casino .ph-ini{color:rgba(245,197,66,.6)}
+body.theme-casino .role.JOLLY{background:linear-gradient(90deg,rgba(74,222,128,.25),rgba(251,191,36,.25))}
+body.theme-casino .vbox{background:linear-gradient(180deg,rgba(245,197,66,.1),rgba(255,255,255,.03))}
+body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
+@media (prefers-reduced-motion:reduce){body{transition:none}.bg::after,body::after{transition:none}}
 </style>
 </head>
 <body>
@@ -4626,13 +4632,13 @@ function balChartHTML(w){
   const X = i => L + i * (W - L - R) / (pts.length - 1), Y = v => T + (hi - v) / (hi - lo) * (H - T - B);
   const line = pts.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(' ');
   const area = `${line} L${X(pts.length - 1).toFixed(1)} ${H - B} L${X(0).toFixed(1)} ${H - B} Z`;
-  const zero = lo < 0 && hi > 0 ? `<line x1="${L}" x2="${W - R}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}" stroke="#fb7185" stroke-dasharray="3 4" opacity=".55"/>` : '';
-  const yl = [lo, hi].map(v => `<text x="${L - 5}" y="${(Y(v) + 3).toFixed(1)}" text-anchor="end" fill="#6c9680" font-size="9">${Math.round(v)}</text>`).join('');
+  const zero = lo < 0 && hi > 0 ? `<line x1="${L}" x2="${W - R}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}" stroke="#ffc4cc" stroke-dasharray="3 4" opacity=".7"/>` : '';
+  const yl = [lo, hi].map(v => `<text x="${L - 5}" y="${(Y(v) + 3).toFixed(1)}" text-anchor="end" fill="#d3ead9" font-size="9">${Math.round(v)}</text>`).join('');
   const stp = Math.max(1, Math.ceil(pts.length / 7));
   const dl = t => t == null ? 'Inizio' : new Date(t).toLocaleDateString('it-IT', { day:'numeric', month:'short' });
-  const xl = pts.map((_, i) => (i % stp === 0 || i === pts.length - 1) ? `<text x="${X(i).toFixed(1)}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle'}" fill="#6c9680" font-size="9">${dl(m[i].t)}</text>` : '').join('');
-  const dots = pts.map((v, i) => `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${i === pts.length - 1 ? 4.5 : 2.5}" fill="${i === pts.length - 1 ? '#f5c542' : '#04140c'}" stroke="#f5c542" stroke-width="1.5"/>`).join('');
-  return `<svg class="ovrchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Andamento del saldo: da ${pts[0]} a ${pts[pts.length - 1]} ${CURRENCY}"><defs><linearGradient id="bca" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22c55e" stop-opacity=".35"/><stop offset="1" stop-color="#22c55e" stop-opacity="0"/></linearGradient></defs>${zero}${yl}${xl}<path d="${area}" fill="url(#bca)"/><path d="${line}" fill="none" stroke="#f5c542" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>${dots}</svg>`;
+  const xl = pts.map((_, i) => (i % stp === 0 || i === pts.length - 1) ? `<text x="${X(i).toFixed(1)}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle'}" fill="#d3ead9" font-size="9">${dl(m[i].t)}</text>` : '').join('');
+  const dots = pts.map((v, i) => `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${i === pts.length - 1 ? 4.5 : 2.5}" fill="${i === pts.length - 1 ? '#f5c542' : '#0a5c36'}" stroke="#f5c542" stroke-width="1.5"/>`).join('');
+  return `<svg class="ovrchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Andamento del saldo: da ${pts[0]} a ${pts[pts.length - 1]} ${CURRENCY}"><defs><linearGradient id="bca" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f5c542" stop-opacity=".3"/><stop offset="1" stop-color="#f5c542" stop-opacity="0"/></linearGradient></defs>${zero}${yl}${xl}<path d="${area}" fill="url(#bca)"/><path d="${line}" fill="none" stroke="#f5c542" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>${dots}</svg>`;
 }
 /* Classifica dei saldi di tutta la rosa: la vedono tutti */
 function bancoBoardHTML(me){
@@ -5774,7 +5780,7 @@ function applyTheme(){
   const on = ui.view === 'casino' && feat('casino');
   document.body.classList.toggle('theme-casino', on);
   const mt = document.querySelector('meta[name="theme-color"]');
-  if(mt) mt.setAttribute('content', on ? '#04140c' : '#050608');
+  if(mt) mt.setAttribute('content', on ? '#0a5c36' : '#050608');
 }
 function go(view){
   if(view === 'casino' && !feat('casino')){ toast('CASiNO sospeso', 'warn'); view = 'dashboard'; }
