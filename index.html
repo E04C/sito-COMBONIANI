@@ -1121,6 +1121,10 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .chron ol{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .cr{display:grid;grid-template-columns:44px 22px 1fr auto;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.03);border-left:3px solid #eef1f6}
 .cr.b{border-left-color:var(--or)}
+.cr.mv{border-left-color:#fbbf24;background:rgba(251,191,36,.06)}
+.cr.mv .cw{font-weight:600}
+.cr.mv .cs{visibility:hidden}
+.lu .bn{margin-left:0}
 .cr .mn{font:italic 800 16px var(--disp);color:var(--or)}
 .cr .mn.est{color:var(--mu)}
 .cr .ci{text-align:center}
@@ -2605,9 +2609,24 @@ function evListHTML(evs){
   return li.length ? `<ul class="ev">${li.join('')}</ul>` : `<p class="mu sm" style="margin:0">Nessun gol o assist registrato.</p>`;
 }
 function chronHTML(m){
-  const tl = matchGoals(m); if(!tl.length) return '';
+  const tl = matchGoals(m), mv = hasMoves(m) ? moveRows(m) : [];
+  if(!tl.length && !mv.length) return '';
   const est = tl.some(x => x.est);
-  return `<section class="chron"><h3>🕒 Cronaca della gara</h3><ol>${tl.map(x => `<li class="cr ${x.t === 'black' ? 'b' : 'w'}"><span class="mn${x.est ? ' est' : ''}">${x.min != null ? (x.est ? '~' : '') + x.min + '’' : '·'}</span><span class="ci">${x.og ? '🟥' : '⚽'}</span><span class="cw"><b>${esc(pname(x.s))}${x.og ? ' (autogol)' : ''}</b>${!x.og && x.a ? `<small>assist ${esc(pname(x.a))}</small>` : ''}</span><span class="cs">${x.w}–${x.b}</span></li>`).join('')}</ol>${est ? '<p class="mu sm" style="margin:8px 0 0">I minuti con ~ sono stimati dall’ordine dei gol.</p>' : ''}</section>`;
+  const goalLi = x => `<li class="cr ${x.t === 'black' ? 'b' : 'w'}"><span class="mn${x.est ? ' est' : ''}">${x.min != null ? (x.est ? '~' : '') + x.min + '’' : '·'}</span><span class="ci">${x.og ? '🟥' : '⚽'}</span><span class="cw"><b>${esc(pname(x.s))}${x.og ? ' (autogol)' : ''}</b>${!x.og && x.a ? `<small>assist ${esc(pname(x.a))}</small>` : ''}</span><span class="cs">${x.w}–${x.b}</span></li>`;
+  const mvLi = r => `<li class="cr mv"><span class="mn">${r.min != null ? r.min + '’' : '·'}</span><span class="ci">${moveIcon(r.k)}</span><span class="cw"><b>${esc(moveText(r, m))}</b></span><span class="cs">0–0</span></li>`;
+  /* i cambi stanno tra i gol, in ordine: lo slot n vuol dire "prima del gol n" */
+  const items = [];
+  for(let i = 0; i <= tl.length; i++){
+    mv.filter(r => r.slot === i).forEach(r => items.push(mvLi(r)));
+    if(i < tl.length) items.push(goalLi(tl[i]));
+  }
+  return `<section class="chron"><h3>🕒 Cronaca della gara</h3><ol>${items.join('')}</ol>${est ? '<p class="mu sm" style="margin:8px 0 0">I minuti con ~ sono stimati dall’ordine dei gol.</p>' : ''}</section>`;
+}
+/* Sezione "Cambi" del resoconto: solo se la gara ne ha */
+function cambiHTML(m){
+  const mv = hasMoves(m) ? moveRows(m) : [];
+  if(!mv.length) return '';
+  return `<section class="chron"><h3>🔁 Cambi</h3><ol>${mv.map(r => `<li class="cr mv"><span class="mn">${r.min != null ? r.min + '’' : '·'}</span><span class="ci">${moveIcon(r.k)}</span><span class="cw"><b>${esc(moveText(r, m))}</b></span><span class="cs">0–0</span></li>`).join('')}</ol></section>`;
 }
 function matchDetailHTML(id){
   const m = { id, ...store.matches[id] };
@@ -2615,7 +2634,7 @@ function matchDetailHTML(id){
   const sc = matchScore(m), mv = matchMvp(m);
   const col = team => `<div class="tcol"><h3><span class="dot ${team === 'white' ? 'w' : 'b'}"></span>Squadra ${team === 'white' ? 'Bianca' : 'Nera'}</h3>
     ${evListHTML(teamEvents(m, team))}
-    <div class="lineup">${list(m[team]).map(e => `<button class="lu" data-open-player="${e.pid}" ${store.players[e.pid] ? '' : 'disabled'}>${avatar(store.players[e.pid] || { name:e.n }, 'xs')}${esc(pname(e.pid, e.n))}</button>`).join('')}</div>
+    <div class="lineup">${list(m[team]).map(e => `<button class="lu" data-open-player="${e.pid}" ${store.players[e.pid] ? '' : 'disabled'}>${avatar(store.players[e.pid] || { name:e.n }, 'xs')}${esc(pname(e.pid, e.n))}${e.bench ? '<em class="bn">in più</em>' : ''}</button>`).join('')}</div>
   </div>`;
   const mvp = mv
     ? `<div class="mvpbox">${avatar(store.players[mv.pid] || { name:mv.n }, 'md')}<div><div class="t">★ ${mv.provisional ? 'MVP provvisorio' : 'MVP della gara'}</div><div class="n">${esc(pname(mv.pid, mv.n))}</div><div class="d">${evDesc(mv)}${mv.vts ? `, ${mv.vts} ${mv.vts === 1 ? 'voto' : 'voti'}` : ''}, squadra ${mv.team === 'white' ? 'Bianca' : 'Nera'}</div></div><div class="pts">${fmtPts(mv.score)}<small>pt</small></div></div>`
@@ -2625,10 +2644,10 @@ function matchDetailHTML(id){
     ? `<button class="awd" data-open-player="${c.pid}" ${store.players[c.pid] ? '' : 'disabled'}><span class="ai">${A.icon}</span><span><small>${A.l}</small><b>${esc(pname(c.pid, c.n))}</b></span><em>${fmtD(c.pts)}</em></button>`
     : `<div class="awd off"><span class="ai">${A.icon}</span><span><small>${A.l}</small><b>Non assegnato</b></span></div>`; }).join('')}</div>`;
   return `<div class="mgrid"><article class="glass tab">
-    <div class="hero-meta"><span class="tag">Giornata ${num(m.day)}</span>${m.date ? `<span>${fmtDate(m.date)}</span>` : ''}${matchLen(m) ? `<span>Durata ${matchLen(m)}’</span>` : ''}<span class="sum">${list(m.white).length} contro ${list(m.black).length}</span></div>
+    <div class="hero-meta"><span class="tag">Giornata ${num(m.day)}</span>${m.date ? `<span>${fmtDate(m.date)}</span>` : ''}${matchLen(m) ? `<span>Durata ${matchLen(m)}’</span>` : ''}<span class="sum">${starters(m, 'white').length} contro ${starters(m, 'black').length}</span></div>
     ${boardHTML(sc)}
     <div class="tab-cols">${col('white')}${col('black')}</div>
-    ${chronHTML(m)}
+    ${cambiHTML(m)}${chronHTML(m)}
     ${mvp}${awards}${voteBoxHTML(m)}
     <div class="tab-actions">
       <button class="btn primary" data-action="export-match" data-mid="${id}">📸 Esporta Grafica Gara HD</button>
