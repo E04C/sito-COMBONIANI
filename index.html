@@ -5621,6 +5621,62 @@ $('#cpin-form').addEventListener('submit', e => {
 /* =========================================================
    BOOT
    ========================================================= */
+/* =========================================================
+   NOVITÀ: l'elenco degli aggiornamenti sta qui dentro (funziona anche offline), dalla versione più recente.
+   Italiano semplice, solo ciò che è arrivato davvero. A ogni release si aggiunge la voce qui, insieme a
+   CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
+   ========================================================= */
+const NEWS = [
+  { v:'1.5.0', date:'2026-10-15', items:[
+    `🆕 Novità: toccando lo stemma in alto, o la versione in fondo alla pagina, vedi l’elenco degli aggiornamenti. Lo stemma si accende quando c’è qualcosa di nuovo.`
+  ] },
+  { v:'1.4.0', date:'2026-10-15', items:[
+    `🏟️ Partite di qualsiasi misura: si possono registrare gare 9 contro 8, 7 contro 8 o anche 11 contro 5 (fino a 11 per squadra, più 2 giocatori in più). Campo e formazioni si adattano e il bilanciatore funziona anche con squadre di misura diversa.`,
+    `📌 Per l’organizzatore: spostando i giocatori nel campo la pagina non torna più in cima.`,
+    `🔄 Cambi in partita più completi: quando un giocatore esce si indica se è per infortunio (🤕) o per impegno (📅), e chi è uscito può rientrare.`,
+    `⏰ Chi arriva in ritardo perde 1 punto di OVR in quella partita (poi resta nel suo OVR come ogni altra variazione). Non cambia MVP, risultati né le altre statistiche. Nei Trofei c’è il nuovo primato “Il Ritardatario”.`,
+    `🗳️ Votazioni più veloci: per le partite nuove i voti restano aperti 12 ore invece di 24. Finché sono aperti l’organizzatore può allungarli, e da quel momento restano aperti almeno altre 6 ore.`,
+    `🪪 La tua scheda personale: dalla sezione Io puoi aggiungere data e luogo di nascita, nazionalità, ruolo preciso e una breve descrizione. È tutto facoltativo e serve l’approvazione dell’organizzatore. Del compleanno si vede solo l’età.`,
+    `↻ Il retro della figurina: con il pulsante “Gira” (o l’icona ↻ sulle card della rosa) scopri la scheda dei giocatori che l’hanno compilata.`,
+    `🎂 Compleanni: il giorno del compleanno compare in classifica un banner “Oggi compie X anni”, per chi ha la scheda approvata con la data.`,
+    `🔒 La data di nascita non si vede nell’app, ma resta nei dati: scrivi solo ciò che sei contento di condividere.`
+  ] },
+  { v:'1.3.0', date:'2026-10-15', items:[
+    `⭐ Voto ai compagni: dopo ogni partita nuova compare una schermata in cui dai da 1 a 5 stelle ai compagni della tua squadra (al massimo tre voti da 5 stelle e due da 1). Una volta inviato, il voto non si cambia.`,
+    `📈 Quando la votazione si chiude, la media delle stelle dà un piccolo bonus o malus all’OVR, da −0,5 a +0,5 (servono almeno 3 voti). Ognuno vede solo il proprio risultato, nella sezione Io.`,
+    `🔒 Privacy: il voto per l’MVP lo vede l’organizzatore. Le stelle ai compagni non sono collegate a chi le ha date, ma l’anonimato non è assoluto: con pochi votanti, o con accesso ai dati, qualcosa si può intuire.`
+  ] },
+  { v:'1.2.0', date:'2026-10-15', items:[
+    `🔁 Cambi durante la partita: si possono registrare giocatori “in più” (fino a 2 per squadra) e giocatori che passano all’altra squadra a metà gara.`,
+    `🧮 Se uno cambia squadra, risultato, OVR e statistiche contano per la squadra in cui ha giocato più minuti (senza minuti, quella di partenza).`,
+    `👀 Campo, replay e immagini restano con i soli titolari; i cambi si vedono nel tabellino e nella cronaca.`
+  ] },
+  { v:'1.1.0', date:'2026-10-15', items:[
+    `📉 Perché i tuoi OVR sono cambiati: l’autogol ora toglie 1 punto invece di 1,5, e l’MVP non regala più +0,5 all’OVR (il titolo di MVP resta). Gli OVR sono stati ricalcolati da zero su tutte le partite, anche quelle già giocate.`,
+    `🧤 Il ruolo Portiere non c’è più: chi era portiere conta come difensore (per l’OVR non cambia nulla).`,
+    `🧢 Capitano scelto dall’organizzatore: la “C” sul campo e i due capitani nella card “Prossima gara”. Se non è scelto, vale chi ha più presenze (poi chi ha l’OVR più alto).`,
+    `💾 Per l’organizzatore: “Backup completo” dei dati al posto dell’esportazione Excel (l’importazione resta).`,
+    `🔢 In fondo alla pagina si vede il numero di versione, e riaprendo l’app trovi sempre l’ultima.`
+  ] },
+  { v:'1.0.0', date:'2026-10-15', items:[
+    `🏆 Classifica con OVR, vittorie, gol e assist, e figurine dei giocatori con i livelli Bronzo, Argento, Oro e Diamante.`,
+    `📋 Partite con tabellino, marcatori, MVP (si vota tra i 4 migliori) e premi di reparto; gol in sequenza con cronaca e replay.`,
+    `🏟️ Campo con le formazioni, trofei con targhe e primati, testa a testa, la sezione Io e immagini da condividere. L’app si installa sul telefono.`
+  ] }
+];
+const NEWS_KEY = 'cmb_newsSeen';
+/* Confronto numerico per parti: 1.10.0 è maggiore di 1.9.0. Un testo mancante o non valido vale 0.0.0 */
+function verCmp(a, b){
+  const pa = String(a || '').split('.').map(n => parseInt(n, 10) || 0), pb = String(b || '').split('.').map(n => parseInt(n, 10) || 0);
+  for(let i = 0; i < Math.max(pa.length, pb.length, 3); i++){ const d = (pa[i] || 0) - (pb[i] || 0); if(d) return d > 0 ? 1 : -1; }
+  return 0;
+}
+/* Ultima versione delle novità già aperta su questo dispositivo ('' se mai). Con localStorage bloccato vale almeno per la sessione */
+let newsSeenMem = '';
+function newsSeenGet(){ try{ return localStorage.getItem(NEWS_KEY) || newsSeenMem; }catch(e){ return newsSeenMem; } }
+function newsSeenSet(v){ newsSeenMem = v; try{ localStorage.setItem(NEWS_KEY, v); }catch(e){} }
+const newsHasNew = () => verCmp(APP_VERSION, newsSeenGet()) > 0;
+
 /* Splash: due spade si incrociano, il pallone rimbalza al centro. Una volta per sessione, tocca per saltare */
 (function splash(){
   const el = $('#splash'); if(!el) return;
