@@ -1889,7 +1889,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.7.0';
+const APP_VERSION = '1.7.1';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -7402,6 +7402,9 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.7.1', date:'2026-10-15', items:[
+    `🛠️ Corretto un errore: quando l’organizzatore inseriva le formazioni, toccando un giocatore compariva “CASiNO sospeso” e non si poteva selezionare. Ora funziona di nuovo.`
+  ] },
   { v:'1.7.0', date:'2026-10-15', items:[
     `🛍️ Nel CASiNO c’è il Negozio: con le patate compri oggetti per personalizzare la tua figurina e il tuo nome. Ogni oggetto dura 30 giorni, poi scade e puoi ricomprarlo; per ogni categoria ne tieni attivo uno solo.`,
     `✨ Ci sono colori e effetti per il nome, stemmi, righe colorate in classifica, cornici e ologrammi per la figurina, scie dei gol e esultanze nel replay, e icone speciali per gol e assist.`,

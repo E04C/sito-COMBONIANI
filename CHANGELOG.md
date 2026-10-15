@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.7.1
+- Corretto: nell'editor delle formazioni, toccando un giocatore compariva "CASiNO sospeso" (o "Scommesse chiuse") e non si selezionava nessuno. Il Monte MVP usava lo stesso attributo `data-pool` dei gettoni dei giocatori; ora usa `data-mpool`. Errore presente dalla 1.6.2.
+
 ## 1.7.0
 - Negozio del CASiNO (dietro l'interruttore CASiNO): catalogo di oggetti cosmetici con nomi e disegni originali, acquisti in `casino/shop/buys` (prezzo e durata congelati, scadenza a 30 giorni dalla data d'acquisto, voce `shop` nel registro, saldo mai negativo), un oggetto attivo per categoria (`casino/shop/active`), prezzi, durata e disponibilità modificabili dall'admin (`casino/shop/cfg`).
 - Oggetti: colore, effetto e stemma del nome, riga in classifica, cornici e ologrammi alternativi della figurina, scia dei gol, esultanza e set di icone di gol e assist nel replay, cronaca e tabellino. Solo estetica: nessun effetto su OVR, punteggi, classifica, quote o scommesse.
