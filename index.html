@@ -317,6 +317,30 @@ button.affr:hover{border-color:var(--line)}
 .locked p{color:var(--mu);margin:0 auto 18px;max-width:40ch}
 .db-info{margin-top:16px;padding:14px 18px;display:flex;flex-wrap:wrap;gap:8px 22px;color:var(--mu);font-size:13.5px;font-weight:600}
 .db-info b{color:var(--tx)}
+.cs-mk{padding:14px 16px;margin-bottom:12px}
+.cs-mh{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.cs-mt{margin:6px 0 10px;font-size:14px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.odds{display:flex;flex-wrap:wrap;gap:8px}
+.odd{display:inline-flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;padding:6px 12px;border-radius:12px;border:1px solid var(--hair);background:rgba(255,255,255,.06);color:var(--tx);font:600 13.5px var(--body);text-align:left}
+.odd b{font-variant-numeric:tabular-nums;color:var(--or);font-weight:800}
+.odd.on{background:var(--or);border-color:var(--or);color:#2a1c00}
+.odd.on b{color:#2a1c00}
+.odd:disabled{opacity:.45}
+.cs-bt{display:flex;flex-direction:column;gap:2px;padding:8px 0;border-top:1px solid var(--hair);font-size:13.5px}
+.slip{position:fixed;left:8px;right:8px;bottom:calc(74px + env(safe-area-inset-bottom,0px));z-index:46;max-height:58dvh;overflow:auto;padding:12px 14px;border-radius:18px;background:rgba(11,14,21,.97);box-shadow:0 -8px 30px rgba(0,0,0,.4)}
+@media (min-width:900px){.slip{left:auto;right:24px;bottom:24px;width:420px}}
+.sl-h{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.sl-h b{flex:1;min-width:0}
+.sl-m{display:flex;gap:8px;margin:8px 0}
+.sl-r{padding:10px 0;border-top:1px solid var(--hair)}
+.sl-t{display:flex;justify-content:space-between;gap:10px;font-size:13.5px}
+.sl-o{font-size:18px;color:var(--or)}
+.sl-in{display:flex;gap:6px;margin:8px 0 4px;align-items:center}
+.sl-i{min-width:0;flex:1;width:80px}
+.sl-w{font-size:13px;color:var(--mu)}
+.sl-e{color:var(--bad);font-weight:700;font-size:13px}
+.sl-f{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
+body.theme-casino .slip{background:rgba(7,76,44,.98)}
 .mk-adm{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--or-soft);font-size:14px;font-weight:600}
 .mk-sum{margin:0 0 6px;font-size:14px}
 .mk-r{display:grid;gap:4px;padding:8px 0;border-top:1px solid var(--hair)}
@@ -1775,6 +1799,7 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 
 <input type="file" id="xlsxInput" accept=".xlsx,.xls" hidden>
 <div id="exportStage" aria-hidden="true"></div>
+<div class="slip glass" id="slip" role="region" aria-label="Schedina" hidden></div>
 <div id="toasts" aria-live="polite"></div>
 <script>
 'use strict';
@@ -2539,7 +2564,16 @@ function walletBuild(st){
   let bal = 0; for(const x of mov){ bal += x.delta; x.bal = bal; }
   st.bal = bal; st.mov = mov;
 }
-function walletExtra(st, mov){}   /* scommesse e vincite si aggiungono qui */
+function walletExtra(st, mov){
+  const B = (store.casino && store.casino.bets) || {};
+  for(const [mid, bets] of Object.entries(B)){
+    const m = store.matches[mid];
+    for(const [bid, b] of Object.entries(bets || {})){
+      if(!b || b.pid !== st.pid || !betLive(mid, b)) continue;
+      mov.push({ t:num(b.at), kind:'bet', label:`Scommessa, giornata ${m ? num(m.day) : '?'}`, delta:-num(b.stake), ref:bid, mid });
+    }
+  }
+}
 const walletOf = pid => { const s = STATS.byId[pid]; return s && s.mov ? { bal:s.bal, mov:s.mov, earn:s.earn } : null; };
 const CUR_ICON = '🥔';
 const fmtPat = n => (n < 0 ? '−' : '') + Math.abs(Math.round(n)).toLocaleString('it-IT');
@@ -4770,8 +4804,29 @@ function payoutOf(stake, odds){
 /* Puntata minima: il "+1 garantito" non deve mai regalare valore sulle puntate piccole */
 const minStakeOf = odds => { const c = Math.round(odds * 100); return c > 100 ? Math.ceil(100 / (c - 100)) : 1; };
 const maxStakeOf = bal => Math.max(0, Math.min(Math.floor(bal), CASINO.WIN_CAP - 1));
-/* Elenco completo dei mercati con probabilità e quote (nm = funzione dei nomi) */
 const bmLine = x => String(x).replace('.', ',');
+const BM_TITLES = { scorer:'Segna', scorer2:'Segna 2 o più gol', hat:'Tripletta', firstScorer:'Primo marcatore', assist:'Fa un assist', ga:'Segna o fa assist', ogPlayer:'Autogol di' };
+const BM_MARGIN_TXT = { W12:'Bianchi di 1-2', W34:'Bianchi di 3-4', W5:'Bianchi di 5+', D:'Pareggio', B12:'Neri di 1-2', B34:'Neri di 3-4', B5:'Neri di 5+' };
+/* Come si legge una selezione (nm = funzione dei nomi) */
+function bmLegText(S, leg, nm = x => x){
+  const sel = String(leg.sel), more = c => c === 'o' ? 'più di' : 'meno di';
+  switch(leg.k){
+    case 'esito': return 'Esito: ' + ({ '1':'Bianchi', X:'Pareggio', '2':'Neri' }[sel] || sel);
+    case 'dc': return 'Doppia chance: ' + ({ '1X':'Bianchi o pareggio', X2:'Pareggio o Neri', '12':'Bianchi o Neri' }[sel] || sel);
+    case 'tot': return `Gol totali: ${more(sel[0])} ${bmLine(sel.slice(1))}`;
+    case 'team': return `Gol ${sel[0] === 'W' ? 'Bianchi' : 'Neri'}: ${more(sel[1])} ${bmLine(sel.slice(2))}`;
+    case 'band': { const b = bmEval(S).bands[+sel]; return 'Fascia di gol: ' + (b ? bmBandLabel(b, +sel) : sel); }
+    case 'parity': return 'Gol totali: ' + (sel === 'p' ? 'pari' : 'dispari');
+    case 'margin': return 'Margine: ' + (BM_MARGIN_TXT[sel] || sel);
+    case 'exact': return 'Risultato esatto: ' + sel;
+    case 'first': return 'Segna per prima: ' + (sel === 'W' ? 'Bianchi' : 'Neri');
+    case 'og': return 'Ci sarà un autogol: ' + (sel === 'y' ? 'sì' : 'no');
+  }
+  return `${BM_TITLES[leg.k] || leg.k}: ${nm(sel)}`;
+}
+const bmTableCache = new WeakMap();
+const bmTable = S => { let t = bmTableCache.get(S); if(!t){ t = bmMarkets(S); bmTableCache.set(S, t); } return t; };
+/* Elenco completo dei mercati con probabilità e quote (nm = funzione dei nomi) */
 function bmMarkets(m, nm = pid => pid){
   const E = bmEval(m), out = [];
   const add = (k, grp, title, sels) => out.push({ k, grp, title, sels:sels.map(x => { const o = bmOdds(m, { k, sel:x.sel }); return { sel:x.sel, label:x.label, p:o.p, odds:o.odds }; }) });
@@ -4880,6 +4935,149 @@ async function closeMarket(mid){
   if(!ok || mkState(mid).s !== 'open') return;
   await commit({ [`casino/markets/${mid}/status`]:'void' }, 'Scommesse chiuse: puntate rimborsate');
 }
+/* ---------- Puntare: casino/bets/{mid}/{bid} = { pid, gen, legs:[{k, sel}], stake, odds, at, allin?, bal, v } ---------- */
+/* Una scommessa conta solo se il mercato esiste, non è annullato e la sua versione (gen) è quella attuale; altrimenti è rimborsata */
+function betLive(mid, b){ return !!b && !b.void && mkState(mid).s !== 'none' && mkState(mid).s !== 'void' && num(b.gen) === num(mkOf(mid).gen); }
+/* Divieto di puntare su sé stessi: chi gioca non può scegliere selezioni che lo riguardano (né l'autogol generico), neppure in una combo */
+function betLegBlock(S, me, leg){
+  if(!S.pl[me]) return '';
+  if(BM_PLAYER_K.includes(leg.k) && leg.sel === me) return 'Non puoi puntare su te stesso';
+  if(leg.k === 'og') return 'Chi gioca non può puntare sugli autogol';
+  return '';
+}
+/* Quota di una schedina di una sola gara: una selezione = singola; più selezioni = combo */
+function betQuote(S, legs){
+  if(legs.length === 1){ const o = bmOdds(S, legs[0]); return o.odds == null ? { ok:false, reason:'Selezione non disponibile' } : { ok:true, odds:o.odds, p:o.p }; }
+  return bmCombo(S, legs);
+}
+const betAllowedMsg = () => !feat('casino') ? 'CASiNO sospeso' : (db && syncState !== 'live') ? 'Per puntare serve la connessione' : '';
+let slipBusy = false;
+function slipCheck(){
+  const sl = ui.slip, err = [], out = { err, bets:[], total:0, bal:0, rows:[] };
+  if(!sl || !sl.legs.length){ err.push('Scegli almeno una selezione'); return out; }
+  const me = myPid(), st = mkState(sl.mid), mk = mkOf(sl.mid), m = store.matches[sl.mid];
+  const w = me && store.players[me] ? walletOf(me) : null;
+  if(!w){ err.push('Per puntare scegli prima la tua carta nella sezione Io'); return out; }
+  if(st.s !== 'open'){ err.push('Le scommesse di questa gara sono chiuse'); return out; }
+  if(m && kickDate(m) && Date.now() >= kickDate(m).getTime()){ err.push('La gara è iniziata: scommesse chiuse'); return out; }
+  const S = mk.m; out.bal = Math.max(0, Math.floor(w.bal));
+  for(const l of sl.legs){ const b = betLegBlock(S, me, l); if(b) err.push(b); }
+  if(err.length) return out;
+  const groups = sl.mode === 'combo' && sl.legs.length > 1 ? [sl.legs] : sl.legs.map(l => [l]);
+  let left = out.bal;
+  for(const g of groups){
+    const key = g.map(l => l.k + '|' + l.sel).join('+'), q = betQuote(S, g), stake = num(sl.stakes[key]);
+    const row = { key, legs:g, q, stake, err:'' };
+    if(!q.ok) row.err = q.reason;
+    else if(stake < 1) row.err = 'Scrivi la puntata';
+    else if(stake < minStakeOf(q.odds)) row.err = `Puntata minima ${minStakeOf(q.odds)}`;
+    else if(stake > CASINO.WIN_CAP - 1) row.err = `Puntata massima ${CASINO.WIN_CAP - 1}`;
+    else if(stake > left) row.err = 'Non hai abbastanza ' + CURRENCY;
+    if(!row.err){ left -= stake; out.total += stake; out.bets.push({ legs:g, stake, odds:q.odds }); }
+    out.rows.push(row);
+  }
+  if(out.rows.some(r => r.err)) err.push(out.rows.find(r => r.err).err);
+  return out;
+}
+function slipToggle(mid, k, sel){
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  const me = myPid(); if(!me || !store.players[me]){ toast('Scegli prima la tua carta nella sezione Io', 'warn'); return; }
+  const st = mkState(mid); if(st.s !== 'open'){ toast('Scommesse chiuse', 'warn'); return; }
+  const leg = { k, sel }, blk = betLegBlock(st.mk.m, me, leg); if(blk){ toast(blk, 'warn'); return; }
+  if(bmOdds(st.mk.m, leg).odds == null){ toast('Selezione non disponibile', 'warn'); return; }
+  if(!ui.slip || ui.slip.mid !== mid) ui.slip = { mid, mode:'single', legs:[], stakes:{} };
+  const sl = ui.slip, i = sl.legs.findIndex(l => l.k === k && l.sel === sel);
+  if(i >= 0) sl.legs.splice(i, 1);
+  else{
+    if(sl.legs.length >= cparam('LEG_MAX')){ toast(`Al massimo ${cparam('LEG_MAX')} selezioni`, 'warn'); return; }
+    sl.legs.push(leg);
+  }
+  if(sl.legs.length < 2) sl.mode = 'single';
+  if(!sl.legs.length) ui.slip = null;
+  renderCasino(); renderSlip();
+}
+function slipRowHTML(r, S, bal, i){
+  const nm = pid => esc(pname(pid)), txt = r.legs.map(l => esc(bmLegText(S, l, pid => pname(pid)))).join('<br>');
+  const q = r.q.ok ? r.q.odds : null, uncapped = q ? r.stake + Math.max(1, Math.floor(r.stake * (Math.round(q * 100) - 100) / 100)) : 0;
+  const win = q && r.stake >= 1 ? payoutOf(r.stake, q) : 0, capped = q && uncapped > CASINO.WIN_CAP;
+  return `<div class="sl-r"><div class="sl-t"><span>${r.legs.length > 1 ? '<b>Combo</b><br>' : ''}${txt}</span><b class="sl-o">${q ? q.toFixed(2).replace('.', ',') : '—'}</b></div>
+    <div class="sl-in"><input class="field sl-i" type="number" inputmode="numeric" min="1" step="1" max="${CASINO.WIN_CAP - 1}" value="${r.stake || ''}" placeholder="${CURRENCY}" data-slip-i="${esc(r.key)}" aria-label="Puntata">
+      <button type="button" class="btn sm" data-slip-q="10" data-slip-k="${esc(r.key)}">10</button><button type="button" class="btn sm" data-slip-q="half" data-slip-k="${esc(r.key)}">Metà</button><button type="button" class="btn sm" data-slip-q="all" data-slip-k="${esc(r.key)}">Tutto</button></div>
+    <div class="sl-w">${win ? `Vincita potenziale <b>${fmtPat(win)}</b> ${CURRENCY}${capped ? ` (tetto di ${fmtPat(CASINO.WIN_CAP)})` : ''}` : (r.q.ok ? '' : esc(r.q.reason))}${r.q.ok && r.err && r.stake ? ` <span class="sl-e">${esc(r.err)}</span>` : ''}</div></div>`;
+}
+function renderSlip(){
+  const el = $('#slip'); if(!el) return;
+  const sl = ui.slip, show = !!sl && sl.legs.length && ui.view === 'casino' && feat('casino') && (ui.cTab || 'wallet') === 'bets';
+  if(!show){ el.hidden = true; el.innerHTML = ''; return; }
+  const c = slipCheck(), mk = mkOf(sl.mid), m = store.matches[sl.mid]; if(!mk || !m){ el.hidden = true; return; }
+  const S = mk.m, rows = c.rows.length ? c.rows : (sl.mode === 'combo' && sl.legs.length > 1 ? [sl.legs] : sl.legs.map(l => [l])).map(g => ({ key:g.map(l => l.k + '|' + l.sel).join('+'), legs:g, q:betQuote(S, g), stake:num(sl.stakes[g.map(l => l.k + '|' + l.sel).join('+')]), err:'' }));
+  const blocked = c.err.length && !c.rows.length ? c.err[0] : '';
+  el.hidden = false;
+  el.innerHTML = `<div class="sl-h"><b>Schedina, giornata ${num(m.day)}</b><span class="mu sm">Saldo ${fmtPat(c.bal)} ${CURRENCY}</span><button type="button" class="btn sm ghost" data-action="slip-clear">Svuota</button></div>
+    ${sl.legs.length > 1 ? `<div class="sl-m" role="group" aria-label="Tipo di schedina"><button type="button" class="btn sm ${sl.mode === 'single' ? 'primary' : ''}" data-slip-mode="single">Singole</button><button type="button" class="btn sm ${sl.mode === 'combo' ? 'primary' : ''}" data-slip-mode="combo">Combo</button></div>` : ''}
+    <div class="sl-rows">${rows.map((r, i) => slipRowHTML(r, S, c.bal, i)).join('')}</div>
+    <div class="sl-f"><span>Totale <b id="sl-tot">${fmtPat(c.total)}</b> ${CURRENCY}</span><button type="button" class="btn primary" data-action="slip-confirm" ${c.err.length || slipBusy ? 'disabled' : ''}>Conferma</button></div>
+    ${blocked ? `<div class="sl-e">${esc(blocked)}</div>` : (c.err.length && c.rows.some(r => r.stake) ? '' : '')}`;
+}
+/* Aggiorna solo i numeri (senza ridisegnare i campi, per non perdere il cursore mentre si scrive) */
+function slipRefreshNums(){
+  const el = $('#slip'); if(!el || el.hidden) return;
+  const c = slipCheck(), t = $('#sl-tot'); if(t) t.textContent = fmtPat(c.total);
+  const b = el.querySelector('[data-action=slip-confirm]'); if(b) b.disabled = !!c.err.length || slipBusy;
+  const ws = el.querySelectorAll('.sl-w'); c.rows.forEach((r, i) => { if(!ws[i]) return; const q = r.q.ok ? r.q.odds : null;
+    const unc = q ? r.stake + Math.max(1, Math.floor(r.stake * (Math.round(q * 100) - 100) / 100)) : 0, win = q && r.stake >= 1 ? payoutOf(r.stake, q) : 0;
+    ws[i].innerHTML = win ? `Vincita potenziale <b>${fmtPat(win)}</b> ${CURRENCY}${unc > CASINO.WIN_CAP ? ` (tetto di ${fmtPat(CASINO.WIN_CAP)})` : ''}${r.err ? ` <span class="sl-e">${esc(r.err)}</span>` : ''}` : (r.q.ok ? (r.err ? `<span class="sl-e">${esc(r.err)}</span>` : '') : esc(r.q.reason)); });
+}
+function slipQuick(key, q){
+  const sl = ui.slip; if(!sl) return; const c = slipCheck(); const row = c.rows.find(r => r.key === key); if(!row || !row.q.ok) return;
+  const others = c.rows.filter(r => r.key !== key && !r.err).reduce((t, r) => t + r.stake, 0), room = Math.max(0, Math.min(c.bal - others, CASINO.WIN_CAP - 1));
+  const v = q === '10' ? 10 : q === 'half' ? Math.floor(room / 2) : room;
+  sl.stakes[key] = Math.max(0, Math.min(v, room)); renderSlip();
+}
+async function placeBets(){
+  const msg = betAllowedMsg(); if(msg){ toast(msg, 'warn'); return; }
+  if(slipBusy) return;
+  const sl = ui.slip, c = slipCheck(); if(!sl || c.err.length || !c.bets.length){ toast(c.err[0] || 'Controlla la schedina', 'warn'); renderSlip(); return; }
+  const me = myPid(), w = walletOf(me); if(!w){ return; }
+  slipBusy = true; renderSlip();
+  const up = {}; let bal = Math.floor(w.bal);
+  for(const b of c.bets){
+    const bid = newId(), mk = mkOf(sl.mid);
+    up[`casino/bets/${sl.mid}/${bid}`] = { pid:me, gen:num(mk.gen), legs:b.legs.map(l => ({ k:l.k, sel:l.sel })), stake:b.stake, odds:b.odds, at:Date.now(), ...(b.stake === Math.floor(w.bal) ? { allin:1 } : {}), bal, v:APP_VERSION };
+    bal -= b.stake;
+  }
+  try{
+    await commit(up, c.bets.length === 1 ? `Scommessa piazzata: ${fmtPat(c.total)} ${CURRENCY}` : `${c.bets.length} scommesse piazzate: ${fmtPat(c.total)} ${CURRENCY}`);
+    ui.slip = null;
+  }finally{ slipBusy = false; renderCasino(); renderSlip(); }
+}
+function mkCardHTML(mid, me){
+  const m = { id:mid, ...store.matches[mid] }, mk = mkOf(mid), S = mk.m, nm = pid => esc(pname(pid));
+  const tab = (ui.cMk && ui.cMk[mid]) || 'main', sl = ui.slip && ui.slip.mid === mid ? ui.slip : null;
+  const on = (k, sel) => !!sl && sl.legs.some(l => l.k === k && l.sel === sel);
+  const GR = { main:'Principali', gol:'Gol', marc:'Marcatori', spec:'Speciali' };
+  const tbl = bmTable(S).filter(x => x.grp === tab).map(x => {
+    let sels = x.sels.filter(y => y.odds != null);
+    if(x.k === 'exact') sels = [...sels].sort((a, b) => b.p - a.p).slice(0, 12);
+    if(!sels.length) return '';
+    const isP = BM_PLAYER_K.includes(x.k);
+    return `<div class="mk-r"><b>${x.title}</b><div class="odds">${sels.map(y => { const leg = { k:x.k, sel:y.sel }, blk = me ? betLegBlock(S, me, leg) : '';
+      return `<button type="button" class="odd ${on(x.k, y.sel) ? 'on' : ''}" data-odd="${x.k}|${esc(y.sel)}" data-mid="${mid}" ${blk ? `disabled title="${blk}"` : ''} aria-pressed="${on(x.k, y.sel)}"><span>${isP ? nm(y.sel) : esc(y.label)}</span><b>${y.odds.toFixed(2).replace('.', ',')}</b></button>`; }).join('')}</div></div>`;
+  }).join('');
+  const bets = Object.entries((store.casino.bets && store.casino.bets[mid]) || {}).filter(([, b]) => b && betLive(mid, b)).sort((a, b) => num(b[1].at) - num(a[1].at));
+  const betRows = bets.map(([, b]) => { const legs = list(b.legs); return `<div class="cs-bt"><span><b>${nm(b.pid)}</b> ${legs.length > 1 ? 'Combo: ' : ''}${legs.map(l => esc(bmLegText(S, l, pid => pname(pid)))).join(' + ')}</span><span class="mu">${fmtPat(b.stake)} a ${Number(b.odds).toFixed(2).replace('.', ',')}${b.allin ? ' · tutto il saldo' : ''}</span></div>`; }).join('');
+  return `<div class="glass cs-mk"><div class="cs-mh"><div><b>Giornata ${num(m.day)}</b><span class="mu sm"> ${esc(whenLabel(m))}</span></div>${cdSpan(m)}</div>
+    <div class="cs-mt">Bianchi ${S.nW} (OVR ${S.oW}) contro Neri ${S.nB} (OVR ${S.oB}) <button type="button" class="btn sm ghost" data-open-match="${mid}">Vai alla gara</button></div>
+    <div class="cs-tabs" role="tablist">${Object.entries(GR).map(([g, t]) => `<button type="button" role="tab" class="cs-tab ${g === tab ? 'on' : ''}" aria-selected="${g === tab}" data-mktab="${g}" data-mid="${mid}">${t}</button>`).join('')}</div>
+    ${tbl || '<p class="mu sm">Nessun mercato in questa scheda.</p>'}
+    <h4 class="vi-h">Giocate (${bets.length})</h4>${betRows || '<p class="mu sm" style="margin:0">Ancora nessuna giocata.</p>'}</div>`;
+}
+function betsTabHTML(me){
+  const ids = Object.keys(store.matches || {}).filter(id => store.matches[id] && mkState(id).s === 'open')
+    .sort((a, b) => String(store.matches[a].date || '9').localeCompare(String(store.matches[b].date || '9')) || String(store.matches[a].time || '').localeCompare(String(store.matches[b].time || '')));
+  if(!ids.length) return `<div class="glass cs-empty"><b>Nessuna scommessa aperta</b><span>Quando l’organizzatore apre le scommesse di una gara le trovi qui.</span></div>`;
+  return `${me ? '' : '<div class="glass cs-note">Puoi guardare le quote e le giocate. Per puntare scegli la tua carta nella sezione Io.</div>'}${ids.map(id => mkCardHTML(id, me)).join('')}`;
+}
 async function claimDaily(){
   if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
   const me = myPid(); if(!me || !store.players[me]){ toast('Scegli prima la tua carta nella sezione Io', 'warn'); return; }
@@ -4891,7 +5089,7 @@ async function claimDaily(){
 }
 const CTABS = [ { k:'wallet', l:'Portafoglio' }, { k:'bets', l:'Scommesse' }, { k:'hist', l:'Storico e premi' }, { k:'shop', l:'Negozio' } ];
 function casinoTabHTML(tab, me){
-  if(tab === 'bets') return `<div class="glass cs-empty"><b>Nessuna scommessa aperta</b><span>Quando l’organizzatore apre le scommesse di una gara le trovi qui.</span></div>`;
+  if(tab === 'bets') return betsTabHTML(me);
   if(tab === 'hist') return `<div class="glass cs-empty"><b>Ancora niente nello storico</b><span>Qui compariranno le tue scommesse concluse e i premi.</span></div>`;
   if(tab === 'shop') return `<div class="glass cs-empty"><b>Il negozio è ancora vuoto</b></div>`;
   return walletHTML(me);
@@ -4949,6 +5147,7 @@ function renderCasino(){
     <div class="cs-body" role="tabpanel">${casinoTabHTML(tab, guest ? '' : me)}</div>`;
   if(ui.cAnim){ countUp(el); ui.cAnim = false; }
   ui.cPop = 0;
+  const ae = document.activeElement; if(!(ae && ae.closest && ae.closest('#slip'))) renderSlip();
 }
 
 /* ---------- Vista admin dei voti a stelle: solo conteggi per chi li ha ricevuti, mai chi li ha dati ---------- */
@@ -6065,7 +6264,7 @@ function applyTheme(){
 function go(view){
   if(view === 'casino' && !feat('casino')){ toast('CASiNO sospeso', 'warn'); view = 'dashboard'; }
   ui.view = view;
-  applyTheme();
+  applyTheme(); renderSlip();
   $$('.view').forEach(v => v.hidden = v.id !== 'view-' + view);
   $$('.nav [data-go]').forEach(b => b.setAttribute('aria-current', b.dataset.go === view ? 'page' : 'false'));
   window.scrollTo(0, 0);
@@ -6097,7 +6296,11 @@ document.addEventListener('click', async e => {
     else ui.sort = { key:d.sort, dir:d.sort === 'rank' ? 1 : -1 };
     renderDashboard(); return;
   }
-  if(d.ctab){ if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; } ui.cTab = d.ctab; renderCasino(); return; }
+  if(d.ctab){ if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; } ui.cTab = d.ctab; renderCasino(); renderSlip(); return; }
+  if(d.odd){ const i = d.odd.indexOf('|'); slipToggle(d.mid, d.odd.slice(0, i), d.odd.slice(i + 1)); return; }
+  if(d.mktab){ ui.cMk = ui.cMk || {}; ui.cMk[d.mid] = d.mktab; renderCasino(); return; }
+  if(d.slipMode){ if(ui.slip){ ui.slip.mode = d.slipMode; renderSlip(); } return; }
+  if(d.slipQ){ slipQuick(d.slipK, d.slipQ); return; }
   if(d.edteam){ edTeam = d.edteam; renderEditorPick(); return; }
   if(d.edmode){ if(ED) setEdMode(d.edmode); return; }
   if(d.rpg !== undefined){ rpGoto(+d.rpg); return; }
@@ -6159,6 +6362,8 @@ document.addEventListener('click', async e => {
     case 'backup-all': if(requireAdmin()) backupAll(); break;
     case 'import-xlsx': if(requireAdmin()){ $('#xlsxInput').value = ''; $('#xlsxInput').click(); } break;
     case 'casino-claim': claimDaily(); break;
+    case 'slip-clear': ui.slip = null; renderCasino(); renderSlip(); break;
+    case 'slip-confirm': placeBets(); break;
     case 'mk-open': openMarketPreview(d.mid); break;
     case 'mk-confirm': openMarketConfirm(); break;
     case 'mk-close': closeMarket(d.mid); break;
@@ -6213,6 +6418,7 @@ document.addEventListener('keydown', e => {
 });
 
 $('#psearch').addEventListener('input', renderPlayers);
+document.addEventListener('input', e => { const t = e.target; if(t && t.dataset && t.dataset.slipI !== undefined && ui.slip){ ui.slip.stakes[t.dataset.slipI] = Math.floor(Number(t.value) || 0); slipRefreshNums(); } });
 $('#msel').addEventListener('change', e => { ui.matchId = e.target.value; ui.swapSel = null; rerenderMatch(); });
 document.addEventListener('input', e => { const t = e.target; if(t && typeof t.id === 'string' && /^pf2-/.test(t.id)) profDraft = profReadForm(); });
 document.addEventListener('submit', e => { if(e.target && e.target.id === 'prof-form'){ e.preventDefault(); profSend(); } });
