@@ -317,6 +317,14 @@ button.affr:hover{border-color:var(--line)}
 .locked p{color:var(--mu);margin:0 auto 18px;max-width:40ch}
 .db-info{margin-top:16px;padding:14px 18px;display:flex;flex-wrap:wrap;gap:8px 22px;color:var(--mu);font-size:13.5px;font-weight:600}
 .db-info b{color:var(--tx)}
+.sh-r{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--hair);min-height:56px}
+.sh-pv{flex:none;width:44px;height:44px;display:grid;place-items:center;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid var(--hair);font-size:22px;overflow:hidden}
+.sh-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.sh-t small{color:var(--mu);font-size:12.5px;line-height:1.3}
+.sh-ad{padding:12px 0;border-top:1px solid var(--hair);display:grid;gap:4px}
+.sh-ad small{color:var(--mu)}
+.sh-l{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--mu);flex:1}
+.sh-ck{flex-direction:row;align-items:center;gap:6px;min-height:44px}
 .cs-mk{padding:14px 16px;margin-bottom:12px}
 .cs-mh{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .cs-mt{margin:6px 0 10px;font-size:14px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
@@ -5300,6 +5308,54 @@ async function shopActivate(cat, id){
   await commit({ [`casino/shop/active/${me}/${cat}`]:id || null }, id ? `Attivo: ${SHOP_BY_ID[id].name}` : 'Oggetto disattivato');
 }
 
+const SHOP_CAT_ICON = { trail:'☄️', frame:'🖼️', ncol:'🎨', nfx:'✨', holo:'🌈', emblem:'🏅', icons:'⚽', cheer:'🎆', row:'📊', token:'🎟️' };
+/* Anteprima di un oggetto (si arricchisce man mano che gli oggetti hanno un loro disegno) */
+function shopPreviewHTML(id){ const it = SHOP_BY_ID[id]; return `<span class="sh-pv" aria-hidden="true">${SHOP_CAT_ICON[it.cat]}</span>`; }
+const dayLeft = until => { const d = Math.ceil((until - Date.now()) / DAY_MS); return d <= 1 ? 'scade oggi o domani' : `scade tra ${d} giorni`; };
+function shopTabHTML(me){
+  const guest = !me || !store.players[me], own = guest ? {} : shopOwned(me), act = guest ? {} : cosOf(me), now = Date.now();
+  const off = !!db && syncState !== 'live';
+  const mine = Object.entries(own).sort((a, b) => SHOP_BY_ID[a[0]].cat.localeCompare(SHOP_BY_ID[b[0]].cat));
+  const myHTML = guest ? '' : `<div class="glass cs-hist"><h3>I tuoi oggetti</h3>${mine.length ? mine.map(([id, o]) => { const it = SHOP_BY_ID[id], on = act[it.cat] === id;
+      return `<div class="sh-r">${shopPreviewHTML(id)}<span class="sh-t"><b>${esc(it.name)}</b><small>${SHOP_CATS[it.cat]} · ${o.merit ? 'finché detieni il titolo' : dayLeft(o.until)}</small></span>
+        <button type="button" class="btn sm ${on ? 'primary' : ''}" data-action="shop-act" data-cat="${it.cat}" data-item="${on ? '' : id}" ${off ? 'disabled' : ''} aria-pressed="${on}">${on ? 'Attivo' : 'Attiva'}</button></div>`; }).join('') : '<p class="mu sm" style="margin:0">Non hai ancora nessun oggetto. Compra qualcosa qui sotto.</p>'}</div>`;
+  const avail = guest ? 0 : shopAvail(me);
+  const cats = Object.keys(SHOP_CATS).map(cat => {
+    const items = SHOP_ITEMS.filter(it => it.cat === cat && (!shopCfg(it.id).off || own[it.id]));
+    if(!items.length) return '';
+    return `<div class="glass cs-hist"><h3>${SHOP_CATS[cat]}</h3>${items.map(it => { const c = shopCfg(it.id), o = own[it.id], blk = guest ? 'Scegli la tua carta' : (it.merit ? '' : shopBlock(me, it.id));
+      const btn = it.merit ? `<span class="mu sm">Solo per merito</span>` : o ? `<span class="mu sm">Posseduto, ${dayLeft(o.until)}</span>` : `<button type="button" class="btn sm primary" data-action="shop-buy" data-item="${it.id}" ${blk || off ? 'disabled' : ''}>${fmtPat(c.price)} ${CURRENCY}</button>`;
+      return `<div class="sh-r">${shopPreviewHTML(it.id)}<span class="sh-t"><b>${esc(it.name)}</b><small>${esc(it.desc)}${it.merit ? '' : ` · dura ${c.days} giorni`}</small>${!o && blk && !guest && !it.merit ? `<small class="sl-e">${esc(blk)}</small>` : ''}</span>${btn}</div>`; }).join('')}</div>`;
+  }).join('');
+  return `${guest ? '<div class="glass cs-note">Puoi guardare il negozio. Per comprare scegli la tua carta nella sezione Io.</div>' : `<div class="glass cs-note">Puoi spendere <b>${fmtPat(avail)}</b> ${CURRENCY}. Ogni oggetto dura 30 giorni dall’acquisto, poi scade. Uno solo per categoria è attivo: scegli quale.${off ? ' Per comprare serve la connessione.' : ''}</div>`}${myHTML}${cats}`;
+}
+/* Admin: prezzi, durata e disponibilità di ogni oggetto */
+function shopAdminHTML(){
+  const rows = SHOP_ITEMS.filter(it => !it.merit).map(it => { const c = shopCfg(it.id), has = !!(shopNode().cfg && shopNode().cfg[it.id]);
+    return `<div class="sh-ad"><b>${esc(it.name)}</b><small>${SHOP_CATS[it.cat]}${has ? ' · modificato' : ''}</small>
+      <div class="sl-in"><label class="sh-l">Prezzo<input class="field sl-i" id="sc-p-${it.id}" type="number" inputmode="numeric" min="0" step="1" value="${c.price}"></label><label class="sh-l">Giorni<input class="field sl-i" id="sc-d-${it.id}" type="number" inputmode="numeric" min="1" step="1" value="${c.days}"></label>
+      <label class="sh-l sh-ck"><input type="checkbox" id="sc-o-${it.id}" ${c.off ? '' : 'checked'}> In vendita</label></div>
+      <div class="row"><button type="button" class="btn sm primary" data-action="shop-cfg-save" data-item="${it.id}">Salva</button>${has ? `<button type="button" class="btn sm ghost" data-action="shop-cfg-reset" data-item="${it.id}">Ripristina</button>` : ''}</div></div>`; }).join('');
+  return `<h3>Negozio</h3><p class="mu sm">Prezzo e durata valgono per i nuovi acquisti: quelli già fatti non cambiano. Spegnendo un oggetto non si può più comprare, ma chi lo ha lo tiene fino alla scadenza.</p>${rows}`;
+}
+function openShopAdmin(){
+  if(!ui.admin) return;
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  $('#ca-body').innerHTML = shopAdminHTML(); openModal('#m-ca');
+}
+async function shopCfgSave(id, reset){
+  if(!ui.admin || !SHOP_BY_ID[id] || SHOP_BY_ID[id].merit) return;
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  if(db && syncState !== 'live'){ toast('Serve la connessione', 'warn'); return; }
+  if(reset){ await commit({ [`casino/shop/cfg/${id}`]:null }, 'Ripristinato il catalogo di ' + SHOP_BY_ID[id].name); refreshShopAdmin(); return; }
+  const price = Math.round(Number($('#sc-p-' + id).value)), days = Math.round(Number($('#sc-d-' + id).value)), on = !!$('#sc-o-' + id).checked;
+  if(!Number.isFinite(price) || price < 0 || price > 100000){ toast('Prezzo da 0 a 100000', 'warn'); return; }
+  if(!Number.isFinite(days) || days < 1 || days > 3650){ toast('Durata da 1 a 3650 giorni', 'warn'); return; }
+  await commit({ [`casino/shop/cfg/${id}`]:{ price, days, ...(on ? {} : { off:true }) } }, 'Salvato: ' + SHOP_BY_ID[id].name);
+  refreshShopAdmin();
+}
+const refreshShopAdmin = () => { if($('#m-ca').classList.contains('open') && /<h3>Negozio<\/h3>/.test($('#ca-body').innerHTML)) { const y = $('#m-ca .sheet') ? $('#m-ca .sheet').scrollTop : 0; $('#ca-body').innerHTML = shopAdminHTML(); if($('#m-ca .sheet')) $('#m-ca .sheet').scrollTop = y; } };
+
 /* ---------- Puntare: casino/bets/{mid}/{bid} = { pid, gen, legs:[{k, sel}], stake, odds, at, allin?, bal, v } ---------- */
 /* Una scommessa conta solo se il mercato esiste, non è annullato e la sua versione (gen) è quella attuale; altrimenti è rimborsata */
 function betLive(mid, b){ return !!b && !b.void && !!store.matches[mid] && mkState(mid).s !== 'none' && mkState(mid).s !== 'void' && num(b.gen) === num(mkOf(mid).gen); }
@@ -5547,7 +5603,7 @@ async function saveAdj(){
 function casinoTabHTML(tab, me){
   if(tab === 'bets') return betsTabHTML(me);
   if(tab === 'hist') return histHTML(me);
-  if(tab === 'shop') return `<div class="glass cs-empty"><b>Il negozio è ancora vuoto</b></div>`;
+  if(tab === 'shop') return shopTabHTML(me);
   return walletHTML(me);
 }
 /* Andamento del saldo dopo ogni movimento (stesso disegno del grafico OVR) */
@@ -5657,7 +5713,8 @@ function renderAdmin(){
       <button class="tile" data-action="new-sched"><span class="ic">🗓️</span><b>Programma gara</b><span>Data, ora e convocati bilanciati: tutti vedono dove giocano.</span></button>
       <button class="tile" data-action="new-match"><span class="ic">📝</span><b>Registra gara</b><span>Schiera le squadre e segna gol, assist e autogol.</span></button>
       <button class="tile" data-action="stars-view"><span class="ic">⭐</span><b>Voti a stelle</b><span>Per ogni gara: quanti voti ha preso ognuno, la media e il bonus. Mai chi ha votato.</span></button>
-      ${feat('casino') ? `<button class="tile" data-action="bets-admin"><span class="ic">🎰</span><b>Scommesse</b><span>Elenco delle scommesse di ogni gara, con “Annulla scommessa”.</span></button>
+      ${feat('casino') ? `<button class="tile" data-action="shop-admin"><span class="ic">🛍️</span><b>Negozio</b><span>Prezzi, durata e disponibilità di ogni oggetto.</span></button>
+      <button class="tile" data-action="bets-admin"><span class="ic">🎰</span><b>Scommesse</b><span>Elenco delle scommesse di ogni gara, con “Annulla scommessa”.</span></button>
       <button class="tile" data-action="adj-admin"><span class="ic">🥔</span><b>Rettifica saldo</b><span>Aggiungi o togli ${CURRENCY} a un giocatore, con un motivo.</span></button>` : ''}
       <button class="tile" data-action="prof-list"><span class="ic">🪪</span><b>Richieste schede${profPending().length ? `<span class="cbadge">${profPending().length}</span>` : ''}</b><span>Approva o rifiuta le schede dei giocatori (nascita, nazionalità, ruolo preciso).</span></button>
       <button class="tile" data-action="add-player"><span class="ic">🧑‍🎤</span><b>Aggiungi giocatore</b><span>Nome, ruolo, piede e foto dal rullino.</span></button>
@@ -6825,6 +6882,11 @@ document.addEventListener('click', async e => {
     case 'backup-all': if(requireAdmin()) backupAll(); break;
     case 'import-xlsx': if(requireAdmin()){ $('#xlsxInput').value = ''; $('#xlsxInput').click(); } break;
     case 'casino-claim': claimDaily(); break;
+    case 'shop-admin': openShopAdmin(); break;
+    case 'shop-buy': shopBuy(d.item); break;
+    case 'shop-act': shopActivate(d.cat, d.item); break;
+    case 'shop-cfg-save': shopCfgSave(d.item, false); break;
+    case 'shop-cfg-reset': shopCfgSave(d.item, true); break;
     case 'bets-admin': openBetsAdmin(); break;
     case 'adj-admin': openAdjAdmin(); break;
     case 'adj-save': saveAdj(); break;
