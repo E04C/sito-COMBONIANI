@@ -326,6 +326,8 @@ button.affr:hover{border-color:var(--line)}
 .odd.on{background:var(--or);border-color:var(--or);color:#2a1c00}
 .odd.on b{color:#2a1c00}
 .odd:disabled{opacity:.45}
+.st-won,.cs-mv b.pos,.cs-bt b.pos{color:var(--pos)}
+.st-lost,.cs-bt b.neg{color:var(--bad)}
 .cs-bt{display:flex;flex-direction:column;gap:2px;padding:8px 0;border-top:1px solid var(--hair);font-size:13.5px}
 .slip{position:fixed;left:8px;right:8px;bottom:calc(74px + env(safe-area-inset-bottom,0px));z-index:46;max-height:58dvh;overflow:auto;padding:12px 14px;border-radius:18px;background:rgba(11,14,21,.97);box-shadow:0 -8px 30px rgba(0,0,0,.4)}
 @media (min-width:900px){.slip{left:auto;right:24px;bottom:24px;width:420px}}
@@ -1732,6 +1734,7 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 <div class="modal" id="m-vote" aria-hidden="true" data-lock="1"><div class="sheet glass vg" role="dialog" aria-modal="true" aria-label="Vota l’MVP" id="vg-body"></div></div>
 <div class="modal" id="m-news" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Novità" style="width:min(620px,100%)"><div id="nw-body"></div><div class="row end sticky-actions"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 <div class="modal" id="m-prof" aria-hidden="true"><div class="sheet glass vi" role="dialog" aria-modal="true" aria-label="Richieste schede giocatore" style="width:min(620px,100%)"><div id="pr-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
+<div class="modal" id="m-ca" aria-hidden="true"><div class="sheet glass vi" role="dialog" aria-modal="true" aria-label="Scommesse" style="width:min(560px,100%)"><div id="ca-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 <div class="modal" id="m-dl" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Crea sfida"><div id="dl-body"></div></div></div>
 <div class="modal" id="m-mk" aria-hidden="true"><div class="sheet glass mk" role="dialog" aria-modal="true" aria-label="Apri scommesse" style="width:min(680px,100%)"><div id="mk-body"></div></div></div>
 <div class="modal" id="m-vinfo" aria-hidden="true"><div class="sheet glass vi" role="dialog" aria-modal="true" aria-label="Chi ha votato chi" style="width:min(560px,100%)"><div id="vi-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
@@ -2572,7 +2575,10 @@ function walletExtra(st, mov){
     const m = store.matches[mid];
     for(const [bid, b] of Object.entries(bets || {})){
       if(!b || b.pid !== st.pid || !betLive(mid, b)) continue;
-      mov.push({ t:num(b.at), kind:'bet', label:`Scommessa, giornata ${m ? num(m.day) : '?'}`, delta:-num(b.stake), ref:bid, mid });
+      const r = settleBet(b, mkOf(mid), m); if(r.state === 'void') continue;   /* rimborsata: nessun movimento */
+      const lbl = `Scommessa, giornata ${m ? num(m.day) : '?'}`;
+      mov.push({ t:num(b.at), kind:'bet', label:lbl, delta:-num(b.stake), ref:bid, mid });
+      if(r.state === 'won') mov.push({ t:m ? (num(m.updatedAt) || num(m.createdAt)) : num(b.at), kind:'win', label:'Vincita: ' + lbl, delta:r.payout, ref:bid, mid });
     }
   }
   const PL = (store.casino && store.casino.pools) || {};
@@ -4949,6 +4955,38 @@ async function closeMarket(mid){
   if(!ok || mkState(mid).s !== 'open') return;
   await commit({ [`casino/markets/${mid}/status`]:'void' }, 'Scommesse chiuse: puntate rimborsate');
 }
+/* ---------- Liquidazione delle scommesse (funzioni pure) ----------
+   Si liquida solo a gara giocata. Selezione annullata (giocatore senza voce, 0-0 o gara senza sequenza per il primo gol, primo gol autogol per il primo marcatore):
+   la scommessa è rimborsata per intero. Una selezione persa la perde. Vinta solo se tutte le selezioni sono vinte, con la quota salvata. */
+function settleLeg(leg, m, S){
+  if(!m || m.status === 'scheduled') return 'pending';
+  if(!leg || !(BM_MATCH_K.includes(leg.k) || BM_PLAYER_K.includes(leg.k))) return 'void';
+  const sc = matchScore(m), w = sc.w, b = sc.b, T = w + b, k = leg.k, sel = String(leg.sel), EE = effEntries(m), all = [...EE.white, ...EE.black];
+  if(['esito', 'dc', 'tot', 'team', 'band', 'parity', 'margin', 'exact'].includes(k)) return bmLegFactor(S, bmEval(S), leg, w, b) ? 'won' : 'lost';
+  const gl = matchGoals(m);
+  if(k === 'first'){ if(!T || !gl.length || !gl[0].t) return 'void'; return (gl[0].t === 'white' ? 'W' : 'B') === sel ? 'won' : 'lost'; }
+  if(k === 'og'){ const og = all.reduce((t, e) => t + num(e.og), 0); return (sel === 'y') === (og >= 1) ? 'won' : 'lost'; }
+  const e = all.find(x => x.pid === sel); if(!e) return 'void';
+  const g = num(e.g), a = num(e.a), og = num(e.og);
+  switch(k){
+    case 'firstScorer': if(!T || !gl.length || gl[0].og) return 'void'; return gl[0].s === sel ? 'won' : 'lost';
+    case 'scorer': return g >= 1 ? 'won' : 'lost';
+    case 'scorer2': return g >= 2 ? 'won' : 'lost';
+    case 'hat': return g >= 3 ? 'won' : 'lost';
+    case 'assist': return a >= 1 ? 'won' : 'lost';
+    case 'ga': return g >= 1 || a >= 1 ? 'won' : 'lost';
+    case 'ogPlayer': return og >= 1 ? 'won' : 'lost';
+  }
+  return 'void';
+}
+function settleBet(b, mk, m){
+  const legs = list(b.legs); if(!legs.length || !mk || !mk.m) return { state:'void', payout:0 };
+  const st = legs.map(l => settleLeg(l, m, mk.m));
+  if(st.includes('pending')) return { state:'pending', payout:0 };
+  if(st.includes('void')) return { state:'void', payout:0 };
+  if(st.includes('lost')) return { state:'lost', payout:0 };
+  return { state:'won', payout:payoutOf(num(b.stake), Number(b.odds)) };
+}
 /* ---------- Monte MVP e sfide: casino/pools/{mid}/{bid} = { pid, kind:'mvp'|'duel', sel, stake, gen, at, did? }; casino/duels/{mid}/{did} = { gen, a, b, metric, stake, at, void? } ----------
    Puntata fissa, nessuna quota: chi indovina si divide tutto il monte (parte intera, nessuna trattenuta). Nessun vincitore: le puntate si perdono.
    MVP assente, pareggio o giocatore senza voce nella gara: rimborso. Un rimborso non lascia movimenti nel portafoglio. */
@@ -5248,9 +5286,98 @@ async function claimDaily(){
   await commit({ [`casino/claims/${me}/${day}`]:true }, `Riscosse ${CASINO.DAILY} ${CURRENCY}`);
 }
 const CTABS = [ { k:'wallet', l:'Portafoglio' }, { k:'bets', l:'Scommesse' }, { k:'hist', l:'Storico e premi' }, { k:'shop', l:'Negozio' } ];
+const BET_STATE = { pending:'In corso', won:'Vinta', lost:'Persa', void:'Rimborsata' };
+/* Le giocate di una persona (scommesse e scelte dei monti) con esito e netto */
+function myBetRows(me){
+  const rows = [];
+  for(const [mid, bets] of Object.entries((store.casino && store.casino.bets) || {})){
+    const m = store.matches[mid], mk = mkOf(mid);
+    for(const [bid, b] of Object.entries(bets || {})){
+      if(!b || b.pid !== me) continue;
+      const r = betLive(mid, b) ? settleBet(b, mk, m) : { state:'void', payout:0 };
+      rows.push({ at:num(b.at), day:m ? num(m.day) : 0, what:list(b.legs).map(l => mk && mk.m ? bmLegText(mk.m, l, pid => pname(pid)) : l.k).join(' + '), combo:list(b.legs).length > 1, stake:num(b.stake), odds:Number(b.odds), st:r.state, payout:r.payout, allin:!!b.allin });
+    }
+  }
+  for(const [mid, pools] of Object.entries((store.casino && store.casino.pools) || {})){
+    const m = store.matches[mid], S = poolStates(mid);
+    for(const [bid, b] of Object.entries(pools || {})){
+      if(!b || b.pid !== me) continue;
+      const x = S[bid] || { state:'void', payout:0 }, d = b.kind === 'duel' ? duelsOf(mid)[b.did] : null;
+      rows.push({ at:num(b.at), day:m ? num(m.day) : 0, what:b.kind === 'mvp' ? `Monte MVP: ${pname(b.sel)}` : (d && d.a && d.b ? `Sfida: ${duelSideName(b.sel === 'a' ? d.a : d.b)} (${duelTitle(d)})` : 'Sfida'), stake:num(b.stake), odds:0, st:x.state, payout:x.payout || 0 });
+    }
+  }
+  return rows.sort((a, b) => b.at - a.at);
+}
+function casinoPrizesHTML(){
+  const cards = PLAQUES.filter(P => P.feat === 'casino' && plqOn(P)).map(P => { const h = STATS.plaques[P.id];
+    return h ? recCard({ icon:P.icon, title:P.name, desc:P.desc, pid:h.pid, sub:'Targa stagionale', value:esc(h.val), unit:'' }) : recCard({ icon:P.icon, title:P.name, desc:P.desc, lock:'In palio: nessun giocatore la soddisfa ancora' }); });
+  return cards.join('');
+}
+function histHTML(me){
+  const rows = me ? myBetRows(me) : [];
+  const fmt = t => new Date(t).toLocaleDateString('it-IT', { day:'numeric', month:'short' });
+  const net = r => r.st === 'won' ? r.payout - r.stake : r.st === 'lost' ? -r.stake : 0;
+  const mine = me ? `<div class="glass cs-hist"><h3>Le mie giocate</h3>${rows.length ? rows.map(r => `<div class="cs-bt"><span><b>Giornata ${r.day}</b> · ${r.combo ? 'Combo: ' : ''}${esc(r.what)}</span>
+      <span class="mu">${fmtPat(r.stake)} ${CURRENCY}${r.odds ? ' a ' + r.odds.toFixed(2).replace('.', ',') : ''}${r.allin ? ' · tutto il saldo' : ''} · <b class="st-${r.st}">${BET_STATE[r.st]}</b>${r.st === 'won' || r.st === 'lost' ? ` · netto <b class="${net(r) < 0 ? 'neg' : 'pos'}">${net(r) < 0 ? '−' : '+'}${fmtPat(Math.abs(net(r)))}</b>` : ''}</span></div>`).join('') : '<p class="mu sm" style="margin:0">Non hai ancora giocato.</p>'}</div>`
+    : `<div class="glass cs-note">Scegli la tua carta nella sezione Io per vedere le tue giocate.</div>`;
+  return `${mine}<div class="th-sec" style="margin:14px 0 8px"><h3>Premi</h3><span>Targhe e primati del CASiNO</span></div><div class="rec-grid">${casinoPrizesHTML()}</div>${bancoBoardHTML(me)}`;
+}
+/* ---------- Admin: scommesse di ogni gara e rettifica del saldo ---------- */
+function betsAdminHTML(){
+  const mids = [...new Set([...Object.keys((store.casino && store.casino.bets) || {}), ...Object.keys((store.casino && store.casino.pools) || {})])].filter(id => store.matches[id]).sort((a, b) => num(store.matches[b].day) - num(store.matches[a].day));
+  const row = (src, mid, bid, b, what, st) => `<div class="vi-r"><b>${esc(pname(b.pid))}</b><span>${esc(what)} · ${fmtPat(num(b.stake))}${b.void ? ' · <i>annullata</i>' : ` · ${BET_STATE[st] || ''}`}</span>${b.void ? '' : `<button type="button" class="btn sm ghost" data-action="bet-void" data-src="${src}" data-mid="${mid}" data-bid="${bid}">Annulla scommessa</button>`}</div>`;
+  const body = mids.map(mid => {
+    const m = store.matches[mid], mk = mkOf(mid), bets = Object.entries((store.casino.bets && store.casino.bets[mid]) || {}).filter(([, b]) => b), pools = Object.entries((store.casino.pools && store.casino.pools[mid]) || {}).filter(([, b]) => b), PS = poolStates(mid);
+    return `<h4 class="vi-h">Giornata ${num(m.day)}</h4><div class="vi-list">${bets.map(([bid, b]) => row('bets', mid, bid, b, list(b.legs).map(l => mk && mk.m ? bmLegText(mk.m, l, pid => pname(pid)) : l.k).join(' + '), betLive(mid, b) ? settleBet(b, mk, m).state : 'void')).join('')}${pools.map(([bid, b]) => row('pools', mid, bid, b, b.kind === 'mvp' ? `Monte MVP: ${pname(b.sel)}` : 'Sfida', (PS[bid] || { state:'void' }).state)).join('')}</div>`;
+  }).join('');
+  return `<h3>Scommesse</h3><p class="mu sm">Annullando una scommessa la puntata torna al giocatore. L’annullamento resta registrato.</p>${body || '<p class="mu sm">Nessuna scommessa.</p>'}`;
+}
+function openBetsAdmin(){
+  if(!ui.admin) return;
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  $('#ca-body').innerHTML = betsAdminHTML(); openModal('#m-ca');
+}
+async function voidBet(src, mid, bid){
+  if(!ui.admin) return;
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  if(db && syncState !== 'live'){ toast('Serve la connessione', 'warn'); return; }
+  if(src !== 'bets' && src !== 'pools') return;
+  const b = store.casino && store.casino[src] && store.casino[src][mid] && store.casino[src][mid][bid]; if(!b || b.void) return;
+  const ok = await confirmDlg('Annullare la scommessa?', `La puntata di ${pname(b.pid)} (${fmtPat(num(b.stake))} ${CURRENCY}) torna al giocatore. Non si può riattivare.`, 'Annulla scommessa', true); if(!ok) return;
+  const me = myPid(), by = me && store.players[me] ? pname(me) : 'Admin';
+  await commit({ [`casino/${src}/${mid}/${bid}/void`]:1, [`casino/log/${newId()}`]:{ bet:bid, by, at:Date.now() } }, 'Scommessa annullata: puntata rimborsata');
+  if($('#m-ca').classList.contains('open')) $('#ca-body').innerHTML = betsAdminHTML();
+}
+function adjAdminHTML(){
+  const ls = [...STATS.list].sort((a, b) => a.name.localeCompare(b.name, 'it'));
+  const recent = Object.entries((store.casino && store.casino.adj) || {}).flatMap(([pid, o]) => Object.values(o || {}).map(x => ({ pid, ...x }))).sort((a, b) => num(b.at) - num(a.at)).slice(0, 8);
+  return `<h3>Rettifica saldo</h3><p class="mu sm">Aggiungi o togli ${CURRENCY} a un giocatore, con un motivo. Compare nei suoi movimenti come «Rettifica».</p>
+    <select id="aj-p" class="field">${ls.map(s => `<option value="${s.pid}">${esc(s.name)} (saldo ${fmtPat(s.bal != null ? s.bal : 0)})</option>`).join('')}</select>
+    <input id="aj-d" class="field" type="number" inputmode="numeric" step="1" placeholder="Importo (anche negativo)" style="margin-top:8px">
+    <input id="aj-w" class="field" maxlength="80" placeholder="Motivo" style="margin-top:8px">
+    ${recent.length ? `<h4 class="vi-h">Ultime rettifiche</h4>${recent.map(x => `<div class="vi-l">${esc(pname(x.pid))}: ${Math.round(x.delta) < 0 ? '−' : '+'}${fmtPat(Math.abs(Math.round(x.delta)))} · ${esc(x.why || '')}</div>`).join('')}` : ''}
+    <div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button><button type="button" class="btn primary" data-action="adj-save">Applica</button></div>`;
+}
+function openAdjAdmin(){
+  if(!ui.admin) return;
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  $('#ca-body').innerHTML = adjAdminHTML(); openModal('#m-ca');
+}
+async function saveAdj(){
+  if(!ui.admin) return;
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  if(db && syncState !== 'live'){ toast('Serve la connessione', 'warn'); return; }
+  const pid = $('#aj-p').value, d = Math.round(Number($('#aj-d').value)), why = ($('#aj-w').value || '').trim().slice(0, 80);
+  if(!store.players[pid]){ toast('Scegli un giocatore', 'warn'); return; }
+  if(!Number.isFinite(d) || !d){ toast('Scrivi un importo diverso da zero', 'warn'); return; }
+  if(Math.abs(d) > 100000){ toast('Importo troppo grande', 'warn'); return; }
+  if(why.length < 3){ toast('Scrivi il motivo', 'warn'); return; }
+  closeModal('#m-ca', true);
+  await commit({ [`casino/adj/${pid}/${newId()}`]:{ delta:d, why, at:Date.now() } }, `Rettifica: ${d < 0 ? '−' : '+'}${fmtPat(Math.abs(d))} a ${pname(pid)}`);
+}
 function casinoTabHTML(tab, me){
   if(tab === 'bets') return betsTabHTML(me);
-  if(tab === 'hist') return `<div class="glass cs-empty"><b>Ancora niente nello storico</b><span>Qui compariranno le tue scommesse concluse e i premi.</span></div>`;
+  if(tab === 'hist') return histHTML(me);
   if(tab === 'shop') return `<div class="glass cs-empty"><b>Il negozio è ancora vuoto</b></div>`;
   return walletHTML(me);
 }
@@ -5361,6 +5488,8 @@ function renderAdmin(){
       <button class="tile" data-action="new-sched"><span class="ic">🗓️</span><b>Programma gara</b><span>Data, ora e convocati bilanciati: tutti vedono dove giocano.</span></button>
       <button class="tile" data-action="new-match"><span class="ic">📝</span><b>Registra gara</b><span>Schiera le squadre e segna gol, assist e autogol.</span></button>
       <button class="tile" data-action="stars-view"><span class="ic">⭐</span><b>Voti a stelle</b><span>Per ogni gara: quanti voti ha preso ognuno, la media e il bonus. Mai chi ha votato.</span></button>
+      ${feat('casino') ? `<button class="tile" data-action="bets-admin"><span class="ic">🎰</span><b>Scommesse</b><span>Elenco delle scommesse di ogni gara, con “Annulla scommessa”.</span></button>
+      <button class="tile" data-action="adj-admin"><span class="ic">🥔</span><b>Rettifica saldo</b><span>Aggiungi o togli ${CURRENCY} a un giocatore, con un motivo.</span></button>` : ''}
       <button class="tile" data-action="prof-list"><span class="ic">🪪</span><b>Richieste schede${profPending().length ? `<span class="cbadge">${profPending().length}</span>` : ''}</b><span>Approva o rifiuta le schede dei giocatori (nascita, nazionalità, ruolo preciso).</span></button>
       <button class="tile" data-action="add-player"><span class="ic">🧑‍🎤</span><b>Aggiungi giocatore</b><span>Nome, ruolo, piede e foto dal rullino.</span></button>
       <button class="tile" data-action="backup-all"><span class="ic">💾</span><b>Backup completo</b><span>Scarica tutti i dati del database in un file .json. Contiene anche il PIN.</span></button>
@@ -6524,6 +6653,10 @@ document.addEventListener('click', async e => {
     case 'backup-all': if(requireAdmin()) backupAll(); break;
     case 'import-xlsx': if(requireAdmin()){ $('#xlsxInput').value = ''; $('#xlsxInput').click(); } break;
     case 'casino-claim': claimDaily(); break;
+    case 'bets-admin': openBetsAdmin(); break;
+    case 'adj-admin': openAdjAdmin(); break;
+    case 'adj-save': saveAdj(); break;
+    case 'bet-void': voidBet(d.src, d.mid, d.bid); break;
     case 'dl-new': openDuelForm(d.mid); break;
     case 'dl-save': saveDuel(); break;
     case 'dl-del': delDuel(d.mid, d.did); break;
