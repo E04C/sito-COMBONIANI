@@ -2098,9 +2098,13 @@ function sortedMatches(){
     .sort((a, b) => (num(a.day) - num(b.day)) || String(a.date || '').localeCompare(String(b.date || '')) || ((a.createdAt || 0) - (b.createdAt || 0)));
 }
 /* MVP: Gol = 1.0, Assist = 0.5. Parità: squadra vincente, meno autogol, più gol. */
-/* Votazione MVP: votano solo i giocatori della gara (non se stessi), 24 ore o finché votano tutti.
+/* Votazione MVP: votano solo i giocatori della gara (non se stessi), 12 ore (24 per le gare vecchie) o finché votano tutti.
    Ogni voto vale VOTE_W punti SOLO per scegliere l'MVP; i voti restano segreti finché la votazione è aperta. */
-const VOTE_W = 0.25, VOTE_W2 = 0.2, VOTE_WINDOW = 24 * 3600e3;
+const VOTE_W = 0.25, VOTE_W2 = 0.2, VOTE_HRS_NEW = 12, VOTE_HRS_OLD = 24, VOTE_EXT = 6 * 3600e3;
+/* Finestra di voto della gara: voteHrs (12 per le gare nuove); le gare senza voteHrs restano a 24 ore */
+const voteWin = m => ((m && m.voteHrs) || VOTE_HRS_OLD) * 3600e3;
+const voteHrsTxt = m => `${(m && m.voteHrs) || VOTE_HRS_OLD} ore`;
+const extendBtn = m => ui.admin ? `<button type="button" class="btn sm ghost" data-action="vote-extend" data-mid="${m.id}">Riapri votazione</button>` : '';
 const voteW = m => (m && m.vote2 ? VOTE_W2 : VOTE_W);   /* le gare con vote2 (nuova regola) pesano 0,2 a voto; le precedenti restano a 0,25 */
 /* ---------- MVP: si vota solo tra i 4 migliori della partita ----------
    Punti = gol + ½ assist, senza bonus né malus di vittoria o sconfitta. A pari punti entra chi ha il ruolo con priorità
@@ -2783,9 +2787,9 @@ function voteBoxHTML(m){
       : !inMatch ? `<p class="mu sm">Può votare solo chi ha giocato questa partita.</p>`
       : locked ? `<p class="vb-me">Il tuo voto: <b>${nm(mine)}</b>. È bloccato perché la gara è stata corretta.</p>`
       : `<p class="vb-me">${mine ? `Il tuo voto: <b>${nm(mine)}</b>. Puoi cambiarlo fino alla chiusura.` : 'Tocca chi secondo te è stato il migliore in campo:'}</p><div class="vb-opts">${cl.map(c => `<button class="vb-opt ${mine === c.pid ? 'on' : ''}" data-vote="${c.pid}" data-mid="${m.id}">${avatar(store.players[c.pid], 'xs')}<span>${nm(c.pid)}${sub(c)}</span></button>`).join('')}</div>`;
-    return `<div class="vbox"><div class="vb-h"><h4>🗳️ Vota l’MVP</h4><span class="cd" data-cd="${m.voteClose}" data-t="0">${cdText(m.voteClose, false)}</span></div>
+    return `<div class="vbox"><div class="vb-h"><h4>🗳️ Vota l’MVP</h4><span class="cd" data-cd="${m.voteClose}" data-t="0">${cdText(m.voteClose, false)}</span>${extendBtn(m)}</div>
       ${vi.cands ? `<p class="mu sm">Si vota tra i 4 migliori della partita per punti (gol e assist). Se i punti non bastano, i posti si completano con i più alti per OVR.${m.reopened ? ' Votazione riaperta dopo la correzione della gara: chi aveva già votato un candidato ancora valido non può cambiare il voto.' : ''}</p>` : ''}
-      <p class="mu sm">Ogni voto vale +${fmtPts(VOTE_W)} punti solo per scegliere l’MVP. I voti restano segreti fino alla chiusura: 24 ore dopo la gara o appena votano tutti.</p>
+      <p class="mu sm">Ogni voto vale +${fmtPts(VOTE_W)} punti solo per scegliere l’MVP. I voti restano segreti fino alla chiusura: ${voteHrsTxt(m)} dopo la gara o appena votano tutti.</p>
       <div class="vb-prog"><i style="width:${(vi.n / vi.eligible.length * 100).toFixed(0)}%"></i></div>
       <p class="mu sm">${vi.n} su ${vi.eligible.length} hanno votato${left.length && left.length <= 8 ? `. Mancano: ${left.map(nm).join(', ')}` : ''}</p>${action}</div>`;
   }
@@ -2812,8 +2816,8 @@ function rateBoxHTML(m){
   const mine = !inMatch ? '' : (info.done[me] || prHas(m.id))
     ? '<p class="vb-me">Hai votato i compagni. Il voto è anonimo e definitivo.</p>'
     : `<button class="btn sm primary" data-action="rate-open" data-mid="${m.id}">Vota i compagni</button>`;
-  return `<div class="vbox"><div class="vb-h"><h4>⭐ Voto ai compagni</h4><span class="cd" data-cd="${m.voteClose}" data-t="0">${cdText(m.voteClose, false)}</span></div>
-    <p class="mu sm">Da 1 a 5 stelle ai compagni di squadra, in forma anonima. Nessuno vede i risultati: a votazione chiusa ognuno scopre solo il proprio bonus nella sezione Io. Chiude 24 ore dopo la gara o appena votano tutti.</p>
+  return `<div class="vbox"><div class="vb-h"><h4>⭐ Voto ai compagni</h4><span class="cd" data-cd="${m.voteClose}" data-t="0">${cdText(m.voteClose, false)}</span>${extendBtn(m)}</div>
+    <p class="mu sm">Da 1 a 5 stelle ai compagni di squadra, in forma anonima. Nessuno vede i risultati: a votazione chiusa ognuno scopre solo il proprio bonus nella sezione Io. Chiude ${voteHrsTxt(m)} dopo la gara o appena votano tutti.</p>
     <div class="vb-prog"><i style="width:${(info.n / info.voters.length * 100).toFixed(0)}%"></i></div>
     <p class="mu sm">${info.n} su ${info.voters.length} hanno votato${ui.admin && left.length ? `. Mancano: ${left.map(nm).join(', ')}` : ''}</p>${mine}</div>`;
 }
@@ -2851,8 +2855,8 @@ function voteBox2HTML(m, vi, me, inMatch, mine, pend){
       : mine ? `<p class="vb-me">Hai votato <b>${nm(mine)}</b>. Il voto è definitivo.</p>`
       : pend ? `<p class="vb-me">Il tuo voto è in attesa di invio: partirà appena torni online.</p>`
       : `<p class="mu sm">Può votare solo chi ha giocato questa partita.</p>`;
-    return `<div class="vbox"><div class="vb-h"><h4>🗳️ Vota l’MVP</h4><span class="cd" data-cd="${m.voteClose}" data-t="0">${cdText(m.voteClose, false)}</span>${info}</div>
-      <p class="mu sm">Si vota tra i 4 migliori della partita per punti (gol e assist). Ogni voto vale +${fmtPts(w)} punti solo per scegliere l’MVP. I voti restano privati fino alla chiusura: 24 ore dopo la gara o appena votano tutti.${m.reopened ? ' Votazione riaperta dopo una correzione.' : ''}</p>
+    return `<div class="vbox"><div class="vb-h"><h4>🗳️ Vota l’MVP</h4><span class="cd" data-cd="${m.voteClose}" data-t="0">${cdText(m.voteClose, false)}</span>${info}${extendBtn(m)}</div>
+      <p class="mu sm">Si vota tra i 4 migliori della partita per punti (gol e assist). Ogni voto vale +${fmtPts(w)} punti solo per scegliere l’MVP. I voti restano privati fino alla chiusura: ${voteHrsTxt(m)} dopo la gara o appena votano tutti.${m.reopened ? ' Votazione riaperta dopo una correzione.' : ''}</p>
       <div class="vb-prog"><i style="width:${(vi.n / vi.eligible.length * 100).toFixed(0)}%"></i></div>
       <p class="mu sm">${vi.n} su ${vi.eligible.length} hanno votato${left.length && left.length <= 8 ? `. Mancano: ${left.map(nm).join(', ')}` : ''}</p>
       ${canVote ? '' : `<div class="mvb-h">Punteggio MVP finora</div>${bars}`}${act}</div>`;
@@ -2907,6 +2911,16 @@ function voteInfoHTML(mid){
     <div class="vi-list">${rows}</div>
     ${log.length ? `<h4 class="vi-h">Voti annullati</h4>${log.map(x => `<div class="vi-l">${fmt(x.at)}: voto di <b>${esc(pname(x.voter))}</b> per ${esc(pname(x.target))} annullato da ${esc(x.by || 'Admin')}</div>`).join('')}` : ''}`;
 }
+/* Riapri votazione (admin): solo a votazione attiva (MVP o voto ai compagni ancora aperti). Nuova scadenza = la più lontana tra l'attuale e adesso + 6 ore */
+function extendVote(mid){
+  if(!ui.admin) return;
+  const m = store.matches[mid]; if(!m) return;
+  const mm = { id:mid, ...m };
+  const active = (m.voteClose && Date.now() < m.voteClose) && (voteInfo(mm).open || rateInfo(mm).open);
+  if(!active){ toast('La votazione è già chiusa: non si può riaprire', 'warn'); return; }
+  const to = Math.max(num(m.voteClose), Date.now() + VOTE_EXT), when = new Date(to).toLocaleString('it-IT', { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+  commit({ [`matches/${mid}/voteClose`]: to, [`matches/${mid}/voteExt`]: num(m.voteExt) + 1 }, `Votazione aperta fino a ${when}`);
+}
 async function voteCancel(mid, voter){
   if(!ui.admin) return;
   const m = store.matches[mid]; if(!m) return;
@@ -2915,7 +2929,7 @@ async function voteCancel(mid, voter){
   if(!ok) return;
   const me = myPid(), by = me && store.players[me] ? pname(me) : 'Admin', id = newId();
   const up = { [`votes/${mid}/${voter}`]:null, [`votes/${mid}/_m/${voter}`]:null, [`votes/${mid}/_log/${id}`]:{ voter, target:t, at:Date.now(), by } };
-  if(!(m.voteClose && Date.now() < m.voteClose)) up[`matches/${mid}/voteClose`] = Date.now() + VOTE_WINDOW;
+  if(!(m.voteClose && Date.now() < m.voteClose)) up[`matches/${mid}/voteClose`] = Date.now() + voteWin(m);
   await commit(up, `Voto di ${pname(voter)} annullato`);
   setTimeout(() => { if($('#m-vinfo').classList.contains('open')) $('#vi-body').innerHTML = voteInfoHTML(mid); }, 120);
 }
@@ -4722,6 +4736,8 @@ async function saveMatch(){
   }
   const clean = e => ({ pid:e.pid, n:pname(e.pid, e.n), g:sched ? 0 : num(e.g), a:sched ? 0 : num(e.a), og:sched ? 0 : num(e.og), ...(e.bench && !sched ? { bench:1 } : {}) });
   const movesOut = (!sched && ED.seq) ? matchTimeline({ ...ED, goals:goalsOut }).moves.map(x => ({ pid:x.pid, k:x.k, ...(x.min != null ? { min:x.min } : {}), ...(x.ts ? { ts:x.ts } : {}), at:x.slot })) : [];
+  const oldM = ED.id ? store.matches[ED.id] : null, newPlayed = !sched && (!oldM || oldM.status === 'scheduled');
+  const vHrs = oldM && oldM.voteHrs ? oldM.voteHrs : (newPlayed ? VOTE_HRS_NEW : 0);   /* gare nuove: 12 ore; le esistenti restano a 24 */
   const payload = {
     status:sched ? 'scheduled' : 'played', time:ED.time, ...(!sched && ED.end ? { end:ED.end } : {}), fmW:ED.fmW || DEF_FM, fmB:ED.fmB || DEF_FM,
     ...(ED.posW ? { posW:list(ED.posW) } : {}), ...(ED.posB ? { posB:list(ED.posB) } : {}),
@@ -4731,7 +4747,8 @@ async function saveMatch(){
     ...(goalsOut.length ? { goals:goalsOut } : {}),
     ...(movesOut.length ? { moves:movesOut } : {}),
     createdAt:(ED.id && store.matches[ED.id]?.createdAt) || Date.now(),
-    voteClose:sched ? null : (store.matches[ED.id]?.voteClose || ((!ED.id || store.matches[ED.id]?.status === 'scheduled') ? Date.now() + VOTE_WINDOW : null)),
+    ...(vHrs && !sched ? { voteHrs:vHrs } : {}), ...(oldM && oldM.voteExt && !sched ? { voteExt:oldM.voteExt } : {}),
+    voteClose:sched ? null : (store.matches[ED.id]?.voteClose || (newPlayed ? Date.now() + (vHrs || VOTE_HRS_OLD) * 3600e3 : null)),
     updatedAt:Date.now()
   };
   /* Gara giocata senza capitano scelto: si salva quello automatico di adesso, così non cambia nelle settimane dopo */
@@ -4748,7 +4765,7 @@ async function saveMatch(){
     if(old && old.reopened) payload.reopened = 1;
     if(old && old.top4 && old.status !== 'scheduled'){
       const key = mm => mvpCands(mm).map(c => c.pid).sort().join(',');
-      if(key({ id, ...old }) !== key({ id, ...payload })){ payload.voteClose = Date.now() + VOTE_WINDOW; payload.reopened = 1; }
+      if(key({ id, ...old }) !== key({ id, ...payload })){ payload.voteClose = Date.now() + voteWin(payload); payload.reopened = 1; }
     }
   }
   const wasEdit = !!ED.id;
@@ -5231,6 +5248,7 @@ document.addEventListener('click', async e => {
     case 'who-guest-ok': whoGuest(); break;
     case 'vote-info': if(ui.admin){ $('#vi-body').innerHTML = voteInfoHTML(d.mid); openModal('#m-vinfo'); } break;
     case 'vote-cancel': voteCancel(d.mid, d.voter); break;
+    case 'vote-extend': extendVote(d.mid); break;
     case 'rate-send': rateSend(); break;
     case 'rate-open': { const m = store.matches[d.mid]; if(m) openRateGate({ id:d.mid, ...m }); break; }
     case 'rate-later': ui.voteLater = ui.voteLater || {}; ui.voteLater['r' + d.mid] = true; closeModal('#m-rate', true); break;
