@@ -1341,6 +1341,16 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .rt-st:active{background:var(--or-soft)}
 .rt-note{margin:0 0 8px;font-size:12.5px}
 .rt-send{width:100%}
+.nw{padding:12px 14px;margin-top:10px;border-radius:14px;border:1px solid var(--hair);background:rgba(255,255,255,.03)}
+.nw.new{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.06)}
+.nw-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;margin-bottom:8px}
+.nw-h h4{margin:0;font:italic 800 22px/1 var(--disp)}
+.nw-h span{color:var(--mu);font-size:12.5px;font-weight:600}
+.nw-b,.nw-c{font:800 10.5px var(--body);font-style:normal;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px}
+.nw-b{background:#22c55e;color:#052e12}
+.nw-c{background:var(--or-soft);color:var(--or)}
+.nw ul{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.nw li{font-size:14px;line-height:1.4;overflow-wrap:anywhere}
 .bday{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:18px;border-color:rgba(251,191,36,.45);background:linear-gradient(100deg,rgba(251,191,36,.16),rgba(12,16,24,.66) 60%)}
 .bday .bd-ic{font-size:26px}
 .bday>div{flex:1;min-width:0;font-weight:700;font-size:14px}
@@ -1567,6 +1577,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 <div class="modal" id="m-who" aria-hidden="true" data-lock="1"><div class="sheet glass who" role="dialog" aria-modal="true" aria-label="Chi sei?" id="who-body"></div></div>
 <div class="modal" id="m-rate" aria-hidden="true" data-lock="1"><div class="sheet glass vg" role="dialog" aria-modal="true" aria-label="Vota i compagni" id="rt-body"></div></div>
 <div class="modal" id="m-vote" aria-hidden="true" data-lock="1"><div class="sheet glass vg" role="dialog" aria-modal="true" aria-label="Vota l’MVP" id="vg-body"></div></div>
+<div class="modal" id="m-news" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Novità" style="width:min(620px,100%)"><div id="nw-body"></div><div class="row end sticky-actions"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 <div class="modal" id="m-prof" aria-hidden="true"><div class="sheet glass vi" role="dialog" aria-modal="true" aria-label="Richieste schede giocatore" style="width:min(620px,100%)"><div id="pr-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 <div class="modal" id="m-vinfo" aria-hidden="true"><div class="sheet glass vi" role="dialog" aria-modal="true" aria-label="Chi ha votato chi" style="width:min(560px,100%)"><div id="vi-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 
@@ -5378,7 +5389,7 @@ function anHTML(){
   const hMax = Math.max(1, ...hours);
   const views = {}, feats = {};
   S.forEach(x => { for(const [k, v] of Object.entries(x.v || {})) views[k] = (views[k] || 0) + num(v); for(const [k, v] of Object.entries(x.f || {})) feats[k] = (feats[k] || 0) + num(v); });
-  const VL = { dashboard:'Classifica', players:'Giocatori', matches:'Partite', me:'Io', trophies:'Trofei', admin:'Admin' }, FL = { replay:'Replay dei gol', export:'Immagini esportate', vote:'Voti MVP' };
+  const VL = { dashboard:'Classifica', players:'Giocatori', matches:'Partite', me:'Io', trophies:'Trofei', admin:'Admin' }, FL = { replay:'Replay dei gol', export:'Immagini esportate', vote:'Voti MVP', news:'Novità aperte' };
   const vTot = Object.values(views).reduce((a, b) => a + b, 0) || 1;
   const nm = x => x.pid && store.players[x.pid] ? store.players[x.pid].name : (x.guest ? 'Ospite · ' + x.guest : 'Ospite');
   const fmt = ts => ts ? new Date(num(ts)).toLocaleString('it-IT', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '–';
@@ -5507,6 +5518,7 @@ document.addEventListener('click', async e => {
     case 'who-guest-ok': whoGuest(); break;
     case 'vote-info': if(ui.admin){ $('#vi-body').innerHTML = voteInfoHTML(d.mid); openModal('#m-vinfo'); } break;
     case 'vote-cancel': voteCancel(d.mid, d.voter); break;
+    case 'open-news': openNews(); break;
     case 'vote-extend': extendVote(d.mid); break;
     case 'rate-send': rateSend(); break;
     case 'rate-open': { const m = store.matches[d.mid]; if(m) openRateGate({ id:d.mid, ...m }); break; }
@@ -5676,6 +5688,22 @@ let newsSeenMem = '';
 function newsSeenGet(){ try{ return localStorage.getItem(NEWS_KEY) || newsSeenMem; }catch(e){ return newsSeenMem; } }
 function newsSeenSet(v){ newsSeenMem = v; try{ localStorage.setItem(NEWS_KEY, v); }catch(e){} }
 const newsHasNew = () => verCmp(APP_VERSION, newsSeenGet()) > 0;
+/* Lo stemma si accende (classe "on") quando ci sono novità non ancora aperte */
+function newsPaint(){ const b = $('#newsBtn'); if(b) b.classList.toggle('on', newsHasNew()); }
+/* Versioni dalla più recente; "Nuovo" su quelle più recenti dell'ultima aperta (alla prima visita solo sull'ultima) */
+function newsHTML(seen){
+  return `<h3>Novità</h3><p class="lead-p" style="margin-bottom:6px">Cosa è cambiato a ogni aggiornamento.</p>` + NEWS.map((n, i) => {
+    const isNew = seen ? verCmp(n.v, seen) > 0 : i === 0, cur = n.v === APP_VERSION;
+    return `<section class="nw ${isNew ? 'new' : ''}"><div class="nw-h"><h4>v${esc(n.v)}</h4><span>${esc(fmtDate(n.date))}</span>${isNew ? '<em class="nw-b">Nuovo</em>' : ''}${cur ? '<em class="nw-c">Versione attuale</em>' : ''}</div><ul>${n.items.map(t => `<li>${esc(t)}</li>`).join('')}</ul></section>`;
+  }).join('');
+}
+function openNews(){
+  const seen = newsSeenGet();                       /* prima di aggiornarla: serve a mostrare cosa è nuovo */
+  $('#nw-body').innerHTML = newsHTML(seen);
+  newsSeenSet(APP_VERSION); newsPaint();
+  anBump('f/news');                                 /* conta le aperture, non le persone (i dispositivi admin sono già esclusi) */
+  openModal('#m-news');
+}
 
 /* Splash: due spade si incrociano, il pallone rimbalza al centro. Una volta per sessione, tocca per saltare */
 (function splash(){
