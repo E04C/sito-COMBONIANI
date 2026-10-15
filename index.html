@@ -2849,6 +2849,8 @@ let profWatch = null;
 function watchProfileReq(){
   if(!db) return;
   const me = myPid(), want = ui.admin ? 'all' : (me && store.players[me] ? 'me:' + me : '');
+  /* un dispositivo non admin non tiene in memoria le richieste altrui (per esempio rimaste nella cache di quando era admin) */
+  if(!ui.admin && Object.keys(store.profileReq || {}).some(k => k !== me)) store.profileReq = (me && store.profileReq[me]) ? { [me]:store.profileReq[me] } : {};
   if(profWatch && profWatch.key === want) return;
   if(profWatch){ try{ profWatch.ref.off('value', profWatch.fn); }catch(e){} profWatch = null; store.profileReq = {}; }   /* cambio di ruolo (admin ↔ giocatore): niente richieste altrui in memoria */
   if(!want) return;
