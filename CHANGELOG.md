@@ -6,7 +6,11 @@
 - Admin: scheda "Voti a stelle" con voti ricevuti, media, distribuzione e bonus per ogni gara (mai chi ha votato), anche con l'interruttore spento.
 - CASiNO: tema "tavolo da gioco" (verde acceso, oro, bordo cucito).
 - CASiNO: modello di probabilità per tutti i mercati (solo funzioni pure, `buildModel`, `bmMarkets`, `bmCombo`, `payoutOf`) e parametri in `BETP`, leggibili con `cparam()` anche da `casino/params`.
-- CASiNO: l'admin apre le scommesse di una gara in programma (anteprima e conferma, snapshot delle quote in `casino/markets/{gara}`, annullamento se cambia la formazione, "Chiudi e rimborsa", "Riapri"). Gli amici non possono ancora puntare.
+- CASiNO: l'admin apre le scommesse di una gara in programma (anteprima e conferma, snapshot delle quote in `casino/markets/{gara}`, annullamento se cambia la formazione, "Chiudi e rimborsa", "Riapri").
+- CASiNO: scheda Scommesse con schedina (singole e combo fino a 3 selezioni di una gara, puntata minima `ceil(1/(quota−1))`, tetto di vincita `WIN_CAP`), divieto di puntare su sé stessi, giocate visibili a tutti.
+- CASiNO: Monte MVP (puntata fissa, si divide il monte) e sfide create dall'admin (`casino/pools`, `casino/duels`), rimborsati con il voto MVP spento o se la sfida è annullata.
+- CASiNO: liquidazione di ogni mercato (`settleLeg`, `settleBet`), movimenti del portafoglio per puntate e vincite, scheda "Storico e premi", admin "Annulla scommessa" e "Rettifica saldo" (`casino/log`, `casino/adj`).
+- Nuova targa "Il Profeta" e primati "Il Colpaccio" e "Il Kamikaze" (in coda a `REC_KEYS`, nascosti a CASiNO spento senza spostare le altre chiavi). Eliminando una gara spariscono anche i suoi mercati, scommesse, monti e sfide.
 
 ## 1.5.0
 - Pulsante "Novità": toccando lo stemma in alto, o la versione in fondo alla pagina, si apre l'elenco degli aggiornamenti. Lo stemma si accende (anello verde) quando c'è qualcosa di nuovo.
