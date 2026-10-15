@@ -4606,6 +4606,186 @@ function showNextRec(){
 
 /* ---------- Admin ---------- */
 /* ---------- CASiNO ---------- */
+/* =========================================================
+   CASiNO: modello di probabilità (funzioni pure, nessuna interfaccia)
+   Un solo modello per tutti i mercati. buildModel() produce uno snapshot compatto e deterministico: da lì in poi le probabilità e le quote
+   si ricalcolano SOLO dallo snapshot (bmJoint, bmOdds, bmMarkets, bmCombo), mai dai dati di gara.
+   ctx = { n, totalGoals, totalOg, roster:{ pid:{ role, pres, g, a, og, ovr } } }. lineup = { W:[{ pid, bench }], B:[...] }.
+   Una selezione (leg) è { k, sel }: k = tipo di mercato, sel = scelta (vedi bmLegFactor).
+   ========================================================= */
+const BM_TMAX = 40, BM_MATCH_K = ['esito', 'dc', 'tot', 'team', 'band', 'parity', 'margin', 'exact', 'first', 'og'];
+const BM_PLAYER_K = ['scorer', 'scorer2', 'hat', 'firstScorer', 'assist', 'ga', 'ogPlayer'];
+const BM_HARD_K = ['exact', 'firstScorer', 'scorer2', 'hat'];
+const BM_PKEYS = ['MARGIN', 'MARGIN_FEW', 'FEW_K', 'MARGIN_HARD', 'MARGIN_COMBO', 'MARGIN_MAX', 'ODDS_MIN', 'ODDS_STEP', 'LEG_MAX', 'ODDS_MAX_TOTAL', 'COMBO_PMAX'];
+const r6 = x => Math.round(x * 1e6) / 1e6;
+const bmLogF = (() => { const a = [0]; for(let i = 1; i <= 80; i++) a[i] = a[i - 1] + Math.log(i); return a; })();
+function bmErf(x){ const t = 1 / (1 + 0.3275911 * Math.abs(x)); const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return x >= 0 ? y : -y; }
+const bmPhi = z => 0.5 * (1 + bmErf(z / Math.SQRT2));
+function bmBinom(n, k, p){
+  if(k < 0 || k > n) return 0;
+  if(p <= 0) return k === 0 ? 1 : 0;
+  if(p >= 1) return k === n ? 1 : 0;
+  return Math.exp(bmLogF[n] - bmLogF[k] - bmLogF[n - k] + k * Math.log(p) + (n - k) * Math.log(1 - p));
+}
+const bmGE = (G, p, r) => { let c = 0; for(let j = 0; j < r; j++) c += bmBinom(G, j, p); return Math.max(0, 1 - c); };   /* P(Binomiale(G, p) >= r) */
+const bmRoleOf = r => (r === 'JOLLY' ? 'CEN' : (ROLES[r] ? r : 'CEN'));
+function bmBase(P, n){ return P.MARGIN + P.MARGIN_FEW * P.FEW_K / (P.FEW_K + Math.max(0, n - 5)); }
+const bmMargin = (m, k) => BM_HARD_K.includes(k) ? Math.max(m.p.MARGIN_HARD, bmBase(m.p, m.n)) : bmBase(m.p, m.n);
+/* Snapshot: tutto ciò che serve per ricalcolare le quote in modo deterministico (numeri arrotondati a 6 decimali) */
+function buildModel(lineup, ctx){
+  const P = {}; for(const k of BM_PKEYS) P[k] = cparam(k);
+  P.CAPS = {}; for(const k of Object.keys(BETP.CAPS)) P.CAPS[k] = cparam('CAPS.' + k);
+  const ro = ctx.roster || {}, n = Math.max(0, num(ctx.n));
+  const starters = t => (lineup[t] || []).filter(e => !e.bench), all = t => lineup[t] || [];
+  const nW = starters('W').length, nB = starters('B').length, nL = nW + nB;
+  const mean = t => { const L = starters(t); return L.length ? L.reduce((a, e) => a + ((ro[e.pid] && ro[e.pid].ovr) != null ? ro[e.pid].ovr : OVR_START), 0) / L.length : OVR_START; };
+  const mT = (ctx.totalGoals + cparam('GOALS_PRIOR') * cparam('GOALS_PRIOR_W')) / (n + cparam('GOALS_PRIOR_W')) * nL / 16;
+  const d = (mean('W') - mean('B')) + cparam('W_N') * Math.log(Math.max(1, nW) / Math.max(1, nB));
+  const pW = 1 / (1 + Math.exp(-d / cparam('SENS')));
+  /* tassi per ruolo (JOLLY come CEN) su tutta la rosa */
+  const agg = {}; for(const r of ['ATT', 'CEN', 'DIF']) agg[r] = { pres:0, g:0, a:0 };
+  let sumG = 0, sumA = 0;
+  for(const x of Object.values(ro)){ const r = bmRoleOf(x.role); agg[r].pres += num(x.pres); agg[r].g += num(x.g); agg[r].a += num(x.a); sumG += num(x.g); sumA += num(x.a); }
+  const mu = r => Math.max(0.10, agg[r].pres ? agg[r].g / agg[r].pres : 0), mua = r => Math.max(0.05, agg[r].pres ? agg[r].a / agg[r].pres : 0);
+  const ogFrac = Math.max(0.01, ctx.totalGoals ? num(ctx.totalOg) / ctx.totalGoals : 0);
+  const K = cparam('PLAYER_PRIOR_G'), pl = {};
+  for(const t of ['W', 'B']){
+    const rows = all(t).map(e => { const x = ro[e.pid] || { role:'CEN', pres:0, g:0, a:0 }, r = bmRoleOf(x.role);
+      return { pid:e.pid, lam:(num(x.g) + K * mu(r)) / (num(x.pres) + K), lama:(num(x.a) + K * mua(r)) / (num(x.pres) + K) }; });
+    const sl = rows.reduce((a, r) => a + r.lam, 0) || 1, sa = rows.reduce((a, r) => a + r.lama, 0) || 1;
+    for(const r of rows) pl[r.pid] = { t:t.toLowerCase(), s:r6(r.lam / sl * (1 - ogFrac)), sa:r6(r.lama / sa) };
+  }
+  const qa = (sumA + cparam('QA_PRIOR') * 5) / (sumG + 5);
+  const lo = (num(ctx.totalOg) + cparam('OG_PRIOR')) / (n + 10) * nL / 16;
+  return { v:1, mT:r6(mT), sd:r6(cparam('GOALS_SD')), pW:r6(pW), sp:r6(cparam('SPREAD')), nW, nB, n, qa:r6(qa), og:r6(ogFrac), lo:r6(lo), oW:Math.round(mean('W') * 10) / 10, oB:Math.round(mean('B') * 10) / 10, p:P, pl };
+}
+/* Distribuzioni derivate dallo snapshot (in cache sul suo oggetto) */
+const bmCache = new WeakMap();
+function bmEval(m){
+  let E = bmCache.get(m); if(E) return E;
+  const PT = []; let z = 0;
+  for(let t = 0; t <= BM_TMAX; t++){ const v = bmPhi((t + 0.5 - m.mT) / m.sd) - bmPhi((t - 0.5 - m.mT) / m.sd); PT[t] = Math.max(0, v); z += PT[t]; }
+  for(let t = 0; t <= BM_TMAX; t++) PT[t] /= z;
+  const cl = x => Math.min(0.97, Math.max(0.03, x)), mix = [[cl(m.pW - m.sp), 0.25], [cl(m.pW), 0.5], [cl(m.pW + m.sp), 0.25]];
+  const J = Array.from({ length:BM_TMAX + 1 }, () => new Array(BM_TMAX + 1).fill(0)), PGw = new Array(BM_TMAX + 1).fill(0), PGb = new Array(BM_TMAX + 1).fill(0);
+  let pbar = 0; for(const [p, w] of mix) pbar += p * w;
+  for(let t = 0; t <= BM_TMAX; t++) for(const [p, wk] of mix) for(let w = 0; w <= t; w++) J[w][t - w] += PT[t] * wk * bmBinom(t, w, p);
+  for(let w = 0; w <= BM_TMAX; w++) for(let b = 0; b + w <= BM_TMAX; b++){ PGw[w] += J[w][b]; PGb[b] += J[w][b]; }
+  const pT1 = 1 - PT[0], N = Object.keys(m.pl).length || 1;
+  const pog = 1 - Math.exp(-m.lo), pogp = 1 - Math.exp(-m.lo / N);
+  /* fasce: tagli ai quantili 25/50/75% della distribuzione dei gol totali */
+  const q = f => { let c = 0; for(let t = 0; t <= BM_TMAX; t++){ c += PT[t]; if(c >= f - 1e-12) return t; } return BM_TMAX; };
+  const c1 = q(0.25), c2 = Math.max(c1 + 1, q(0.5)), c3 = Math.max(c2 + 1, q(0.75));
+  const bands = [[0, c1], [c1 + 1, c2], [c2 + 1, c3], [c3 + 1, 99]];
+  E = { PT, J, PGw, PGb, pbar, pT1, pog, pogp, ogq:Math.min(1, pog / pT1), ogpq:Math.min(1, pogp / pT1), bands };
+  bmCache.set(m, E); return E;
+}
+const bmBandLabel = (b, i) => i === 3 ? `${b[0]}+` : (b[0] === b[1] ? `${b[0]}` : `${b[0]}-${b[1]}`);
+/* Quanto vale una selezione dati i gol (w, b): 0/1 per i mercati di partita, una probabilità per quelli sui giocatori */
+function bmLegFactor(m, E, leg, w, b){
+  const T = w + b, k = leg.k, sel = String(leg.sel);
+  switch(k){
+    case 'esito': return (sel === '1' ? w > b : sel === 'X' ? w === b : w < b) ? 1 : 0;
+    case 'dc': return (sel === '1X' ? w >= b : sel === 'X2' ? w <= b : w !== b) ? 1 : 0;
+    case 'tot': { const L = parseFloat(sel.slice(1)); return (sel[0] === 'o' ? T > L : T < L) ? 1 : 0; }
+    case 'team': { const L = parseFloat(sel.slice(2)), g = sel[0] === 'W' ? w : b; return (sel[1] === 'o' ? g > L : g < L) ? 1 : 0; }
+    case 'band': { const bd = E.bands[+sel]; return bd && T >= bd[0] && T <= bd[1] ? 1 : 0; }
+    case 'parity': return ((T % 2 === 0) === (sel === 'p')) ? 1 : 0;
+    case 'margin': { const dd = sel[0] === 'W' ? w - b : sel[0] === 'B' ? b - w : (w === b ? 0 : -99); const r = sel.slice(1);
+      if(sel === 'D') return w === b ? 1 : 0;
+      return (r === '12' ? dd >= 1 && dd <= 2 : r === '34' ? dd >= 3 && dd <= 4 : dd >= 5) ? 1 : 0; }
+    case 'exact': return sel === `${w}-${b}` ? 1 : 0;
+    case 'first': return T > 0 ? (sel === 'W' ? w : b) / T : 0;
+    case 'og': return sel === 'y' ? (T > 0 ? E.ogq : 0) : 1 - (T > 0 ? E.ogq : 0);
+  }
+  const x = m.pl[sel]; if(!x) return 0;
+  const G = x.t === 'w' ? w : b, s = x.s;
+  switch(k){
+    case 'scorer': return bmGE(G, s, 1);
+    case 'scorer2': return bmGE(G, s, 2);
+    case 'hat': return bmGE(G, s, 3);
+    case 'firstScorer': return T > 0 ? G / T * s : 0;
+    case 'assist': return 1 - Math.pow(1 - m.qa * x.sa * (1 - s), G);
+    case 'ga': return 1 - Math.pow(1 - Math.min(0.95, s + (1 - s) * m.qa * x.sa), G);
+    case 'ogPlayer': return T > 0 ? E.ogpq : 0;
+  }
+  return 0;
+}
+const bmValidLeg = (m, leg) => !!leg && (BM_MATCH_K.includes(leg.k) || (BM_PLAYER_K.includes(leg.k) && !!m.pl[leg.sel]));
+/* Probabilità congiunta esatta di più selezioni: somma su (w, b) del prodotto dei fattori */
+function bmJoint(m, legs){
+  const E = bmEval(m); let p = 0;
+  for(let w = 0; w <= BM_TMAX; w++) for(let b = 0; b + w <= BM_TMAX; b++){
+    const j = E.J[w][b]; if(j < 1e-15) continue;
+    let f = j; for(const l of legs){ f *= bmLegFactor(m, E, l, w, b); if(!f) break; }
+    p += f;
+  }
+  return p;
+}
+/* Quota: (1 - margine) / p, arrotondata SEMPRE per difetto al passo, poi ridotta al tetto del mercato. Mai alzata; sotto il minimo non si offre */
+function bmOddsFromP(m, k, p, margin, cap){
+  if(!(p > 1e-12)) return null;
+  const raw = (1 - margin) / p, step = m.p.ODDS_STEP, u = Math.floor(raw / step + 1e-9);
+  let o = Math.round(u * step * 100) / 100;
+  if(cap != null) o = Math.min(o, cap);
+  return o + 1e-9 >= m.p.ODDS_MIN ? o : null;
+}
+function bmOdds(m, leg){
+  const p = bmJoint(m, [leg]);
+  return { p, odds:bmOddsFromP(m, leg.k, p, bmMargin(m, leg.k), m.p.CAPS[leg.k]) };
+}
+/* Combo nella stessa gara: al massimo LEG_MAX selezioni, una sola su un giocatore. Rifiuta ripetizioni, contraddizioni, ridondanze e quasi certezze */
+function bmCombo(m, legs){
+  const no = reason => ({ ok:false, reason });
+  if(!Array.isArray(legs) || legs.length < 2) return no('Servono almeno due selezioni');
+  if(legs.length > m.p.LEG_MAX) return no(`Al massimo ${m.p.LEG_MAX} selezioni`);
+  if(!legs.every(l => bmValidLeg(m, l))) return no('Selezione non valida');
+  if(legs.filter(l => BM_PLAYER_K.includes(l.k)).length > 1) return no('Una sola selezione su un giocatore');
+  const seen = new Set(); for(const l of legs){ const id = l.k + '|' + l.sel; if(seen.has(id)) return no('Selezione ripetuta'); seen.add(id); }
+  for(const k of BM_MATCH_K) if(k !== 'tot' && k !== 'team' && legs.filter(l => l.k === k).length > 1) return no('Lo stesso mercato due volte');
+  const p = bmJoint(m, legs);
+  if(p <= 1e-12) return no('Selezioni incompatibili: non possono avverarsi insieme');
+  const ps = legs.map(l => bmJoint(m, [l]));
+  if(p >= Math.min(...ps) - 1e-9) return no('Una selezione include già le altre');
+  if(p > m.p.COMBO_PMAX) return no('Combo troppo probabile');
+  const margin = Math.min(m.p.MARGIN_MAX, Math.max(...legs.map(l => bmMargin(m, l.k))) + m.p.MARGIN_COMBO);
+  const odds = bmOddsFromP(m, 'combo', p, margin, m.p.ODDS_MAX_TOTAL);
+  if(odds == null) return no('Quota troppo bassa');
+  return { ok:true, p, odds, margin };
+}
+/* Vincita: puntata + guadagno (almeno 1), con tetto WIN_CAP. Conti in centesimi di quota, tutti interi (niente errori float) */
+function payoutOf(stake, odds){
+  const c = Math.round(odds * 100), profit = Math.floor(stake * (c - 100) / 100);
+  return Math.min(CASINO.WIN_CAP, stake + Math.max(1, profit));
+}
+/* Puntata minima: il "+1 garantito" non deve mai regalare valore sulle puntate piccole */
+const minStakeOf = odds => { const c = Math.round(odds * 100); return c > 100 ? Math.ceil(100 / (c - 100)) : 1; };
+const maxStakeOf = bal => Math.max(0, Math.min(Math.floor(bal), CASINO.WIN_CAP - 1));
+/* Elenco completo dei mercati con probabilità e quote (nm = funzione dei nomi) */
+const bmLine = x => String(x).replace('.', ',');
+function bmMarkets(m, nm = pid => pid){
+  const E = bmEval(m), out = [];
+  const add = (k, grp, title, sels) => out.push({ k, grp, title, sels:sels.map(x => { const o = bmOdds(m, { k, sel:x.sel }); return { sel:x.sel, label:x.label, p:o.p, odds:o.odds }; }) });
+  add('esito', 'main', 'Esito finale', [{ sel:'1', label:'Bianchi' }, { sel:'X', label:'Pareggio' }, { sel:'2', label:'Neri' }]);
+  add('dc', 'main', 'Doppia chance', [{ sel:'1X', label:'Bianchi o pareggio' }, { sel:'X2', label:'Pareggio o Neri' }, { sel:'12', label:'Bianchi o Neri' }]);
+  const rm = Math.round(m.mT), lines = []; for(let k = Math.max(0, rm - 2); k <= rm + 2; k++) lines.push(k + 0.5);
+  for(const L of lines) add('tot', L === rm + 0.5 || L === rm - 0.5 ? 'main' : 'gol', `Gol totali ${bmLine(L)}`, [{ sel:'o' + L, label:`Più di ${bmLine(L)}` }, { sel:'u' + L, label:`Meno di ${bmLine(L)}` }]);
+  for(const t of ['W', 'B']){
+    const P = t === 'W' ? E.PGw : E.PGb; let mu = 0; P.forEach((p, g) => { mu += p * g; }); const r = Math.round(mu);
+    for(let k = Math.max(0, r - 2); k <= r + 2; k++){ const L = k + 0.5; add('team', 'gol', `Gol ${t === 'W' ? 'Bianchi' : 'Neri'} ${bmLine(L)}`, [{ sel:`${t}o${L}`, label:`Più di ${bmLine(L)}` }, { sel:`${t}u${L}`, label:`Meno di ${bmLine(L)}` }]); }
+  }
+  add('band', 'gol', 'Fasce di gol totali', E.bands.map((b, i) => ({ sel:String(i), label:bmBandLabel(b, i) })));
+  add('parity', 'gol', 'Gol totali pari o dispari', [{ sel:'p', label:'Pari' }, { sel:'d', label:'Dispari' }]);
+  add('margin', 'gol', 'Margine di vittoria', [['W12', 'Bianchi di 1-2'], ['W34', 'Bianchi di 3-4'], ['W5', 'Bianchi di 5+'], ['D', 'Pareggio'], ['B12', 'Neri di 1-2'], ['B34', 'Neri di 3-4'], ['B5', 'Neri di 5+']].map(([sel, label]) => ({ sel, label })));
+  const ex = []; for(let w = 0; w <= 20; w++) for(let b = 0; b <= 20; b++) ex.push({ sel:`${w}-${b}`, label:`${w}-${b}` });
+  add('exact', 'gol', 'Risultato esatto', ex);
+  add('first', 'main', 'Squadra che segna per prima', [{ sel:'W', label:'Bianchi' }, { sel:'B', label:'Neri' }]);
+  const order = [...Object.entries(m.pl)].sort((a, b) => (a[1].t === b[1].t ? 0 : a[1].t === 'w' ? -1 : 1));
+  for(const [k, title, grp] of [['scorer', 'Segna almeno un gol', 'marc'], ['scorer2', 'Segna 2 o più gol', 'marc'], ['hat', 'Tripletta', 'marc'], ['firstScorer', 'Primo marcatore', 'marc'], ['assist', 'Fa almeno un assist', 'marc'], ['ga', 'Segna o fa assist', 'marc'], ['ogPlayer', 'Fa autogol', 'spec']])
+    add(k, grp, title, order.map(([pid]) => ({ sel:pid, label:nm(pid) })));
+  add('og', 'spec', 'Ci sarà un autogol', [{ sel:'y', label:'Sì' }, { sel:'n', label:'No' }]);
+  return out;
+}
 async function claimDaily(){
   if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
   const me = myPid(); if(!me || !store.players[me]){ toast('Scegli prima la tua carta nella sezione Io', 'warn'); return; }
