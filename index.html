@@ -1433,7 +1433,13 @@ body{transition:background-color .3s}
 .cs-pop{position:absolute;left:100%;top:-6px;margin-left:6px;font:800 22px var(--body);color:#22c55e;animation:csPop 1.3s ease-out both;pointer-events:none}
 @keyframes csPop{0%{opacity:0;transform:translateY(8px) scale(.8)}20%{opacity:1}100%{opacity:0;transform:translateY(-26px) scale(1.15)}}
 @media (prefers-reduced-motion:reduce){.cs-pop{display:none}}
-.cs-hist{padding:14px 18px}
+.cs-hist{padding:14px 18px;margin-bottom:12px}
+.cs-lb{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:6px 4px;border:0;border-top:1px solid var(--hair);background:none;text-align:left;font:600 14px var(--body)}
+.cs-lb .pos{flex:none;width:24px;text-align:center;color:var(--mu2);font-weight:800}
+.cs-lb .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cs-lb b{font-variant-numeric:tabular-nums;color:var(--gold)}
+.cs-lb b.neg{color:var(--bad)}
+.cs-lb.me{background:var(--or-soft);border-radius:10px}
 .cs-hist h3{margin:0 0 6px;font:italic 800 22px/1 var(--disp)}
 .cs-mv{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--hair);min-height:44px}
 .cs-mv .d{flex:none;width:64px;color:var(--mu2);font-size:12.5px;font-weight:700}
@@ -1768,11 +1774,11 @@ const firebaseConfig = {
 };
 const APP_VERSION = '1.5.0';
 const DEFAULT_PIN = '2026';
+/* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
+const CURRENCY = 'patate', CURRENCY1 = 'patata';
+const CASINO = { START:100, DAILY:10, MATCH:20, GOAL:10, ASSIST:5, CAP:60, MARGIN:0.10, ODDS_MIN:1.10, ODDS_MAX:50, POOL_STAKE:10, PROFETA_MIN:5 };
 /* Interruttori delle funzioni: li accende e spegne l'admin (settings/features/{chiave}), valgono per tutti i dispositivi.
    Il codice legge sempre e solo feat(chiave). Spenta = nascosta e disattivata; codice e dati restano, riaccesa torna tutto com'era. */
-/* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
-const CURRENCY = 'patate';
-const CASINO = { START:100, DAILY:10, MATCH:20, GOAL:10, ASSIST:5, CAP:60, MARGIN:0.10, ODDS_MIN:1.10, ODDS_MAX:50, POOL_STAKE:10, PROFETA_MIN:5 };
 const FEATURE_DEFAULTS = { casino:true, mvp:true, ratings:true };
 const FEATURES = [
   { k:'casino',  name:'CASiNO',                       desc:'La sezione con portafoglio, scommesse e premi.' },
@@ -1824,6 +1830,11 @@ PLAQUES.push({ id:'apriscatole', icon:'🥫', name:'L’Apriscatole', desc:'Più
   ok:s => s.firstG >= 1, cmp:(a,b) => (b.firstG - a.firstG) || (b.g - a.g), val:s => `${s.firstG} ${s.firstG === 1 ? 'primo gol' : 'primi gol'}` });
 PLAQUES.push({ id:'ultimo', icon:'⏳', name:'Ultimo Respiro', desc:'Più gol nell’ultimo 20% della gara (servono minuti e ora di fine). Parità: più gol totali.',
   ok:s => s.lateG >= 1, cmp:(a,b) => (b.lateG - a.lateG) || (b.g - a.g), val:s => `${s.lateG} ${s.lateG === 1 ? 'gol nel finale' : 'gol nel finale'}` });
+/* Targhe legate a una funzione (feat): con la funzione spenta non si assegnano, non si mostrano e non contano nel tetto di 2 a testa.
+   Il saldo esiste solo sulla stagione intera, quindi negli storici dei trofei queste targhe non risultano mai assegnate. */
+PLAQUES.push({ id:'banco', feat:'casino', icon:'💰', name:'Il Banco', desc:`Il saldo più alto di ${CURRENCY}. Parità: più ${CURRENCY} guadagnate nelle gare.`,
+  ok:s => !!s.mov && s.mov.length > 1 && s.bal > 0, cmp:(a,b) => (b.bal - a.bal) || (b.earn - a.earn), val:s => `${fmtPat(s.bal)} ${CURRENCY}` });
+const plqOn = P => !P.feat || feat(P.feat);
 /* Moduli per ogni misura di squadra (da 1 a 11 titolari). La prima riga è sempre un solo giocatore "in porta"; massimo 4 righe e 5 per riga.
    Quelli a 8 sono i quattro di sempre. Il menu del modulo mostra solo quelli la cui somma è uguale ai titolari. */
 const FORMATIONS = {
@@ -1851,10 +1862,10 @@ const PLQ_GAP = {
   assist:[s => s.a, 'assist', 'assist', 1, 0], vittoria:[s => s.pct, 'punto %', 'punti %', 5, 0],
   gladiatore:[s => s.mvp, 'MVP', 'MVP', 1, 0], amuleto:[s => s.v - s.s, 'di saldo', 'di saldo', 1, 0],
   roccia:[s => s.ovr, 'OVR', 'OVR', 1, 1], re:[s => s.hat, 'gara da 3+ gol', 'gare da 3+ gol', 1, 0],
-  muro:[s => s.minConcW, 'gol subito', 'gol subiti', 1, 0], treno:[s => s.g + s.a, 'bonus', 'bonus', 1, 0],
+  muro:[s => s.minConcW, 'gol subito', 'gol subiti', 1, 0], banco:[s => s.bal, CURRENCY1, CURRENCY, 20, 0], treno:[s => s.g + s.a, 'bonus', 'bonus', 1, 0],
   apriscatole:[s => s.firstG, 'primo gol', 'primi gol', 1, 0], ultimo:[s => s.lateG, 'gol', 'gol', 1, 0]
 };
-const METALS = { noexcuses:'steel', cecchino:'gold', assist:'rose', vittoria:'gold', gladiatore:'bronze', amuleto:'emerald', roccia:'titanium', re:'gold', muro:'steel', treno:'copper', apriscatole:'silver', ultimo:'rose' };
+const METALS = { noexcuses:'steel', cecchino:'gold', assist:'rose', vittoria:'gold', gladiatore:'bronze', amuleto:'emerald', roccia:'titanium', re:'gold', muro:'steel', treno:'copper', apriscatole:'silver', ultimo:'rose', banco:'gold' };
 const COLS = [
   { k:'ovr',  l:'OVR', t:'Overall dinamico (50-99)' },
   { k:'pres', l:'Pr',  t:'Presenze' },
@@ -2578,6 +2589,7 @@ function computeStats(upto){
   /* Targhe: assegnazione in ordine gerarchico con tetto di 2 per giocatore */
   const held = {}, plaques = {};
   for(const P of PLAQUES){
+    if(!plqOn(P)) continue;
     const cands = arr.filter(P.ok).sort((a, b) => P.cmp(a, b) || a.name.localeCompare(b.name, 'it'));
     const win = cands.find(s => P.free || (held[s.pid] || []).length < 2);
     if(win){ (held[win.pid] = held[win.pid] || []).push(P.id); plaques[P.id] = { pid:win.pid, val:P.val(win) }; }
@@ -4105,7 +4117,7 @@ function renderMe(){
   const best = h.length ? [...h].sort((a, b) => (b.d - a.d) || ((b.g + b.a * .5) - (a.g + a.a * .5)))[0] : null;
   const bestBox = best ? (() => { const sc = matchScore(best.m); return `<div class="me-best"><b>${fmtD(best.d)}</b><span>OVR</span></div><p><b>${esc(matchWhen(best.m))}</b><br>${(best.g || best.a) ? evDesc(best) : 'Senza gol né assist'}, ${best.r === 'v' ? 'vittoria' : best.r === 's' ? 'sconfitta' : 'pareggio'} ${sc.w}–${sc.b}</p>`; })()
     : '<p class="mu sm" style="margin:0">Ancora nessuna gara giocata.</p>';
-  const race = PLAQUES.map(P => {
+  const race = PLAQUES.filter(plqOn).map(P => {
     const c = STATS.list.filter(P.ok).sort((a, b) => P.cmp(a, b) || a.name.localeCompare(b.name, 'it'));
     const i = c.findIndex(x => x.pid === s.pid); if(i < 0) return null;
     const hold = STATS.plaques[P.id];
@@ -4396,7 +4408,8 @@ function renderTrophies(){
   let seenP = null, seenR = null;
   try{ seenP = JSON.parse(localStorage.getItem('cmb2627_seenPlq') || 'null'); seenR = JSON.parse(localStorage.getItem('cmb2627_seenRecV') || 'null'); }catch(e){}
   const curP = {}, curR = {};
-  const plk = PLAQUES.map((P, i) => {
+  const PL = PLAQUES.filter(plqOn);
+  const plk = PL.map((P, i) => {
     const h = STATS.plaques[P.id], s = h && STATS.byId[h.pid];
     curP[P.id] = h ? h.pid : null;
     const plate = `<span class="plate"><span class="plk-ic">${P.icon}</span><span class="plk-t">${P.name}</span><span class="plk-n">${String(i + 1).padStart(2, '0')}</span></span>`;
@@ -4419,7 +4432,7 @@ function renderTrophies(){
     const mine = me === s.pid;
     return `<div class="plk ${metal} ${mine ? 'mine' : ''}">${plate}<div class="plk-body">
       <button class="plk-hold ${changed ? 'swap' : ''}" data-open-player="${s.pid}"><span class="hos">${changed && store.players[old] ? `<span class="ho old">${avatar(store.players[old], 'md')}</span>` : ''}<span class="ho new">${avatar(s.p, 'md')}</span></span><span class="hn"><span class="nm">${esc(s.name)}</span><span class="vl">${esc(h.val)}</span></span>${ovrPlate(s.ovr, 'pill')}</button>
-      <span class="plk-meta"><span class="reign ${st}" title="Gare consecutive in cui detiene la targa">${lockSVG(st)}<span>${reign} ${reign === 1 ? 'gara' : 'gare'}</span>${st === 'danger' ? '<em>In pericolo</em>' : st === 'open' ? '<em>Nuovo detentore</em>' : ''}</span>${mine ? '<span class="tua">Tua</span>' : ''}</span>
+      <span class="plk-meta"><span class="reign ${st}" title="Gare consecutive in cui detiene la targa">${lockSVG(st)}<span>${P.feat ? '—' : `${reign} ${reign === 1 ? 'gara' : 'gare'}`}</span>${st === 'danger' ? '<em>In pericolo</em>' : st === 'open' ? '<em>Nuovo detentore</em>' : ''}</span>${mine ? '<span class="tua">Tua</span>' : ''}</span>
       ${rival}<small>${esc(P.desc)}</small></div></div>`;
   }).join('');
   const cards = buildRecordCards(computeRecords(), nM);
@@ -4436,8 +4449,8 @@ function renderTrophies(){
     const mine = !!me && (c.pid === me || (c.pair && c.pair.includes(me)));
     return recCard(c, { broken, chain, mine });
   }).join('');
-  el.innerHTML = `<div class="glass th-hero"><h2>🏆 Trofei & Primati</h2><p>Le ${PLAQUES.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa meglio.</p></div>
-    <div class="th-sec"><h3>Le ${PLAQUES.length} targhe stagionali</h3><span>Leader in tempo reale</span></div>
+  el.innerHTML = `<div class="glass th-hero"><h2>🏆 Trofei & Primati</h2><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa meglio.</p></div>
+    <div class="th-sec"><h3>Le ${PL.length} targhe stagionali</h3><span>Leader in tempo reale</span></div>
     <div class="plk-grid">${plk}</div>
     <div class="th-sec"><h3>Bacheca dei primati storici</h3><span>${nM} ${nM === 1 ? 'gara analizzata' : 'gare analizzate'}</span></div>
     <div class="rec-grid">${recs}</div>`;
@@ -4578,9 +4591,33 @@ function casinoTabHTML(tab, me){
   if(tab === 'shop') return `<div class="glass cs-empty"><b>Il negozio è ancora vuoto</b></div>`;
   return walletHTML(me);
 }
+/* Andamento del saldo dopo ogni movimento (stesso disegno del grafico OVR) */
+function balChartHTML(w){
+  const m = w.mov;
+  if(m.length < 2) return '<p class="mu sm" style="margin:0">Il grafico compare dopo il primo movimento.</p>';
+  const pts = m.map(x => x.bal), W = 340, H = 150, L = 34, R = 8, T = 12, B = 22;
+  let lo = Math.min(...pts), hi = Math.max(...pts);
+  const pad = Math.max(5, Math.round((hi - lo) * 0.1)); lo -= pad; hi += pad;
+  const X = i => L + i * (W - L - R) / (pts.length - 1), Y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+  const line = pts.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(' ');
+  const area = `${line} L${X(pts.length - 1).toFixed(1)} ${H - B} L${X(0).toFixed(1)} ${H - B} Z`;
+  const zero = lo < 0 && hi > 0 ? `<line x1="${L}" x2="${W - R}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}" stroke="#fb7185" stroke-dasharray="3 4" opacity=".55"/>` : '';
+  const yl = [lo, hi].map(v => `<text x="${L - 5}" y="${(Y(v) + 3).toFixed(1)}" text-anchor="end" fill="#6c9680" font-size="9">${Math.round(v)}</text>`).join('');
+  const stp = Math.max(1, Math.ceil(pts.length / 7));
+  const dl = t => t == null ? 'Inizio' : new Date(t).toLocaleDateString('it-IT', { day:'numeric', month:'short' });
+  const xl = pts.map((_, i) => (i % stp === 0 || i === pts.length - 1) ? `<text x="${X(i).toFixed(1)}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle'}" fill="#6c9680" font-size="9">${dl(m[i].t)}</text>` : '').join('');
+  const dots = pts.map((v, i) => `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${i === pts.length - 1 ? 4.5 : 2.5}" fill="${i === pts.length - 1 ? '#f5c542' : '#04140c'}" stroke="#f5c542" stroke-width="1.5"/>`).join('');
+  return `<svg class="ovrchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Andamento del saldo: da ${pts[0]} a ${pts[pts.length - 1]} ${CURRENCY}"><defs><linearGradient id="bca" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22c55e" stop-opacity=".35"/><stop offset="1" stop-color="#22c55e" stop-opacity="0"/></linearGradient></defs>${zero}${yl}${xl}<path d="${area}" fill="url(#bca)"/><path d="${line}" fill="none" stroke="#f5c542" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>${dots}</svg>`;
+}
+/* Classifica dei saldi di tutta la rosa: la vedono tutti */
+function bancoBoardHTML(me){
+  const rows = STATS.list.filter(s => s.mov).sort((a, b) => (b.bal - a.bal) || (b.earn - a.earn) || a.name.localeCompare(b.name, 'it'));
+  if(!rows.length) return '';
+  return `<div class="glass cs-hist"><h3>Classifica dei saldi</h3>${rows.map((s, i) => `<button type="button" class="cs-lb ${s.pid === me ? 'me' : ''}" data-open-player="${s.pid}"><span class="pos">${i + 1}</span>${avatar(s.p, 'xs')}<span class="nm">${esc(s.name)}</span><b class="${s.bal < 0 ? 'neg' : ''}">${fmtPat(s.bal)}</b></button>`).join('')}</div>`;
+}
 function walletHTML(me){
   const w = me ? walletOf(me) : null;
-  if(!w) return `<div class="glass cs-empty"><b>Il tuo portafoglio</b><span>Scegli la tua carta nella sezione Io per avere il tuo portafoglio.</span></div>`;
+  if(!w) return `<div class="glass cs-empty"><b>Il tuo portafoglio</b><span>Scegli la tua carta nella sezione Io per avere il tuo portafoglio.</span></div>${bancoBoardHTML('')}`;
   const day = todayISO(), done = !!(store.casino && store.casino.claims && store.casino.claims[me] && store.casino.claims[me][day] === true);
   const off = !!db && syncState !== 'live';
   const from = ui.cAnim ? (ui.cFrom != null ? ui.cFrom : 0) : w.bal;
@@ -4592,6 +4629,8 @@ function walletHTML(me){
       <div class="cs-big ${w.bal < 0 ? 'neg' : ''}">${CUR_ICON} ${big}<small>${CURRENCY}</small>${pop}</div>
       <button type="button" class="btn primary cs-claim" data-action="casino-claim" ${done || off ? 'disabled' : ''}>${done ? 'Già riscosso oggi' : `Riscuoti ${CASINO.DAILY}`}</button>
       <span class="mu sm">${done ? 'Il prossimo bonus è disponibile domani.' : off ? 'Per riscuotere serve la connessione.' : `Un bonus di ${CASINO.DAILY} ${CURRENCY} al giorno.`}</span></div>
+    <div class="glass cs-hist"><h3>Andamento del saldo</h3>${balChartHTML(w)}</div>
+    ${bancoBoardHTML(me)}
     <div class="glass cs-hist"><h3>Movimenti</h3>${rows}</div>`;
 }
 function renderCasino(){
