@@ -1864,7 +1864,89 @@ function migrateLegacyPhotos(){
 /* =========================================================
    STATS ENGINE
    ========================================================= */
+/* ---------- Cambi e giocatori in più (campi opzionali) ----------
+   bench:1 su una riga di squadra = giocatore "in più" (non è titolare: entra solo con un cambio "in").
+   moves: [{ pid, k:'out'|'in'|'sw', min?, ts?, at }]: out = esce, in = entra nella squadra della sua lista, sw = passa all'altra squadra.
+   at = quanti gol erano già in cronaca quando il cambio è stato inserito (serve a ordinare quando manca il minuto).
+   Senza moves tutto funziona come prima. */
+const otherTeam = t => t === 'white' ? 'black' : 'white';
+const hasMoves = m => !!m && list(m.moves).length > 0;
+const startTeam = (m, pid) => list(m.white).some(e => e.pid === pid) ? 'white' : list(m.black).some(e => e.pid === pid) ? 'black' : null;
+const isBench = (m, pid) => { const e = [...list(m.white), ...list(m.black)].find(x => x.pid === pid); return !!(e && e.bench); };
+const starters = (m, team) => list(m[team]).filter(e => !e.bench);
+function matchMoves(m){
+  return list(m.moves).map((x, j) => {
+    const cm = x.ts ? clockMin(x.ts, m.time, m.end) : null;
+    return { j, pid:x.pid, k:x.k, ts:x.ts || '', min:cm != null ? cm : (x.min == null || x.min === '' ? null : num(x.min)), at:num(x.at) };
+  }).filter(x => x.pid && (x.k === 'out' || x.k === 'in' || x.k === 'sw'));
+}
+/* Ordine dei cambi rispetto ai gol: ogni cambio ha uno "slot" (= prima del gol n). Si ordina per minuto quando il cambio e il gol
+   hanno entrambi un minuto vero (non stimato), altrimenti per "at". */
+function matchTimeline(m){
+  const gs = list(m.goals);
+  const gMin = gs.map(g => { const cm = g.ts ? clockMin(g.ts, m.time, m.end) : null; return cm != null ? cm : (g.min == null || g.min === '' ? null : num(g.min)); });
+  const mv = matchMoves(m);
+  for(const x of mv){
+    let s = 0;
+    while(s < gs.length){
+      const gm = gMin[s];
+      const before = (x.min != null && gm != null) ? (gm < x.min || (gm === x.min && s < x.at)) : s < x.at;
+      if(!before) break;
+      s++;
+    }
+    x.slot = s;
+  }
+  mv.sort((a, b) => (a.slot - b.slot) || ((a.min != null && b.min != null && a.min !== b.min) ? a.min - b.min : a.j - b.j));
+  const byPid = {};
+  for(const x of mv) (byPid[x.pid] = byPid[x.pid] || []).push(x);
+  return { moves:mv, byPid };
+}
+/* Transizione di un cambio: restituisce la nuova squadra (null = fuori dal campo) oppure undefined se il cambio è impossibile */
+function stepTeam(st, k, start, bench){
+  if(k === 'out') return st ? null : undefined;
+  if(k === 'sw') return st ? otherTeam(st) : undefined;
+  return (!st && bench) ? start : undefined;
+}
+/* Squadra in cui sta un giocatore nel momento del gol numero gi (indice in m.goals); gi = Infinity per lo stato a fine gara.
+   null = non in campo (uscito, o "in più" non ancora entrato). */
+function teamAt(m, pid, gi, tl){
+  const start = startTeam(m, pid); if(!start) return null;
+  if(!hasMoves(m)) return start;
+  const bench = isBench(m, pid);
+  let st = bench ? null : start;
+  for(const x of ((tl || matchTimeline(m)).byPid[pid] || [])){
+    if(x.slot > gi) break;
+    const n = stepTeam(st, x.k, start, bench); if(n !== undefined) st = n;
+  }
+  return st;
+}
+/* Squadra in cui il giocatore ha giocato più minuti (usata per V/P/S, gol subiti, compagni, OVR).
+   Se manca anche un solo minuto necessario, o la durata, o in parità: squadra di partenza. */
+function effTeam(m, pid){
+  const start = startTeam(m, pid); if(!start) return null;
+  if(!hasMoves(m)) return start;
+  const mv = matchTimeline(m).byPid[pid] || [];
+  if(!mv.length) return start;
+  const bench = isBench(m, pid), len = matchLen(m), tot = { white:0, black:0 };
+  let st = bench ? null : start, t = 0;
+  for(const x of mv){
+    if(x.min == null || x.min < t) return start;
+    if(st) tot[st] += x.min - t;
+    t = x.min;
+    const n = stepTeam(st, x.k, start, bench); if(n !== undefined) st = n;
+  }
+  if(st){ if(len == null || len < t) return start; tot[st] += len - t; }
+  return tot.white > tot.black ? 'white' : tot.black > tot.white ? 'black' : start;
+}
+/* Righe dei giocatori divise per squadra effettiva (senza cambi sono le liste di sempre) */
+function effEntries(m){
+  if(!hasMoves(m)) return { white:list(m.white), black:list(m.black) };
+  const out = { white:[], black:[] };
+  for(const team of ['white', 'black']) for(const e of list(m[team])) out[effTeam(m, e.pid) || team].push(e);
+  return out;
+}
 function matchScore(m){
+  if(hasMoves(m)){ const tl = matchGoals(m), last = tl[tl.length - 1]; return last ? { w:last.w, b:last.b } : { w:0, b:0 }; }
   let w = 0, b = 0;
   for(const e of list(m.white)){ w += num(e.g); b += num(e.og); }
   for(const e of list(m.black)){ b += num(e.g); w += num(e.og); }
@@ -1894,9 +1976,10 @@ function clockMin(ts, start, end){
 function matchGoals(m, lenOverride){
   const gs = list(m.goals); if(!gs.length) return [];
   const teamOf = pid => list(m.white).some(e => e.pid === pid) ? 'white' : list(m.black).some(e => e.pid === pid) ? 'black' : null;
+  const mvOn = hasMoves(m), tlm = mvOn ? matchTimeline(m) : null;
   const out = gs.map((g, i) => {
-    const og = !!num(g.og), own = teamOf(g.s);
-    const t = own ? (og ? (own === 'white' ? 'black' : 'white') : own) : null;
+    const og = !!num(g.og), own = mvOn ? teamAt(m, g.s, i, tlm) : teamOf(g.s);
+    const t = own ? (og ? otherTeam(own) : own) : null;
     const cm = g.ts ? clockMin(g.ts, m.time, m.end) : null;
     const min = cm != null ? cm : (g.min == null || g.min === '' ? null : num(g.min));
     return { i, s:g.s, a:g.a || '', og, t, min, est:false, ts:g.ts || '' };
@@ -1935,7 +2018,8 @@ const ROLE_PRI = { DIF:0, CEN:1, JOLLY:1, ATT:2 };
 const mvpPre = m => { const lg = (m.id && STATS && STATS.log && STATS.log[m.id]) || {}; return pid => (lg[pid] && lg[pid].pre != null) ? lg[pid].pre : (STATS.byId[pid]?.ovr ?? OVR_START); };
 function mvpCands(m, preFn){
   const pf = preFn || mvpPre(m), rows = [];
-  for(const team of ['white', 'black']) for(const e of list(m[team])){
+  const EE = effEntries(m);
+  for(const team of ['white', 'black']) for(const e of EE[team]){
     const p = store.players[e.pid]; if(!p) continue;
     const g = num(e.g), a = num(e.a);
     rows.push({ pid:e.pid, n:e.n, team, g, a, og:num(e.og), pts:g + a * 0.5, pri:ROLE_PRI[p.role] ?? 1, ovr:pf(e.pid), name:pname(e.pid, e.n) });
@@ -1980,7 +2064,7 @@ function matchMvpLegacy(m){
   let best = null;
   for(const team of ['white','black']){
     const won = team === 'white' ? sc.w > sc.b : sc.b > sc.w;
-    for(const e of list(m[team])){
+    for(const e of effEntries(m)[team]){
       const g = num(e.g), a = num(e.a), og = num(e.og);
       const pts = g + a * 0.5, vts = cnt[e.pid] || 0, score = pts + vts * VOTE_W;
       if(score <= 0) continue;
@@ -2014,7 +2098,7 @@ function ovrDelta(role, ovr, c){
 function matchAwards(m){
   const best = { ATT:null, CEN:null, DIF:null };
   const dept = r => r === 'ATT' ? 'ATT' : r === 'DIF' ? 'DIF' : 'CEN';
-  for(const team of ['white','black']) for(const e of list(m[team])){
+  for(const team of ['white','black']) for(const e of effEntries(m)[team]){
     const role = ROLES[store.players[e.pid]?.role] ? store.players[e.pid].role : 'JOLLY';
     const g = num(e.g), a = num(e.a), og = num(e.og);
     const pts = (g + a * 0.5) * ROLE_MULT[role] - og * OG_PEN;
@@ -2054,7 +2138,7 @@ function computeStats(upto){
     if(mlen) for(const x of gtl) if(!x.og && !x.est && x.min != null && x.min >= mlen * 0.8) lateBy[x.s] = (lateBy[x.s] || 0) + 1;
     for(const team of ['white','black']){
       const r = res[team], conceded = team === 'white' ? sc.b : sc.w;
-      const es = list(m[team]).filter(e => S[e.pid]);
+      const es = effEntries(m)[team].filter(e => S[e.pid]);
       for(const e of es){
         const st = S[e.pid];
         const g = num(e.g), a = num(e.a), og = num(e.og);
@@ -2111,6 +2195,14 @@ function computeStats(upto){
   return { list:arr, byId:Object.fromEntries(arr.map(s => [s.pid, s])), matches:ms, plaques, log, scheduled };
 }
 function teamEvents(m, team){
+  if(hasMoves(m)){   /* con i cambi gol e assist si attribuiscono dalla cronaca: chi passa di squadra segna per quella in cui sta */
+    const gm = {}, am = {}, om = {}, bump = (o, k) => { o[k] = (o[k] || 0) + 1; };
+    for(const x of matchGoals(m)){ if(x.t !== team) continue; if(x.og) bump(om, x.s); else { bump(gm, x.s); if(x.a) bump(am, x.a); } }
+    const nm = pid => pname(pid, [...list(m.white), ...list(m.black)].find(e => e.pid === pid)?.n);
+    const by = (a, b) => b.c - a.c || a.n.localeCompare(b.n, 'it');
+    const arr = o => Object.entries(o).map(([pid, c]) => ({ pid, n:nm(pid), c })).sort(by);
+    return { goals:arr(gm), assists:arr(am), ogs:arr(om) };
+  }
   const opp = team === 'white' ? 'black' : 'white';
   const goals = [], assists = [], ogs = [];
   for(const e of list(m[team])){
@@ -2742,12 +2834,12 @@ function captainOf(entries){
 /* Capitano scelto dall'admin (capW / capB) se è ancora in quella squadra, altrimenti la regola automatica */
 function captainFor(m, team){
   const pid = m[team === 'white' ? 'capW' : 'capB'];
-  if(pid && list(m[team]).some(e => e.pid === pid)) return pid;
-  return captainOf(m[team]);
+  if(pid && starters(m, team).some(e => e.pid === pid)) return pid;
+  return captainOf(starters(m, team));
 }
 function capInfoHTML(m, team){
   const pid = captainFor(m, team); if(!pid) return '';
-  const e = list(m[team]).find(x => x.pid === pid);
+  const e = starters(m, team).find(x => x.pid === pid);
   return `<span class="capinfo">${avatar(store.players[pid] || { name:e?.n }, 'xs')}<span><span class="cn">${esc(pname(pid, e?.n))}</span><small>Capitano</small></span></span>`;
 }
 function autoOrder(entries){
@@ -2757,14 +2849,14 @@ function autoOrder(entries){
 }
 /* Ordine degli slot (porta → attacco, sinistra → destra): quello salvato dall'admin, poi i nuovi in automatico */
 function orderFor(m, team){
-  const entries = list(m[team]);
+  const entries = starters(m, team);   /* il campo è sempre 8 contro 8: solo i titolari, nella squadra di partenza */
   const ids = new Set(entries.map(e => e.pid));
   const saved = list(m[team === 'white' ? 'posW' : 'posB']).filter((pid, i, a) => ids.has(pid) && a.indexOf(pid) === i);
   return [...saved, ...autoOrder(entries).filter(pid => !saved.includes(pid))];
 }
 function placeTeam(m, team){
   const lines = FORMATIONS[team === 'white' ? (m.fmW || DEF_FM) : (m.fmB || DEF_FM)] || FORMATIONS[DEF_FM];
-  const byId = Object.fromEntries(list(m[team]).map(e => [e.pid, e]));
+  const byId = Object.fromEntries(starters(m, team).map(e => [e.pid, e]));
   const ord = orderFor(m, team);
   const out = []; let k = 0;
   lines.forEach((cnt, li) => { for(let j = 0; j < cnt && k < ord.length; j++) out.push({ e:byId[ord[k++]], li, j, cnt, n:lines.length }); });
@@ -3117,7 +3209,7 @@ async function prepContain(src, boxW, boxH){
 }
 async function prepPitchPhotos(mm){
   const out = {}, cwPx = CP_CW / 100 * EXP_PW;
-  const ids = [...list(mm.white), ...list(mm.black)].map(e => e.pid).filter(pid => store.players[pid]?.photo);
+  const ids = [...starters(mm, 'white'), ...starters(mm, 'black')].map(e => e.pid).filter(pid => store.players[pid]?.photo);
   await Promise.all(ids.map(async pid => { try{ out[pid] = await prepCover(store.players[pid].photo, cwPx * 0.93, cwPx * 1.12); }catch(e){ console.warn('foto', pid, e); } }));
   return out;
 }
@@ -3237,7 +3329,7 @@ function renderMe(){
   const raceBox = race.length ? race.map(r => `<div class="me-race ${r.mine ? 'mine' : ''}"><span class="ri">${r.P.icon}</span><span class="rn"><b>${r.P.name}</b><small>${r.mine ? 'La detieni tu: ' + esc(r.hold.val) : (r.pos === 1 && r.hold ? `Saresti 1°, ma hai già il massimo di 2 targhe: va a ${esc(pname(r.hold.pid))}` : `Sei ${r.pos}°${r.hold ? `, la detiene ${esc(pname(r.hold.pid))} (${esc(r.hold.val)})` : ''}`)}</small></span><span class="rp">${r.mine ? '🏅' : r.pos + '°'}</span></div>`).join('')
     : '<p class="mu sm" style="margin:0">Gioca qualche gara per entrare nella corsa alle targhe.</p>';
   const Wn = {}, Ls = {};
-  for(const x of h){ const opp = x.team === 'white' ? 'black' : 'white'; for(const o of list(x.m[opp])){ if(!store.players[o.pid]) continue; if(x.r === 'v') Wn[o.pid] = (Wn[o.pid] || 0) + 1; if(x.r === 's') Ls[o.pid] = (Ls[o.pid] || 0) + 1; } }
+  for(const x of h){ const opp = x.team === 'white' ? 'black' : 'white'; for(const o of effEntries(x.m)[opp]){ if(!store.players[o.pid]) continue; if(x.r === 'v') Wn[o.pid] = (Wn[o.pid] || 0) + 1; if(x.r === 's') Ls[o.pid] = (Ls[o.pid] || 0) + 1; } }
   const topOf = M => Object.entries(M).sort((a, b) => (b[1] - a[1]) || pname(a[0]).localeCompare(pname(b[0]), 'it'))[0];
   const vit = topOf(Wn), inc = topOf(Ls);
   const riv = (e, cls, k, unit, emptyTxt) => e
@@ -3246,7 +3338,7 @@ function renderMe(){
   const rivBox = `<div class="me-riv">${riv(vit, 'good', 'Vittima preferita', 'vinte contro', 'Nessuna vittoria da avversario')}${riv(inc, 'bad', 'Il tuo incubo', 'perse contro', 'Nessuna sconfitta, per ora')}</div>`;
   const zc = {};
   for(const x of h){
-    const pl = placeTeam(x.m, x.team).find(q => q.e && q.e.pid === s.pid); if(!pl) continue;
+    const pl = placeTeam(x.m, startTeam(x.m, s.pid) || x.team).find(q => q.e && q.e.pid === s.pid); if(!pl) continue;
     const zone = pl.li === 0 ? 'In porta' : pl.li === pl.n - 1 ? 'In attacco' : pl.li === 1 ? 'In difesa' : 'A centrocampo';
     const side = (pl.cnt === 1 || pl.li === 0) ? '' : pl.j === 0 ? ', a sinistra' : pl.j === pl.cnt - 1 ? ', a destra' : ', al centro';
     zc[zone + side] = (zc[zone + side] || 0) + 1;
@@ -3299,8 +3391,7 @@ function renderMe(){
 function h2h(a, b){
   const out = { aw:0, bw:0, dr:0, games:[], tog:{ n:0, v:0, pa:0, s:0 } };
   for(const m of STATS.matches){
-    const side = pid => list(m.white).some(e => e.pid === pid) ? 'white' : list(m.black).some(e => e.pid === pid) ? 'black' : null;
-    const ta = side(a), tb = side(b);
+    const ta = effTeam(m, a), tb = effTeam(m, b);
     if(!ta || !tb) continue;
     const sc = matchScore(m);
     const win = sc.w > sc.b ? 'white' : sc.b > sc.w ? 'black' : null;
@@ -3395,7 +3486,7 @@ function computeRecords(){
     const res = { white: sc.w > sc.b ? 'v' : sc.w < sc.b ? 's' : 'pa', black: sc.b > sc.w ? 'v' : sc.b < sc.w ? 's' : 'pa' };
     for(const team of ['white','black']){
       const r = res[team], against = team === 'white' ? sc.b : sc.w;
-      const es = list(m[team]).filter(e => known(e.pid));
+      const es = effEntries(m)[team].filter(e => known(e.pid));
       for(const e of es){
         const g = num(e.g), a = num(e.a), og = num(e.og);
         if(g > 0 && (!manita || g > manita.v)) manita = { pid:e.pid, v:g, m };
@@ -3421,7 +3512,8 @@ function computeRecords(){
         }
       }
     }
-    for(const w of list(m.white).filter(e => known(e.pid))) for(const b of list(m.black).filter(e => known(e.pid))){
+    const EE = effEntries(m);
+    for(const w of EE.white.filter(e => known(e.pid))) for(const b of EE.black.filter(e => known(e.pid))){
       const k = pk(w.pid, b.pid);
       const o = opp[k] || (opp[k] = { n:0, dr:0, wins:{} });
       o.n++;
