@@ -1424,6 +1424,23 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .cs-note{padding:12px 16px;margin-bottom:12px;color:var(--mu);font-size:13.5px;font-weight:600}
 .linkbtn{display:inline;min-height:44px;padding:0 4px;border:0;background:none;color:var(--or);font-weight:800;font-size:inherit;font-family:inherit;text-decoration:underline}
 body{transition:background-color .3s}
+.cs-bal{padding:20px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:12px}
+.cs-big{position:relative;display:flex;align-items:baseline;gap:8px;font:italic 800 56px/1 var(--disp);color:var(--gold)}
+.cs-big b{font-variant-numeric:tabular-nums}
+.cs-big small{font:700 15px var(--body);font-style:normal;color:var(--mu)}
+.cs-big.neg b{color:var(--bad)}
+.cs-claim{min-width:190px}
+.cs-pop{position:absolute;left:100%;top:-6px;margin-left:6px;font:800 22px var(--body);color:#22c55e;animation:csPop 1.3s ease-out both;pointer-events:none}
+@keyframes csPop{0%{opacity:0;transform:translateY(8px) scale(.8)}20%{opacity:1}100%{opacity:0;transform:translateY(-26px) scale(1.15)}}
+@media (prefers-reduced-motion:reduce){.cs-pop{display:none}}
+.cs-hist{padding:14px 18px}
+.cs-hist h3{margin:0 0 6px;font:italic 800 22px/1 var(--disp)}
+.cs-mv{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--hair);min-height:44px}
+.cs-mv .d{flex:none;width:64px;color:var(--mu2);font-size:12.5px;font-weight:700}
+.cs-mv .l{flex:1;min-width:0;font-size:14px;font-weight:600}
+.cs-mv b{font-variant-numeric:tabular-nums;font-weight:800}
+.cs-mv b.pos{color:#22c55e}
+.cs-mv b.neg{color:var(--bad)}
 .bg::after{content:"";position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .3s;
   background:
     radial-gradient(1000px 640px at 88% -12%,rgba(34,197,94,.20),transparent 62%),
@@ -1854,7 +1871,7 @@ const COLS = [
 /* =========================================================
    STATE
    ========================================================= */
-const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{} };
+const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{}, casino:{} };
 const loaded = { players:false, matches:false, settings:false };
 let localMode = false;
 const ui = {
@@ -1967,7 +1984,7 @@ function featuresHTML(){
 function loadCache(){
   try{
     const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    if(c){ store.players = c.players || {}; store.matches = c.matches || {}; store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; }
+    if(c){ store.players = c.players || {}; store.matches = c.matches || {}; store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; store.casino = c.casino || {}; }
   }catch(e){}
 }
 let cacheT;
@@ -1980,7 +1997,7 @@ function saveCache(){
       const { photo, ...rest } = p;
       return [k, (!rest.photoV && photo) ? p : rest];
     }));
-    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, profileReq:store.profileReq, photos:localMode ? store.photos : {} };
+    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, profileReq:store.profileReq, casino:store.casino, photos:localMode ? store.photos : {} };
     try{ localStorage.setItem(CACHE_KEY, JSON.stringify(data)); }
     catch(e){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, players:Object.fromEntries(Object.entries(players).map(([k, p]) => { const { photo, ...r } = p || {}; return [k, r]; })) })); }catch(e2){} }
   }, 400);
@@ -2047,6 +2064,8 @@ function initFirebase(){
   db.ref('matches').on('value',  s => { store.matches  = s.val() || {}; loaded.matches = true; afterData(); }, onErr);
   db.ref('settings').on('value', s => { store.settings = s.val() || {}; loaded.settings = true; afterData(); }, onErr);
   db.ref('votes').on('value', s => { store.votes = s.val() || {}; afterData(); }, onErr);
+  /* CASiNO: se le regole non permettono questo percorso l'app continua a funzionare e l'admin vede il motivo nel pannello */
+  db.ref('casino').on('value', s => { store.casino = s.val() || {}; casinoIssue = false; afterData(); }, () => { casinoIssue = true; scheduleRender(); });
   /* Voto ai compagni: se le regole non permettono questi percorsi l'app continua a funzionare e l'admin vede il motivo nel pannello */
   db.ref('ratingsDone').on('value', s => { store.ratingsDone = s.val() || {}; loaded.ratingsDone = true; afterData(); }, () => { loaded.ratingsDone = true; ratingsProblem('read', 'ratingsDone'); });
   db.ref('.info/connected').on('value', s => {
@@ -2058,6 +2077,7 @@ function initFirebase(){
 function afterData(){ saveCache(); scheduleRender(); }
 const dataReady = () => localMode || (loaded.players && loaded.matches && ratingsReady());
 /* ---------- Voto anonimo ai compagni: percorsi ratings/{gara}/{rid} e ratingsDone/{gara}/{pid} ---------- */
+let casinoIssue = false;          /* true se il database rifiuta la lettura di «casino» */
 let ratingsIssue = null;           /* { kind:'read'|'write', path } se il database rifiuta questi percorsi: lo vede l'admin */
 const ratingsLoaded = {}, ratingsWatch = {};
 function ratingsProblem(kind, path){ ratingsIssue = { kind, path }; scheduleRender(); }
@@ -2451,11 +2471,33 @@ function matchAwards(m){
   }
   return best;
 }
+/* ---------- Portafoglio: il saldo non si scrive mai, si ricalcola dai movimenti {t, kind, label, delta, ref} ----------
+   Saldo iniziale (nessuna data) + bonus giornalieri + guadagni delle gare + rettifiche dell'admin. Le scommesse si aggiungono qui. */
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+function walletBuild(st){
+  const C = store.casino || {}, mov = st.cmov;
+  mov.unshift({ t:null, kind:'start', label:'Saldo iniziale', delta:CASINO.START });
+  const cl = (C.claims && C.claims[st.pid]) || {};
+  for(const day of Object.keys(cl)) if(ISO_DAY.test(day) && cl[day] === true) mov.push({ t:new Date(day + 'T12:00:00').getTime(), kind:'daily', label:'Bonus giornaliero', delta:CASINO.DAILY, ref:day });
+  for(const a of Object.values((C.adj && C.adj[st.pid]) || {})){
+    const d = Math.round(Number(a && a.delta)); if(!Number.isFinite(d) || !d) continue;
+    mov.push({ t:num(a.at), kind:'adj', label:'Rettifica' + (a.why ? ': ' + String(a.why).slice(0, 80) : ''), delta:d });
+  }
+  walletExtra(st, mov);
+  mov.forEach((x, i) => { x.i = i; });
+  mov.sort((a, b) => ((a.t == null ? -Infinity : a.t) - (b.t == null ? -Infinity : b.t)) || (a.i - b.i));
+  let bal = 0; for(const x of mov){ bal += x.delta; x.bal = bal; }
+  st.bal = bal; st.mov = mov;
+}
+function walletExtra(st, mov){}   /* scommesse e vincite si aggiungono qui */
+const walletOf = pid => { const s = STATS.byId[pid]; return s && s.mov ? { bal:s.bal, mov:s.mov, earn:s.earn } : null; };
+const CUR_ICON = '🥔';
+const fmtPat = n => (n < 0 ? '−' : '') + Math.abs(Math.round(n)).toLocaleString('it-IT');
 function computeStats(upto){
-  const S = {};
+  const S = {}, wal = upto == null;   /* il portafoglio si calcola solo sulla stagione intera: gli storici dei trofei non lo usano */
   for(const [pid, p] of Object.entries(store.players || {})){
     if(!p || typeof p !== 'object') continue;
-    S[pid] = { pid, p, name:p.name || '', pres:0, v:0, pa:0, s:0, g:0, a:0, og:0, mvp:0, mvpPts:0, votesRx:0, ritardi:0, firstG:0, lateG:0, hat:0, maxG:0, minConcW:Infinity, bigW:0,
+    S[pid] = { pid, p, name:p.name || '', pres:0, v:0, pa:0, s:0, g:0, a:0, og:0, mvp:0, mvpPts:0, votesRx:0, earn:0, cmov:[], ritardi:0, firstG:0, lateG:0, hat:0, maxG:0, minConcW:Infinity, bigW:0,
                ovr:OVR_START, last:null, mates:{}, hist:[], prevRank:null };
   }
   const all = sortedMatches();
@@ -2486,6 +2528,11 @@ function computeStats(upto){
         const st = S[e.pid];
         const g = num(e.g), a = num(e.a), og = num(e.og);
         if(e.late) st.ritardi++;
+        if(wal && m.px){   /* guadagno della gara (solo gare nuove con px): partecipazione + gol + assist, con tetto. Autogol, risultato e MVP non contano */
+          const d = Math.min(CASINO.CAP, CASINO.MATCH + CASINO.GOAL * g + CASINO.ASSIST * a);
+          st.cmov.push({ t:num(m.createdAt) || (kickDate(m) ? kickDate(m).getTime() : 0), kind:'match', label:`Gara, giornata ${num(m.day)}`, delta:d, ref:m.id });
+          st.earn += d;
+        }
         st.pres++; st[r]++; st.g += g; st.a += a; st.og += og;
         if(st.pres === 1) st.first = m.id;
         if(g >= 3) st.hat++;
@@ -2525,6 +2572,7 @@ function computeStats(upto){
     st.ideal = ideal; st.nemesis = nem;
     return st;
   });
+  if(wal) for(const st of arr) walletBuild(st);
   arr.sort(rankCmp);
   arr.forEach((s, i) => s.rank = i + 1);
   /* Targhe: assegnazione in ordine gerarchico con tetto di 2 per giocatore */
@@ -4514,12 +4562,37 @@ function showNextRec(){
 
 /* ---------- Admin ---------- */
 /* ---------- CASiNO ---------- */
+async function claimDaily(){
+  if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; }
+  const me = myPid(); if(!me || !store.players[me]){ toast('Scegli prima la tua carta nella sezione Io', 'warn'); return; }
+  if(db && syncState !== 'live'){ toast('Per riscuotere serve la connessione', 'warn'); return; }
+  const day = todayISO(), had = store.casino && store.casino.claims && store.casino.claims[me] && store.casino.claims[me][day];
+  if(had){ toast('Oggi hai già riscosso', 'warn'); return; }
+  const w = walletOf(me); ui.cFrom = w ? w.bal : 0; ui.cAnim = true; ui.cPop = CASINO.DAILY;
+  await commit({ [`casino/claims/${me}/${day}`]:true }, `Riscosse ${CASINO.DAILY} ${CURRENCY}`);
+}
 const CTABS = [ { k:'wallet', l:'Portafoglio' }, { k:'bets', l:'Scommesse' }, { k:'hist', l:'Storico e premi' }, { k:'shop', l:'Negozio' } ];
 function casinoTabHTML(tab, me){
   if(tab === 'bets') return `<div class="glass cs-empty"><b>Nessuna scommessa aperta</b><span>Quando l’organizzatore apre le scommesse di una gara le trovi qui.</span></div>`;
   if(tab === 'hist') return `<div class="glass cs-empty"><b>Ancora niente nello storico</b><span>Qui compariranno le tue scommesse concluse e i premi.</span></div>`;
   if(tab === 'shop') return `<div class="glass cs-empty"><b>Il negozio è ancora vuoto</b></div>`;
-  return `<div class="glass cs-empty"><b>Il tuo portafoglio</b><span>${me ? 'Qui vedrai il saldo e i movimenti.' : 'Scegli la tua carta nella sezione Io per avere il tuo portafoglio.'}</span></div>`;
+  return walletHTML(me);
+}
+function walletHTML(me){
+  const w = me ? walletOf(me) : null;
+  if(!w) return `<div class="glass cs-empty"><b>Il tuo portafoglio</b><span>Scegli la tua carta nella sezione Io per avere il tuo portafoglio.</span></div>`;
+  const day = todayISO(), done = !!(store.casino && store.casino.claims && store.casino.claims[me] && store.casino.claims[me][day] === true);
+  const off = !!db && syncState !== 'live';
+  const from = ui.cAnim ? (ui.cFrom != null ? ui.cFrom : 0) : w.bal;
+  const big = ui.cAnim ? `<b data-cu="${w.bal}" data-from="${from}" data-dur="900">${fmtPat(from)}</b>` : `<b>${fmtPat(w.bal)}</b>`;
+  const pop = ui.cPop ? `<span class="cs-pop" aria-hidden="true">+${ui.cPop}</span>` : '';
+  const fmt = t => t == null ? 'Inizio' : new Date(t).toLocaleDateString('it-IT', { day:'numeric', month:'short' });
+  const rows = [...w.mov].reverse().map(x => `<div class="cs-mv"><span class="d">${fmt(x.t)}</span><span class="l">${esc(x.label)}</span><b class="${x.delta < 0 ? 'neg' : 'pos'}">${x.delta < 0 ? '−' : '+'}${fmtPat(Math.abs(x.delta))}</b></div>`).join('');
+  return `<div class="glass cs-bal"><span class="mu sm">Il tuo saldo</span>
+      <div class="cs-big ${w.bal < 0 ? 'neg' : ''}">${CUR_ICON} ${big}<small>${CURRENCY}</small>${pop}</div>
+      <button type="button" class="btn primary cs-claim" data-action="casino-claim" ${done || off ? 'disabled' : ''}>${done ? 'Già riscosso oggi' : `Riscuoti ${CASINO.DAILY}`}</button>
+      <span class="mu sm">${done ? 'Il prossimo bonus è disponibile domani.' : off ? 'Per riscuotere serve la connessione.' : `Un bonus di ${CASINO.DAILY} ${CURRENCY} al giorno.`}</span></div>
+    <div class="glass cs-hist"><h3>Movimenti</h3>${rows}</div>`;
 }
 function renderCasino(){
   const el = $('#casino'); if(!el) return;
@@ -4530,6 +4603,8 @@ function renderCasino(){
     ${guest ? `<div class="glass cs-note">Stai guardando in sola lettura. Per avere il tuo portafoglio scegli la tua carta nella sezione <button type="button" class="linkbtn" data-go="me">Io</button>.</div>` : ''}
     <div class="cs-tabs" role="tablist" aria-label="CASiNO">${CTABS.map(t => `<button type="button" role="tab" class="cs-tab ${t.k === tab ? 'on' : ''}" aria-selected="${t.k === tab}" data-ctab="${t.k}">${t.l}</button>`).join('')}</div>
     <div class="cs-body" role="tabpanel">${casinoTabHTML(tab, guest ? '' : me)}</div>`;
+  if(ui.cAnim){ countUp(el); ui.cAnim = false; }
+  ui.cPop = 0;
 }
 
 function renderAdmin(){
@@ -4560,6 +4635,7 @@ function renderAdmin(){
     ${ratingsIssue && feat('ratings') ? `<div class="warnline">${ratingsIssue.kind === 'read'
       ? `Il database non permette di leggere «${esc(ratingsIssue.path)}». Per il voto ai compagni aggiungi nelle regole di Firebase i percorsi “ratings” e “ratingsDone” (lettura e scrittura per tutti i dispositivi).`
       : `Il database ha rifiutato la scrittura di un voto ai compagni (percorso «${esc(ratingsIssue.path)}»). Nelle regole di Firebase servono ratings/$gara/$rid e ratingsDone/$gara/$pid con scrittura consentita a tutti i dispositivi.`}</div>` : ''}
+    ${casinoIssue && feat('casino') ? `<div class="warnline">Il database non permette di leggere «casino». Per il CASiNO aggiungi nelle regole di Firebase il percorso “casino” (lettura e scrittura per tutti i dispositivi).</div>` : ''}
     ${!store.settings?.pin ? `<div class="warnline">Stai usando il PIN predefinito ${DEFAULT_PIN}: cambialo prima di condividere il link.</div>` : ''}
     <div class="glass db-info"><span>Archivio: <b>${mode}</b></span><span>Giocatori: <b>${STATS.list.length}</b></span><span>Gare: <b>${STATS.matches.length}</b></span><span>Versione: <b>v${APP_VERSION}</b></span></div>
     ${anHTML()}`;
@@ -5202,6 +5278,8 @@ async function saveMatch(){
   const old = ED.id ? store.matches[ED.id] : null;
   /* Voto anonimo ai compagni: solo per le gare nuove (primo salvataggio da giocata, o programmata che diventa giocata) */
   if(!sched && (!old || old.status === 'scheduled' || old.rate)) payload.rate = 1;
+  /* px: la gara dà patate ai giocatori. Solo per le gare che diventano giocate adesso (con CASiNO acceso o spento); le vecchie restano senza */
+  if(!sched && (!old || old.status === 'scheduled' || old.px)) payload.px = 1;
   if(!sched && (!old || old.status === 'scheduled' || old.top4)){
     payload.top4 = 1;
     if(!old || old.status === 'scheduled' || old.vote2) payload.vote2 = 1;
@@ -5357,7 +5435,7 @@ async function backupAll(){
   backing = true;
   toast('Backup in corso…');
   const data = {}, failed = [];
-  const PATHS = ['players','matches','settings','votes','photos','ratings','ratingsDone','profileReq'];
+  const PATHS = ['players','matches','settings','votes','photos','ratings','ratingsDone','profileReq','casino'];
   for(const path of PATHS){
     try{ data[path] = (await db.ref(path).once('value')).val(); }
     catch(e){ console.warn('backup', path, e); failed.push(path); }
@@ -5610,7 +5688,7 @@ function go(view){
   if(view === 'me'){ const el = $('#me'); el.classList.remove('me-anim'); void el.offsetWidth; el.classList.add('me-anim'); countUp(el); }
   if(view === 'dashboard') rankShift();
   if(view === 'trophies') renderTrophies();
-  if(view === 'casino') renderCasino();
+  if(view === 'casino'){ ui.cAnim = true; ui.cFrom = null; renderCasino(); }
   if(view === 'admin') setTimeout(profToast, 500);
   anBump('v/' + view);
   if(view === 'admin' && ui.admin) anLoad();
@@ -5696,6 +5774,7 @@ document.addEventListener('click', async e => {
     case 'optimize-photos': if(requireAdmin()) optimizeStoredPhotos(); break;
     case 'backup-all': if(requireAdmin()) backupAll(); break;
     case 'import-xlsx': if(requireAdmin()){ $('#xlsxInput').value = ''; $('#xlsxInput').click(); } break;
+    case 'casino-claim': claimDaily(); break;
     case 'feat-toggle': toggleFeature(d.fx); break;
     case 'change-pin': if(requireAdmin()){ $('#cpin-form').reset(); openModal('#m-cpin'); } break;
     case 'logout':
