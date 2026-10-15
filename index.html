@@ -1102,6 +1102,9 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .gl-act{grid-column:1/-1;display:flex;gap:4px;justify-content:flex-end}
 .gl-act button{width:34px;height:32px;border-radius:8px;border:1px solid var(--hair);background:rgba(255,255,255,.04);font:800 14px var(--body);touch-action:manipulation}
 .gl-act button:active{background:rgba(249,115,22,.25)}
+.bn{font:800 10px var(--body);letter-spacing:.04em;text-transform:uppercase;color:var(--or);margin-left:6px;font-style:normal}
+.gl-row.mv{border-left-color:#fbbf24}
+.gl-row.bad{opacity:.6}
 .gl-form{padding:12px;border-radius:14px;border:1px dashed var(--line-strong);display:grid;gap:10px}
 .gl-ft{font:italic 800 19px var(--disp);color:var(--or)}
 .gl-lb{font:700 11.5px var(--body);color:var(--mu);text-transform:uppercase;letter-spacing:.05em}
@@ -1118,6 +1121,10 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .chron ol{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .cr{display:grid;grid-template-columns:44px 22px 1fr auto;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.03);border-left:3px solid #eef1f6}
 .cr.b{border-left-color:var(--or)}
+.cr.mv{border-left-color:#fbbf24;background:rgba(251,191,36,.06)}
+.cr.mv .cw{font-weight:600}
+.cr.mv .cs{visibility:hidden}
+.lu .bn{margin-left:0}
 .cr .mn{font:italic 800 16px var(--disp);color:var(--or)}
 .cr .mn.est{color:var(--mu)}
 .cr .ci{text-align:center}
@@ -1482,6 +1489,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
       <div id="ed-black" class="ed-team black"></div>
     </div>
     <div id="ed-goals" class="ed-goals" hidden></div>
+    <div id="ed-moves" class="ed-goals" hidden></div>
     <div class="row end sticky-actions">
       <button type="button" class="btn ghost" data-close>Annulla</button>
       <button type="button" class="btn primary" data-action="ed-save" id="ed-save">Salva gara</button>
@@ -1575,7 +1583,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 const DEFAULT_PIN = '2026';
 const CACHE_KEY = 'cmb2627_cache_v1';
 const ROLES = { ATT:'Attaccante', CEN:'Centrocampista', DIF:'Difensore', JOLLY:'Jolly' };
@@ -1864,7 +1872,110 @@ function migrateLegacyPhotos(){
 /* =========================================================
    STATS ENGINE
    ========================================================= */
+/* ---------- Cambi e giocatori in più (campi opzionali) ----------
+   bench:1 su una riga di squadra = giocatore "in più" (non è titolare: entra solo con un cambio "in").
+   moves: [{ pid, k:'out'|'in'|'sw', min?, ts?, at }]: out = esce, in = entra nella squadra della sua lista, sw = passa all'altra squadra.
+   at = quanti gol erano già in cronaca quando il cambio è stato inserito (serve a ordinare quando manca il minuto).
+   Senza moves tutto funziona come prima. */
+const otherTeam = t => t === 'white' ? 'black' : 'white';
+const hasMoves = m => !!m && list(m.moves).length > 0;
+const startTeam = (m, pid) => list(m.white).some(e => e.pid === pid) ? 'white' : list(m.black).some(e => e.pid === pid) ? 'black' : null;
+const isBench = (m, pid) => { const e = [...list(m.white), ...list(m.black)].find(x => x.pid === pid); return !!(e && e.bench); };
+const starters = (m, team) => list(m[team]).filter(e => !e.bench);
+function matchMoves(m){
+  return list(m.moves).map((x, j) => {
+    const cm = x.ts ? clockMin(x.ts, m.time, m.end) : null;
+    return { j, pid:x.pid, k:x.k, ts:x.ts || '', min:cm != null ? cm : (x.min == null || x.min === '' ? null : num(x.min)), at:num(x.at) };
+  }).filter(x => x.pid && (x.k === 'out' || x.k === 'in' || x.k === 'sw'));
+}
+/* Ordine dei cambi rispetto ai gol: ogni cambio ha uno "slot" (= prima del gol n). Si ordina per minuto quando il cambio e il gol
+   hanno entrambi un minuto vero (non stimato), altrimenti per "at". */
+function matchTimeline(m){
+  const gs = list(m.goals);
+  const gMin = gs.map(g => { const cm = g.ts ? clockMin(g.ts, m.time, m.end) : null; return cm != null ? cm : (g.min == null || g.min === '' ? null : num(g.min)); });
+  const mv = matchMoves(m);
+  for(const x of mv){
+    let s = 0;
+    while(s < gs.length){
+      const gm = gMin[s];
+      const before = (x.min != null && gm != null) ? (gm < x.min || (gm === x.min && s < x.at)) : s < x.at;
+      if(!before) break;
+      s++;
+    }
+    x.slot = s;
+  }
+  mv.sort((a, b) => (a.slot - b.slot) || ((a.min != null && b.min != null && a.min !== b.min) ? a.min - b.min : a.j - b.j));
+  const byPid = {};
+  for(const x of mv) (byPid[x.pid] = byPid[x.pid] || []).push(x);
+  return { moves:mv, byPid };
+}
+/* Transizione di un cambio: restituisce la nuova squadra (null = fuori dal campo) oppure undefined se il cambio è impossibile */
+function stepTeam(st, k, start, bench){
+  if(k === 'out') return st ? null : undefined;
+  if(k === 'sw') return st ? otherTeam(st) : undefined;
+  return (!st && bench) ? start : undefined;
+}
+/* Squadra in cui sta un giocatore nel momento del gol numero gi (indice in m.goals); gi = Infinity per lo stato a fine gara.
+   null = non in campo (uscito, o "in più" non ancora entrato). */
+function teamAt(m, pid, gi, tl){
+  const start = startTeam(m, pid); if(!start) return null;
+  if(!hasMoves(m)) return start;
+  const bench = isBench(m, pid);
+  let st = bench ? null : start;
+  for(const x of ((tl || matchTimeline(m)).byPid[pid] || [])){
+    if(x.slot > gi) break;
+    const n = stepTeam(st, x.k, start, bench); if(n !== undefined) st = n;
+  }
+  return st;
+}
+/* Squadra in cui il giocatore ha giocato più minuti (usata per V/P/S, gol subiti, compagni, OVR).
+   Se manca anche un solo minuto necessario, o la durata, o in parità: squadra di partenza. */
+function effTeam(m, pid){
+  const start = startTeam(m, pid); if(!start) return null;
+  if(!hasMoves(m)) return start;
+  const mv = matchTimeline(m).byPid[pid] || [];
+  if(!mv.length) return start;
+  const bench = isBench(m, pid), len = matchLen(m), tot = { white:0, black:0 };
+  let st = bench ? null : start, t = 0;
+  for(const x of mv){
+    if(x.min == null || x.min < t) return start;
+    if(st) tot[st] += x.min - t;
+    t = x.min;
+    const n = stepTeam(st, x.k, start, bench); if(n !== undefined) st = n;
+  }
+  if(st){ if(len == null || len < t) return start; tot[st] += len - t; }
+  return tot.white > tot.black ? 'white' : tot.black > tot.white ? 'black' : start;
+}
+/* Righe dei giocatori divise per squadra effettiva (senza cambi sono le liste di sempre) */
+function effEntries(m){
+  if(!hasMoves(m)) return { white:list(m.white), black:list(m.black) };
+  const out = { white:[], black:[] };
+  for(const team of ['white', 'black']) for(const e of list(m[team])) out[effTeam(m, e.pid) || team].push(e);
+  return out;
+}
+/* Cambi in ordine di cronaca, con squadra prima/dopo: [{ ...cambio, from, to, bad }] */
+function moveRows(m){
+  const tl = matchTimeline(m), st = {}, out = [];
+  for(const x of tl.moves){
+    const start = startTeam(m, x.pid); if(!start) continue;
+    const bench = isBench(m, x.pid);
+    if(!(x.pid in st)) st[x.pid] = bench ? null : start;
+    const from = st[x.pid], n = stepTeam(from, x.k, start, bench);
+    if(n === undefined){ out.push({ ...x, bad:true, from, to:from }); continue; }
+    st[x.pid] = n; out.push({ ...x, from, to:n });
+  }
+  return out;
+}
+const teamName = t => t === 'white' ? 'Bianchi' : 'Neri';
+const moveIcon = k => k === 'sw' ? '🔁' : k === 'in' ? '⬆️' : '⬇️';
+function moveText(r, m){
+  const nm = pname(r.pid, [...list(m.white), ...list(m.black)].find(e => e.pid === r.pid)?.n);
+  if(r.k === 'sw') return `${nm} passa ${r.from ? `dai ${teamName(r.from)} ai ${teamName(r.to)}` : 'all’altra squadra'}`;
+  if(r.k === 'in') return `${nm} entra${r.to ? ` nei ${teamName(r.to)}` : ''}`;
+  return `${nm} esce${r.from ? ` dai ${teamName(r.from)}` : ''}`;
+}
 function matchScore(m){
+  if(hasMoves(m)){ const tl = matchGoals(m), last = tl[tl.length - 1]; return last ? { w:last.w, b:last.b } : { w:0, b:0 }; }
   let w = 0, b = 0;
   for(const e of list(m.white)){ w += num(e.g); b += num(e.og); }
   for(const e of list(m.black)){ b += num(e.g); w += num(e.og); }
@@ -1894,9 +2005,10 @@ function clockMin(ts, start, end){
 function matchGoals(m, lenOverride){
   const gs = list(m.goals); if(!gs.length) return [];
   const teamOf = pid => list(m.white).some(e => e.pid === pid) ? 'white' : list(m.black).some(e => e.pid === pid) ? 'black' : null;
+  const mvOn = hasMoves(m), tlm = mvOn ? matchTimeline(m) : null;
   const out = gs.map((g, i) => {
-    const og = !!num(g.og), own = teamOf(g.s);
-    const t = own ? (og ? (own === 'white' ? 'black' : 'white') : own) : null;
+    const og = !!num(g.og), own = mvOn ? teamAt(m, g.s, i, tlm) : teamOf(g.s);
+    const t = own ? (og ? otherTeam(own) : own) : null;
     const cm = g.ts ? clockMin(g.ts, m.time, m.end) : null;
     const min = cm != null ? cm : (g.min == null || g.min === '' ? null : num(g.min));
     return { i, s:g.s, a:g.a || '', og, t, min, est:false, ts:g.ts || '' };
@@ -1935,7 +2047,8 @@ const ROLE_PRI = { DIF:0, CEN:1, JOLLY:1, ATT:2 };
 const mvpPre = m => { const lg = (m.id && STATS && STATS.log && STATS.log[m.id]) || {}; return pid => (lg[pid] && lg[pid].pre != null) ? lg[pid].pre : (STATS.byId[pid]?.ovr ?? OVR_START); };
 function mvpCands(m, preFn){
   const pf = preFn || mvpPre(m), rows = [];
-  for(const team of ['white', 'black']) for(const e of list(m[team])){
+  const EE = effEntries(m);
+  for(const team of ['white', 'black']) for(const e of EE[team]){
     const p = store.players[e.pid]; if(!p) continue;
     const g = num(e.g), a = num(e.a);
     rows.push({ pid:e.pid, n:e.n, team, g, a, og:num(e.og), pts:g + a * 0.5, pri:ROLE_PRI[p.role] ?? 1, ovr:pf(e.pid), name:pname(e.pid, e.n) });
@@ -1980,7 +2093,7 @@ function matchMvpLegacy(m){
   let best = null;
   for(const team of ['white','black']){
     const won = team === 'white' ? sc.w > sc.b : sc.b > sc.w;
-    for(const e of list(m[team])){
+    for(const e of effEntries(m)[team]){
       const g = num(e.g), a = num(e.a), og = num(e.og);
       const pts = g + a * 0.5, vts = cnt[e.pid] || 0, score = pts + vts * VOTE_W;
       if(score <= 0) continue;
@@ -2014,7 +2127,7 @@ function ovrDelta(role, ovr, c){
 function matchAwards(m){
   const best = { ATT:null, CEN:null, DIF:null };
   const dept = r => r === 'ATT' ? 'ATT' : r === 'DIF' ? 'DIF' : 'CEN';
-  for(const team of ['white','black']) for(const e of list(m[team])){
+  for(const team of ['white','black']) for(const e of effEntries(m)[team]){
     const role = ROLES[store.players[e.pid]?.role] ? store.players[e.pid].role : 'JOLLY';
     const g = num(e.g), a = num(e.a), og = num(e.og);
     const pts = (g + a * 0.5) * ROLE_MULT[role] - og * OG_PEN;
@@ -2054,7 +2167,7 @@ function computeStats(upto){
     if(mlen) for(const x of gtl) if(!x.og && !x.est && x.min != null && x.min >= mlen * 0.8) lateBy[x.s] = (lateBy[x.s] || 0) + 1;
     for(const team of ['white','black']){
       const r = res[team], conceded = team === 'white' ? sc.b : sc.w;
-      const es = list(m[team]).filter(e => S[e.pid]);
+      const es = effEntries(m)[team].filter(e => S[e.pid]);
       for(const e of es){
         const st = S[e.pid];
         const g = num(e.g), a = num(e.a), og = num(e.og);
@@ -2111,6 +2224,14 @@ function computeStats(upto){
   return { list:arr, byId:Object.fromEntries(arr.map(s => [s.pid, s])), matches:ms, plaques, log, scheduled };
 }
 function teamEvents(m, team){
+  if(hasMoves(m)){   /* con i cambi gol e assist si attribuiscono dalla cronaca: chi passa di squadra segna per quella in cui sta */
+    const gm = {}, am = {}, om = {}, bump = (o, k) => { o[k] = (o[k] || 0) + 1; };
+    for(const x of matchGoals(m)){ if(x.t !== team) continue; if(x.og) bump(om, x.s); else { bump(gm, x.s); if(x.a) bump(am, x.a); } }
+    const nm = pid => pname(pid, [...list(m.white), ...list(m.black)].find(e => e.pid === pid)?.n);
+    const by = (a, b) => b.c - a.c || a.n.localeCompare(b.n, 'it');
+    const arr = o => Object.entries(o).map(([pid, c]) => ({ pid, n:nm(pid), c })).sort(by);
+    return { goals:arr(gm), assists:arr(am), ogs:arr(om) };
+  }
   const opp = team === 'white' ? 'black' : 'white';
   const goals = [], assists = [], ogs = [];
   for(const e of list(m[team])){
@@ -2488,9 +2609,24 @@ function evListHTML(evs){
   return li.length ? `<ul class="ev">${li.join('')}</ul>` : `<p class="mu sm" style="margin:0">Nessun gol o assist registrato.</p>`;
 }
 function chronHTML(m){
-  const tl = matchGoals(m); if(!tl.length) return '';
+  const tl = matchGoals(m), mv = hasMoves(m) ? moveRows(m) : [];
+  if(!tl.length && !mv.length) return '';
   const est = tl.some(x => x.est);
-  return `<section class="chron"><h3>🕒 Cronaca della gara</h3><ol>${tl.map(x => `<li class="cr ${x.t === 'black' ? 'b' : 'w'}"><span class="mn${x.est ? ' est' : ''}">${x.min != null ? (x.est ? '~' : '') + x.min + '’' : '·'}</span><span class="ci">${x.og ? '🟥' : '⚽'}</span><span class="cw"><b>${esc(pname(x.s))}${x.og ? ' (autogol)' : ''}</b>${!x.og && x.a ? `<small>assist ${esc(pname(x.a))}</small>` : ''}</span><span class="cs">${x.w}–${x.b}</span></li>`).join('')}</ol>${est ? '<p class="mu sm" style="margin:8px 0 0">I minuti con ~ sono stimati dall’ordine dei gol.</p>' : ''}</section>`;
+  const goalLi = x => `<li class="cr ${x.t === 'black' ? 'b' : 'w'}"><span class="mn${x.est ? ' est' : ''}">${x.min != null ? (x.est ? '~' : '') + x.min + '’' : '·'}</span><span class="ci">${x.og ? '🟥' : '⚽'}</span><span class="cw"><b>${esc(pname(x.s))}${x.og ? ' (autogol)' : ''}</b>${!x.og && x.a ? `<small>assist ${esc(pname(x.a))}</small>` : ''}</span><span class="cs">${x.w}–${x.b}</span></li>`;
+  const mvLi = r => `<li class="cr mv"><span class="mn">${r.min != null ? r.min + '’' : '·'}</span><span class="ci">${moveIcon(r.k)}</span><span class="cw"><b>${esc(moveText(r, m))}</b></span><span class="cs">0–0</span></li>`;
+  /* i cambi stanno tra i gol, in ordine: lo slot n vuol dire "prima del gol n" */
+  const items = [];
+  for(let i = 0; i <= tl.length; i++){
+    mv.filter(r => r.slot === i).forEach(r => items.push(mvLi(r)));
+    if(i < tl.length) items.push(goalLi(tl[i]));
+  }
+  return `<section class="chron"><h3>🕒 Cronaca della gara</h3><ol>${items.join('')}</ol>${est ? '<p class="mu sm" style="margin:8px 0 0">I minuti con ~ sono stimati dall’ordine dei gol.</p>' : ''}</section>`;
+}
+/* Sezione "Cambi" del resoconto: solo se la gara ne ha */
+function cambiHTML(m){
+  const mv = hasMoves(m) ? moveRows(m) : [];
+  if(!mv.length) return '';
+  return `<section class="chron"><h3>🔁 Cambi</h3><ol>${mv.map(r => `<li class="cr mv"><span class="mn">${r.min != null ? r.min + '’' : '·'}</span><span class="ci">${moveIcon(r.k)}</span><span class="cw"><b>${esc(moveText(r, m))}</b></span><span class="cs">0–0</span></li>`).join('')}</ol></section>`;
 }
 function matchDetailHTML(id){
   const m = { id, ...store.matches[id] };
@@ -2498,7 +2634,7 @@ function matchDetailHTML(id){
   const sc = matchScore(m), mv = matchMvp(m);
   const col = team => `<div class="tcol"><h3><span class="dot ${team === 'white' ? 'w' : 'b'}"></span>Squadra ${team === 'white' ? 'Bianca' : 'Nera'}</h3>
     ${evListHTML(teamEvents(m, team))}
-    <div class="lineup">${list(m[team]).map(e => `<button class="lu" data-open-player="${e.pid}" ${store.players[e.pid] ? '' : 'disabled'}>${avatar(store.players[e.pid] || { name:e.n }, 'xs')}${esc(pname(e.pid, e.n))}</button>`).join('')}</div>
+    <div class="lineup">${list(m[team]).map(e => `<button class="lu" data-open-player="${e.pid}" ${store.players[e.pid] ? '' : 'disabled'}>${avatar(store.players[e.pid] || { name:e.n }, 'xs')}${esc(pname(e.pid, e.n))}${e.bench ? '<em class="bn">in più</em>' : ''}</button>`).join('')}</div>
   </div>`;
   const mvp = mv
     ? `<div class="mvpbox">${avatar(store.players[mv.pid] || { name:mv.n }, 'md')}<div><div class="t">★ ${mv.provisional ? 'MVP provvisorio' : 'MVP della gara'}</div><div class="n">${esc(pname(mv.pid, mv.n))}</div><div class="d">${evDesc(mv)}${mv.vts ? `, ${mv.vts} ${mv.vts === 1 ? 'voto' : 'voti'}` : ''}, squadra ${mv.team === 'white' ? 'Bianca' : 'Nera'}</div></div><div class="pts">${fmtPts(mv.score)}<small>pt</small></div></div>`
@@ -2508,10 +2644,10 @@ function matchDetailHTML(id){
     ? `<button class="awd" data-open-player="${c.pid}" ${store.players[c.pid] ? '' : 'disabled'}><span class="ai">${A.icon}</span><span><small>${A.l}</small><b>${esc(pname(c.pid, c.n))}</b></span><em>${fmtD(c.pts)}</em></button>`
     : `<div class="awd off"><span class="ai">${A.icon}</span><span><small>${A.l}</small><b>Non assegnato</b></span></div>`; }).join('')}</div>`;
   return `<div class="mgrid"><article class="glass tab">
-    <div class="hero-meta"><span class="tag">Giornata ${num(m.day)}</span>${m.date ? `<span>${fmtDate(m.date)}</span>` : ''}${matchLen(m) ? `<span>Durata ${matchLen(m)}’</span>` : ''}<span class="sum">${list(m.white).length} contro ${list(m.black).length}</span></div>
+    <div class="hero-meta"><span class="tag">Giornata ${num(m.day)}</span>${m.date ? `<span>${fmtDate(m.date)}</span>` : ''}${matchLen(m) ? `<span>Durata ${matchLen(m)}’</span>` : ''}<span class="sum">${starters(m, 'white').length} contro ${starters(m, 'black').length}</span></div>
     ${boardHTML(sc)}
     <div class="tab-cols">${col('white')}${col('black')}</div>
-    ${chronHTML(m)}
+    ${cambiHTML(m)}${chronHTML(m)}
     ${mvp}${awards}${voteBoxHTML(m)}
     <div class="tab-actions">
       <button class="btn primary" data-action="export-match" data-mid="${id}">📸 Esporta Grafica Gara HD</button>
@@ -2742,12 +2878,12 @@ function captainOf(entries){
 /* Capitano scelto dall'admin (capW / capB) se è ancora in quella squadra, altrimenti la regola automatica */
 function captainFor(m, team){
   const pid = m[team === 'white' ? 'capW' : 'capB'];
-  if(pid && list(m[team]).some(e => e.pid === pid)) return pid;
-  return captainOf(m[team]);
+  if(pid && starters(m, team).some(e => e.pid === pid)) return pid;
+  return captainOf(starters(m, team));
 }
 function capInfoHTML(m, team){
   const pid = captainFor(m, team); if(!pid) return '';
-  const e = list(m[team]).find(x => x.pid === pid);
+  const e = starters(m, team).find(x => x.pid === pid);
   return `<span class="capinfo">${avatar(store.players[pid] || { name:e?.n }, 'xs')}<span><span class="cn">${esc(pname(pid, e?.n))}</span><small>Capitano</small></span></span>`;
 }
 function autoOrder(entries){
@@ -2757,14 +2893,14 @@ function autoOrder(entries){
 }
 /* Ordine degli slot (porta → attacco, sinistra → destra): quello salvato dall'admin, poi i nuovi in automatico */
 function orderFor(m, team){
-  const entries = list(m[team]);
+  const entries = starters(m, team);   /* il campo è sempre 8 contro 8: solo i titolari, nella squadra di partenza */
   const ids = new Set(entries.map(e => e.pid));
   const saved = list(m[team === 'white' ? 'posW' : 'posB']).filter((pid, i, a) => ids.has(pid) && a.indexOf(pid) === i);
   return [...saved, ...autoOrder(entries).filter(pid => !saved.includes(pid))];
 }
 function placeTeam(m, team){
   const lines = FORMATIONS[team === 'white' ? (m.fmW || DEF_FM) : (m.fmB || DEF_FM)] || FORMATIONS[DEF_FM];
-  const byId = Object.fromEntries(list(m[team]).map(e => [e.pid, e]));
+  const byId = Object.fromEntries(starters(m, team).map(e => [e.pid, e]));
   const ord = orderFor(m, team);
   const out = []; let k = 0;
   lines.forEach((cnt, li) => { for(let j = 0; j < cnt && k < ord.length; j++) out.push({ e:byId[ord[k++]], li, j, cnt, n:lines.length }); });
@@ -3117,7 +3253,7 @@ async function prepContain(src, boxW, boxH){
 }
 async function prepPitchPhotos(mm){
   const out = {}, cwPx = CP_CW / 100 * EXP_PW;
-  const ids = [...list(mm.white), ...list(mm.black)].map(e => e.pid).filter(pid => store.players[pid]?.photo);
+  const ids = [...starters(mm, 'white'), ...starters(mm, 'black')].map(e => e.pid).filter(pid => store.players[pid]?.photo);
   await Promise.all(ids.map(async pid => { try{ out[pid] = await prepCover(store.players[pid].photo, cwPx * 0.93, cwPx * 1.12); }catch(e){ console.warn('foto', pid, e); } }));
   return out;
 }
@@ -3237,7 +3373,7 @@ function renderMe(){
   const raceBox = race.length ? race.map(r => `<div class="me-race ${r.mine ? 'mine' : ''}"><span class="ri">${r.P.icon}</span><span class="rn"><b>${r.P.name}</b><small>${r.mine ? 'La detieni tu: ' + esc(r.hold.val) : (r.pos === 1 && r.hold ? `Saresti 1°, ma hai già il massimo di 2 targhe: va a ${esc(pname(r.hold.pid))}` : `Sei ${r.pos}°${r.hold ? `, la detiene ${esc(pname(r.hold.pid))} (${esc(r.hold.val)})` : ''}`)}</small></span><span class="rp">${r.mine ? '🏅' : r.pos + '°'}</span></div>`).join('')
     : '<p class="mu sm" style="margin:0">Gioca qualche gara per entrare nella corsa alle targhe.</p>';
   const Wn = {}, Ls = {};
-  for(const x of h){ const opp = x.team === 'white' ? 'black' : 'white'; for(const o of list(x.m[opp])){ if(!store.players[o.pid]) continue; if(x.r === 'v') Wn[o.pid] = (Wn[o.pid] || 0) + 1; if(x.r === 's') Ls[o.pid] = (Ls[o.pid] || 0) + 1; } }
+  for(const x of h){ const opp = x.team === 'white' ? 'black' : 'white'; for(const o of effEntries(x.m)[opp]){ if(!store.players[o.pid]) continue; if(x.r === 'v') Wn[o.pid] = (Wn[o.pid] || 0) + 1; if(x.r === 's') Ls[o.pid] = (Ls[o.pid] || 0) + 1; } }
   const topOf = M => Object.entries(M).sort((a, b) => (b[1] - a[1]) || pname(a[0]).localeCompare(pname(b[0]), 'it'))[0];
   const vit = topOf(Wn), inc = topOf(Ls);
   const riv = (e, cls, k, unit, emptyTxt) => e
@@ -3246,7 +3382,7 @@ function renderMe(){
   const rivBox = `<div class="me-riv">${riv(vit, 'good', 'Vittima preferita', 'vinte contro', 'Nessuna vittoria da avversario')}${riv(inc, 'bad', 'Il tuo incubo', 'perse contro', 'Nessuna sconfitta, per ora')}</div>`;
   const zc = {};
   for(const x of h){
-    const pl = placeTeam(x.m, x.team).find(q => q.e && q.e.pid === s.pid); if(!pl) continue;
+    const pl = placeTeam(x.m, startTeam(x.m, s.pid) || x.team).find(q => q.e && q.e.pid === s.pid); if(!pl) continue;
     const zone = pl.li === 0 ? 'In porta' : pl.li === pl.n - 1 ? 'In attacco' : pl.li === 1 ? 'In difesa' : 'A centrocampo';
     const side = (pl.cnt === 1 || pl.li === 0) ? '' : pl.j === 0 ? ', a sinistra' : pl.j === pl.cnt - 1 ? ', a destra' : ', al centro';
     zc[zone + side] = (zc[zone + side] || 0) + 1;
@@ -3299,8 +3435,7 @@ function renderMe(){
 function h2h(a, b){
   const out = { aw:0, bw:0, dr:0, games:[], tog:{ n:0, v:0, pa:0, s:0 } };
   for(const m of STATS.matches){
-    const side = pid => list(m.white).some(e => e.pid === pid) ? 'white' : list(m.black).some(e => e.pid === pid) ? 'black' : null;
-    const ta = side(a), tb = side(b);
+    const ta = effTeam(m, a), tb = effTeam(m, b);
     if(!ta || !tb) continue;
     const sc = matchScore(m);
     const win = sc.w > sc.b ? 'white' : sc.b > sc.w ? 'black' : null;
@@ -3395,7 +3530,7 @@ function computeRecords(){
     const res = { white: sc.w > sc.b ? 'v' : sc.w < sc.b ? 's' : 'pa', black: sc.b > sc.w ? 'v' : sc.b < sc.w ? 's' : 'pa' };
     for(const team of ['white','black']){
       const r = res[team], against = team === 'white' ? sc.b : sc.w;
-      const es = list(m[team]).filter(e => known(e.pid));
+      const es = effEntries(m)[team].filter(e => known(e.pid));
       for(const e of es){
         const g = num(e.g), a = num(e.a), og = num(e.og);
         if(g > 0 && (!manita || g > manita.v)) manita = { pid:e.pid, v:g, m };
@@ -3421,7 +3556,8 @@ function computeRecords(){
         }
       }
     }
-    for(const w of list(m.white).filter(e => known(e.pid))) for(const b of list(m.black).filter(e => known(e.pid))){
+    const EE = effEntries(m);
+    for(const w of EE.white.filter(e => known(e.pid))) for(const b of EE.black.filter(e => known(e.pid))){
       const k = pk(w.pid, b.pid);
       const o = opp[k] || (opp[k] = { n:0, dr:0, wins:{} });
       o.n++;
@@ -3825,19 +3961,24 @@ function setEdMode(mode){
   $('#m-match .sheet').classList.toggle('sched', mode === 'scheduled');
   $('#ed-end-w').hidden = mode === 'scheduled';
   $('#ed-save').textContent = mode === 'scheduled' ? 'Salva gara in programma' : 'Salva risultato';
-  if(mode === 'scheduled'){ [...ED.white, ...ED.black].forEach(e => { e.g = 0; e.a = 0; e.og = 0; }); ED.goals = []; goalFormReset(); }
+  if(mode === 'scheduled'){
+    [...ED.white, ...ED.black].forEach(e => { e.g = 0; e.a = 0; e.og = 0; }); ED.goals = []; ED.moves = []; goalFormReset(); moveFormReset();
+    /* una gara in programma è 8 contro 8: i giocatori "in più" tornano tra i convocati */
+    for(const T of ['white', 'black']){ ED.called.push(...ED[T].filter(e => e.bench).map(e => e.pid)); ED[T] = ED[T].filter(e => !e.bench); }
+  }
   renderEditor();
 }
 function openMatchEditor(id, mode){
   if(!STATS.list.length){ toast('Aggiungi prima i giocatori alla rosa', 'warn'); return; }
   const m = id ? store.matches[id] : null;
-  const cp = arr => list(arr).map(e => ({ pid:e.pid, n:e.n, g:num(e.g), a:num(e.a), og:num(e.og) }));
+  const cp = arr => list(arr).map(e => ({ pid:e.pid, n:e.n, g:num(e.g), a:num(e.a), og:num(e.og), ...(e.bench ? { bench:1 } : {}) }));
   const wasSched = m?.status === 'scheduled';
   ED = { id:id || null, day:m ? num(m.day) : nextDay(), date:m?.date || todayISO(), time:m?.time || '', end:m?.end || '', fmW:m?.fmW || DEF_FM, fmB:m?.fmB || DEF_FM, posW:m?.posW || null, posB:m?.posB || null, capW:m?.capW || null, capB:m?.capB || null,
          white:cp(m?.white), black:cp(m?.black), called:[], status:mode || (wasSched ? 'scheduled' : 'played'),
          goals:list(m?.goals).map(g => ({ s:g.s, a:g.a || '', og:!!num(g.og), min:(g.min == null ? null : num(g.min)), ts:g.ts || '' })),
+         moves:list(m?.moves).map(x => ({ pid:x.pid, k:x.k, min:(x.min == null ? null : num(x.min)), ts:x.ts || '', at:num(x.at) })),
          seq:!m || wasSched || list(m.goals).length > 0 || [...list(m.white), ...list(m.black)].every(e => !num(e.g) && !num(e.a) && !num(e.og)) };
-  goalFormReset(); if(ED.seq) syncCounts();
+  goalFormReset(); moveFormReset(); if(ED.seq) syncCounts();
   edTeam = (ED.white.length || ED.black.length) ? 'white' : 'called';
   $('#mm-t').textContent = !id ? 'Nuova gara' : (wasSched && ED.status === 'played') ? `Risultato giornata ${ED.day}` : `Modifica giornata ${ED.day}`;
   $('#ed-day').value = ED.day;
@@ -3854,11 +3995,14 @@ function edFind(pid){
   if(ED.called.includes(pid)) return 'called';
   return null;
 }
+/* "8/8" oppure "8/8 +1 in più" */
+const edCount = T => { const n = ED[T].filter(e => !e.bench).length, b = ED[T].length - n; return `${n}/8${b ? ` +${b} in più` : ''}`; };
 const edTotal = () => ED.white.length + ED.black.length + ED.called.length;
 const ovrOf = pid => STATS.byId[pid]?.ovr ?? OVR_START;
 function edToggle(pid){
   const cur = edFind(pid), T = edTeam;
   if(cur && cur !== 'called' && goalsInvolve(pid)){ toast(`${pname(pid)} ha gol o assist registrati: eliminali dalla cronaca prima di toglierlo o spostarlo`, 'warn'); return; }
+  if(cur && cur !== 'called' && movesInvolve(pid)){ toast(`${pname(pid)} ha dei cambi registrati: eliminali prima di toglierlo o spostarlo`, 'warn'); return; }
   const pull = from => {
     if(from === 'called'){ ED.called = ED.called.filter(x => x !== pid); return null; }
     const e = ED[from].find(x => x.pid === pid); ED[from] = ED[from].filter(x => x.pid !== pid); return e;
@@ -3869,10 +4013,20 @@ function edToggle(pid){
     if(cur) pull(cur);
     ED.called.push(pid);
   }else{
-    if(ED[T].length >= 8){ toast(`${T === 'white' ? 'I Bianchi' : 'I Neri'} hanno già 8 giocatori`, 'warn'); return; }
-    if(!cur && edTotal() >= 16){ toast('Hai già 16 giocatori in distinta', 'warn'); return; }
+    const tn = T === 'white' ? 'I Bianchi' : 'I Neri', nStart = ED[T].filter(x => !x.bench).length, nBench = ED[T].length - nStart;
+    let asBench = false;
+    if(nStart >= 8){
+      if(ED.status === 'scheduled'){ toast(`${tn} hanno già 8 giocatori`, 'warn'); return; }
+      if(!ED.seq){ toast(`${tn} hanno già 8 giocatori. Per aggiungere giocatori in più passa all’inserimento dei gol in sequenza`, 'warn'); return; }
+      if(nBench >= 2){ toast(`${tn} hanno già 8 titolari e 2 giocatori in più`, 'warn'); return; }
+      asBench = true;
+    }
+    const cap = ED.status === 'scheduled' ? 16 : 20;
+    if(!cur && edTotal() >= cap){ toast(`Hai già ${cap} giocatori in distinta`, 'warn'); return; }
     const e = (cur && pull(cur)) || { pid, n:pname(pid), g:0, a:0, og:0 };
+    if(asBench) e.bench = 1; else delete e.bench;
     ED[T].push(e);
+    if(asBench) toast(`${pname(pid)} entra come giocatore in più: registra quando entra nella sezione “Cambi”`);
   }
   renderEditor();
 }
@@ -3880,7 +4034,9 @@ function edToggle(pid){
    A parità quasi perfetta distribuisce i ruoli; tra le soluzioni equivalenti ne sceglie una a caso. */
 function balanceTeams(){
   if(ED.seq && ED.goals.length){ toast('Ci sono già dei gol in cronaca: ribilanciare cambierebbe le squadre. Elimina prima i gol.', 'warn'); return; }
-  const ids = [...ED.white.map(e => e.pid), ...ED.black.map(e => e.pid), ...ED.called];
+  if(ED.moves.length){ toast('Ci sono già dei cambi registrati: ribilanciare cambierebbe le squadre. Elimina prima i cambi.', 'warn'); return; }
+  const benchW = ED.white.filter(e => e.bench), benchB = ED.black.filter(e => e.bench);   /* i giocatori in più restano dove sono */
+  const ids = [...ED.white.filter(e => !e.bench).map(e => e.pid), ...ED.black.filter(e => !e.bench).map(e => e.pid), ...ED.called];
   const n = ids.length;
   if(n < 2){ toast('Spunta almeno 2 convocati', 'warn'); return; }
   const o = ids.map(ovrOf), role = ids.map(id => store.players[id]?.role || 'JOLLY');
@@ -3902,26 +4058,26 @@ function balanceTeams(){
   const mask = cands[Math.floor(Math.random() * cands.length)][1];
   const old = Object.fromEntries([...ED.white, ...ED.black].map(e => [e.pid, e]));
   const mk = id => old[id] || { pid:id, n:pname(id), g:0, a:0, og:0 };
-  ED.white = ids.filter((_, i) => mask >> i & 1).map(mk);
-  ED.black = ids.filter((_, i) => !(mask >> i & 1)).map(mk);
+  ED.white = [...ids.filter((_, i) => mask >> i & 1).map(mk), ...benchW];
+  ED.black = [...ids.filter((_, i) => !(mask >> i & 1)).map(mk), ...benchB];
   ED.called = [];
   edTeam = 'white';
   renderEditor();
-  const mean = arr => arr.reduce((t, e) => t + ovrOf(e.pid), 0) / arr.length;
+  const mean = arr => arr.filter(e => !e.bench).reduce((t, e) => t + ovrOf(e.pid), 0) / (arr.filter(e => !e.bench).length || 1);
   toast(`Squadre bilanciate: OVR medio ${mean(ED.white).toFixed(1)} contro ${mean(ED.black).toFixed(1)}. Premi di nuovo per un’alternativa.`);
 }
 function renderEditorScore(){
   if(ED.status === 'scheduled'){
-    const mean = arr => arr.length ? (arr.reduce((t, e) => t + ovrOf(e.pid), 0) / arr.length).toFixed(1) : '–';
+    const mean = arr => { const l = arr.filter(e => !e.bench); return l.length ? (l.reduce((t, e) => t + ovrOf(e.pid), 0) / l.length).toFixed(1) : '–'; };
     $('#ed-score').innerHTML = `<div class="t w">Bianchi<small>${ED.white.length}/8, OVR medio <b>${mean(ED.white)}</b></small></div><div class="s"><span style="color:var(--or)">VS</span></div><div class="t b">Neri<small>${ED.black.length}/8, OVR medio <b>${mean(ED.black)}</b></small></div><div class="note">Gara in programma: gol e assist si inseriscono dopo il fischio finale con “Registra risultato”</div>`;
     return;
   }
   const sc = matchScore(ED);
   const hasOg = [...ED.white, ...ED.black].some(e => e.og > 0);
-  const mean = arr => arr.length ? (arr.reduce((t, e) => t + ovrOf(e.pid), 0) / arr.length).toFixed(1) : '–';
-  $('#ed-score').innerHTML = `<div class="t w">Bianchi<small>${ED.white.length}/8, OVR medio <b>${mean(ED.white)}</b></small></div>
+  const mean = arr => { const l = arr.filter(e => !e.bench); return l.length ? (l.reduce((t, e) => t + ovrOf(e.pid), 0) / l.length).toFixed(1) : '–'; };
+  $('#ed-score').innerHTML = `<div class="t w">Bianchi<small>${edCount('white')}, OVR medio <b>${mean(ED.white)}</b></small></div>
     <div class="s"><span>${sc.w}</span><i></i><span>${sc.b}</span></div>
-    <div class="t b">Neri<small>${ED.black.length}/8, OVR medio <b>${mean(ED.black)}</b></small></div>
+    <div class="t b">Neri<small>${edCount('black')}, OVR medio <b>${mean(ED.black)}</b></small></div>
     ${hasOg ? '<div class="note">Gli autogol sono già conteggiati alla squadra avversaria</div>' : ''}`;
 }
 function renderEditorPick(){
@@ -3942,8 +4098,8 @@ function stp(f, ic, label, v){
 }
 function edTeamHTML(T){
   const arr = ED[T];
-  return `<h4><span><span class="dot ${T === 'white' ? 'w' : 'b'}"></span>Squadra ${T === 'white' ? 'Bianca' : 'Nera'}</span><span class="cnt ${arr.length === 8 ? 'full' : ''}">${arr.length}/8</span></h4>` +
-    (arr.length ? arr.map(e => `<div class="erow" data-t="${T}" data-pid="${e.pid}">${avatar(store.players[e.pid] || { name:e.n }, 'xs')}<span class="nm">${esc(pname(e.pid, e.n))}</span><button type="button" class="capb" data-cap aria-pressed="${ED[T === 'white' ? 'capW' : 'capB'] === e.pid}" aria-label="Capitano: ${esc(pname(e.pid, e.n))}" title="Scegli come capitano (tocca di nuovo per tornare all’automatico)">C</button><button type="button" class="rm" data-rm aria-label="Togli ${esc(pname(e.pid, e.n))}">×</button>${ED.seq ? roSteps(e) : `<div class="steps">${stp('g', '⚽', 'Gol', e.g)}${stp('a', '👟', 'Assist', e.a)}${stp('og', '🟥', 'Autogol', e.og)}</div>`}</div>`).join('')
+  return `<h4><span><span class="dot ${T === 'white' ? 'w' : 'b'}"></span>Squadra ${T === 'white' ? 'Bianca' : 'Nera'}</span><span class="cnt ${arr.filter(e => !e.bench).length === 8 ? 'full' : ''}">${edCount(T)}</span></h4>` +
+    (arr.length ? arr.map(e => `<div class="erow" data-t="${T}" data-pid="${e.pid}">${avatar(store.players[e.pid] || { name:e.n }, 'xs')}<span class="nm">${esc(pname(e.pid, e.n))}${e.bench ? '<em class="bn">in più</em>' : ''}</span>${e.bench ? '<span></span>' : `<button type="button" class="capb" data-cap aria-pressed="${ED[T === 'white' ? 'capW' : 'capB'] === e.pid}" aria-label="Capitano: ${esc(pname(e.pid, e.n))}" title="Scegli come capitano (tocca di nuovo per tornare all’automatico)">C</button>`}<button type="button" class="rm" data-rm aria-label="Togli ${esc(pname(e.pid, e.n))}">×</button>${ED.seq ? roSteps(e) : `<div class="steps">${stp('g', '⚽', 'Gol', e.g)}${stp('a', '👟', 'Assist', e.a)}${stp('og', '🟥', 'Autogol', e.og)}</div>`}</div>`).join('')
       : `<p class="mu sm pad">Scegli la squadra qui sopra e tocca i nomi per schierarli.</p>`);
 }
 function renderEditor(){
@@ -3951,7 +4107,7 @@ function renderEditor(){
   renderEditorScore(); renderEditorPick();
   $('#ed-white').innerHTML = edTeamHTML('white');
   $('#ed-black').innerHTML = edTeamHTML('black');
-  renderGoals();
+  renderGoals(); renderMoves();
 }
 const roSteps = e => (e.g || e.a || e.og) ? `<div class="steps ro">${e.g ? `<span>⚽ ${e.g}</span>` : ''}${e.a ? `<span>👟 ${e.a}</span>` : ''}${e.og ? `<span>🟥 ${e.og}</span>` : ''}</div>` : '';
 
@@ -3960,6 +4116,7 @@ let GF = null;
 function goalFormReset(){ GF = { s:'', a:'', og:false, ts:'', edit:-1 }; }
 const edTeamOf = pid => ED.white.some(e => e.pid === pid) ? 'white' : ED.black.some(e => e.pid === pid) ? 'black' : null;
 const goalsInvolve = pid => !!ED && ED.seq && ED.goals.some(g => g.s === pid || g.a === pid);
+const movesInvolve = pid => !!ED && ED.moves.some(x => x.pid === pid);
 function syncCounts(){
   const all = [...ED.white, ...ED.black];
   all.forEach(e => { e.g = 0; e.a = 0; e.og = 0; });
@@ -3986,6 +4143,48 @@ function parseWhen(txt){
   if(n && +n[1] >= 1 && +n[1] <= (matchLen({ time:ED.time, end:ED.end }) || 240)) return { min:+n[1] };
   return { err:'Scrivi un minuto (es. 23) oppure l’ora del memo (es. 21:14)' };
 }
+/* I cambi si agganciano ai gol per posizione (at): quando i gol cambiano numero od ordine, la posizione si ricalcola */
+let GKEY = 0;
+const gkey = g => g._k || (g._k = ++GKEY);
+function rebasedMoves(oldGoals, newGoals){
+  if(!ED.moves.length) return ED.moves;
+  const tl = matchTimeline({ white:ED.white, black:ED.black, time:ED.time, end:ED.end, goals:oldGoals, moves:ED.moves }), slotOf = {};
+  tl.moves.forEach(x => { slotOf[x.j] = x.slot; });
+  return ED.moves.map((mv, j) => {
+    const before = new Set(oldGoals.slice(0, slotOf[j] != null ? slotOf[j] : mv.at).map(gkey));
+    let at = 0; newGoals.forEach((g, i) => { if(before.has(gkey(g))) at = i + 1; });
+    return { ...mv, at };
+  });
+}
+function setGoals(ng){ const mv = rebasedMoves(ED.goals, ng); ED.goals = ng; ED.moves = mv; }
+/* Controllo di coerenza di gol e cambi: restituisce il testo dell'errore, oppure '' se è tutto a posto */
+function validateMatch(m){
+  const all = [...list(m.white), ...list(m.black)], nm = pid => pname(pid, all.find(e => e.pid === pid)?.n);
+  const mv = matchMoves(m);
+  if(mv.length !== list(m.moves).length) return 'Un cambio non è valido';
+  for(const x of mv) if(!startTeam(m, x.pid)) return `${nm(x.pid)} ha un cambio ma non è in distinta`;
+  const tl = matchTimeline(m);
+  for(const [pid, arr] of Object.entries(tl.byPid)){
+    const start = startTeam(m, pid), bench = isBench(m, pid);
+    let st = bench ? null : start, prev = null;
+    for(const x of arr){
+      if(prev != null && x.min != null && x.min < prev) return `I cambi di ${nm(pid)} non sono in ordine di minuto`;
+      if(x.min != null) prev = x.min;
+      const n = stepTeam(st, x.k, start, bench);
+      if(n === undefined) return x.k === 'in'
+        ? (bench ? `${nm(pid)} è già in campo: non può entrare` : `${nm(pid)} è un titolare: può entrare solo chi è “in più”`)
+        : `${nm(pid)} non è in campo in quel momento (è già uscito o non è ancora entrato)`;
+      st = n;
+    }
+  }
+  const gl = list(m.goals);
+  for(let i = 0; i < gl.length; i++){
+    const g = gl[i], t = teamAt(m, g.s, i, tl);
+    if(!t) return `${nm(g.s)} non era in campo al ${i + 1}° gol`;
+    if(g.a && !num(g.og) && teamAt(m, g.a, i, tl) !== t) return `Al ${i + 1}° gol l’assist deve essere un compagno di squadra del marcatore (${nm(g.a)} non era con lui)`;
+  }
+  return '';
+}
 function renderGoals(){
   const box = $('#ed-goals'); if(!box) return;
   if(!ED || ED.status === 'scheduled'){ box.hidden = true; box.innerHTML = ''; return; }
@@ -4007,10 +4206,10 @@ function renderGoals(){
   const st = GF.s ? edTeamOf(GF.s) : null;
   const scorerChips = none ? '<p class="mu sm" style="margin:0">Schiera prima i giocatori nelle due squadre.</p>'
     : [...ED.white.map(e => chip(e, 'white', 'data-gs', GF.s === e.pid)), ...ED.black.map(e => chip(e, 'black', 'data-gs', GF.s === e.pid))].join('');
-  const mates = st ? ED[st].filter(e => e.pid !== GF.s) : [];
+  const mates = ED.moves.length ? [...ED.white, ...ED.black].filter(e => e.pid !== GF.s) : (st ? ED[st].filter(e => e.pid !== GF.s) : []);
   const assistChips = GF.og ? '<p class="mu sm" style="margin:0">Nessun assist su autogol.</p>'
     : !GF.s ? '<p class="mu sm" style="margin:0">Scegli prima chi ha segnato.</p>'
-    : `<button type="button" class="pchip gc none" data-ga="" aria-pressed="${!GF.a}">Nessun assist</button>${mates.map(e => chip(e, st, 'data-ga', GF.a === e.pid)).join('')}`;
+    : `<button type="button" class="pchip gc none" data-ga="" aria-pressed="${!GF.a}">Nessun assist</button>${mates.map(e => chip(e, edTeamOf(e.pid) || st, 'data-ga', GF.a === e.pid)).join('')}`;
   const pw = parseWhen(GF.ts);
   const prev = pw.err ? pw.err : pw.min != null ? `→ ${pw.min}’ dall’inizio` : '';
   box.innerHTML = `<div class="gl-h"><h4>⚽ Gol in sequenza</h4><span class="mu sm">${dur ? `Durata ${dur}’ (${ED.time}–${ED.end})` : 'Imposta ora inizio e ora fine per ricavare i minuti'}</span></div>
@@ -4031,37 +4230,103 @@ function goalAdd(){
   const st = edTeamOf(GF.s); if(!st){ toast('Il marcatore non è in distinta', 'err'); return; }
   const w = parseWhen(GF.ts); if(w.err){ toast(w.err, 'warn'); return; }
   const g = { s:GF.s, og:!!GF.og, a:(!GF.og && GF.a) ? GF.a : '', min:w.min != null ? w.min : null, ts:w.ts || '' };
-  if(g.a && (g.a === g.s || edTeamOf(g.a) !== st)){ toast('L’assist deve essere un compagno di squadra del marcatore', 'warn'); return; }
+  if(g.a && g.a === g.s){ toast('L’assist deve essere un compagno di squadra del marcatore', 'warn'); return; }
+  if(!ED.moves.length && g.a && edTeamOf(g.a) !== st){ toast('L’assist deve essere un compagno di squadra del marcatore', 'warn'); return; }
   const arr = [...ED.goals];
-  if(GF.edit >= 0) arr[GF.edit] = g; else arr.push(g);
+  ED.goals.forEach(gkey);
+  if(GF.edit >= 0){ g._k = arr[GF.edit]._k; arr[GF.edit] = g; } else arr.push(g);
   const wasEdit = GF.edit >= 0;
-  ED.goals = goalOrder(effGoals(arr));
+  const ng = goalOrder(effGoals(arr)), mv = rebasedMoves(ED.goals, ng);
+  const err = validateMatch({ ...ED, goals:ng, moves:mv }); if(err){ toast(err, 'warn'); return; }
+  ED.goals = ng; ED.moves = mv;
   syncCounts(); goalFormReset(); renderEditor();
   toast(wasEdit ? 'Gol aggiornato' : `${ED.goals.length}° gol aggiunto`);
 }
 function goalAct(act, i){
   if(!ED || !ED.goals[i]) return;
   if(act === 'del'){
-    ED.goals.splice(i, 1); syncCounts();
+    ED.goals.forEach(gkey); setGoals(ED.goals.filter((_, k) => k !== i)); syncCounts();
     if(GF && GF.edit === i) goalFormReset(); else if(GF && GF.edit > i) GF.edit--;
     renderEditor(); return;
   }
   if(act === 'edit'){ const g = ED.goals[i]; GF = { s:g.s, a:g.a || '', og:!!g.og, ts:g.ts || (g.min != null ? String(g.min) : ''), edit:i }; renderGoals(); return; }
   const j = act === 'up' ? i - 1 : i + 1;
   if(j < 0 || j >= ED.goals.length) return;
-  [ED.goals[i], ED.goals[j]] = [ED.goals[j], ED.goals[i]];
+  { const ng = [...ED.goals]; ED.goals.forEach(gkey); [ng[i], ng[j]] = [ng[j], ng[i]]; setGoals(ng); }
   if(GF && GF.edit === i) GF.edit = j; else if(GF && GF.edit === j) GF.edit = i;
   renderEditor();
+}
+/* ---------- Cambi (editor) ---------- */
+let MF = null;
+function moveFormReset(){ MF = { pid:'', k:'', ts:'', edit:-1 }; }
+function renderMoves(){
+  const box = $('#ed-moves'); if(!box) return;
+  if(!ED || ED.status === 'scheduled'){ box.hidden = true; box.innerHTML = ''; return; }
+  box.hidden = false;
+  if(!ED.seq){
+    box.innerHTML = `<div class="gl-h"><h4>🔁 Cambi</h4></div><p class="mu sm" style="margin:0">I cambi (giocatori in più, uscite, passaggi all’altra squadra) si registrano solo con l’inserimento dei gol in sequenza, perché servono a sapere per quale squadra segna ciascuno. Questa gara è registrata con i soli totali: passa alla sequenza nella sezione dei gol per usarli.</p>`;
+    return;
+  }
+  const rows = moveRows(ED);
+  const list_ = rows.map(r => `<li class="gl-row mv ${r.bad ? 'bad' : ''}">
+      <span class="gl-n">${moveIcon(r.k)}</span><span class="gl-m">${r.min != null ? r.min + '’' : ''}</span>
+      <span class="gl-w"><span>${esc(moveText(r, ED))}</span>${r.bad ? '<small>cambio non valido</small>' : ''}</span><span class="gl-s"></span>
+      <span class="gl-act"><button type="button" data-mact="edit" data-mi="${r.j}" aria-label="Modifica">✎</button><button type="button" data-mact="del" data-mi="${r.j}" aria-label="Elimina">×</button></span>
+    </li>`).join('');
+  const chip = (e, T) => `<button type="button" class="pchip ${T === 'white' ? 'w' : 'b'} gc" data-mp="${e.pid}" aria-pressed="${MF.pid === e.pid}">${avatar(store.players[e.pid] || { name:e.n }, 'xs')}${esc(pname(e.pid, e.n))}${e.bench ? '<span class="tg">in più</span>' : ''}</button>`;
+  const chips = (!ED.white.length && !ED.black.length) ? '<p class="mu sm" style="margin:0">Schiera prima i giocatori nelle due squadre.</p>'
+    : [...ED.white.map(e => chip(e, 'white')), ...ED.black.map(e => chip(e, 'black'))].join('');
+  const KS = [['out', '⬇️ Esce'], ['sw', '🔁 Passa all’altra squadra'], ['in', '⬆️ Entra']];
+  const pw = parseWhen(MF.ts), prev = pw.err ? pw.err : pw.min != null ? `→ ${pw.min}’ dall’inizio` : '';
+  const at = MF.edit >= 0 ? ED.moves[MF.edit]?.at : ED.goals.length;
+  box.innerHTML = `<div class="gl-h"><h4>🔁 Cambi</h4><span class="mu sm">Giocatori in più, uscite e passaggi all’altra squadra</span></div>
+    ${rows.length ? `<ol class="gl-list">${list_}</ol>` : '<p class="mu sm" style="margin:0 0 12px">Nessun cambio. Se serve, aggiungi chi esce, chi passa all’altra squadra o chi entra come giocatore in più.</p>'}
+    <div class="gl-form">
+      <div class="gl-ft">${MF.edit >= 0 ? 'Modifica il cambio' : 'Nuovo cambio'}</div>
+      <div class="gl-lb">Giocatore</div><div class="gl-chips">${chips}</div>
+      <div class="gl-lb">Tipo</div><div class="gl-chips">${KS.map(([k, l]) => `<button type="button" class="pchip gc" data-mk="${k}" aria-pressed="${MF.k === k}">${l}</button>`).join('')}</div>
+      <div class="gl-lb">Minuto o ora del memo (facoltativo)</div>
+      <div class="gl-when"><input id="mv-ts" class="field" type="text" inputmode="text" autocomplete="off" placeholder="es. 21:14 oppure 23" value="${esc(MF.ts)}"><span id="mv-prev">${esc(prev)}</span></div>
+      <p class="mu sm" style="margin:0">Senza minuto il cambio vale dopo i ${at} gol già in cronaca.</p>
+      <div class="row end" style="gap:8px">${MF.edit >= 0 ? '<button type="button" class="btn ghost sm" data-action="move-cancel">Annulla modifica</button>' : ''}<button type="button" class="btn primary" data-action="move-add">${MF.edit >= 0 ? 'Salva modifica' : '＋ Aggiungi cambio'}</button></div>
+    </div>`;
+}
+function moveAdd(){
+  if(!ED || !MF) return;
+  if(!MF.pid){ toast('Scegli il giocatore', 'warn'); return; }
+  if(!MF.k){ toast('Scegli il tipo di cambio', 'warn'); return; }
+  const w = parseWhen(MF.ts); if(w.err){ toast(w.err, 'warn'); return; }
+  const x = { pid:MF.pid, k:MF.k, min:w.min != null ? w.min : null, ts:w.ts || '', at:MF.edit >= 0 ? ED.moves[MF.edit].at : ED.goals.length };
+  const arr = [...ED.moves];
+  if(MF.edit >= 0) arr[MF.edit] = x; else arr.push(x);
+  const err = validateMatch({ ...ED, moves:arr }); if(err){ toast(err, 'warn'); return; }
+  const wasEdit = MF.edit >= 0;
+  ED.moves = arr; moveFormReset(); renderEditor();
+  toast(wasEdit ? 'Cambio aggiornato' : 'Cambio aggiunto');
+}
+function moveAct(act, j){
+  if(!ED || !ED.moves[j]) return;
+  if(act === 'del'){
+    const arr = ED.moves.filter((_, k) => k !== j);
+    const err = validateMatch({ ...ED, moves:arr });
+    if(err){ toast(`Non puoi eliminare questo cambio: ${err}`, 'warn'); return; }
+    ED.moves = arr;
+    if(MF && MF.edit === j) moveFormReset(); else if(MF && MF.edit > j) MF.edit--;
+    renderEditor(); return;
+  }
+  const x = ED.moves[j];
+  MF = { pid:x.pid, k:x.k, ts:x.ts || (x.min != null ? String(x.min) : ''), edit:j };
+  renderMoves();
 }
 async function goalsToSeq(){
   const ok = await confirmDlg('Passare alla sequenza?', 'I gol e gli assist inseriti come totali verranno azzerati: li reinserirai uno alla volta, nell’ordine in cui sono avvenuti.', 'Azzera e passa', true);
   if(!ok || !ED) return;
-  ED.seq = true; ED.goals = []; goalFormReset(); syncCounts(); renderEditor();
+  ED.seq = true; ED.goals = []; ED.moves = []; goalFormReset(); syncCounts(); renderEditor();
 }
 /* Se il capitano scelto non è più nella sua squadra, il campo si svuota */
 function edCapFix(){
-  if(ED.capW && !ED.white.some(e => e.pid === ED.capW)) ED.capW = null;
-  if(ED.capB && !ED.black.some(e => e.pid === ED.capB)) ED.capB = null;
+  if(ED.capW && !ED.white.some(e => e.pid === ED.capW && !e.bench)) ED.capW = null;
+  if(ED.capB && !ED.black.some(e => e.pid === ED.capB && !e.bench)) ED.capB = null;
 }
 function edStep(btn, d){
   const row = btn.closest('.erow'); if(!row) return;
@@ -4079,7 +4344,7 @@ async function saveMatch(){
   ED.time = $('#ed-time').value || '';
   ED.end = $('#ed-end').value || '';
   if(ED.status !== 'scheduled' && ED.end && (!ED.time || matchLen({ time:ED.time, end:ED.end }) == null)){ toast('Controlla ora inizio e ora fine della gara', 'err'); return; }
-  const w = ED.white.length, b = ED.black.length;
+  const w = ED.white.filter(e => !e.bench).length, b = ED.black.filter(e => !e.bench).length;
   if(ED.called.length){
     const ok = await confirmDlg('Convocati non assegnati', `${ED.called.length} convocati non sono in nessuna squadra e non verranno salvati. Premi “Bilancia squadre” oppure continua.`, 'Salva senza di loro');
     if(!ok) return;
@@ -4095,11 +4360,15 @@ async function saveMatch(){
   let goalsOut = [];
   if(!sched && ED.seq){
     syncCounts();
-    const bad = ED.goals.some(g => { const t = edTeamOf(g.s); return !t || (g.a && !g.og && edTeamOf(g.a) !== t); });
-    if(bad){ toast('Un gol fa riferimento a un giocatore fuori distinta o a un assist di un avversario: controlla la cronaca', 'err'); return; }
-    goalsOut = goalOrder(effGoals(ED.goals)).map(g => ({ s:g.s, ...(g.a && !g.og ? { a:g.a } : {}), ...(g.og ? { og:1 } : {}), ...(g.min != null ? { min:g.min } : {}), ...(g.ts ? { ts:g.ts } : {}) }));
+    const bad = ED.goals.some(g => !edTeamOf(g.s) || (g.a && !g.og && !edTeamOf(g.a)));
+    if(bad){ toast('Un gol fa riferimento a un giocatore fuori distinta: controlla la cronaca', 'err'); return; }
+    const ordered = goalOrder(effGoals(ED.goals)), mvOrd = rebasedMoves(ED.goals, ordered);
+    const verr = validateMatch({ ...ED, goals:ordered, moves:mvOrd }); if(verr){ toast(verr, 'err'); return; }
+    ED.goals = ordered; ED.moves = mvOrd;
+    goalsOut = ordered.map(g => ({ s:g.s, ...(g.a && !g.og ? { a:g.a } : {}), ...(g.og ? { og:1 } : {}), ...(g.min != null ? { min:g.min } : {}), ...(g.ts ? { ts:g.ts } : {}) }));
   }
-  const clean = e => ({ pid:e.pid, n:pname(e.pid, e.n), g:sched ? 0 : num(e.g), a:sched ? 0 : num(e.a), og:sched ? 0 : num(e.og) });
+  const clean = e => ({ pid:e.pid, n:pname(e.pid, e.n), g:sched ? 0 : num(e.g), a:sched ? 0 : num(e.a), og:sched ? 0 : num(e.og), ...(e.bench && !sched ? { bench:1 } : {}) });
+  const movesOut = (!sched && ED.seq) ? matchTimeline({ ...ED, goals:goalsOut }).moves.map(x => ({ pid:x.pid, k:x.k, ...(x.min != null ? { min:x.min } : {}), ...(x.ts ? { ts:x.ts } : {}), at:x.slot })) : [];
   const payload = {
     status:sched ? 'scheduled' : 'played', time:ED.time, ...(!sched && ED.end ? { end:ED.end } : {}), fmW:ED.fmW || DEF_FM, fmB:ED.fmB || DEF_FM,
     ...(ED.posW ? { posW:list(ED.posW) } : {}), ...(ED.posB ? { posB:list(ED.posB) } : {}),
@@ -4107,14 +4376,15 @@ async function saveMatch(){
     day:ED.day, date:ED.date,
     white:ED.white.map(clean), black:ED.black.map(clean),
     ...(goalsOut.length ? { goals:goalsOut } : {}),
+    ...(movesOut.length ? { moves:movesOut } : {}),
     createdAt:(ED.id && store.matches[ED.id]?.createdAt) || Date.now(),
     voteClose:sched ? null : (store.matches[ED.id]?.voteClose || ((!ED.id || store.matches[ED.id]?.status === 'scheduled') ? Date.now() + VOTE_WINDOW : null)),
     updatedAt:Date.now()
   };
   /* Gara giocata senza capitano scelto: si salva quello automatico di adesso, così non cambia nelle settimane dopo */
   if(!sched){
-    if(!payload.capW){ const c = captainOf(payload.white); if(c) payload.capW = c; }
-    if(!payload.capB){ const c = captainOf(payload.black); if(c) payload.capB = c; }
+    if(!payload.capW){ const c = captainOf(payload.white.filter(e => !e.bench)); if(c) payload.capW = c; }
+    if(!payload.capB){ const c = captainOf(payload.black.filter(e => !e.bench)); if(c) payload.capB = c; }
   }
   const old = ED.id ? store.matches[ED.id] : null;
   if(!sched && (!old || old.status === 'scheduled' || old.top4)){
@@ -4546,12 +4816,15 @@ document.addEventListener('click', async e => {
   if(d.prole){ ui.pRole = d.prole; renderPlayers(); return; }
   if(d.swap){ const [team, pid] = d.swap.split('|'); handleSwap(d.mid, team, pid); return; }
   if(d.plq){ figPlq = figPlq === d.plq ? null : d.plq; renderFigurina(); return; }
-  if(d.gs !== undefined){ if(GF){ GF.s = GF.s === d.gs ? '' : d.gs; if(GF.s && GF.a && (GF.a === GF.s || edTeamOf(GF.a) !== edTeamOf(GF.s))) GF.a = ''; renderGoals(); } return; }
+  if(d.gs !== undefined){ if(GF){ GF.s = GF.s === d.gs ? '' : d.gs; if(GF.s && GF.a && (GF.a === GF.s || (!ED.moves.length && edTeamOf(GF.a) !== edTeamOf(GF.s)))) GF.a = ''; renderGoals(); } return; }
   if(d.ga !== undefined){ if(GF){ GF.a = d.ga; renderGoals(); } return; }
   if(d.gact){ goalAct(d.gact, +d.gi); return; }
+  if(d.mp !== undefined){ if(MF){ MF.pid = MF.pid === d.mp ? '' : d.mp; renderMoves(); } return; }
+  if(d.mk !== undefined){ if(MF){ MF.k = MF.k === d.mk ? '' : d.mk; renderMoves(); } return; }
+  if(d.mact){ moveAct(d.mact, +d.mi); return; }
   if(d.pool){ edToggle(d.pool); return; }
   if(d.st){ edStep(t, +d.st); return; }
-  if('rm' in d){ const row = t.closest('.erow'); if(goalsInvolve(row.dataset.pid)){ toast(`${pname(row.dataset.pid)} ha gol o assist registrati: eliminali dalla cronaca prima di toglierlo`, 'warn'); return; } ED[row.dataset.t] = ED[row.dataset.t].filter(x => x.pid !== row.dataset.pid); edCapFix(); renderEditor(); return; }
+  if('rm' in d){ const row = t.closest('.erow'); if(movesInvolve(row.dataset.pid)){ toast(`${pname(row.dataset.pid)} ha dei cambi registrati: eliminali prima di toglierlo`, 'warn'); return; } if(goalsInvolve(row.dataset.pid)){ toast(`${pname(row.dataset.pid)} ha gol o assist registrati: eliminali dalla cronaca prima di toglierlo`, 'warn'); return; } ED[row.dataset.t] = ED[row.dataset.t].filter(x => x.pid !== row.dataset.pid); edCapFix(); renderEditor(); return; }
   if('cap' in d){ const row = t.closest('.erow'); if(row && ED){ const k = row.dataset.t === 'white' ? 'capW' : 'capB'; ED[k] = ED[k] === row.dataset.pid ? null : row.dataset.pid; renderEditor(); } return; }
   if(d.openPlayer && !d.action){ figPlq = null; openFigurina(d.openPlayer); return; }
   if(d.openMatch){ ui.matchId = d.openMatch; renderMatches(); go('matches'); return; }
@@ -4593,6 +4866,8 @@ document.addEventListener('click', async e => {
     case 'ed-save': saveMatch(); break;
     case 'goal-add': goalAdd(); break;
     case 'goal-cancel': goalFormReset(); renderGoals(); break;
+    case 'move-add': moveAdd(); break;
+    case 'move-cancel': moveFormReset(); renderMoves(); break;
     case 'goals-seq': goalsToSeq(); break;
     case 'an-load': anLoad(); break;
     case 'who-guest': $('#who-g').hidden = false; setTimeout(() => $('#who-name').focus(), 50); break;
@@ -4631,14 +4906,21 @@ $('#msel').addEventListener('change', e => { ui.matchId = e.target.value; ui.swa
 $('#ed-filter').addEventListener('input', renderEditorPick);
 $('#ed-day').addEventListener('input', e => { if(ED) ED.day = num(e.target.value); });
 $('#ed-date').addEventListener('input', e => { if(ED) ED.date = e.target.value; });
-$('#ed-time').addEventListener('input', e => { if(ED){ ED.time = e.target.value; if(ED.seq){ ED.goals = goalOrder(effGoals(ED.goals)); renderGoals(); } } });
-$('#ed-end').addEventListener('input', e => { if(ED){ ED.end = e.target.value; if(ED.seq){ ED.goals = goalOrder(effGoals(ED.goals)); renderGoals(); } } });
+$('#ed-time').addEventListener('input', e => { if(ED){ ED.time = e.target.value; if(ED.seq){ ED.goals.forEach(gkey); setGoals(goalOrder(effGoals(ED.goals))); renderGoals(); renderMoves(); } } });
+$('#ed-end').addEventListener('input', e => { if(ED){ ED.end = e.target.value; if(ED.seq){ ED.goals.forEach(gkey); setGoals(goalOrder(effGoals(ED.goals))); renderGoals(); renderMoves(); } } });
 $('#ed-goals').addEventListener('input', e => {
   if(e.target.id !== 'gf-ts' || !GF) return;
   GF.ts = e.target.value;
   const w = parseWhen(GF.ts), pv = $('#gf-prev');
   if(pv) pv.textContent = w.err ? w.err : w.min != null ? `→ ${w.min}’ dall’inizio` : '';
 });
+$('#ed-moves').addEventListener('input', e => {
+  if(e.target.id !== 'mv-ts' || !MF) return;
+  MF.ts = e.target.value;
+  const w = parseWhen(MF.ts), pv = $('#mv-prev');
+  if(pv) pv.textContent = w.err ? w.err : w.min != null ? `→ ${w.min}’ dall’inizio` : '';
+});
+$('#ed-moves').addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.id === 'mv-ts'){ e.preventDefault(); moveAdd(); } });
 $('#ed-goals').addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.id === 'gf-ts'){ e.preventDefault(); goalAdd(); } });
 document.addEventListener('change', e => {
   const t = e.target;
