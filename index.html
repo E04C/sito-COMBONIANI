@@ -317,6 +317,12 @@ button.affr:hover{border-color:var(--line)}
 .locked p{color:var(--mu);margin:0 auto 18px;max-width:40ch}
 .db-info{margin-top:16px;padding:14px 18px;display:flex;flex-wrap:wrap;gap:8px 22px;color:var(--mu);font-size:13.5px;font-weight:600}
 .db-info b{color:var(--tx)}
+.sa-list{display:grid;gap:8px}
+.sa-r{display:grid;gap:2px;padding:10px 12px;border-radius:12px;border:1px solid var(--hair);background:rgba(255,255,255,.03);font-size:13.5px}
+.sa-r span{color:var(--mu)}
+.sa-d{display:flex;flex-wrap:wrap;gap:4px 10px}
+.sa-d i{font-style:normal;font-variant-numeric:tabular-nums}
+.sa-b{color:var(--tx)!important;font-weight:700}
 .fx-box{padding:16px 18px;margin-bottom:14px}
 .fx-box h3{margin:0 0 4px;font:italic 800 23px/1 var(--disp)}
 .fx-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--hair)}
@@ -1776,7 +1782,17 @@ const APP_VERSION = '1.5.0';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
-const CASINO = { START:100, DAILY:10, MATCH:20, GOAL:10, ASSIST:5, CAP:60, MARGIN:0.10, ODDS_MIN:1.10, ODDS_MAX:50, POOL_STAKE:10, PROFETA_MIN:5 };
+const CASINO = { START:100, DAILY:10, MATCH:20, GOAL:10, ASSIST:5, CAP:60, WIN_CAP:1000, POOL_STAKE:10, PROFETA_MIN:5 };   /* WIN_CAP = tetto della somma restituita per una scommessa */
+/* Parametri delle quote. Si leggono sempre con cparam('CHIAVE') o cparam('CAPS.esito'): un valore in casino/params vale al posto di quello qui */
+const BETP = { MARGIN:0.15, MARGIN_FEW:0.07, FEW_K:15, MARGIN_HARD:0.30, MARGIN_COMBO:0.10, MARGIN_MAX:0.45, ODDS_MIN:1.10, ODDS_STEP:0.05, GOALS_PRIOR:10.4, GOALS_PRIOR_W:3, GOALS_SD:2.7,
+  SENS:8, W_N:6, SPREAD:0.08, PLAYER_PRIOR_G:3, QA_PRIOR:0.55, OG_PRIOR:1, LEG_MAX:3, ODDS_MAX_TOTAL:30, COMBO_PMAX:0.80,
+  CAPS:{ esito:8, dc:4, tot:4, team:4, band:4, parity:4, margin:6, exact:25, first:8, scorer:8, scorer2:15, hat:20, firstScorer:15, assist:8, ga:8, og:8, ogPlayer:25 } };
+function cparam(key){
+  const P = store.casino && store.casino.params, path = String(key).split('.');
+  let v = P, d = BETP;
+  for(const k of path){ v = v != null && typeof v === 'object' ? v[k] : undefined; d = d != null ? d[k] : undefined; }
+  return typeof d === 'number' ? (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : d) : d;   /* un valore non numerico o negativo si ignora */
+}
 /* Interruttori delle funzioni: li accende e spegne l'admin (settings/features/{chiave}), valgono per tutti i dispositivi.
    Il codice legge sempre e solo feat(chiave). Spenta = nascosta e disattivata; codice e dati restano, riaccesa torna tutto com'era. */
 const FEATURE_DEFAULTS = { casino:true, mvp:true, ratings:true };
@@ -2376,8 +2392,9 @@ function voteInfo(m, preFn){
 }
 /* ---------- Voto ai compagni (1-5 stelle, anonimo). Solo gare con rate:1 ----------
    Vota chi ha giocato (in rosa), tutti i compagni della stessa squadra effettiva (effTeam), se stesso escluso.
-   Massimo 3 voti da 5 stelle e 2 da 1 stella. Chiude a voteClose o quando hanno votato tutti. Bonus OVR = (media - 3) x 0,25, con almeno 3 votanti. */
-const RATE_MAX5 = 3, RATE_MAX1 = 2, RATE_MIN_N = 3, RATE_STEP = 0.25;
+   Massimo 3 voti da 5 stelle e 2 da 1 stella. Chiude a voteClose o quando hanno votato tutti. Bonus OVR = (media - 3) x 0,1 (da -0,2 a +0,2), con almeno 3 votanti. */
+const RATE_MAX5 = 3, RATE_MAX1 = 2, RATE_MIN_N = 3, RATE_STEP = 0.1;   /* bonus = (media − 3) × 0,1: da −0,2 a +0,2 */
+const LATE_PEN = 0.3;   /* punti OVR persi da chi arriva in ritardo, dopo i tetti */
 function rateInfo(m){
   const EE = effEntries(m), teamOf = {}, by = { white:[], black:[] };
   for(const t of ['white', 'black']) for(const e of EE[t]) if(store.players[e.pid] && !(e.pid in teamOf)){ teamOf[e.pid] = t; by[t].push(e.pid); }
@@ -2402,6 +2419,14 @@ function ratingsValid(items, targets){
 function rateResults(m){
   const out = {};
   if(!feat('ratings') || !m.rate || m.status === 'scheduled') return out;   /* stelle spente: bonus sempre 0, i voti restano salvati */
+  for(const [pid, t] of Object.entries(rateTally(m))) out[pid] = { n:t.n, avg:t.avg, bonus:t.bonus };
+  return out;
+}
+/* Conteggio dei voti ricevuti da ciascuno a votazione chiusa: { pid: { n, avg, dist:[1..5], bonus } }. Ignora l'interruttore (lo usa anche la vista admin).
+   Nei dati non c'è chi ha dato il voto, quindi qui non può comparire. */
+function rateTally(m){
+  const out = {};
+  if(!m.rate || m.status === 'scheduled') return out;
   const info = rateInfo(m); if(info.open) return out;
   const acc = {};
   for(const rec of Object.values((store.ratings && store.ratings[m.id]) || {})){
@@ -2410,8 +2435,8 @@ function rateResults(m){
     (acc[rec.to] = acc[rec.to] || []).push(v);
   }
   for(const [pid, arr] of Object.entries(acc)){
-    const avg = arr.reduce((t, v) => t + v, 0) / arr.length;
-    out[pid] = { n:arr.length, avg, bonus:arr.length >= RATE_MIN_N ? (avg - 3) * RATE_STEP : 0 };
+    const avg = arr.reduce((t, v) => t + v, 0) / arr.length, dist = [1, 2, 3, 4, 5].map(k => arr.filter(v => v === k).length);
+    out[pid] = { n:arr.length, avg, dist, bonus:arr.length >= RATE_MIN_N ? (avg - 3) * RATE_STEP : 0 };
   }
   return out;
 }
@@ -2556,8 +2581,8 @@ function computeStats(upto){
         const award = awardIds.has(e.pid);
         if(award) st.awards = (st.awards || 0) + 1;
         const preOvr = st.ovr;
-        /* il bonus delle stelle e il −1 del ritardo si sommano dopo il delta già limitato dai tetti (+5/-3); la variazione mostrata li include */
-        const d = ovrDelta(st.p.role, st.ovr, { res:r, margin, conceded, g, a, og, mvp:isMvp, award }) + (RR[e.pid] ? RR[e.pid].bonus : 0) - (e.late ? 1 : 0);
+        /* il bonus delle stelle e la penalità del ritardo (LATE_PEN) si sommano dopo il delta già limitato dai tetti (+5/-3); la variazione mostrata li include */
+        const d = ovrDelta(st.p.role, st.ovr, { res:r, margin, conceded, g, a, og, mvp:isMvp, award }) + (RR[e.pid] ? RR[e.pid].bonus : 0) - (e.late ? LATE_PEN : 0);
         st.ovr = Math.max(OVR_MIN, Math.min(OVR_MAX, st.ovr + d));
         st.last = { d, day:num(m.day) };
         (log[m.id] = log[m.id] || {})[e.pid] = { d, ovr:st.ovr, pre:preOvr };
@@ -4646,6 +4671,39 @@ function renderCasino(){
   ui.cPop = 0;
 }
 
+/* ---------- Vista admin dei voti a stelle: solo conteggi per chi li ha ricevuti, mai chi li ha dati ---------- */
+const sgnB = v => (v < 0 ? '−' : '+') + Math.abs(v).toFixed(2).replace('.', ',');
+function starsAdminLoad(ids){
+  if(!db) return;
+  for(const id of ids){
+    if(ratingsLoaded[id]) continue;
+    ratingsLoaded[id] = true;
+    db.ref('ratings/' + id).once('value').then(sn => { store.ratings[id] = sn.val() || {}; refreshStarsAdmin(); }).catch(() => { ratingsProblem('read', 'ratings/' + id); });
+  }
+}
+function refreshStarsAdmin(){ const m = $('#m-vinfo'); if(m && m.classList.contains('open') && ui.starsView) $('#vi-body').innerHTML = starsAdminHTML(); }
+function starsAdminHTML(){
+  const on = feat('ratings'), ms = [...STATS.matches].filter(m => m.rate).reverse();
+  const warn = on ? '' : '<div class="warnline" style="margin:0 0 10px">Funzione spenta: il bonus non è applicato.</div>';
+  if(!ms.length) return `<h3>Voti a stelle</h3>${warn}<p class="mu sm">Nessuna gara con il voto a stelle.</p>`;
+  const body = ms.map(m => {
+    const info = rateInfo(m), head = `<h4 class="vi-h">Giornata ${num(m.day)}${m.date ? ', ' + esc(fmtDate(m.date)) : ''}</h4>`;
+    if(info.open) return `${head}<p class="mu sm">Votazione in corso: ${info.n} su ${info.voters.length} hanno votato.</p>`;
+    const T = rateTally(m), rows = Object.entries(T).sort((a, b) => pname(a[0]).localeCompare(pname(b[0]), 'it'));
+    if(!rows.length) return `${head}<p class="mu sm">Nessun voto ricevuto.</p>`;
+    return `${head}<div class="sa-list">${rows.map(([pid, t]) => `<div class="sa-r"><b>${esc(pname(pid))}</b><span>${t.n} ${t.n === 1 ? 'voto' : 'voti'}, media ${t.avg.toFixed(2).replace('.', ',')}</span>
+      <span class="sa-d" title="Voti da 1 a 5 stelle">${t.dist.map((c, i) => `<i>${i + 1}★ ${c}</i>`).join('')}</span>
+      <span class="sa-b">${t.n >= RATE_MIN_N ? (on ? `bonus ${sgnB(t.bonus)} OVR` : `bonus ${sgnB(t.bonus)} OVR, non applicato`) : `servono ${RATE_MIN_N} voti: nessun bonus`}</span></div>`).join('')}</div>`;
+  }).join('');
+  return `<h3>Voti a stelle</h3>${warn}<p class="mu sm">Qui si vede come è stata votata ogni persona, non chi ha dato quali voti: nei dati non c’è.</p>${body}`;
+}
+function openStarsAdmin(){
+  if(!ui.admin) return;
+  ui.starsView = true;
+  starsAdminLoad(STATS.matches.filter(m => m.rate && !rateInfo(m).open).map(m => m.id));
+  $('#vi-body').innerHTML = starsAdminHTML(); openModal('#m-vinfo');
+}
+
 function renderAdmin(){
   const el = $('#admin');
   if(!ui.admin){
@@ -4663,6 +4721,7 @@ function renderAdmin(){
     <div class="admin-grid">
       <button class="tile" data-action="new-sched"><span class="ic">🗓️</span><b>Programma gara</b><span>Data, ora e convocati bilanciati: tutti vedono dove giocano.</span></button>
       <button class="tile" data-action="new-match"><span class="ic">📝</span><b>Registra gara</b><span>Schiera le squadre e segna gol, assist e autogol.</span></button>
+      <button class="tile" data-action="stars-view"><span class="ic">⭐</span><b>Voti a stelle</b><span>Per ogni gara: quanti voti ha preso ognuno, la media e il bonus. Mai chi ha votato.</span></button>
       <button class="tile" data-action="prof-list"><span class="ic">🪪</span><b>Richieste schede${profPending().length ? `<span class="cbadge">${profPending().length}</span>` : ''}</b><span>Approva o rifiuta le schede dei giocatori (nascita, nazionalità, ruolo preciso).</span></button>
       <button class="tile" data-action="add-player"><span class="ic">🧑‍🎤</span><b>Aggiungi giocatore</b><span>Nome, ruolo, piede e foto dal rullino.</span></button>
       <button class="tile" data-action="backup-all"><span class="ic">💾</span><b>Backup completo</b><span>Scarica tutti i dati del database in un file .json. Contiene anche il PIN.</span></button>
@@ -5022,7 +5081,7 @@ function stp(f, ic, label, v){
 function edTeamHTML(T){
   const arr = ED[T];
   return `<h4><span><span class="dot ${T === 'white' ? 'w' : 'b'}"></span>Squadra ${T === 'white' ? 'Bianca' : 'Nera'}</span><span class="cnt ${arr.filter(e => !e.bench).length === MAX_START ? 'full' : ''}">${edCount(T)}</span></h4>` +
-    (arr.length ? arr.map(e => `<div class="erow" data-t="${T}" data-pid="${e.pid}">${avatar(store.players[e.pid] || { name:e.n }, 'xs')}<span class="nm">${esc(pname(e.pid, e.n))}${e.bench ? '<em class="bn">in più</em>' : ''}</span>${ED.status === 'scheduled' ? '' : `<button type="button" class="latb" data-late aria-pressed="${!!e.late}" aria-label="In ritardo: ${esc(pname(e.pid, e.n))}" title="In ritardo (−1 OVR)">⏰</button>`}${e.bench ? '<span></span>' : `<button type="button" class="capb" data-cap aria-pressed="${ED[T === 'white' ? 'capW' : 'capB'] === e.pid}" aria-label="Capitano: ${esc(pname(e.pid, e.n))}" title="Scegli come capitano (tocca di nuovo per tornare all’automatico)">C</button>`}<button type="button" class="rm" data-rm aria-label="Togli ${esc(pname(e.pid, e.n))}">×</button>${ED.seq ? roSteps(e) : `<div class="steps">${stp('g', '⚽', 'Gol', e.g)}${stp('a', '👟', 'Assist', e.a)}${stp('og', '🟥', 'Autogol', e.og)}</div>`}</div>`).join('')
+    (arr.length ? arr.map(e => `<div class="erow" data-t="${T}" data-pid="${e.pid}">${avatar(store.players[e.pid] || { name:e.n }, 'xs')}<span class="nm">${esc(pname(e.pid, e.n))}${e.bench ? '<em class="bn">in più</em>' : ''}</span>${ED.status === 'scheduled' ? '' : `<button type="button" class="latb" data-late aria-pressed="${!!e.late}" aria-label="⏰ Ritardo, −0,3 OVR: ${esc(pname(e.pid, e.n))}" title="⏰ Ritardo, −0,3 OVR">⏰</button>`}${e.bench ? '<span></span>' : `<button type="button" class="capb" data-cap aria-pressed="${ED[T === 'white' ? 'capW' : 'capB'] === e.pid}" aria-label="Capitano: ${esc(pname(e.pid, e.n))}" title="Scegli come capitano (tocca di nuovo per tornare all’automatico)">C</button>`}<button type="button" class="rm" data-rm aria-label="Togli ${esc(pname(e.pid, e.n))}">×</button>${ED.seq ? roSteps(e) : `<div class="steps">${stp('g', '⚽', 'Gol', e.g)}${stp('a', '👟', 'Assist', e.a)}${stp('og', '🟥', 'Autogol', e.og)}</div>`}</div>`).join('')
       : `<p class="mu sm pad">Scegli la squadra qui sopra e tocca i nomi per schierarli.</p>`);
 }
 function renderEditor(){
@@ -5829,7 +5888,8 @@ document.addEventListener('click', async e => {
     case 'an-load': anLoad(); break;
     case 'who-guest': $('#who-g').hidden = false; setTimeout(() => $('#who-name').focus(), 50); break;
     case 'who-guest-ok': whoGuest(); break;
-    case 'vote-info': if(ui.admin){ $('#vi-body').innerHTML = voteInfoHTML(d.mid); openModal('#m-vinfo'); } break;
+    case 'stars-view': openStarsAdmin(); break;
+    case 'vote-info': if(ui.admin){ ui.starsView = false; $('#vi-body').innerHTML = voteInfoHTML(d.mid); openModal('#m-vinfo'); } break;
     case 'vote-cancel': voteCancel(d.mid, d.voter); break;
     case 'open-news': openNews(); break;
     case 'vote-extend': extendVote(d.mid); break;
@@ -6064,6 +6124,13 @@ try{
   if(!localStorage.getItem('cmb_mig_v110')){
     ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr'].forEach(k => localStorage.removeItem(k));
     localStorage.setItem('cmb_mig_v110', '1');
+  }
+}catch(e){}
+/* Migrazione 1.6.2: ritardo e stelle valgono meno, gli OVR si ricalcolano. Stesso trucco: niente popup finti */
+try{
+  if(!localStorage.getItem('cmb_mig_v162')){
+    ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr'].forEach(k => localStorage.removeItem(k));
+    localStorage.setItem('cmb_mig_v162', '1');
   }
 }catch(e){}
 loadCache();
