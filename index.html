@@ -2677,11 +2677,13 @@ function renderMatches(){
   }
   sel.hidden = false;
   if(!ui.matchId || !store.matches[ui.matchId]) ui.matchId = (sched[0] || played[0]).id;
+  /* Durante gli spostamenti si aggiorna solo il campo: il resto della pagina non si tocca */
+  if(ui.admin && ui.swapMode && paintedMatch === ui.matchId && $('#mdetail .pp')){ rerenderPitch(); return; }
   const opt = (m, label) => `<option value="${m.id}" ${m.id === ui.matchId ? 'selected' : ''}>${label}</option>`;
   sel.innerHTML =
     (sched.length ? `<optgroup label="In programma">${sched.map(m => opt(m, `Giornata ${num(m.day)}${whenLabel(m) ? ' (' + whenLabel(m) + ')' : ''}: formazioni`)).join('')}</optgroup>` : '') +
     (played.length ? `<optgroup label="Giocate">${played.map(m => { const s = matchScore(m); return opt(m, `Giornata ${num(m.day)}${m.date ? ' (' + fmtDate(m.date) + ')' : ''}: Bianchi ${s.w}–${s.b} Neri`); }).join('')}</optgroup>` : '');
-  $('#mdetail').innerHTML = matchDetailHTML(ui.matchId);
+  paintMatch();
 }
 function evListHTML(evs){
   const li = [];
@@ -3479,12 +3481,29 @@ function exportPitchHTML(mm, ph){
   </div>`;
 }
 
-function rerenderMatch(){ if(ui.matchId && store.matches[ui.matchId]) $('#mdetail').innerHTML = matchDetailHTML(ui.matchId); }
+/* Il tabellino si ridisegna senza far saltare la pagina: la posizione si salva prima e si ripristina dopo, se gara e sezione sono le stesse */
+let paintedMatch = null;   /* gara mostrata nell'ultimo disegno di #mdetail */
+function restoreScroll(y){ requestAnimationFrame(() => { if(Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y); }); }
+function paintMatch(){
+  const same = ui.view === 'matches' && paintedMatch === ui.matchId, y = window.scrollY;
+  $('#mdetail').innerHTML = matchDetailHTML(ui.matchId);
+  paintedMatch = ui.matchId;
+  if(same) restoreScroll(y);
+}
+function rerenderMatch(){ if(ui.matchId && store.matches[ui.matchId]) paintMatch(); }
+/* Solo il pannello del campo (.pp): per selezioni, scambi, modulo e "Inverti metà campo" */
+function rerenderPitch(){
+  const m = ui.matchId && store.matches[ui.matchId], pp = m && paintedMatch === ui.matchId && $('#mdetail .pp');
+  if(!pp){ rerenderMatch(); return; }
+  const y = window.scrollY;
+  pp.outerHTML = pitchPanelHTML({ id:ui.matchId, ...m });
+  restoreScroll(y);
+}
 function handleSwap(mid, team, pid){
   const m = store.matches[mid]; if(!m) return;
-  if(!ui.swapSel){ ui.swapSel = { team, pid }; rerenderMatch(); return; }
+  if(!ui.swapSel){ ui.swapSel = { team, pid }; rerenderPitch(); return; }
   const a = ui.swapSel; ui.swapSel = null;
-  if(a.pid === pid){ rerenderMatch(); return; }
+  if(a.pid === pid){ rerenderPitch(); return; }
   const key = t => t === 'white' ? 'posW' : 'posB';
   if(a.team === team){
     const ord = orderFor(m, team);
@@ -3492,10 +3511,10 @@ function handleSwap(mid, team, pid){
     [ord[i], ord[j]] = [ord[j], ord[i]];
     commit({ [`matches/${mid}/${key(team)}`]: ord });
   }else{
-    if(m.status !== 'scheduled'){ toast('In una gara già giocata puoi scambiare solo compagni della stessa squadra', 'warn'); rerenderMatch(); return; }
+    if(m.status !== 'scheduled'){ toast('In una gara già giocata puoi scambiare solo compagni della stessa squadra', 'warn'); rerenderPitch(); return; }
     const A = list(m[a.team]).map(x => ({ ...x })), B = list(m[team]).map(x => ({ ...x }));
     const ia = A.findIndex(x => x.pid === a.pid), ib = B.findIndex(x => x.pid === pid);
-    if(ia < 0 || ib < 0){ rerenderMatch(); return; }
+    if(ia < 0 || ib < 0){ rerenderPitch(); return; }
     const oa = orderFor(m, a.team).map(x => x === a.pid ? pid : x);
     const ob = orderFor(m, team).map(x => x === pid ? a.pid : x);
     [A[ia], B[ib]] = [B[ib], A[ia]];
@@ -3503,7 +3522,7 @@ function handleSwap(mid, team, pid){
     toast(`${pname(a.pid)} e ${pname(pid)} hanno cambiato squadra`);
   }
   haptic();
-  rerenderMatch();
+  rerenderPitch();
 }
 
 /* ---------- Luce olografica: giroscopio sul telefono, mouse su PC, dito sulla figurina ---------- */
@@ -5085,8 +5104,8 @@ document.addEventListener('click', async e => {
     case 'ios-hint-close': $('#ios-hint').hidden = true; localStorage.setItem('cmb_iosHint', '1'); break;
     case 'duel-swap': if(ui.duel){ ui.duel = { a:ui.duel.b, b:ui.duel.a }; renderDuel(); } break;
     case 'balance': balanceTeams(); break;
-    case 'flip': ui.flip = !ui.flip; rerenderMatch(); break;
-    case 'swap-mode': ui.swapMode = !ui.swapMode; ui.swapSel = null; rerenderMatch(); break;
+    case 'flip': ui.flip = !ui.flip; rerenderPitch(); break;
+    case 'swap-mode': ui.swapMode = !ui.swapMode; ui.swapSel = null; if(ui.swapMode) rerenderPitch(); else rerenderMatch(); break;
     case 'export-pitch': exportPitch(d.mid, t); break;
     case 'record-result': if(requireAdmin()) openMatchEditor(d.mid, 'played'); break;
     case 'optimize-photos': if(requireAdmin()) optimizeStoredPhotos(); break;
