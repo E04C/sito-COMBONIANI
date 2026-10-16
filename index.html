@@ -2052,6 +2052,7 @@ const ui = {
   pRole:'ALL',
   pSort:'ovr',
   cView:'gen',
+  tTab:'plq',
   cf:{ q:'', played:false, min:0, open:false },
   duel:null
 };
@@ -2988,7 +2989,7 @@ function renderDashboardInner(){
       <div class="table-wrap" id="cls-wrap">${tableHTML()}</div>
       <p class="legend" id="cls-legend">${esc(cv.legend)}</p>
     </section>
-    <button type="button" class="glass season-btn" data-go="trophies" aria-label="Premi stagionali, stagione 26/27"><span class="ico" aria-hidden="true">🏆</span><span><b>Premi stagionali</b><small>Stagione 26/27</small></span><span class="go" aria-hidden="true">›</span></button>
+    <button type="button" class="glass season-btn" data-action="season-awards" aria-label="Premi stagionali, stagione 26/27"><span class="ico" aria-hidden="true">🏆</span><span><b>Premi stagionali</b><small>Stagione 26/27</small></span><span class="go" aria-hidden="true">›</span></button>
   </div>`;
 }
 /* Cambio vista o filtri: si ridisegnano solo podio, tabella e legenda (la tastiera resta aperta) */
@@ -4703,11 +4704,12 @@ function renderTrophies(){
     const mine = !!me && (c.pid === me || (c.pair && c.pair.includes(me)));
     return recCard(c, { broken, chain, mine });
   }).join('');
-  el.innerHTML = `<div class="glass th-hero"><h2>🏆 Trofei & Primati</h2><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa meglio.</p></div>
-    <div class="th-sec"><h3>Le ${PL.length} targhe stagionali</h3><span>Leader in tempo reale</span></div>
-    <div class="plk-grid">${plk}</div>
-    <div class="th-sec"><h3>Bacheca dei primati storici</h3><span>${nM} ${nM === 1 ? 'gara analizzata' : 'gare analizzate'}</span></div>
-    <div class="rec-grid">${recs}</div>`;
+  const tt = ui.tTab === 'rec' ? 'rec' : 'plq';
+  const ttabs = `<div class="cs-tabs" role="tablist" aria-label="Trofei">${[['plq', 'Targhe'], ['rec', 'Trofei storici']].map(([k, l]) => `<button type="button" role="tab" class="cs-tab ${k === tt ? 'on' : ''}" aria-selected="${k === tt}" data-ttab="${k}">${l}</button>`).join('')}</div>`;
+  el.innerHTML = `${ttabs}<div class="glass th-hero"><h2>🏆 Trofei & Primati</h2><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa meglio.</p></div>
+    ${tt === 'plq' ? `<div class="th-sec"><h3>Le ${PL.length} targhe stagionali</h3><span>Leader in tempo reale · Stagione 26/27</span></div>
+    <div class="plk-grid">${plk}</div>` : `<div class="th-sec"><h3>Bacheca dei primati storici</h3><span>${nM} ${nM === 1 ? 'gara analizzata' : 'gare analizzate'}</span></div>
+    <div class="rec-grid">${recs}</div>`}`;
   try{ localStorage.setItem('cmb2627_seenPlq', JSON.stringify(curP)); localStorage.setItem('cmb2627_seenRecV', JSON.stringify(curR)); }catch(e){}
 }
 const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk','rit','colp','kami'];
@@ -7197,6 +7199,7 @@ document.addEventListener('click', async e => {
     else ui.sort = { key:d.sort, dir:d.sort === 'rank' ? 1 : -1 };
     renderBoardPart(); return;
   }
+  if(d.ttab){ ui.tTab = d.ttab === 'rec' ? 'rec' : 'plq'; renderTrophies(); return; }
   if(d.ctab){ if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; } ui.cTab = d.ctab; renderCasino(); renderSlip(); return; }
   if(d.mpool){ const [k, a, b] = d.mpool.split('|'); placePool(d.mid, k, k === 'mvp' ? a : b, k === 'duel' ? a : undefined); return; }
   if(d.dlKind){ if(ui.dlForm){ ui.dlForm.kind = d.dlKind; $('#dl-pl').hidden = d.dlKind === 't'; $$('[data-dl-kind]').forEach(b => b.classList.toggle('primary', b.dataset.dlKind === d.dlKind)); } return; }
@@ -7230,6 +7233,7 @@ document.addEventListener('click', async e => {
   if(d.openMatch){ ui.matchId = d.openMatch; renderMatches(); go('matches'); return; }
 
   switch(d.action){
+    case 'season-awards': ui.tTab = 'plq'; go('trophies'); break;
     case 'cls-filters': ui.cf.open = !ui.cf.open; { const p = $('#cls-filt'); if(p) p.hidden = !ui.cf.open; t.setAttribute('aria-expanded', String(ui.cf.open)); if(ui.cf.open){ const q = $('#cf-q'); if(q) q.focus(); } } break;
     case 'admin': ui.admin ? go('admin') : openModal('#m-pin'); break;
     case 'add-player': if(requireAdmin()) openPlayerForm(); break;
