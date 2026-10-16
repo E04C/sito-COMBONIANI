@@ -1944,7 +1944,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.7.2';
+const APP_VERSION = '1.7.3';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -7711,6 +7711,13 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.7.3', date:'2026-10-16', items:[
+    `🔐 Ora ogni giocatore ha un codice di 4–6 cifre. Chi sceglie per primo il proprio giocatore imposta il codice: da quel momento serve per entrare da un altro telefono. Su ogni telefono resta salvato, quindi non va scritto a ogni voto.`,
+    `🔄 Tutti dovete rifare l’accesso una volta: scegli il tuo giocatore e imposta il tuo codice. Gli ospiti restano ospiti.`,
+    `🗳️ Per votare l’MVP, dare le stelle ai compagni e chiedere la scheda serve il codice. Gli ospiti guardano tutto ma non votano. I voti a stelle restano anonimi: il codice serve solo a decidere chi può votare.`,
+    `👤 In “Io” c’è “Gestisci account”: cambi il codice oppure esci da quel telefono.`,
+    `⏳ Dopo 5 codici sbagliati l’app si blocca per qualche minuto. Il codice serve a evitare gli scherzi tra amici, non è una cassaforte: non usare un codice che usi anche altrove. Se qualcuno sceglie il tuo giocatore al posto tuo, o se dimentichi il codice, scrivi all’organizzatore: lo azzera.`
+  ] },
   { v:'1.7.2', date:'2026-10-16', items:[
     `📊 La Classifica ha un menu per scegliere cosa guardare: Generale, Capocannoniere, Assist man, % vittorie, Sconfitte o Autogol. Ogni vista mostra solo le colonne che servono, così sul telefono si legge tutto senza scorrere di lato.`,
     `🔎 Accanto al menu c’è il tasto Filtri: puoi cercare un giocatore, vedere solo chi ha giocato o chi ha almeno un certo numero di presenze.`,
