@@ -1495,6 +1495,18 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .who-opt:active{background:var(--or-soft)}
 .who-opt span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .who-guest{display:grid;gap:10px;padding-top:6px;border-top:1px solid var(--hair)}
+.key-form{display:grid;gap:10px;margin:12px 0 4px}
+.key-form label{display:grid;gap:5px;font:700 13px var(--body);color:var(--mu)}
+.key-form .field{height:48px;font-size:20px;letter-spacing:.35em;text-align:center}
+.key-who{display:flex;align-items:center;gap:12px;margin:2px 0 10px}
+.key-who b{display:block;font:italic 800 24px/1.1 var(--disp)}
+.key-who small{color:var(--mu);font-weight:700}
+.key-note{margin:6px 0 0;color:var(--mu2);font-size:12.5px;line-height:1.45}
+.key-list{display:grid;gap:8px;margin:10px 0}
+.key-row{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:12px;border:1px solid var(--hair);background:rgba(255,255,255,.03)}
+.key-row .nm{flex:1;min-width:0;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.key-row .st{font:700 12px var(--body);color:var(--mu2)}
+.key-row .st.on{color:var(--or)}
 .vg-k{font:800 12px var(--body);color:var(--or);text-transform:uppercase;letter-spacing:.06em}
 .vg h3{margin:2px 0 6px}
 .vg-opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
@@ -1838,6 +1850,8 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 
 <!-- Chi sei, voto obbligatorio, info voti -->
 <div class="modal" id="m-who" aria-hidden="true" data-lock="1"><div class="sheet glass who" role="dialog" aria-modal="true" aria-label="Chi sei?" id="who-body"></div></div>
+<div class="modal" id="m-acct" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Gestisci account" id="acct-body" style="width:min(440px,100%)"></div></div>
+<div class="modal" id="m-keys" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Codici dei giocatori" id="keys-body" style="width:min(520px,100%)"></div></div>
 <div class="modal" id="m-rate" aria-hidden="true" data-lock="1"><div class="sheet glass vg" role="dialog" aria-modal="true" aria-label="Vota i compagni" id="rt-body"></div></div>
 <div class="modal" id="m-vote" aria-hidden="true" data-lock="1"><div class="sheet glass vg" role="dialog" aria-modal="true" aria-label="Vota l’MVP" id="vg-body"></div></div>
 <div class="modal" id="m-news" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Novità" style="width:min(620px,100%)"><div id="nw-body"></div><div class="row end sticky-actions"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
@@ -2064,7 +2078,7 @@ const CVIEW_ORDER = ['gen', 'g', 'a', 'pct', 's', 'og'];
 /* =========================================================
    STATE
    ========================================================= */
-const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{}, casino:{}, messages:{} };
+const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{}, casino:{}, messages:{}, playerKeys:{} };
 const loaded = { players:false, matches:false, settings:false };
 let localMode = false;
 const ui = {
@@ -2181,7 +2195,7 @@ function featuresHTML(){
 function loadCache(){
   try{
     const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    if(c){ store.players = c.players || {}; store.matches = c.matches || {}; store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; store.casino = c.casino || {}; }
+    if(c){ store.players = c.players || {}; store.matches = c.matches || {}; store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; store.playerKeys = c.playerKeys || {}; store.casino = c.casino || {}; }
   }catch(e){}
 }
 let cacheT;
@@ -2194,7 +2208,7 @@ function saveCache(){
       const { photo, ...rest } = p;
       return [k, (!rest.photoV && photo) ? p : rest];
     }));
-    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, profileReq:store.profileReq, casino:store.casino, photos:localMode ? store.photos : {} };
+    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, profileReq:store.profileReq, casino:store.casino, photos:localMode ? store.photos : {}, ...(localMode ? { playerKeys:store.playerKeys } : {}) };
     try{ localStorage.setItem(CACHE_KEY, JSON.stringify(data)); }
     catch(e){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, players:Object.fromEntries(Object.entries(players).map(([k, p]) => { const { photo, ...r } = p || {}; return [k, r]; })) })); }catch(e2){} }
   }, 400);
@@ -2947,7 +2961,7 @@ let rq = false;
 function scheduleRender(){ if(rq) return; rq = true; requestAnimationFrame(() => { rq = false; render(); }); }
 function render(){
   featSync();
-  watchRatings(); watchProfileReq();
+  watchRatings(); watchProfileReq(); watchMyKey();
   /* Ruolo Portiere eliminato: i POR già salvati valgono come DIF solo in memoria, nel database non si riscrive nulla */
   for(const id in store.players){ const p = store.players[id]; if(p && p.role === 'POR') p.role = 'DIF'; }
   attachPhotos();
@@ -3512,7 +3526,7 @@ function voteBoxHTML(m){
   if(m.status === 'scheduled' || !feat('mvp')) return '';
   const vi = voteInfo(m);
   if(!m.voteClose && !vi.n) return '';
-  const me = localStorage.getItem('cmb_me'), inMatch = me && vi.eligible.includes(me), mine = me ? vi.votes[me] : null;
+  const me = myPid(), inMatch = me && vi.eligible.includes(me), mine = me ? vi.votes[me] : null;
   const nm = pid => esc(pname(pid));
   if(m.vote2) return voteBox2HTML(m, vi, me, inMatch, mine, !!me && pvHas(m.id));
   if(vi.open){
@@ -3563,14 +3577,82 @@ const PV_KEY = 'cmb2627_pendingVotes';
 const pvGet = () => { try{ return JSON.parse(localStorage.getItem(PV_KEY) || '[]'); }catch(e){ return []; } };
 const pvSet = a => { try{ localStorage.setItem(PV_KEY, JSON.stringify(a)); }catch(e){} };
 const pvHas = mid => pvGet().some(x => x.mid === mid);
-const myPid = () => { try{ return localStorage.getItem('cmb_me') || ''; }catch(e){ return ''; } };
+/* ---------- Codice giocatore ----------
+   Il giocatore scelto su questo telefono vale solo con un codice verificato (cmb_pk = { p, h }, h = hash del codice).
+   Nel database sta solo playerKeys/{pid} = { s:salt, h:hash, v:1 } (PBKDF2-SHA256): mai il codice in chiaro.
+   Il codice serve a decidere chi può votare e agire "come qualcuno": non viene mai collegato ai voti a stelle (ratings resta anonimo).
+   LIMITI: protegge dagli scherzi tra amici, non da chi sa leggere il database; il blocco dopo 5 errori vale solo nell'app. */
+const KEY_ITER = 120000, KEY_MAX_FAIL = 5, KEY_LOCK_MS = 5 * 60e3, PK_KEY = 'cmb_pk', KEY_LK = 'cmb_keylock';
+const keyValid = c => /^\d{4,6}$/.test(String(c));
+const toHex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+const fromHex = h => new Uint8Array((String(h).match(/../g) || []).map(x => parseInt(x, 16)));
+async function keyHash(code, saltHex){
+  if(!window.crypto || !crypto.subtle) throw new Error('nocrypto');
+  const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(String(code)), 'PBKDF2', false, ['deriveBits']);
+  return toHex(await crypto.subtle.deriveBits({ name:'PBKDF2', hash:'SHA-256', salt:fromHex(saltHex), iterations:KEY_ITER }, km, 256));
+}
+async function keyMake(code){ const s = toHex(rndBytes(16)); return { s, h:await keyHash(code, s), v:1 }; }
+function pkGet(){ try{ return JSON.parse(localStorage.getItem(PK_KEY) || 'null'); }catch(e){ return null; } }
+const myPid = () => {
+  try{
+    const me = localStorage.getItem('cmb_me') || '', pk = pkGet();
+    return me && pk && pk.p === me && pk.h ? me : '';
+  }catch(e){ return ''; }
+};
+function keyLockLeft(){ try{ const l = JSON.parse(localStorage.getItem(KEY_LK) || 'null'); return l && l.until > Date.now() ? l.until - Date.now() : 0; }catch(e){ return 0; } }
+function keyFail(){   /* conta l'errore; dopo 5 sbagliati blocca per qualche minuto */
+  let l = null; try{ l = JSON.parse(localStorage.getItem(KEY_LK) || 'null'); }catch(e){}
+  const n = (l && l.until && l.until <= Date.now() ? 0 : (l && l.n) || 0) + 1;
+  const nl = n >= KEY_MAX_FAIL ? { n:0, until:Date.now() + KEY_LOCK_MS } : { n, until:0 };
+  try{ localStorage.setItem(KEY_LK, JSON.stringify(nl)); }catch(e){}
+  return nl.until ? 0 : KEY_MAX_FAIL - n;
+}
+const keyLockMsg = () => `Troppi tentativi sbagliati: riprova tra ${Math.ceil(keyLockLeft() / 60e3)} minuti.`;
+function keyOk(){ try{ localStorage.removeItem(KEY_LK); }catch(e){} }
+const keyOnline = () => !db || syncState === 'live';
+async function keyFetch(pid){
+  if(!db) return (store.playerKeys && store.playerKeys[pid]) || null;
+  return await Promise.race([db.ref('playerKeys/' + pid).once('value').then(sn => sn.val()), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 9000))]);
+}
+/* Primo arrivato: scrive solo se il giocatore non ha ancora un codice (transazione) */
+async function keyClaim(pid, rec){
+  if(!db){ if(store.playerKeys[pid]) return false; applyPath(store, 'playerKeys/' + pid, rec); saveCache(); return true; }
+  return !!(await db.ref('playerKeys/' + pid).transaction(cur => cur ? undefined : rec)).committed;
+}
+/* Cambio codice: scrive solo se il codice nel database è ancora quello che abbiamo verificato */
+async function keyReplace(pid, oldH, rec){
+  if(!db){ const c = store.playerKeys[pid]; if(!c || c.h !== oldH) return false; applyPath(store, 'playerKeys/' + pid, rec); saveCache(); return true; }
+  return !!(await db.ref('playerKeys/' + pid).transaction(cur => cur && cur.h === oldH ? rec : undefined)).committed;
+}
+function keyLogin(pid, h){
+  try{ localStorage.setItem('cmb_me', pid); localStorage.setItem(PK_KEY, JSON.stringify({ p:pid, h })); localStorage.removeItem('cmb_guest'); }catch(e){}
+  keyOk(); anSetMe(pid);
+}
+function keyLogout(){ try{ localStorage.removeItem('cmb_me'); localStorage.removeItem(PK_KEY); }catch(e){} }
+/* Se il codice nel database cambia o viene azzerato (da un altro telefono o dall'admin) questo telefono deve rifare l'accesso */
+let keyWatch = null;
+function keyInvalid(why){ keyLogout(); toast(`Il codice del tuo giocatore è stato ${why}: rifai l’accesso.`, 'warn'); render(); }
+function watchMyKey(){
+  let me = ''; try{ me = localStorage.getItem('cmb_me') || ''; }catch(e){}
+  const pk = pkGet();
+  if(!me || !pk || pk.p !== me){ if(keyWatch){ try{ keyWatch.ref.off('value', keyWatch.fn); }catch(e){} keyWatch = null; } return; }
+  if(!db){ const r = store.playerKeys && store.playerKeys[me]; if(!r || r.h !== pk.h) keyInvalid(!r ? 'azzerato' : 'cambiato'); return; }
+  if(keyWatch && keyWatch.pid === me) return;
+  if(keyWatch){ try{ keyWatch.ref.off('value', keyWatch.fn); }catch(e){} }
+  const ref = db.ref('playerKeys/' + me);
+  const fn = sn => { const v = sn.val(), p = pkGet(); if(!p || p.p !== me) return; if(!v || v.h !== p.h) keyInvalid(!v ? 'azzerato' : 'cambiato'); };
+  ref.on('value', fn, () => {});
+  keyWatch = { pid:me, ref, fn };
+}
 const voteWrites = (mid, voter, target) => ({ [`votes/${mid}/${voter}`]:target, [`votes/${mid}/_m/${voter}`]:Date.now() });
 function pvFlush(){
   if(!feat('mvp')){ if(pvGet().length) pvSet([]); return; }   /* voto MVP spento: la coda si svuota senza inviare nulla */
   if(db && syncState !== 'live') return;
   const q = pvGet(); if(!q.length) return;
-  pvSet([]);
+  const who = myPid(); if(!who) return;   /* senza codice verificato la coda resta ferma */
+  pvSet(q.filter(x => x.voter !== who));
   for(const x of q){
+    if(x.voter !== who) continue;
     const m = store.matches[x.mid]; if(!m) continue;
     const vi = voteInfo({ id:x.mid, ...m });
     if(!vi.open){ toast('Voto non inviato: la votazione era già chiusa', 'warn'); continue; }
@@ -3682,17 +3764,101 @@ function openWho(){
   $('#who-body').innerHTML = `<h3>Chi sei?</h3><p class="lead-p">Scegli la tua carta: ${feat('mvp') ? 'serve per votare l’MVP e per vedere le tue statistiche' : 'serve per vedere le tue statistiche'}. Resta salvata su questo telefono.</p>
     <div class="who-grid">${ls.map(x => `<button type="button" class="who-opt" data-who="${x.pid}">${avatar(x.p, 'md')}<span>${esc(x.name)}</span></button>`).join('')}</div>
     <div class="who-guest"><button type="button" class="btn ghost" data-action="who-guest">Sono un ospite</button>
-      <div id="who-g" hidden><p class="mu sm">Non hai mai giocato ai Comboniani? Scrivi il tuo nome: l’organizzatore lo vedrà negli accessi.</p><div class="row"><input id="who-name" class="field" maxlength="40" placeholder="Nome e cognome" autocomplete="name"><button type="button" class="btn primary" data-action="who-guest-ok">Entra</button></div></div></div>`;
+      <div id="who-g" hidden><p class="mu sm">Non hai mai giocato ai Comboniani? Scrivi il tuo nome: l’organizzatore lo vedrà negli accessi.</p><div class="row"><input id="who-name" class="field" maxlength="40" placeholder="Nome e cognome" autocomplete="name"><button type="button" class="btn primary" data-action="who-guest-ok">Entra</button></div></div>
+      ${identityKnown() ? '<button type="button" class="btn ghost sm" data-action="who-cancel">Annulla</button>' : ''}</div>`;
   openModal('#m-who');
 }
-function whoPick(pid){
-  try{ localStorage.setItem('cmb_me', pid); localStorage.removeItem('cmb_guest'); }catch(e){}
-  anSetMe(pid); closeModal('#m-who', true); render(); toast(`Ciao ${pname(pid)}`);
+/* Scelta del giocatore: se non ha un codice lo imposta chi arriva per primo, altrimenti serve il codice giusto */
+let whoBusy = false;
+async function whoPick(pid){
+  if(whoBusy || !store.players[pid]) return;
+  if(keyLockLeft()){ toast(keyLockMsg(), 'warn'); return; }
+  if(!keyOnline()){ toast('Serve la connessione per scegliere il giocatore', 'warn'); return; }
+  whoBusy = true;
+  try{
+    const rec = await keyFetch(pid);
+    whoCodeUI(pid, rec ? 'enter' : 'new');
+  }catch(e){ console.warn('keyFetch', e); toast('Non riesco a leggere il codice: controlla la connessione e riprova.', 'err'); }
+  finally{ whoBusy = false; }
+}
+function whoCodeUI(pid, mode){
+  const p = store.players[pid], inp = (id, lbl) => `<label>${lbl}<input id="${id}" class="field" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></label>`;
+  $('#who-body').innerHTML = `<div class="key-who">${avatar(p, 'md')}<div><small>${mode === 'new' ? 'Imposta il tuo codice' : 'Inserisci il tuo codice'}</small><b>${esc(p.name)}</b></div></div>
+    <p class="lead-p" style="margin-bottom:6px">${mode === 'new'
+      ? 'Nessuno ha ancora scelto questo giocatore: scegli un codice di 4–6 cifre. Ti servirà per votare e per rientrare da un altro telefono.'
+      : 'Questo giocatore ha un codice. Inseriscilo per votare e vedere le tue statistiche. Resta salvato su questo telefono.'}</p>
+    <form id="key-form" class="key-form" data-pid="${pid}" data-mode="${mode}" autocomplete="off">
+      ${inp('key-in', 'Codice')}${mode === 'new' ? inp('key-in2', 'Ripeti il codice') : ''}
+      <div class="row end"><button type="button" class="btn ghost" data-action="who-back">Indietro</button><button type="submit" class="btn primary">${mode === 'new' ? 'Imposta e continua' : 'Entra'}</button></div>
+    </form>
+    <p class="key-note">${mode === 'new' ? 'Chi arriva per primo lo imposta: se qualcuno ha scelto il tuo giocatore al posto tuo, scrivi all’organizzatore e lo azzera. ' : 'Hai dimenticato il codice o l’ha impostato un altro? Scrivi all’organizzatore: lo azzera. '}Il codice serve a evitare gli scherzi tra amici, non è una cassaforte: non usare un codice che usi anche altrove.</p>`;
+  setTimeout(() => { const i = $('#key-in'); if(i) i.focus(); }, 80);
+}
+async function whoCodeSubmit(form){
+  const pid = form.dataset.pid, mode = form.dataset.mode, code = $('#key-in').value.trim();
+  if(whoBusy) return;
+  if(keyLockLeft()){ toast(keyLockMsg(), 'warn'); return; }
+  if(!keyValid(code)){ toast('Il codice deve avere da 4 a 6 cifre', 'warn'); return; }
+  if(mode === 'new' && $('#key-in2').value.trim() !== code){ toast('I due codici non coincidono', 'warn'); return; }
+  if(!keyOnline()){ toast('Serve la connessione per continuare', 'warn'); return; }
+  whoBusy = true;
+  try{
+    if(mode === 'new'){
+      const rec = await keyMake(code);
+      if(!(await keyClaim(pid, rec))){ toast('Qualcuno ha appena scelto questo giocatore. Inserisci il suo codice.', 'warn'); whoBusy = false; whoCodeUI(pid, 'enter'); return; }
+      keyLogin(pid, rec.h);
+    }else{
+      const rec = await keyFetch(pid);
+      if(!rec){ whoBusy = false; whoCodeUI(pid, 'new'); return; }
+      if(await keyHash(code, rec.s) !== rec.h){
+        const left = keyFail(), sh = form.closest('.sheet'); sh.classList.remove('shake'); void sh.offsetWidth; sh.classList.add('shake');
+        toast(left ? `Codice sbagliato. Tentativi rimasti: ${left}` : keyLockMsg(), 'err'); $('#key-in').value = ''; $('#key-in').focus(); return;
+      }
+      keyLogin(pid, rec.h);
+    }
+    closeModal('#m-who', true); render(); toast(`Ciao ${pname(pid)}`);
+  }catch(e){
+    console.warn('who code', e);
+    toast(e && e.message === 'nocrypto' ? 'Questo browser non supporta il codice: apri il sito da https.' : isPermErr(e) ? 'Il database rifiuta il salvataggio del codice: avvisa l’organizzatore.' : 'Non è andata a buon fine: riprova tra poco.', 'err');
+  }finally{ whoBusy = false; }
+}
+/* Gestisci account: cambio codice ed uscita */
+function openAcct(){
+  const me = myPid(), p = me && store.players[me]; if(!p){ openWho(); return; }
+  $('#acct-body').innerHTML = `<h3>Gestisci account</h3>
+    <div class="key-who">${avatar(p, 'md')}<div><small>Giocatore selezionato</small><b>${esc(p.name)}</b></div></div>
+    <form id="acct-form" class="key-form" autocomplete="off">
+      <label>Codice attuale<input id="ac-old" class="field" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></label>
+      <label>Nuovo codice<input id="ac-new" class="field" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></label>
+      <button type="submit" class="btn primary">Salva</button>
+    </form>
+    <div class="row end" style="margin-top:6px"><button type="button" class="btn ghost" data-close>Chiudi</button><button type="button" class="btn danger" data-action="acct-exit">Esci</button></div>
+    <p class="key-note">“Esci” toglie il giocatore da questo telefono: per rientrare serve il codice. Il codice serve a evitare gli scherzi tra amici, non è una cassaforte: non usarne uno che usi anche altrove.</p>`;
+  openModal('#m-acct');
+}
+async function acctSave(){
+  const me = myPid(); if(!me || whoBusy) return;
+  const oc = $('#ac-old').value.trim(), nc = $('#ac-new').value.trim();
+  if(keyLockLeft()){ toast(keyLockMsg(), 'warn'); return; }
+  if(!keyValid(oc) || !keyValid(nc)){ toast('I codici devono avere da 4 a 6 cifre', 'warn'); return; }
+  if(!keyOnline()){ toast('Serve la connessione per cambiare il codice', 'warn'); return; }
+  whoBusy = true;
+  try{
+    const rec = await keyFetch(me);
+    if(!rec){ keyInvalid('azzerato'); closeModal('#m-acct'); return; }
+    if(await keyHash(oc, rec.s) !== rec.h){ const left = keyFail(); toast(left ? `Codice attuale sbagliato. Tentativi rimasti: ${left}` : keyLockMsg(), 'err'); return; }
+    keyOk();
+    const nr = await keyMake(nc);
+    if(!(await keyReplace(me, rec.h, nr))){ toast('Il codice è cambiato nel frattempo: riprova.', 'warn'); return; }
+    try{ localStorage.setItem(PK_KEY, JSON.stringify({ p:me, h:nr.h })); }catch(e){}
+    closeModal('#m-acct'); toast('Codice cambiato');
+  }catch(e){ console.warn('acct', e); toast(isPermErr(e) ? 'Il database rifiuta il salvataggio del codice: avvisa l’organizzatore.' : 'Non è andata a buon fine: riprova tra poco.', 'err'); }
+  finally{ whoBusy = false; }
 }
 function whoGuest(){
   const el = $('#who-name'), v = (el.value || '').trim().replace(/\s+/g, ' ');
   if(v.length < 2){ toast('Scrivi il tuo nome per entrare come ospite', 'warn'); el.focus(); return; }
-  try{ localStorage.setItem('cmb_guest', v); localStorage.removeItem('cmb_me'); }catch(e){}
+  try{ localStorage.setItem('cmb_guest', v); localStorage.removeItem('cmb_me'); localStorage.removeItem(PK_KEY); }catch(e){}
   anSetGuest(v); closeModal('#m-who', true); render(); toast(`Benvenuto ${v}`);
 }
 function openVoteGate(m){
@@ -3759,9 +3925,11 @@ let prBusy = false;
 async function prFlush(){
   if(!feat('ratings')) return;   /* stelle spente: niente invii (la coda resta ferma sul telefono) */
   if(prBusy || (db && syncState !== 'live') || !dataReady() || !prGet().length) return;
+  const who = myPid(); if(!who) return;   /* senza codice verificato la coda resta ferma */
   prBusy = true;
   try{
     for(const x of prGet()){
+      if(x.voter !== who) continue;
       const patch = o => prSet(prGet().map(y => (y.mid === x.mid && y.voter === x.voter) ? { ...y, ...o } : y));
       const drop = () => prSet(prGet().filter(y => !(y.mid === x.mid && y.voter === x.voter)));
       const m = store.matches[x.mid];
@@ -4384,10 +4552,10 @@ document.addEventListener('pointerup', e => { const t = e.target.closest && e.ta
 function renderMe(){
   const el = $('#me'); if(!el) return;
   const ae = document.activeElement; if(ae && typeof ae.id === 'string' && /^pf2-/.test(ae.id)) return;   /* mentre scrivi la scheda la pagina non si ridisegna */
-  const me = localStorage.getItem('cmb_me'), s = me && STATS.byId[me];
+  const me = myPid(), s = me && STATS.byId[me];
   if(!s){
     el.innerHTML = STATS.list.length
-      ? `<div class="glass me-pick"><h2>Chi sei?</h2><p class="mu">Scegli il tuo giocatore. La scelta resta solo su questo telefono e puoi cambiarla quando vuoi. L’admin vede quando entri.</p><div class="me-opts">${[...STATS.list].sort((a, b) => a.name.localeCompare(b.name, 'it')).map(x => `<button class="me-opt" data-action="me-pick" data-pid="${x.pid}">${avatar(x.p, 'md')}<span>${esc(x.name)}</span></button>`).join('')}</div></div>`
+      ? `<div class="glass me-pick"><h2>Io</h2><p class="mu">Per votare e vedere le tue statistiche scegli il tuo giocatore e inserisci il tuo codice. Intanto puoi guardare tutto come ospite.</p><button class="btn primary" data-action="who-open">Scegli il tuo giocatore</button></div>`
       : `<div class="glass empty"><h3>Nessun giocatore</h3><p>La sezione personale si attiva quando la rosa ha i suoi giocatori.</p></div>`;
     return;
   }
@@ -4472,7 +4640,7 @@ function renderMe(){
   el.innerHTML = `${voteNote}${rateNote}<div class="me-head glass"><div class="me-card">${miniFigHTML(s)}</div><div class="me-info"><span class="mu sm">Il mio giocatore</span><h2>${nameHTML(s.pid)}</h2>
       <div class="me-chips">${roleChip(s.p.role)}<span class="tierlbl t-${t}">${TIERS[t].i} ${TIERS[t].l}</span>${streakChip(s)}</div>
       <div class="me-big"><div>${cu(rov)}<span>OVR</span></div><div>${cu(s.rank, 0, '°')}<span>in classifica</span></div><div>${cu(s.pres)}<span>presenze</span></div></div>
-      <div class="row"><button class="btn sm" data-open-player="${s.pid}">Apri figurina</button><button class="btn sm ghost" data-action="me-change">Cambia giocatore</button></div></div></div>
+      <div class="row"><button class="btn sm" data-open-player="${s.pid}">Apri figurina</button><button class="btn sm ghost" data-action="acct-open">Gestisci account</button></div></div></div>
     <div class="me-grid">
       <section class="glass me-sec wide"><h3>📈 Andamento OVR</h3>${ovrChartHTML(s)}</section>
       <section class="glass me-sec"><h3>⬆️ Prossimo livello</h3>${tierBox}</section>
@@ -4709,7 +4877,7 @@ function trophyHistory(){
 }
 function renderTrophies(){
   const el = $('#troph'); if(!el) return;
-  const nM = STATS.matches.length, me = localStorage.getItem('cmb_me');
+  const nM = STATS.matches.length, me = myPid();
   const hist = trophyHistory();
   let seenP = null, seenR = null;
   try{ seenP = JSON.parse(localStorage.getItem('cmb2627_seenPlq') || 'null'); seenR = JSON.parse(localStorage.getItem('cmb2627_seenRecV') || 'null'); }catch(e){}
@@ -6152,6 +6320,7 @@ function renderAdmin(){
       <button class="tile" data-action="shop-admin"><span class="ic">🛍️</span><b>Negozio</b><span>Prezzi, durata e disponibilità di ogni oggetto.</span></button>
       <button class="tile" data-action="bets-admin"><span class="ic">🎰</span><b>Scommesse</b><span>Elenco delle scommesse di ogni gara, con “Annulla scommessa”.</span></button>
       <button class="tile" data-action="adj-admin"><span class="ic">🥔</span><b>Rettifica saldo</b><span>Aggiungi o togli ${CURRENCY} a un giocatore, con un motivo.</span></button>` : ''}
+      <button class="tile" data-action="keys-open"><span class="ic">🔐</span><b>Codici giocatori</b><span>Vedi chi ha un codice e azzeralo se qualcuno ha preso il posto di un altro.</span></button>
       <button class="tile" data-action="prof-list"><span class="ic">🪪</span><b>Richieste schede${profPending().length ? `<span class="cbadge">${profPending().length}</span>` : ''}</b><span>Approva o rifiuta le schede dei giocatori (nascita, nazionalità, ruolo preciso).</span></button>
       <button class="tile" data-action="add-player"><span class="ic">🧑‍🎤</span><b>Aggiungi giocatore</b><span>Nome, ruolo, piede e foto dal rullino.</span></button>
       <button class="tile" data-action="backup-all"><span class="ic">💾</span><b>Backup completo</b><span>Scarica tutti i dati del database in un file .json. Contiene anche il PIN.</span></button>
@@ -6965,6 +7134,33 @@ async function exportFigurina(pid, btn){
    EXCEL IMPORT / EXPORT (SheetJS)
    ========================================================= */
 /* Backup completo: legge uno per uno i percorsi (non la radice, le regole potrebbero negarla). Solo lettura, non scrive nulla */
+/* ---------- Codici giocatori (admin): si vede solo se c'è un codice, mai il codice. Non fanno parte del backup ---------- */
+async function openKeys(){
+  if(!requireAdmin()) return;
+  $('#keys-body').innerHTML = '<h3>Codici giocatori</h3><p class="mu">Controllo in corso…</p>';
+  openModal('#m-keys');
+  let set = null;
+  try{
+    if(db){ const v = (await db.ref('playerKeys').once('value')).val() || {}; set = new Set(Object.keys(v)); }
+    else set = new Set(Object.keys(store.playerKeys || {}));
+  }catch(e){ $('#keys-body').innerHTML = '<h3>Codici giocatori</h3><p class="mu">Non riesco a leggere i codici: controlla la connessione e le regole di Firebase.</p><div class="row end"><button type="button" class="btn ghost" data-close>Chiudi</button></div>'; return; }
+  paintKeys(set);
+}
+function paintKeys(set){
+  const ls = [...STATS.list].sort((a, b) => a.name.localeCompare(b.name, 'it'));
+  $('#keys-body').innerHTML = `<h3>Codici giocatori</h3>
+    <p class="mu sm">Qui non si vedono mai i codici. “Azzera codice” serve quando un amico dice che qualcuno ha scelto il suo giocatore: poi chi arriva per primo imposta un nuovo codice.</p>
+    <div class="key-list">${ls.map(x => `<div class="key-row">${avatar(x.p, 'sm')}<span class="nm">${esc(x.name)}</span><span class="st ${set.has(x.pid) ? 'on' : ''}">${set.has(x.pid) ? 'Ha un codice' : 'Nessun codice'}</span><button type="button" class="btn sm danger" data-action="key-reset" data-pid="${x.pid}" ${set.has(x.pid) ? '' : 'disabled'}>Azzera codice</button></div>`).join('')}</div>
+    <div class="row end"><button type="button" class="btn ghost" data-close>Chiudi</button></div>`;
+  ui.keySet = set;
+}
+async function resetKey(pid){
+  if(!requireAdmin() || !store.players[pid]) return;
+  const ok = await confirmDlg(`Azzerare il codice di ${pname(pid)}?`, 'Controlla i voti recenti di questo giocatore: se qualcuno aveva preso il suo posto, potrebbe aver votato al suo posto. Dopo l’azzeramento chi sceglie per primo questo giocatore imposta un nuovo codice, e i telefoni già collegati dovranno rifare l’accesso.', 'Azzera codice', true);
+  if(!ok) return;
+  await commit({ ['playerKeys/' + pid]:null }, `Codice di ${pname(pid)} azzerato`);
+  if(ui.keySet){ ui.keySet.delete(pid); paintKeys(ui.keySet); }
+}
 let backing = false;
 async function backupAll(){
   if(backing) return;
@@ -7135,7 +7331,7 @@ function anDevice(){ const u = navigator.userAgent; return /iPhone|iPad|iPod/i.t
 function anStart(){
   if(!db || anOff() || ui.admin) return;
   try{
-    const me = localStorage.getItem('cmb_me') || '', guest = localStorage.getItem('cmb_guest') || '', dev = anDevice();
+    const me = myPid(), guest = localStorage.getItem('cmb_guest') || '', dev = anDevice();
     const pres = db.ref('analytics/online/' + AN_SID);
     pres.set({ pid:me, guest, dev, u:AN_U, since:anSV().TIMESTAMP }).catch(() => {});
     pres.onDisconnect().remove();
@@ -7305,8 +7501,13 @@ document.addEventListener('click', async e => {
     case 'prof-no': profReject(d.pid); break;
     case 'bday-close': try{ localStorage.setItem('cmb_bday_' + isoOf(new Date()), '1'); }catch(e){} renderDashboard(); break;
     case 'duel': openDuel(d.pid); break;
-    case 'me-pick': localStorage.setItem('cmb_me', d.pid); anSetMe(d.pid); renderMe(); go('me'); toast('Fatto: questa è la tua sezione'); break;
-    case 'me-change': localStorage.removeItem('cmb_me'); renderMe(); break;
+    case 'who-open': openWho(); break;
+    case 'who-cancel': closeModal('#m-who', true); break;
+    case 'who-back': openWho(); break;
+    case 'acct-open': openAcct(); break;
+    case 'acct-exit': keyLogout(); closeModal('#m-acct'); render(); toast('Sei uscito: su questo telefono non c’è più nessun giocatore'); break;
+    case 'keys-open': openKeys(); break;
+    case 'key-reset': resetKey(d.pid); break;
     case 'final-close': closeModal('#m-final'); setTimeout(showNextRec, 300); break;
     case 'rec-next': closeModal('#m-rec'); setTimeout(showNextRec, 250); break;
     case 'rec-close': recQueue = []; recShown = 0; closeModal('#m-rec'); break;
@@ -7471,6 +7672,11 @@ $('#pf-file').addEventListener('change', async e => {
 
 $('#pform').addEventListener('submit', e => { e.preventDefault(); savePlayer(); });
 
+document.addEventListener('submit', e => {
+  const f = e.target;
+  if(f && f.id === 'key-form'){ e.preventDefault(); whoCodeSubmit(f); }
+  else if(f && f.id === 'acct-form'){ e.preventDefault(); acctSave(); }
+});
 $('#pin-form').addEventListener('submit', e => {
   e.preventDefault();
   const inp = $('#pin-in');
@@ -7654,6 +7860,13 @@ try{
   if(!localStorage.getItem('cmb_mig_v162')){
     ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr'].forEach(k => localStorage.removeItem(k));
     localStorage.setItem('cmb_mig_v162', '1');
+  }
+}catch(e){}
+/* Migrazione 1.7.3: i codici giocatore sono nuovi, quindi ogni telefono rifà l'accesso (gli ospiti restano ospiti) */
+try{
+  if(!localStorage.getItem('cmb_mig_v173')){
+    localStorage.removeItem('cmb_me'); localStorage.removeItem(PK_KEY);
+    localStorage.setItem('cmb_mig_v173', '1');
   }
 }catch(e){}
 loadCache();
