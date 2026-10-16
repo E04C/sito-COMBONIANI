@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.7.2
+- Grafica e struttura, nessuna modifica a punteggi, OVR o dati. Classifica: tendina con Generale, Capocannoniere, Assist man, % vittorie, Sconfitte, Autogol, ognuna con le sue colonne (niente scorrimento laterale a 390 px); tasto Filtri (ricerca, solo chi ha giocato, PG minimo); tolti l'hero dell'ultima gara e i riquadri Scarpa d'Oro / Miglior assist-man; nuovo tasto "Premi stagionali" verso Trofei.
+- Trofei: sottosezioni Targhe e Trofei storici.
+- Partite: tendina della giornata e selettore Resoconto / Formazioni; marcatori con minuto, assist e "(aut.)" sotto ogni squadra (le gare senza sequenza dei gol restano senza minuti); liste squadre sotto Formazioni; replay ed esportazioni sotto entrambe le voci. Rimossa la cronaca (resta la sezione Cambi).
+- Indicatore di connessione con scritta e senza aspetto da pulsante (etichette: Live, Attesa…, Offline, Errore, Locale).
+- Retro della figurina: statistiche, targhe, compagno ideale e bestia nera (dati già calcolati, sola lettura); pulsanti sotto la carta sempre visibili.
+- Nuovi stati interni solo di interfaccia (`ui.cView`, `ui.cf`, `ui.tTab`, `ui.mTab`): nessun nuovo campo nel database.
+
 ## 1.7.1
 - Corretto: nell'editor delle formazioni, toccando un giocatore compariva "CASiNO sospeso" (o "Scommesse chiuse") e non si selezionava nessuno. Il Monte MVP usava lo stesso attributo `data-pool` dei gettoni dei giocatori; ora usa `data-mpool`. Errore presente dalla 1.6.2.
 

@@ -1930,7 +1930,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.7.1';
+const APP_VERSION = '1.7.2';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -7505,6 +7505,14 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.7.2', date:'2026-10-16', items:[
+    `📊 La Classifica ha un menu per scegliere cosa guardare: Generale, Capocannoniere, Assist man, % vittorie, Sconfitte o Autogol. Ogni vista mostra solo le colonne che servono, così sul telefono si legge tutto senza scorrere di lato.`,
+    `🔎 Accanto al menu c’è il tasto Filtri: puoi cercare un giocatore, vedere solo chi ha giocato o chi ha almeno un certo numero di presenze.`,
+    `🏆 Il tasto “Premi stagionali” ti porta nei Trofei, che ora sono divisi in due: Targhe e Trofei storici.`,
+    `⚽ Nelle Partite scegli la giornata e poi passi da Resoconto a Formazioni. Nel Resoconto sotto ogni squadra ci sono i marcatori con il minuto del gol e, più piccolo, chi ha fatto l’assist. Nelle Formazioni trovi il campo e le liste delle squadre. Replay e immagini da condividere ci sono in tutte e due.`,
+    `🃏 Il retro della figurina ora mostra statistiche, targhe, il compagno ideale e la bestia nera.`,
+    `🟢 L’indicatore in alto ora ha la scritta (Live, Offline…): serve solo a dirti se i dati sono aggiornati, non è un pulsante.`
+  ] },
   { v:'1.7.1', date:'2026-10-15', items:[
     `🛠️ Corretto un errore: quando l’organizzatore inseriva le formazioni, toccando un giocatore compariva “CASiNO sospeso” e non si poteva selezionare. Ora funziona di nuovo.`
   ] },
