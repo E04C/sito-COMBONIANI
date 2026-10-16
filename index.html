@@ -715,6 +715,16 @@ button.pcard:active .pc-fr{transform:scale(.96)}
 .mid-c .td.b{background:#0a0d14;border:.35cqw solid #f97316}
 .mid-c.post b span{color:#f97316;margin:0 1cqw}
 .swap-hint{margin:0 18px 10px;padding:9px 12px;border-radius:12px;border:1px dashed var(--line-strong);background:var(--or-soft);font:700 13px var(--body);color:#fed7aa}
+.mone{display:grid;gap:16px}
+@media (min-width:1100px){.mone.form{grid-template-columns:minmax(0,480px) minmax(0,1fr);align-items:start}}
+.m-tabs{margin:0 0 4px}
+.scorers{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 16px;margin:0 0 12px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.08)}
+.sc-col.r{text-align:right}
+.sc-li{margin:0 0 7px;font:700 14px/1.25 var(--body);overflow-wrap:anywhere}
+.sc-li .mn{color:var(--or);font-weight:800;margin-right:5px;font-variant-numeric:tabular-nums}
+.sc-li .aut{color:#fda4af;font-weight:600}
+.sc-li small{display:block;margin-top:1px;color:var(--mu2);font:600 11.5px/1.2 var(--body)}
+.sc-none{grid-column:1/-1;margin:0;text-align:center;color:var(--mu2);font-size:13px}
 .mgrid{display:grid;gap:16px}
 @media (min-width:1100px){.mgrid{grid-template-columns:minmax(0,1fr) 480px;align-items:start}}
 .pp{padding-bottom:16px}
@@ -1703,8 +1713,8 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 
   <section id="view-matches" class="view" aria-label="Partite" hidden>
     <div class="toolbar">
-      <h2 class="vtitle">Tabellini</h2>
-      <select id="msel" class="field" aria-label="Scegli la gara"></select>
+      <h2 class="vtitle">Partite</h2>
+      <select id="msel" class="field" aria-label="Scegli la giornata"></select>
       <button class="btn primary admin-only" data-action="new-match">＋ Registra gara</button>
     </div>
     <div id="mdetail"></div>
@@ -2053,6 +2063,7 @@ const ui = {
   pSort:'ovr',
   cView:'gen',
   tTab:'plq',
+  mTab:'rep',
   cf:{ q:'', played:false, min:0, open:false },
   duel:null
 };
@@ -3397,41 +3408,55 @@ function renderMatches(){
     (played.length ? `<optgroup label="Giocate">${played.map(m => { const s = matchScore(m); return opt(m, `Giornata ${num(m.day)}${m.date ? ' (' + fmtDate(m.date) + ')' : ''}: Bianchi ${s.w}–${s.b} Neri`); }).join('')}</optgroup>` : '');
   paintMatch();
 }
-function evListHTML(evs){
-  const li = [];
-  evs.goals.forEach(e => li.push(`<li><span class="ic">${goalIcon(e.pid)}</span>${esc(e.n)}${e.c > 1 ? `<span class="c">×${e.c}</span>` : ''}</li>`));
-  evs.ogs.forEach(e => li.push(`<li><span class="ic">🟥</span>${esc(e.n)} <span class="og">(autogol)</span>${e.c > 1 ? `<span class="c">×${e.c}</span>` : ''}</li>`));
-  evs.assists.forEach(e => li.push(`<li class="as"><span class="ic">${assistIcon(e.pid)}</span>${esc(e.n)}${e.c > 1 ? `<span class="c">×${e.c}</span>` : ''}</li>`));
-  return li.length ? `<ul class="ev">${li.join('')}</ul>` : `<p class="mu sm" style="margin:0">Nessun gol o assist registrato.</p>`;
-}
-function chronHTML(m){
-  const tl = matchGoals(m), mv = hasMoves(m) ? moveRows(m) : [];
-  if(!tl.length && !mv.length) return '';
-  const est = tl.some(x => x.est);
-  const goalLi = x => `<li class="cr ${x.t === 'black' ? 'b' : 'w'}"><span class="mn${x.est ? ' est' : ''}">${x.min != null ? (x.est ? '~' : '') + x.min + '’' : '·'}</span><span class="ci">${x.og ? '🟥' : goalIcon(x.s)}</span><span class="cw"><b>${esc(pname(x.s))}${x.og ? ' (autogol)' : ''}</b>${!x.og && x.a ? `<small>assist ${esc(pname(x.a))}</small>` : ''}</span><span class="cs">${x.w}–${x.b}</span></li>`;
-  const mvLi = r => `<li class="cr mv"><span class="mn">${r.min != null ? r.min + '’' : '·'}</span><span class="ci">${moveIcon(r.k, r.why)}</span><span class="cw"><b>${esc(moveText(r, m))}</b></span><span class="cs">0–0</span></li>`;
-  /* i cambi stanno tra i gol, in ordine: lo slot n vuol dire "prima del gol n" */
-  const items = [];
-  for(let i = 0; i <= tl.length; i++){
-    mv.filter(r => r.slot === i).forEach(r => items.push(mvLi(r)));
-    if(i < tl.length) items.push(goalLi(tl[i]));
-  }
-  return `<section class="chron"><h3>🕒 Cronaca della gara</h3><ol>${items.join('')}</ol>${est ? '<p class="mu sm" style="margin:8px 0 0">I minuti con ~ sono stimati dall’ordine dei gol.</p>' : ''}</section>`;
-}
 /* Sezione "Cambi" del resoconto: solo se la gara ne ha */
 function cambiHTML(m){
   const mv = hasMoves(m) ? moveRows(m) : [];
   if(!mv.length) return '';
   return `<section class="chron"><h3>🔁 Cambi</h3><ol>${mv.map(r => `<li class="cr mv"><span class="mn">${r.min != null ? r.min + '’' : '·'}</span><span class="ci">${moveIcon(r.k, r.why)}</span><span class="cw"><b>${esc(moveText(r, m))}</b></span><span class="cs">0–0</span></li>`).join('')}</ol></section>`;
 }
+/* Marcatori sotto ogni squadra: con la sequenza dei gol "12' Cognome N." e assist sotto, senza sequenza "Cognome N. x3" */
+function scorersHTML(m){
+  const seq = matchGoals(m);
+  const col = (team, cls) => {
+    let li = [];
+    if(seq.length){
+      seq.filter(x => x.t === team).forEach(x => {
+        const mn = x.min != null ? `<span class="mn">${x.est ? '~' : ''}${x.min}’</span>` : '';
+        li.push(`<p class="sc-li">${mn}${esc(pname(x.s))}${x.og ? ' <span class="aut">(aut.)</span>' : ''}${!x.og && x.a ? `<small>assist ${esc(pname(x.a))}</small>` : ''}</p>`);
+      });
+    }else{
+      const ev = teamEvents(m, team), c = e => e.c > 1 ? ` x${e.c}` : '';
+      ev.goals.forEach(e => li.push(`<p class="sc-li">${esc(e.n)}${c(e)}</p>`));
+      ev.ogs.forEach(e => li.push(`<p class="sc-li">${esc(e.n)}${c(e)} <span class="aut">(aut.)</span></p>`));
+      ev.assists.forEach(e => li.push(`<p class="sc-li"><small>assist ${esc(e.n)}${c(e)}</small></p>`));
+    }
+    return { cls, li };
+  };
+  const cols = [col('white', ''), col('black', ' r')];
+  if(!cols[0].li.length && !cols[1].li.length) return `<div class="scorers"><p class="sc-none">Nessun gol o assist registrato.</p></div>`;
+  return `<div class="scorers">${cols.map(c => `<div class="sc-col${c.cls}">${c.li.join('')}</div>`).join('')}</div>`;
+}
+/* Replay ed esportazioni: stessi pulsanti sotto Resoconto e Formazioni */
+function mediaBtns(m){
+  const pre = m.status === 'scheduled';
+  return `${!pre && list(m.goals).length ? `<button class="btn sm primary" data-action="rp-open" data-mid="${m.id}">▶ Replay dei gol</button>` : ''}${pre ? '' : `<button class="btn sm primary" data-action="export-match" data-mid="${m.id}">📸 Esporta Grafica Gara HD</button>`}<button class="btn sm primary" data-action="export-pitch" data-mid="${m.id}">📸 Esporta Campo Formazioni</button>`;
+}
+function mTabsHTML(){
+  const t = ui.mTab === 'form' ? 'form' : 'rep';
+  return `<div class="cs-tabs m-tabs" role="tablist" aria-label="Partita">${[['rep', 'Resoconto'], ['form', 'Formazioni']].map(([k, l]) => `<button type="button" role="tab" class="cs-tab ${k === t ? 'on' : ''}" aria-selected="${k === t}" data-mtab="${k}">${l}</button>`).join('')}</div>`;
+}
+/* Liste delle squadre (sotto Formazioni): le vede chiunque */
+function lineupsHTML(m, withFlags){
+  const col = team => `<div class="tcol"><h3><span class="dot ${team === 'white' ? 'w' : 'b'}"></span>Squadra ${team === 'white' ? 'Bianca' : 'Nera'}</h3>
+    <div class="lineup" style="margin-top:0;padding-top:0;border:0">${list(m[team]).map(e => `<button class="lu" data-open-player="${e.pid}" ${store.players[e.pid] ? '' : 'disabled'}>${avatar(store.players[e.pid] || { name:e.n }, 'xs')}${esc(pname(e.pid, e.n))}${withFlags && e.late ? '<em class="lt-ic" title="In ritardo">⏰</em>' : ''}${withFlags && e.bench ? '<em class="bn">in più</em>' : ''}</button>`).join('') || '<span class="mu sm">Nessun convocato</span>'}</div></div>`;
+  return `<section class="glass tab"><div class="tab-cols" style="margin-top:0">${col('white')}${col('black')}</div></section>`;
+}
 function matchDetailHTML(id){
   const m = { id, ...store.matches[id] };
-  if(m.status === 'scheduled') return scheduledDetailHTML(m);
+  const tabs = mTabsHTML(), form = ui.mTab === 'form';
+  if(m.status === 'scheduled') return tabs + scheduledDetailHTML(m);
+  if(form) return `${tabs}<div class="mone form">${pitchPanelHTML(m)}${lineupsHTML(m, true)}</div>`;
   const sc = matchScore(m), mv = matchMvp(m);
-  const col = team => `<div class="tcol"><h3><span class="dot ${team === 'white' ? 'w' : 'b'}"></span>Squadra ${team === 'white' ? 'Bianca' : 'Nera'}</h3>
-    ${evListHTML(teamEvents(m, team))}
-    <div class="lineup">${list(m[team]).map(e => `<button class="lu" data-open-player="${e.pid}" ${store.players[e.pid] ? '' : 'disabled'}>${avatar(store.players[e.pid] || { name:e.n }, 'xs')}${esc(pname(e.pid, e.n))}${e.late ? '<em class="lt-ic" title="In ritardo">⏰</em>' : ''}${e.bench ? '<em class="bn">in più</em>' : ''}</button>`).join('')}</div>
-  </div>`;
   const mvp = mv
     ? `<div class="mvpbox">${avatar(store.players[mv.pid] || { name:mv.n }, 'md')}<div><div class="t">★ ${mv.provisional ? 'MVP provvisorio' : 'MVP della gara'}</div><div class="n">${esc(pname(mv.pid, mv.n))}</div><div class="d">${evDesc(mv)}${mv.vts ? `, ${mv.vts} ${mv.vts === 1 ? 'voto' : 'voti'}` : ''}, squadra ${mv.team === 'white' ? 'Bianca' : 'Nera'}</div></div><div class="pts">${fmtPts(mv.score)}<small>pt</small></div></div>`
     : `<div class="mvpbox none"><div><div class="t">MVP della gara</div><div class="d">Non assegnato: nessun gol o assist registrato.</div></div></div>`;
@@ -3439,19 +3464,19 @@ function matchDetailHTML(id){
   const awards = `<div class="awards">${AWARDS.map(A => { const c = aw[A.k]; return c
     ? `<button class="awd" data-open-player="${c.pid}" ${store.players[c.pid] ? '' : 'disabled'}><span class="ai">${A.icon}</span><span><small>${A.l}</small><b>${esc(pname(c.pid, c.n))}</b></span><em>${fmtD(c.pts)}</em></button>`
     : `<div class="awd off"><span class="ai">${A.icon}</span><span><small>${A.l}</small><b>Non assegnato</b></span></div>`; }).join('')}</div>`;
-  return `<div class="mgrid"><article class="glass tab">
+  return `${tabs}<div class="mone"><article class="glass tab">
     <div class="hero-meta"><span class="tag">Giornata ${num(m.day)}</span>${m.date ? `<span>${fmtDate(m.date)}</span>` : ''}${matchLen(m) ? `<span>Durata ${matchLen(m)}’</span>` : ''}<span class="sum">${starters(m, 'white').length} contro ${starters(m, 'black').length}</span></div>
     ${boardHTML(sc)}
-    <div class="tab-cols">${col('white')}${col('black')}</div>
-    ${cambiHTML(m)}${chronHTML(m)}
+    ${scorersHTML(m)}
+    ${cambiHTML(m)}
     ${mvp}${awards}${voteBoxHTML(m)}${rateBoxHTML(m)}
     <div class="tab-actions">
-      <button class="btn primary" data-action="export-match" data-mid="${id}">📸 Esporta Grafica Gara HD</button>
+      ${mediaBtns(m)}
       <button class="btn admin-only" data-action="edit-match" data-mid="${id}">✏️ Modifica gara</button>
       <button class="btn danger admin-only" data-action="del-match" data-mid="${id}">Elimina gara</button>
       <span class="note">MVP: gol 1 pt, assist 0,5 pt. Premi di reparto: +0,2 OVR</span>
     </div>
-  </article>${pitchPanelHTML(m)}</div>`;
+  </article></div>`;
 }
 
 /* ---------- Votazione MVP ---------- */
@@ -3798,21 +3823,20 @@ setInterval(() => {
 function scheduledDetailHTML(m){
   const mW = teamMean(m.white), mB = teamMean(m.black);
   const share = mW + mB ? mW / (mW + mB) * 100 : 50;
-  const col = team => `<div class="tcol"><h3><span class="dot ${team === 'white' ? 'w' : 'b'}"></span>Squadra ${team === 'white' ? 'Bianca' : 'Nera'}</h3>
-    <div class="lineup" style="margin-top:0;padding-top:0;border:0">${list(m[team]).map(e => `<button class="lu" data-open-player="${e.pid}" ${store.players[e.pid] ? '' : 'disabled'}>${avatar(store.players[e.pid] || { name:e.n }, 'xs')}${esc(pname(e.pid, e.n))}</button>`).join('') || '<span class="mu sm">Nessun convocato</span>'}</div></div>`;
-  return `<div class="mgrid sch"><article class="glass tab">
+  if(ui.mTab === 'form') return `<div class="mone form">${pitchPanelHTML(m)}${lineupsHTML(m, false)}</div>`;
+  return `<div class="mone"><article class="glass tab">
     <div class="hero-meta"><span class="tag">🗓️ In programma</span><span>Giornata ${num(m.day)}</span><span>${esc(whenLabel(m) || 'Data da definire')}</span>${cdSpan(m)}<span class="sum">${list(m.white).length} contro ${list(m.black).length}</span></div>
     <div class="vs"><div class="side">${kit('white')}<span class="side-n">Bianchi</span>${capInfoHTML(m, 'white')}</div><span class="vv">VS</span><div class="side">${kit('black')}<span class="side-n">Neri</span>${capInfoHTML(m, 'black')}</div></div>
     <div class="ovbar" aria-label="OVR medio Bianchi ${mW.toFixed(1)}, Neri ${mB.toFixed(1)}"><span>${mW.toFixed(1)}</span><span class="bar"><i style="width:${share}%"></i><em></em></span><span>${mB.toFixed(1)}</span></div>
     <p class="mu sm" style="text-align:center;margin:0 0 12px">OVR medio delle due squadre</p>
-    <div class="tab-cols">${col('white')}${col('black')}</div>
     ${mkAdminHTML(m)}
     <div class="tab-actions">
+      ${mediaBtns(m)}
       <button class="btn primary admin-only" data-action="record-result" data-mid="${m.id}">📝 Registra risultato</button>
       <button class="btn admin-only" data-action="edit-match" data-mid="${m.id}">✏️ Modifica convocazioni</button>
       <button class="btn danger admin-only" data-action="del-match" data-mid="${m.id}">Elimina</button>
     </div>
-  </article>${pitchPanelHTML(m)}</div>`;
+  </article></div>`;
 }
 
 /* ---------- Campo tattico ---------- */
@@ -3953,8 +3977,7 @@ function pitchPanelHTML(m){
     <div class="pp-ctrl">${fmCtl('white', 'fmW')}${fmCtl('black', 'fmB')}
       <button class="btn sm ${ui.swapMode ? 'primary' : ''} admin-only" data-action="swap-mode">${ui.swapMode ? '✓ Fine spostamenti' : '🔀 Sposta giocatori'}</button>
       <button class="btn sm ghost" data-action="flip">⇅ Inverti metà campo</button>
-      ${!pre && list(m.goals).length ? `<button class="btn sm primary" data-action="rp-open" data-mid="${m.id}">▶ Replay dei gol</button>` : ''}
-      <button class="btn sm primary" data-action="export-pitch" data-mid="${m.id}">📸 Esporta Campo Formazioni</button>
+      ${mediaBtns(m)}
     </div>
     ${ui.admin && ui.swapMode ? `<div class="swap-hint">${ui.swapSel ? `Selezionato <b>${esc(pname(ui.swapSel.pid))}</b>: tocca il giocatore con cui scambiarlo.` : `Tocca due giocatori per scambiarli di posto${pre ? ', anche tra Bianchi e Neri' : ' (stessa squadra)'}. La disposizione si salva da sola.`}</div>` : ''}
     <div class="pp-wrap">${pitchHTML(m)}</div>
@@ -7199,6 +7222,7 @@ document.addEventListener('click', async e => {
     else ui.sort = { key:d.sort, dir:d.sort === 'rank' ? 1 : -1 };
     renderBoardPart(); return;
   }
+  if(d.mtab){ ui.mTab = d.mtab === 'form' ? 'form' : 'rep'; ui.swapSel = null; if(ui.mTab === 'rep') ui.swapMode = false; paintMatch(); return; }
   if(d.ttab){ ui.tTab = d.ttab === 'rec' ? 'rec' : 'plq'; renderTrophies(); return; }
   if(d.ctab){ if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; } ui.cTab = d.ctab; renderCasino(); renderSlip(); return; }
   if(d.mpool){ const [k, a, b] = d.mpool.split('|'); placePool(d.mid, k, k === 'mvp' ? a : b, k === 'duel' ? a : undefined); return; }
