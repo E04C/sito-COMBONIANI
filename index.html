@@ -200,6 +200,21 @@ table.cls{width:100%;border-collapse:separate;border-spacing:0;font-variant-nume
 .cls td.on{color:var(--or);font-weight:800}
 .cls td.k{font:italic 800 18px var(--disp)}
 .pl-cell{display:flex;align-items:center;gap:10px;min-width:188px}
+.cls-bar{display:flex;align-items:center;gap:8px;padding:0 14px 10px}
+.cls-bar .field{flex:1;min-width:0;height:44px;font-size:14.5px;font-weight:700}
+.cls-bar .btn{height:44px;flex:none}
+.cls-filt{display:grid;gap:10px;margin:0 14px 10px;padding:12px;border-radius:14px;border:1px solid var(--hair);background:rgba(255,255,255,.03)}
+.cls-filt[hidden]{display:none}
+.cls-filt .field{height:42px}
+.cls-filt label{display:flex;align-items:center;gap:10px;font:700 13.5px var(--body);color:var(--mu)}
+.cls-filt input[type=checkbox]{width:20px;height:20px;accent-color:var(--or)}
+.cls-filt input[type=number]{width:72px}
+.season-btn{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:12px 18px;border-radius:20px;text-align:left;cursor:pointer}
+.season-btn .ico{font-size:26px}
+.season-btn b{display:block;font:italic 800 20px/1.1 var(--disp)}
+.season-btn small{display:block;margin-top:2px;color:var(--mu);font:700 12.5px var(--body)}
+.season-btn .go{margin-left:auto;color:var(--or);font-size:22px}
+@media (max-width:520px){.cls td{padding:9px 6px}.cls th button{padding:10px 6px}.cls .pl-cell{min-width:0;gap:6px}.cls .pl-name{max-width:104px}.cls .pl-sub .foot{display:none}.cls .mv{display:none}}
 .pos{width:24px;flex:none;font:italic 800 19px/1 var(--disp);color:var(--mu2);text-align:center}
 .r1 .pos{color:var(--gold)} .r2 .pos{color:#d6dbe4} .r3 .pos{color:#e08a3a}
 .pl-name{display:block;font-weight:800;font-size:14.5px;line-height:1.15;max-width:170px;overflow:hidden;text-overflow:ellipsis}
@@ -2003,11 +2018,22 @@ const COLS = [
   { k:'pa',   l:'P',   t:'Pareggi' },
   { k:'s',    l:'S',   t:'Sconfitte' },
   { k:'pct',  l:'%V',  t:'Percentuale vittorie' },
-  { k:'g',    l:'G',   t:'Gol' },
-  { k:'a',    l:'A',   t:'Assist' },
+  { k:'g',    l:'G',   t:'Capocannoniere (gol)' },
+  { k:'a',    l:'A',   t:'Assist man (assist)' },
   { k:'og',   l:'AG',  t:'Autogol' },
   { k:'avg',  l:'MG',  t:'Media gol a partita' }
 ];
+
+/* Viste della classifica: ogni vista mostra solo le sue colonne (tutte le colonne restano in COLS) */
+const CVIEWS = {
+  gen:{ l:'Generale', cols:['ovr', 'pres', 'v', 'pa', 's'], sort:'rank', legend:'OVR overall dinamico, Pr presenze, V vittorie, P pareggi, S sconfitte. Ordine base: vittorie, poi % vittorie, poi gol. Tocca un\u2019intestazione per riordinare.' },
+  g:{ l:'Capocannoniere', cols:['ovr', 'pres', 'g', 'avg'], sort:'g', legend:'Capocannoniere: G gol, MG media gol a partita.' },
+  a:{ l:'Assist man', cols:['ovr', 'pres', 'a'], sort:'a', legend:'Assist man: A assist forniti.' },
+  pct:{ l:'% vittorie', cols:['pres', 'v', 'pct'], sort:'pct', legend:'Percentuale di vittorie sulle presenze.' },
+  s:{ l:'Sconfitte', cols:['pres', 's'], sort:'s', legend:'Sconfitte subite, dalla più alta.' },
+  og:{ l:'Autogol', cols:['pres', 'og'], sort:'og', legend:'Autogol segnati.' }
+};
+const CVIEW_ORDER = ['gen', 'g', 'a', 'pct', 's', 'og'];
 
 /* =========================================================
    STATE
@@ -2025,12 +2051,13 @@ const ui = {
   swapSel:null,
   pRole:'ALL',
   pSort:'ovr',
+  cView:'gen',
+  cf:{ q:'', played:false, min:0, open:false },
   duel:null
 };
 let db = null;
 let STATS = { list:[], byId:{}, matches:[], plaques:{}, log:{}, scheduled:[] };
 let syncState = 'connecting', everConnected = false;
-let heroAnimated = false;
 let openFigPid = null;
 let PF = { id:null, photo:undefined };
 let ED = null, edTeam = 'called';
@@ -2930,14 +2957,7 @@ function renderDashboardInner(){
   const nPlayers = STATS.list.length;
   let hero;
   if(last){
-    const sc = matchScore(last), mv = matchMvp(last);
-    const totG = ms.reduce((t, m) => { const s = matchScore(m); return t + s.w + s.b; }, 0);
-    hero = `<div class="hero glass ${heroAnimated ? '' : 'score-in'}" role="button" tabindex="0" data-open-match="${last.id}" aria-label="Apri il tabellino dell'ultima gara">
-      <div class="hero-meta"><span class="tag">Ultima gara</span><span>Giornata ${num(last.day)}</span>${last.date ? `<span>${fmtDate(last.date)}</span>` : ''}<span class="sum">${ms.length} ${ms.length === 1 ? 'gara giocata' : 'gare giocate'}, ${totG} gol in stagione</span></div>
-      ${boardHTML(sc)}
-      <div class="hero-mvp">${mv ? `<span class="star">★</span> MVP <span>${esc(pname(mv.pid, mv.n))}</span> <span class="mu">${evDesc(mv)}</span>` : '<span class="mu">MVP non assegnato: nessun gol o assist registrato</span>'}</div>
-    </div>`;
-    heroAnimated = true;
+    hero = '';
   }else{
     const cta = ui.admin
       ? `<button class="btn primary" data-action="${nPlayers ? 'new-match' : 'add-player'}">${nPlayers ? '＋ Registra la prima gara' : '＋ Aggiungi il primo giocatore'}</button>`
@@ -2946,26 +2966,40 @@ function renderDashboardInner(){
       ? 'La rosa è pronta. Registra la prima gara per accendere classifica, figurine e tabellini.'
       : 'Ancora nessun giocatore e nessuna gara. Si parte dalla rosa: aggiungi i giocatori, poi registra la prima gara.'}</p>${cta}</div></div>`;
   }
-  const board = (title, icon, key, unit) => {
-    const top = STATS.list.filter(s => s[key] > 0)
-      .sort((a, b) => (b[key] - a[key]) || (a.pres - b.pres) || (a.rank - b.rank)).slice(0, 5);
-    return `<section class="glass"><div class="panel-h"><h2><span class="ico">${icon}</span>${title}</h2></div><div class="lead">${
-      top.length ? top.map((s, i) => `<button class="lrow ${i === 0 ? 'first' : ''}" data-open-player="${s.pid}"><span class="i">${i + 1}</span>${avatar(s.p, 'sm')}<span class="n">${nameHTML(s.pid)}<small>${s.pres} ${s.pres === 1 ? 'presenza' : 'presenze'}</small></span><span class="v">${s[key]}</span></button>`).join('')
-      : `<p class="mu pad">Nessun ${unit} registrato finora.</p>`}</div></section>`;
-  };
   const nx = STATS.scheduled[0];
   const next = nx ? `<div class="glass next" role="button" tabindex="0" data-open-match="${nx.id}" aria-label="Apri la gara in programma">
       <span class="tag">🗓️ Prossima gara</span><b>Giornata ${num(nx.day)}</b><span class="mu">${esc(whenLabel(nx) || 'Data da definire')}</span>
       <span class="mu">OVR medio ${teamMean(nx.white).toFixed(1)} contro ${teamMean(nx.black).toFixed(1)}</span>${cdSpan(nx)}<span class="go">Scopri dove giochi</span>${list(nx.white).length || list(nx.black).length ? `<span class="capsrow"><span class="capside">${kit('white')}${capInfoHTML(nx, 'white')}</span><span class="capside">${kit('black')}${capInfoHTML(nx, 'black')}</span></span>` : ''}</div>` : '';
+  const cv = CVIEWS[ui.cView] || CVIEWS.gen, cf = ui.cf;
+  const nF = (cf.q ? 1 : 0) + (cf.played ? 1 : 0) + (cf.min > 0 ? 1 : 0);
   $('#dash').innerHTML = `<div class="dash">${bdayHTML()}${next}${hero}
     <section class="glass">
-      <div class="panel-h"><h2>Classifica generale</h2><span class="mu sm">Tocca un giocatore per aprire la figurina</span></div>
-      ${podiumHTML()}
-      <div class="table-wrap">${tableHTML()}</div>
-      <p class="legend">OVR overall dinamico, Pr presenze, V vittorie, P pareggi, S sconfitte, %V percentuale vittorie, G gol, A assist, AG autogol, MG media gol. Ordine base: vittorie, poi % vittorie, poi gol. Tocca un'intestazione per riordinare.</p>
+      <div class="panel-h"><h2>Classifica</h2><span class="mu sm">Tocca un giocatore per aprire la figurina</span></div>
+      <div class="cls-bar">
+        <select id="cview" class="field" aria-label="Tipo di classifica">${CVIEW_ORDER.map(k => `<option value="${k}" ${k === ui.cView ? 'selected' : ''}>${CVIEWS[k].l}</option>`).join('')}</select>
+        <button type="button" class="btn ${nF ? 'primary' : ''}" data-action="cls-filters" aria-expanded="${cf.open}" aria-controls="cls-filt">Filtri${nF ? ` (${nF})` : ''}</button>
+      </div>
+      <div class="cls-filt" id="cls-filt" ${cf.open ? '' : 'hidden'}>
+        <input id="cf-q" class="field" type="search" placeholder="Cerca giocatore" aria-label="Cerca giocatore" autocomplete="off" value="${esc(cf.q)}">
+        <label><input id="cf-played" type="checkbox" ${cf.played ? 'checked' : ''}> Solo chi ha giocato</label>
+        <label>PG minimo <input id="cf-min" class="field" type="number" min="0" max="99" inputmode="numeric" value="${cf.min || ''}" placeholder="0"></label>
+      </div>
+      <div id="cls-podium">${podiumHTML()}</div>
+      <div class="table-wrap" id="cls-wrap">${tableHTML()}</div>
+      <p class="legend" id="cls-legend">${esc(cv.legend)}</p>
     </section>
-    <div class="boards">${board('Scarpa d’Oro', '⚽', 'g', 'gol')}${board('Miglior assist-man', '👟', 'a', 'assist')}</div>
+    <button type="button" class="glass season-btn" data-go="trophies" aria-label="Premi stagionali, stagione 26/27"><span class="ico" aria-hidden="true">🏆</span><span><b>Premi stagionali</b><small>Stagione 26/27</small></span><span class="go" aria-hidden="true">›</span></button>
   </div>`;
+}
+/* Cambio vista o filtri: si ridisegnano solo podio, tabella e legenda (la tastiera resta aperta) */
+function renderBoardPart(){
+  const cv = CVIEWS[ui.cView] || CVIEWS.gen;
+  const p = $('#cls-podium'), w = $('#cls-wrap'), l = $('#cls-legend'); if(!p || !w){ renderDashboard(); return; }
+  p.innerHTML = podiumHTML(); w.innerHTML = tableHTML(); if(l) l.textContent = cv.legend;
+}
+function clsList(){
+  const cf = ui.cf, q = norm(cf.q || '');
+  return STATS.list.filter(s => (!q || norm(s.name).includes(q)) && (!cf.played || s.pres > 0) && s.pres >= (cf.min || 0));
 }
 
 function mvArrow(s){
@@ -2977,7 +3011,7 @@ function mvArrow(s){
 function rankShift(){
   const K = 'cmb2627_seenM', n = STATS.matches.length, stored = localStorage.getItem(K);
   if(stored === null){ localStorage.setItem(K, n); return; }
-  if(n <= +stored || ui.view !== 'dashboard' || ui.sort.key !== 'rank' || ui.sort.dir !== 1) return;
+  if(n <= +stored || ui.view !== 'dashboard' || ui.cView !== 'gen' || ui.sort.key !== 'rank' || ui.sort.dir !== 1) return;
   localStorage.setItem(K, n);
   setTimeout(() => {
     const rows = $$('#dash .cls tbody tr'); if(!rows.length || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -2990,7 +3024,7 @@ function rankShift(){
   }, $('#splash') ? 2800 : 150);
 }
 function podiumHTML(){
-  if(!STATS.matches.length || STATS.list.length < 2) return '';
+  if(ui.cView !== 'gen' || !STATS.matches.length || STATS.list.length < 2) return '';
   const top = STATS.list.slice(0, 3);
   return `<div class="podium" aria-label="Podio">${[1, 0, 2].filter(i => top[i]).map(i => {
     const s = top[i], place = i + 1;
@@ -3004,25 +3038,25 @@ function sortCmp(a, b){
 }
 function tableHTML(){
   if(!STATS.list.length) return `<div class="empty"><p>La classifica si popola appena la rosa ha i suoi giocatori.</p></div>`;
-  const rows = [...STATS.list].sort(sortCmp);
+  const cv = CVIEWS[ui.cView] || CVIEWS.gen, gen = ui.cView === 'gen';
+  const rows = clsList().sort(sortCmp);
+  if(!rows.length) return `<div class="empty"><p>Nessun giocatore corrisponde ai filtri.</p></div>`;
   const th = (k, l, t, cls='') => {
     const s = ui.sort.key === k ? (ui.sort.dir === 1 ? 'ascending' : 'descending') : 'none';
     return `<th class="${cls}" aria-sort="${s}" title="${t}"><button data-sort="${k}">${l}</button></th>`;
   };
-  const k = ui.sort.key;
-  return `<table class="cls"><thead><tr>${th('rank', '#  Giocatore', 'Posizione in classifica', 'c-pl')}${COLS.map(c => th(c.k, c.l, c.t)).join('')}</tr></thead><tbody>${
-    rows.map(s => `<tr class="r${s.rank} ${STATS.matches.length && s.rank <= 3 ? 'pod' + s.rank : ''}${rowCls(s.pid) ? ' ' + rowCls(s.pid) : ''}" data-open-player="${s.pid}">
-      <td class="c-pl"><div class="pl-cell"><span class="pos">${s.rank}</span>${mvArrow(s)}${avatar(s.p, 'sm')}<span><span class="pl-name">${nameHTML(s.pid)}</span><span class="pl-sub">${roleChip(s.p.role)}<span class="foot">${esc(FEET[s.p.foot] || '')}</span></span></span></div></td>
-      <td class="ov">${ovrPlate(s.ovr, 'pill')}</td>
-      <td class="${k === 'pres' ? 'on' : ''}">${s.pres}</td>
-      <td class="k ${k === 'v' ? 'on' : ''}">${s.v}</td>
-      <td class="${k === 'pa' ? 'on' : ''}">${s.pa}</td>
-      <td class="${k === 's' ? 'on' : ''}">${s.s}</td>
-      <td class="${k === 'pct' ? 'on' : ''}">${s.pct.toFixed(0)}%</td>
-      <td class="k ${k === 'g' ? 'on' : ''}">${s.g}</td>
-      <td class="${k === 'a' ? 'on' : ''}">${s.a}</td>
-      <td class="${k === 'og' ? 'on' : ''}">${s.og}</td>
-      <td class="${k === 'avg' ? 'on' : ''}">${s.avg.toFixed(2)}</td>
+  const k = ui.sort.key, cols = cv.cols.map(c => COLS.find(x => x.k === c));
+  const cell = (c, s) => {
+    const on = k === c.k ? 'on' : '';
+    if(c.k === 'ovr') return `<td class="ov">${ovrPlate(s.ovr, 'pill')}</td>`;
+    const big = (c.k === 'v' || c.k === 'g') ? 'k ' : '';
+    const val = c.k === 'pct' ? s.pct.toFixed(0) + '%' : c.k === 'avg' ? s.avg.toFixed(2) : s[c.k];
+    return `<td class="${big}${on}">${val}</td>`;
+  };
+  return `<table class="cls"><thead><tr>${th(cv.sort, '#  Giocatore', gen ? 'Posizione in classifica' : 'Riordina', 'c-pl')}${cols.map(c => th(c.k, c.l, c.t)).join('')}</tr></thead><tbody>${
+    rows.map((s, i) => `<tr class="r${s.rank} ${gen && STATS.matches.length && s.rank <= 3 ? 'pod' + s.rank : ''}${rowCls(s.pid) ? ' ' + rowCls(s.pid) : ''}" data-open-player="${s.pid}">
+      <td class="c-pl"><div class="pl-cell"><span class="pos">${gen ? s.rank : i + 1}</span>${mvArrow(s)}${avatar(s.p, 'sm')}<span><span class="pl-name">${nameHTML(s.pid)}</span><span class="pl-sub">${roleChip(s.p.role)}<span class="foot">${esc(FEET[s.p.foot] || '')}</span></span></span></div></td>
+      ${cols.map(c => cell(c, s)).join('')}
     </tr>`).join('')}</tbody></table>`;
 }
 
@@ -7161,7 +7195,7 @@ document.addEventListener('click', async e => {
   if(d.sort){
     if(ui.sort.key === d.sort) ui.sort.dir *= -1;
     else ui.sort = { key:d.sort, dir:d.sort === 'rank' ? 1 : -1 };
-    renderDashboard(); return;
+    renderBoardPart(); return;
   }
   if(d.ctab){ if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; } ui.cTab = d.ctab; renderCasino(); renderSlip(); return; }
   if(d.mpool){ const [k, a, b] = d.mpool.split('|'); placePool(d.mid, k, k === 'mvp' ? a : b, k === 'duel' ? a : undefined); return; }
@@ -7196,6 +7230,7 @@ document.addEventListener('click', async e => {
   if(d.openMatch){ ui.matchId = d.openMatch; renderMatches(); go('matches'); return; }
 
   switch(d.action){
+    case 'cls-filters': ui.cf.open = !ui.cf.open; { const p = $('#cls-filt'); if(p) p.hidden = !ui.cf.open; t.setAttribute('aria-expanded', String(ui.cf.open)); if(ui.cf.open){ const q = $('#cf-q'); if(q) q.focus(); } } break;
     case 'admin': ui.admin ? go('admin') : openModal('#m-pin'); break;
     case 'add-player': if(requireAdmin()) openPlayerForm(); break;
     case 'edit-player': if(requireAdmin()) openPlayerForm(d.pid); break;
@@ -7312,6 +7347,18 @@ document.addEventListener('keydown', e => {
 });
 
 $('#psearch').addEventListener('input', renderPlayers);
+document.addEventListener('change', e => {
+  const t = e.target; if(!t || t.id !== 'cview') return;
+  ui.cView = CVIEWS[t.value] ? t.value : 'gen';
+  const sk = CVIEWS[ui.cView].sort; ui.sort = { key:sk, dir:sk === 'rank' ? 1 : -1 };
+  renderBoardPart();
+});
+document.addEventListener('input', e => {
+  const t = e.target; if(!t || !t.id || t.id.indexOf('cf-') !== 0) return;
+  if(t.id === 'cf-q') ui.cf.q = t.value; else if(t.id === 'cf-played') ui.cf.played = t.checked; else if(t.id === 'cf-min') ui.cf.min = Math.max(0, Math.floor(Number(t.value) || 0));
+  renderBoardPart();
+  const b = $('[data-action="cls-filters"]'); if(b){ const n = (ui.cf.q ? 1 : 0) + (ui.cf.played ? 1 : 0) + (ui.cf.min > 0 ? 1 : 0); b.textContent = 'Filtri' + (n ? ` (${n})` : ''); b.classList.toggle('primary', !!n); }
+});
 document.addEventListener('input', e => { const t = e.target; if(t && t.id === 'msg-text'){ const n = $('#msg-n'); if(n) n.textContent = t.value.length + ' / ' + MSG_MAX; } });
 document.addEventListener('input', e => { const t = e.target; if(t && t.dataset && t.dataset.slipI !== undefined && ui.slip){ ui.slip.stakes[t.dataset.slipI] = Math.floor(Number(t.value) || 0); slipRefreshNums(); } });
 $('#msel').addEventListener('change', e => { ui.matchId = e.target.value; ui.swapSel = null; rerenderMatch(); });
