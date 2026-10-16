@@ -289,6 +289,7 @@ button.affr:hover{border-color:var(--line)}
 .affr .x small{font:700 11px var(--body);color:var(--mu);margin-left:4px;font-style:normal}
 .affr.good .x{color:var(--gold)} .affr.bad .x{color:var(--bad)}
 .fig-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+@media (max-width:520px){.fig{height:min(720px,calc(100dvh - 200px))}.fig-actions{gap:6px;padding-bottom:12px}.fig-actions .btn{min-height:40px;padding:0 12px;font-size:13.5px}}
 
 /* ---------- Tabellino ---------- */
 .tab{padding:18px;border-radius:26px}
@@ -949,7 +950,22 @@ body:not(.lit) .holo{animation:holoIdle 6s ease-in-out infinite alternate}
 .pb-row{display:flex;gap:11px;align-items:flex-start}
 .pb-row i{font-style:normal;font-size:19px;line-height:1.2}
 .pb-row span{display:flex;flex-direction:column;min-width:0;letter-spacing:0;text-transform:none;font-size:inherit}
-.back-in .pb-row small{font:700 11px var(--body);color:var(--mu);letter-spacing:.08em;text-transform:uppercase}
+.back-in .pb-row small{font:600 11.5px var(--body);color:var(--mu);letter-spacing:0;text-transform:none}
+.pb-sec{padding-top:8px;border-top:1px dashed rgba(255,255,255,.12)}
+.back-in .pb-sec h4{margin:0 0 6px;font:600 12px var(--body);color:var(--mu);letter-spacing:0;text-transform:none}
+.pb-sts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.back-in .pb-st{min-width:0;display:flex;flex-direction:column;align-items:center;padding:8px 2px;border-radius:10px;background:rgba(255,255,255,.04);letter-spacing:0;text-transform:none;font-size:inherit;white-space:nowrap}
+.back-in .pb-st b{font:italic 800 22px/1 var(--disp);color:var(--tx)}
+.back-in .pb-st small{margin-top:3px;font:600 11.5px var(--body);color:var(--mu);letter-spacing:0;text-transform:none}
+.pb-plq{display:flex;flex-wrap:wrap;gap:5px}
+.back-in .pb-pl{display:inline-flex;align-items:center;gap:5px;padding:3px 9px 3px 6px;border-radius:999px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.28);font:700 12px var(--body);color:var(--tx);letter-spacing:0;text-transform:none}
+.pb-pl i{font-style:normal}
+.back-in .pb-no{margin:0;font:600 12.5px var(--body);color:var(--mu2)}
+.pb-mate{border:0;color:inherit;display:flex;align-items:center;gap:9px;width:100%;padding:5px 8px;border-radius:12px;background:rgba(255,255,255,.04);text-align:left}
+.back-in .pb-mate span{display:flex;flex-direction:column;letter-spacing:0;text-transform:none;font-size:inherit;min-width:0}
+.back-in .pb-mate b{font:700 14px/1.2 var(--body);color:var(--tx)}
+.back-in .pb-mate small{font:600 11.5px var(--body);color:var(--good,#4ade80)}
+.back-in .pb-mate.bad small{color:var(--bad)}
 .back-in .pb-row b{font:700 15px/1.25 var(--body);color:var(--tx);overflow-wrap:anywhere}
 .pb-bio{margin:4px 0 0;padding-top:10px;border-top:1px dashed rgba(255,255,255,.12);font:500 14px/1.4 var(--body);color:var(--tx);overflow-wrap:anywhere}
 .back-in.prof .btn,.back-in .btn{align-self:center;margin-top:auto;letter-spacing:0;text-transform:none}
@@ -3201,7 +3217,19 @@ function backHTML(pid, p, backT){
   const row = (ic, k, v) => v ? `<div class="pb-row"><i aria-hidden="true">${ic}</i><span><small>${k}</small><b>${esc(v)}</b></span></div>` : '';
   const rows = pr ? row('🎂', 'Età', age != null ? `${age} anni` : '') + row('📍', 'Luogo di nascita', pr.bplace) + row('🌍', 'Nazionalità', pr.nat) + row('🎯', 'Ruolo preciso', pr.pos) + (pr.bio ? `<p class="pb-bio">${esc(pr.bio)}</p>` : '') : '';
   const act = mine ? `<button type="button" class="btn sm" data-action="prof-open">${rows ? '✏️ Modifica scheda' : 'Completa la tua scheda'}</button>` : '';
-  const inner = rows ? `<div class="fig-in chamf back-in prof"><b>${esc(p.name)}</b>${rows}${act}</div>` : `<div class="fig-in chamf back-in">${crestSVG('cgb')}<b>Comboniani</b><span>Stagione 26/27</span>${act}</div>`;
+  const st = STATS.byId[pid];
+  let more = '';
+  if(st){
+    const cell = (k, v) => `<span class="pb-st"><b>${v}</b><small>${k}</small></span>`;
+    const plq = (st.plaques || []).map(id => plaqueById(id)).filter(Boolean);
+    const id = st.ideal && store.players[st.ideal.pid] ? st.ideal : null, nem = st.nemesis && store.players[st.nemesis.pid] ? st.nemesis : null;
+    const mate = (x, n, one, many) => `<button type="button" class="pb-mate" data-open-player="${x.pid}">${avatar(store.players[x.pid], 'xs')}<span><b>${esc(pname(x.pid))}</b><small>${n} ${n === 1 ? one : many}</small></span></button>`;
+    more = `<div class="pb-sec"><h4>Stagione</h4><div class="pb-sts">${cell('Presenze', st.pres)}${cell('V-P-S', `${st.v}-${st.pa}-${st.s}`)}${cell('% vittorie', st.pct.toFixed(0) + '%')}${cell('Gol', st.g)}${cell('Assist', st.a)}${cell('MVP', st.mvp)}</div></div>
+      <div class="pb-sec"><h4>Targhe</h4>${plq.length ? `<div class="pb-plq">${plq.map(q => `<span class="pb-pl"><i aria-hidden="true">${q.icon}</i>${esc(q.name)}</span>`).join('')}</div>` : '<p class="pb-no">Nessuna targa per ora</p>'}</div>
+      <div class="pb-sec"><h4>Compagno ideale</h4>${id ? mate(id, id.v, 'vittoria insieme', 'vittorie insieme') : '<p class="pb-no">Ancora nessuna vittoria insieme</p>'}</div>
+      <div class="pb-sec"><h4>Bestia nera</h4>${nem ? mate(nem, nem.s, 'sconfitta insieme', 'sconfitte insieme').replace('pb-mate', 'pb-mate bad') : '<p class="pb-no">Nessuna sconfitta ricorrente</p>'}</div>`;
+  }
+  const inner = (rows || more) ? `<div class="fig-in chamf back-in prof"><b>${esc(p.name)}</b>${rows}${more}${act}</div>` : `<div class="fig-in chamf back-in">${crestSVG('cgb')}<b>Comboniani</b><span>Stagione 26/27</span>${act}</div>`;
   return `<div class="fig-glow face-back t-${backT}"><div class="fig chamf">${inner}</div></div>`;
 }
 let figTurned = false;
