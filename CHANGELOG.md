@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.4
+- Classifica: il podio dei primi 3 c'è in tutte le viste (nelle viste a conteggio entra solo chi ha almeno 1).
+- "Premi stagionali": tasto dorato tra la prossima gara e la classifica; sul computer la pagina è a colonna unica centrata (niente colonna vuota a destra).
+- Sottosezioni di Trofei e Partite: tasti più grandi e arancioni (nuova classe `sub-tab`; le schede del CASiNO non cambiano); sul computer il resoconto e i tasti sono centrati con larghezza contenuta.
+- Solo interfaccia: nessuna modifica a dati, punteggi o codici.
+
 ## 1.7.3
 - Codice giocatore: ogni giocatore può avere un codice numerico di 4–6 cifre, all'inizio nessuno. Primo arrivato: chi sceglie per primo un giocatore senza codice lo imposta; poi serve il codice per sceglierlo, e resta salvato sul telefono (`cmb_pk`). Nuovo percorso del database `playerKeys/{pid}` = `{ s, h, v }` (salt e hash PBKDF2-SHA256, mai il codice in chiaro); campo opzionale, i dati esistenti funzionano senza. Le chiavi NON fanno parte del backup.
 - Voti MVP, voti a stelle, richiesta scheda e ogni azione "come giocatore" richiedono il codice verificato su quel dispositivo (`myPid()`). Regola ferma: i record `ratings` restano `{ to, s }` con id casuale, senza votante né orario; il codice decide solo chi può votare.
