@@ -3066,11 +3066,16 @@ function rankShift(){
   }, $('#splash') ? 2800 : 150);
 }
 function podiumHTML(){
-  if(ui.cView !== 'gen' || !STATS.matches.length || STATS.list.length < 2) return '';
-  const top = STATS.list.slice(0, 3);
+  const k = ui.cView || 'gen', gen = k === 'gen';
+  if(!STATS.matches.length || STATS.list.length < 2) return '';
+  /* Podio della vista: i primi 3 della classifica scelta (senza filtri); nelle viste a conteggio entra solo chi ha almeno 1 */
+  const sub = { g:s => `${s.g} gol`, a:s => `${s.a} assist`, pct:s => `${s.pct.toFixed(0)}% su ${s.pres} ${s.pres === 1 ? 'gara' : 'gare'}`, s:s => `${s.s} ${s.s === 1 ? 'sconfitta' : 'sconfitte'}`, og:s => `${s.og} autogol` };
+  const top = gen ? STATS.list.slice(0, 3)
+    : [...STATS.list].filter(s => (k === 'pct' ? s.pres > 0 : s[k] > 0)).sort((a, b) => (b[k] - a[k]) || (a.rank - b.rank)).slice(0, 3);
+  if(!top.length) return '';
   return `<div class="podium" aria-label="Podio">${[1, 0, 2].filter(i => top[i]).map(i => {
     const s = top[i], place = i + 1;
-    return `<button class="pod p${place}" data-open-player="${s.pid}" aria-label="${place}° ${esc(s.name)}"><span class="pod-av">${avatar(s.p, 'md')}</span><span class="pod-n">${nameHTML(s.pid, shortName(s.name))}</span><span class="pod-s">${s.v} V, ${s.pct.toFixed(0)}%</span><span class="pod-step"><b>${place}</b></span></button>`;
+    return `<button class="pod p${place}" data-open-player="${s.pid}" aria-label="${place}° ${esc(s.name)}"><span class="pod-av">${avatar(s.p, 'md')}</span><span class="pod-n">${nameHTML(s.pid, shortName(s.name))}</span><span class="pod-s">${gen ? `${s.v} V, ${s.pct.toFixed(0)}%` : sub[k](s)}</span><span class="pod-step"><b>${place}</b></span></button>`;
   }).join('')}</div>`;
 }
 function sortCmp(a, b){
