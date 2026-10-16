@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.7.5
+- Nuova animazione d'ingresso: la scritta Comboniani (arancione con contorno nero) appare e viene frantumata da un pallone calciato fortissimo, poi si apre l'app. Una volta per sessione, tocca per saltare; con "riduci animazioni" resta solo la scritta ferma. Tolte le spade e il sottotitolo. Solo interfaccia.
+
 ## 1.7.4
 - Classifica: il podio dei primi 3 c'è in tutte le viste (nelle viste a conteggio entra solo chi ha almeno 1).
 - "Premi stagionali": tasto dorato tra la prossima gara e la classifica; sul computer la pagina è a colonna unica centrata (niente colonna vuota a destra).
