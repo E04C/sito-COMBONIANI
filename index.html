@@ -1061,12 +1061,13 @@ body:not(.lit) .holo{animation:holoIdle 6s ease-in-out infinite alternate}
 #splash.out{opacity:0;visibility:hidden}
 .sp2-stage{position:relative;display:flex;align-items:center;justify-content:center;width:100%}
 .sp2-glow{position:absolute;left:50%;top:50%;width:min(120vw,900px);height:min(60vw,420px);transform:translate(-50%,-50%);background:radial-gradient(closest-side,rgba(249,115,22,.34),rgba(249,115,22,0));pointer-events:none}
-.sp2-word{position:relative;display:flex;justify-content:center;font:italic 800 clamp(44px,15.5vw,150px)/1 var(--disp);letter-spacing:.01em;opacity:0;transform:scale(.92);animation:sp2In .32s var(--ease) .05s forwards}
-@keyframes sp2In{to{opacity:1;transform:none}}
-.sp2-word>span{display:block;color:#f97316;-webkit-text-stroke:.1em #050505;paint-order:stroke fill;filter:drop-shadow(.05em .055em 0 #050505) drop-shadow(0 0 .3em rgba(249,115,22,.55))}
-.sp2-word .sh{position:absolute;margin:0;will-change:transform,opacity}
+.sp2-word{position:relative;display:flex;justify-content:center;font:italic 800 clamp(44px,15.5vw,150px)/1 var(--disp);letter-spacing:.01em;perspective:900px}
+.sp2-word>span{display:block;padding:.1em .12em;margin:-.1em -.12em;color:#f97316;-webkit-text-stroke:.07em #050505;paint-order:stroke fill;text-shadow:.045em .055em 0 #050505;opacity:0;will-change:transform,opacity}
+.sp2-word .sh{position:absolute;margin:0;backface-visibility:visible;will-change:transform,opacity}
+.sp2-sp{position:absolute;left:50%;top:50%;width:3px;height:16px;margin:-8px 0 0 -1.5px;border-radius:2px;background:linear-gradient(#fff7ed,#fdba74 40%,#f97316);box-shadow:0 0 8px rgba(249,115,22,.9);opacity:0;pointer-events:none;will-change:transform,opacity}
+.sp2-ghost{filter:blur(2.5px) drop-shadow(0 0 10px rgba(249,115,22,.6))}
 .sp2-ball{position:absolute;left:50%;top:50%;width:clamp(84px,24vw,150px);height:clamp(84px,24vw,150px);margin:calc(clamp(84px,24vw,150px) / -2) 0 0 calc(clamp(84px,24vw,150px) / -2);opacity:0;filter:drop-shadow(0 10px 18px rgba(0,0,0,.7));will-change:transform,opacity}
-.sp2-ring{position:absolute;left:50%;top:50%;width:40vmin;height:40vmin;margin:-20vmin 0 0 -20vmin;border-radius:50%;border:.7vmin solid rgba(253,230,138,.9);box-shadow:0 0 6vmin rgba(249,115,22,.7);opacity:0;pointer-events:none}
+.sp2-ring{position:absolute;left:50%;top:50%;width:40vmin;height:40vmin;margin:-20vmin 0 0 -20vmin;border-radius:50%;border:.35vmin solid rgba(253,230,138,.85);box-shadow:0 0 5vmin rgba(249,115,22,.55);opacity:0;pointer-events:none}
 .sp2-flash{position:absolute;left:50%;top:50%;width:70vmin;height:70vmin;margin:-35vmin 0 0 -35vmin;border-radius:50%;background:radial-gradient(circle,#fff 0%,rgba(253,230,138,.85) 22%,rgba(249,115,22,0) 62%);opacity:0;pointer-events:none}
 
 /* --- PWA: installazione --- */
@@ -7852,51 +7853,83 @@ function openNews(){
   const end = () => { if(ended || !el.isConnected) return; ended = true; el.classList.add('out'); setTimeout(() => el.remove(), 520); };
   if(seen){ el.remove(); return; }
   el.addEventListener('click', end);
-  if(reduce || !el.animate){ el.querySelector('#sp2-word').style.cssText = 'opacity:1;transform:none;animation:none'; setTimeout(end, 600); setTimeout(() => { try{ flow(); }catch(e){} }, 1300); return; }
+  if(reduce || !el.animate){ [...el.querySelectorAll('#sp2-word>span')].forEach(x => { x.style.opacity = '1'; }); setTimeout(end, 600); setTimeout(() => { try{ flow(); }catch(e){} }, 1300); return; }
   const stage = $('#sp2-stage'), word = $('#sp2-word'), ball = $('.sp2-ball'), flash = $('#sp2-flash'), ring = $('#sp2-ring');
   /* la scritta riempie quasi tutta la larghezza, qualunque font sia caricato */
   const fit = () => { word.style.fontSize = '100px'; const w = word.getBoundingClientRect().width; if(w) word.style.fontSize = Math.min(100 * Math.min(innerWidth * .9, 1100) / w, 190) + 'px'; };
   fit(); if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if(!ended && !word.querySelector('.sh')) fit(); });
-  const T_HIT = 1000, rnd = (a, b) => a + Math.random() * (b - a);
+  const rnd = (a, b) => a + Math.random() * (b - a), sign = () => Math.random() < .5 ? -1 : 1;
+  const T_LAUNCH = 520, T_FLY = 540, T_HIT = T_LAUNCH + T_FLY;
+  /* Lettere: salgono una dopo l'altra con un piccolo rimbalzo */
+  [...word.children].forEach((ch, i) => ch.animate([
+    { opacity:0, transform:'translateY(.4em) scale(.7) rotate(-7deg)' },
+    { opacity:1, transform:'translateY(-.05em) scale(1.07) rotate(1deg)', offset:.62 },
+    { opacity:1, transform:'none' }
+  ], { duration:520, delay:60 + i * 40, easing:'cubic-bezier(.3,.8,.4,1)', fill:'both' }));
+  /* Fisica semplice: spinta iniziale che si smorza e gravità, campionata in fotogrammi (movimento morbido, niente linee dritte) */
+  const flightFrames = (vx, vy, T, G, k, n = 14) => Array.from({ length:n }, (_, i) => {
+    const t = i / (n - 1) * T, d = (1 - Math.exp(-k * t)) / k;
+    return { t:i / (n - 1), x:vx * d, y:vy * d + .5 * G * t * t };
+  });
   const shatter = () => {
     if(ended) return;
-    const wr = word.getBoundingClientRect(), cx = wr.left + wr.width / 2, cy = wr.top + wr.height / 2, shards = [];
+    const wr = word.getBoundingClientRect(), sr = stage.getBoundingClientRect(), cx = wr.left + wr.width / 2, cy = wr.top + wr.height / 2, shards = [];
     [...word.children].forEach(ch => {
       if(ch.classList.contains('sh')) return;
       const r = ch.getBoundingClientRect(), box = { l:r.left - wr.left, t:r.top - wr.top, w:r.width, h:r.height };
-      /* 8 schegge a ventaglio da un punto interno quasi centrale */
-      const px = rnd(30, 70), py = rnd(30, 70), ring8 = [[0, 0], [50, 0], [100, 0], [100, 50], [100, 100], [50, 100], [0, 100], [0, 50]];
-      for(let i = 0; i < 8; i++){
-        const A = ring8[i], B = ring8[(i + 1) % 8], sh = ch.cloneNode(true);
-        sh.className = 'sh';
-        sh.style.cssText = `left:${box.l}px;top:${box.t}px;width:${box.w}px;height:${box.h}px;clip-path:polygon(${px}% ${py}%,${A[0]}% ${A[1]}%,${B[0]}% ${B[1]}%)`;
+      /* schegge irregolari: punti sul perimetro (angoli più uno o due per lato, spostati a caso) uniti a un centro spostato */
+      const px = rnd(32, 68), py = rnd(32, 68), pts = [];
+      [[0, 0, 100, 0], [100, 0, 100, 100], [100, 100, 0, 100], [0, 100, 0, 0]].forEach(([x0, y0, x1, y1]) => {
+        pts.push([x0, y0]);
+        const m = Math.random() < .55 ? 2 : 1;
+        for(let j = 1; j <= m; j++){ const t = (j + rnd(-.25, .25)) / (m + 1); pts.push([x0 + (x1 - x0) * t, y0 + (y1 - y0) * t]); }
+      });
+      for(let i = 0; i < pts.length; i++){
+        const A = pts[i], B = pts[(i + 1) % pts.length], sh = ch.cloneNode(true);
+        sh.className = 'sh'; sh.style.opacity = 1;
+        sh.style.cssText = `left:${box.l}px;top:${box.t}px;width:${box.w}px;height:${box.h}px;opacity:1;clip-path:polygon(${px}% ${py}%,${A[0]}% ${A[1]}%,${B[0]}% ${B[1]}%)`;
         word.appendChild(sh);
-        const mx = (A[0] + B[0] + px) / 300, my = (A[1] + B[1] + py) / 300;
-        shards.push({ sh, vx:(r.left + r.width * mx) - cx, vy:(r.top + r.height * my) - cy });
+        shards.push({ sh, vx:(r.left + r.width * (A[0] + B[0] + px) / 300) - cx, vy:(r.top + r.height * (A[1] + B[1] + py) / 300) - cy });
       }
       ch.style.visibility = 'hidden';
     });
+    const far = Math.max(1, ...shards.map(o => Math.hypot(o.vx, o.vy)));
     shards.forEach(({ sh, vx, vy }) => {
-      const k = rnd(1.1, 2.6), dx = vx * k + rnd(-40, 40), dy = vy * k + rnd(60, 260), rot = rnd(-380, 380), d = rnd(900, 1500);
-      sh.animate([{ transform:'translate(0,0) rotate(0) scale(1)', opacity:1 }, { transform:`translate(${dx * .55}px,${dy * .4}px) rotate(${rot * .5}deg) scale(1)`, opacity:1, offset:.45 }, { transform:`translate(${dx}px,${dy}px) rotate(${rot}deg) scale(.6)`, opacity:0 }], { duration:d, easing:'cubic-bezier(.15,.7,.35,1)', fill:'forwards' });
+      const L = Math.max(1, Math.hypot(vx, vy)), sp = rnd(700, 1500) * (1.15 - .45 * L / far), T = rnd(1.0, 1.55);
+      const ux = vx / L + rnd(-.25, .25), uy = vy / L + rnd(-.35, .1) - .15;
+      const fr = flightFrames(ux * sp, uy * sp, T, 1700, 1.5), rz = sign() * rnd(180, 620), rx = sign() * rnd(120, 520), ry = sign() * rnd(120, 520);
+      sh.animate(fr.map(p => ({
+        transform:`translate(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px) rotateX(${(rx * p.t).toFixed(0)}deg) rotateY(${(ry * p.t).toFixed(0)}deg) rotate(${(rz * p.t).toFixed(0)}deg) scale(${(1 - .35 * p.t).toFixed(3)})`,
+        opacity:p.t < .55 ? 1 : Math.max(0, 1 - (p.t - .55) / .45), offset:p.t
+      })), { duration:T * 1000, easing:'linear', fill:'forwards' });
     });
-    flash.animate([{ opacity:0, transform:'scale(.3)' }, { opacity:1, transform:'scale(.9)', offset:.25 }, { opacity:0, transform:'scale(1.5)' }], { duration:520, easing:'ease-out', fill:'forwards' });
-    ring.animate([{ opacity:.95, transform:'scale(.2)' }, { opacity:0, transform:'scale(3)' }], { duration:700, easing:'cubic-bezier(.1,.7,.3,1)', fill:'forwards' });
-    stage.animate([{ transform:'translate(0,0)' }, { transform:'translate(-9px,6px)' }, { transform:'translate(8px,-7px)' }, { transform:'translate(-5px,4px)' }, { transform:'translate(0,0)' }], { duration:260, easing:'linear' });
+    /* scintille veloci */
+    for(let i = 0; i < 34; i++){
+      const e = document.createElement('i'); e.className = 'sp2-sp'; stage.appendChild(e);
+      const a = rnd(0, Math.PI * 2), sp = rnd(900, 2100), T = rnd(.45, .85), fr = flightFrames(Math.cos(a) * sp, Math.sin(a) * sp, T, 1400, 3.2, 10), rot = a * 180 / Math.PI + 90;
+      e.animate(fr.map(p => ({ transform:`translate(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px) rotate(${rot.toFixed(0)}deg) scaleY(${(1 - .7 * p.t).toFixed(2)})`, opacity:p.t < .15 ? p.t / .15 : Math.max(0, 1 - (p.t - .15) / .85), offset:p.t })), { duration:T * 1000, easing:'linear', fill:'forwards' });
+    }
+    flash.animate([{ opacity:0, transform:'scale(.3)' }, { opacity:1, transform:'scale(.85)', offset:.22 }, { opacity:0, transform:'scale(1.4)' }], { duration:480, easing:'cubic-bezier(.2,.7,.3,1)', fill:'forwards' });
+    ring.animate([{ opacity:.9, transform:'scale(.15)' }, { opacity:0, transform:'scale(3.2)' }], { duration:760, easing:'cubic-bezier(.1,.75,.3,1)', fill:'forwards' });
+    stage.animate([{ transform:'translate(0,0) scale(1.035)' }, { transform:'translate(-9px,5px) scale(1.02)' }, { transform:'translate(7px,-6px) scale(1.012)' }, { transform:'translate(-4px,3px) scale(1.005)' }, { transform:'translate(0,0) scale(1)' }], { duration:360, easing:'ease-out' });
   };
-  /* il pallone arriva da lontano, accelerando, colpisce la scritta e la attraversa */
+  /* Il pallone parte piano da lontano e accelera con forza: i "fantasmi" dietro lo fanno sembrare veloce */
   const W = innerWidth, H = innerHeight;
-  const hit = ball.animate([
-    { transform:`translate(${-W * .55}px,${H * .5}px) scale(.12) rotate(0deg)`, opacity:1 },
-    { transform:'translate(0,0) scale(1.15) rotate(900deg)', opacity:1 }
-  ], { duration:T_HIT - 560, delay:560, easing:'cubic-bezier(.55,0,.95,.55)', fill:'both' });
-  hit.onfinish = () => {
-    shatter();
-    ball.animate([
-      { transform:'translate(0,0) scale(1.15) rotate(900deg)', opacity:1 },
-      { transform:`translate(${W * .35}px,${-H * .7}px) scale(3.2) rotate(1500deg)`, opacity:0 }
-    ], { duration:420, easing:'cubic-bezier(.2,.6,.4,1)', fill:'forwards' });
+  const fly = (el, delay, alpha, main) => {
+    const a = el.animate([
+      { transform:`translate(${-W * .6}px,${H * .52}px) scale(.1) rotate(0deg)`, opacity:alpha },
+      { transform:'translate(0,0) scale(1.2) rotate(1080deg)', opacity:alpha }
+    ], { duration:T_FLY, delay, easing:'cubic-bezier(.66,0,.96,.42)', fill:'both' });
+    a.onfinish = () => {
+      if(main) shatter();
+      el.animate([
+        { transform:'translate(0,0) scale(1.2) rotate(1080deg)', opacity:alpha },
+        { transform:`translate(${W * .42}px,${-H * .75}px) scale(3.4) rotate(1700deg)`, opacity:0 }
+      ], { duration:460, easing:'cubic-bezier(.25,.5,.45,1)', fill:'forwards' });
+    };
   };
+  [.34, .2, .1].forEach((al, i) => { const g = ball.cloneNode(true); g.classList.add('sp2-ghost'); g.removeAttribute('id'); ball.parentNode.insertBefore(g, ball); fly(g, T_LAUNCH + 26 * (i + 1), al, false); });
+  fly(ball, T_LAUNCH, 1, true);
   setTimeout(end, T_HIT + 1500);
   setTimeout(() => { try{ flow(); }catch(e){} }, T_HIT + 2300);
 })();
