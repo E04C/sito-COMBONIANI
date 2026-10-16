@@ -161,7 +161,7 @@ option{background:#0c1018;color:var(--tx)}
 
 /* ---------- Dashboard ---------- */
 .dash{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
-@media (min-width:1100px){.dash{grid-template-columns:minmax(0,1fr) 370px}.hero{grid-column:1/-1}}
+@media (min-width:1100px){.dash{max-width:920px;margin-inline:auto}}
 .hero{position:relative;overflow:hidden;padding:16px 18px 18px;border-radius:26px;cursor:pointer;transition:border-color .2s}
 .hero:hover{border-color:var(--line-strong)}
 .hero::before{content:"";position:absolute;right:-10%;top:-60%;width:70%;height:200%;background:radial-gradient(closest-side,rgba(249,115,22,.2),transparent);pointer-events:none}
@@ -209,11 +209,15 @@ table.cls{width:100%;border-collapse:separate;border-spacing:0;font-variant-nume
 .cls-filt label{display:flex;align-items:center;gap:10px;font:700 13.5px var(--body);color:var(--mu)}
 .cls-filt input[type=checkbox]{width:20px;height:20px;accent-color:var(--or)}
 .cls-filt input[type=number]{width:72px}
-.season-btn{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:12px 18px;border-radius:20px;text-align:left;cursor:pointer}
-.season-btn .ico{font-size:26px}
-.season-btn b{display:block;font:italic 800 20px/1.1 var(--disp)}
-.season-btn small{display:block;margin-top:2px;color:var(--mu);font:700 12.5px var(--body)}
-.season-btn .go{margin-left:auto;color:var(--or);font-size:22px}
+.season-btn{display:flex;align-items:center;gap:12px;width:100%;min-height:68px;padding:12px 20px;border:0;border-radius:20px;text-align:left;cursor:pointer;color:#1a1205;background:linear-gradient(135deg,#fde68a,#fbbf24 40%,#f59e0b 75%,#d97706);box-shadow:0 8px 26px rgba(245,158,11,.38),inset 0 1px 0 rgba(255,255,255,.55);transition:transform .15s var(--ease),box-shadow .2s}
+.season-btn:hover{box-shadow:0 10px 32px rgba(245,158,11,.55),inset 0 1px 0 rgba(255,255,255,.55)}
+.season-btn:active{transform:scale(.985)}
+.season-btn:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.season-btn .ico{font-size:30px;line-height:1}
+.season-btn b{display:block;font:italic 800 22px/1.1 var(--disp)}
+.season-btn small{display:block;margin-top:2px;color:rgba(26,18,5,.72);font:800 13px var(--body)}
+.season-btn .go{margin-left:auto;font-size:30px;font-weight:800;line-height:1}
+@media (prefers-reduced-motion:reduce){.season-btn{transition:none}}
 @media (max-width:520px){.cls td{padding:9px 6px}.cls th button{padding:10px 6px}.cls .pl-cell{min-width:0;gap:6px}.cls .pl-name{max-width:104px}.cls .pl-sub .foot{display:none}.cls .mv{display:none}}
 .pos{width:24px;flex:none;font:italic 800 19px/1 var(--disp);color:var(--mu2);text-align:center}
 .r1 .pos{color:var(--gold)} .r2 .pos{color:#d6dbe4} .r3 .pos{color:#e08a3a}
@@ -3015,6 +3019,7 @@ function renderDashboardInner(){
   const cv = CVIEWS[ui.cView] || CVIEWS.gen, cf = ui.cf;
   const nF = (cf.q ? 1 : 0) + (cf.played ? 1 : 0) + (cf.min > 0 ? 1 : 0);
   $('#dash').innerHTML = `<div class="dash">${bdayHTML()}${next}${hero}
+    <button type="button" class="season-btn" data-action="season-awards" aria-label="Premi stagionali, stagione 26/27"><span class="ico" aria-hidden="true">🏆</span><span><b>Premi stagionali</b><small>Stagione 26/27</small></span><span class="go" aria-hidden="true">›</span></button>
     <section class="glass">
       <div class="panel-h"><h2>Classifica</h2><span class="mu sm">Tocca un giocatore per aprire la figurina</span></div>
       <div class="cls-bar">
@@ -3030,7 +3035,6 @@ function renderDashboardInner(){
       <div class="table-wrap" id="cls-wrap">${tableHTML()}</div>
       <p class="legend" id="cls-legend">${esc(cv.legend)}</p>
     </section>
-    <button type="button" class="glass season-btn" data-action="season-awards" aria-label="Premi stagionali, stagione 26/27"><span class="ico" aria-hidden="true">🏆</span><span><b>Premi stagionali</b><small>Stagione 26/27</small></span><span class="go" aria-hidden="true">›</span></button>
   </div>`;
 }
 /* Cambio vista o filtri: si ridisegnano solo podio, tabella e legenda (la tastiera resta aperta) */
