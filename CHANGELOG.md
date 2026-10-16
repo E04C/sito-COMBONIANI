@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.7.4
+- Classifica: il podio dei primi 3 c'è in tutte le viste (nelle viste a conteggio entra solo chi ha almeno 1).
+- "Premi stagionali": tasto dorato tra la prossima gara e la classifica; sul computer la pagina è a colonna unica centrata (niente colonna vuota a destra).
+- Sottosezioni di Trofei e Partite: tasti più grandi e arancioni (nuova classe `sub-tab`; le schede del CASiNO non cambiano); sul computer il resoconto e i tasti sono centrati con larghezza contenuta.
+- Solo interfaccia: nessuna modifica a dati, punteggi o codici.
+
+## 1.7.3
+- Codice giocatore: ogni giocatore può avere un codice numerico di 4–6 cifre, all'inizio nessuno. Primo arrivato: chi sceglie per primo un giocatore senza codice lo imposta; poi serve il codice per sceglierlo, e resta salvato sul telefono (`cmb_pk`). Nuovo percorso del database `playerKeys/{pid}` = `{ s, h, v }` (salt e hash PBKDF2-SHA256, mai il codice in chiaro); campo opzionale, i dati esistenti funzionano senza. Le chiavi NON fanno parte del backup.
+- Voti MVP, voti a stelle, richiesta scheda e ogni azione "come giocatore" richiedono il codice verificato su quel dispositivo (`myPid()`). Regola ferma: i record `ratings` restano `{ to, s }` con id casuale, senza votante né orario; il codice decide solo chi può votare.
+- Blocco di 5 minuti dopo 5 tentativi sbagliati (solo nell'app, in `localStorage`).
+- Io: "Gestisci account" (giocatore, codice attuale, nuovo codice, Salva, Esci); per l'Ospite solo il tasto per scegliere un giocatore. Schermata di ingresso invariata (elenco giocatori e Ospite).
+- Admin: "Codici giocatori" con "Azzera codice" per ogni giocatore (si vede solo se c'è un codice, mai il codice) e avviso "controlla i voti recenti". Un telefono il cui codice viene azzerato o cambiato deve rifare l'accesso.
+- Migrazione: alla prima apertura ogni telefono dimentica il giocatore scelto (`cmb_me`) e rifà l'accesso; gli ospiti restano ospiti.
+- Limiti: il codice protegge dagli scherzi, non da chi sa leggere il database (l'hash di un codice a poche cifre si può indovinare); il blocco vale solo nell'app; gli amici non devono usare codici che usano altrove. Servono le regole di Firebase per il percorso `playerKeys` (lettura e scrittura).
+
+## 1.7.2
+- Grafica e struttura, nessuna modifica a punteggi, OVR o dati. Classifica: tendina con Generale, Capocannoniere, Assist man, % vittorie, Sconfitte, Autogol, ognuna con le sue colonne (niente scorrimento laterale a 390 px); tasto Filtri (ricerca, solo chi ha giocato, PG minimo); tolti l'hero dell'ultima gara e i riquadri Scarpa d'Oro / Miglior assist-man; nuovo tasto "Premi stagionali" verso Trofei.
+- Trofei: sottosezioni Targhe e Trofei storici.
+- Partite: tendina della giornata e selettore Resoconto / Formazioni; marcatori con minuto, assist e "(aut.)" sotto ogni squadra (le gare senza sequenza dei gol restano senza minuti); liste squadre sotto Formazioni; replay ed esportazioni sotto entrambe le voci. Rimossa la cronaca (resta la sezione Cambi).
+- Indicatore di connessione con scritta e senza aspetto da pulsante (etichette: Live, Attesa…, Offline, Errore, Locale).
+- Retro della figurina: statistiche, targhe, compagno ideale e bestia nera (dati già calcolati, sola lettura); pulsanti sotto la carta sempre visibili.
+- Nuovi stati interni solo di interfaccia (`ui.cView`, `ui.cf`, `ui.tTab`, `ui.mTab`): nessun nuovo campo nel database.
+
 ## 1.7.1
 - Corretto: nell'editor delle formazioni, toccando un giocatore compariva "CASiNO sospeso" (o "Scommesse chiuse") e non si selezionava nessuno. Il Monte MVP usava lo stesso attributo `data-pool` dei gettoni dei giocatori; ora usa `data-mpool`. Errore presente dalla 1.6.2.
 
