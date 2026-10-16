@@ -1578,6 +1578,13 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 /* ---------- CASiNO: sezione e tema (feltro verde, accenti oro) ---------- */
 .cs-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;margin:0 0 4px;scrollbar-width:none}
 .cs-tabs::-webkit-scrollbar{display:none}
+.sub-tabs{display:flex;gap:10px;margin:0 0 14px}
+.sub-tab{flex:1;min-height:54px;padding:0 14px;border-radius:16px;border:2px solid rgba(249,115,22,.55);background:rgba(249,115,22,.1);color:#fdba74;font:800 17px var(--body);white-space:nowrap;cursor:pointer;transition:background .2s,color .2s,box-shadow .2s,transform .15s var(--ease)}
+.sub-tab:hover{background:rgba(249,115,22,.2)}
+.sub-tab:active{transform:scale(.98)}
+.sub-tab:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.sub-tab.on{border-color:#fb923c;background:linear-gradient(135deg,#fb923c,#f97316 55%,#ea580c);color:#1a0b02;box-shadow:0 6px 22px rgba(249,115,22,.5),inset 0 1px 0 rgba(255,255,255,.4)}
+@media (prefers-reduced-motion:reduce){.sub-tab{transition:none}}
 .cs-tab{flex:none;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--hair);background:rgba(255,255,255,.04);color:var(--mu);font:700 14px var(--body);white-space:nowrap;transition:color .2s,background .2s,border-color .2s}
 .cs-tab.on{color:var(--or);border-color:var(--line-strong);background:var(--or-soft)}
 .cs-empty{padding:26px 20px;text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center}
@@ -3494,7 +3501,7 @@ function mediaBtns(m){
 }
 function mTabsHTML(){
   const t = ui.mTab === 'form' ? 'form' : 'rep';
-  return `<div class="cs-tabs m-tabs" role="tablist" aria-label="Partita">${[['rep', 'Resoconto'], ['form', 'Formazioni']].map(([k, l]) => `<button type="button" role="tab" class="cs-tab ${k === t ? 'on' : ''}" aria-selected="${k === t}" data-mtab="${k}">${l}</button>`).join('')}</div>`;
+  return `<div class="sub-tabs m-tabs" role="tablist" aria-label="Partita">${[['rep', 'Resoconto'], ['form', 'Formazioni']].map(([k, l]) => `<button type="button" role="tab" class="sub-tab ${k === t ? 'on' : ''}" aria-selected="${k === t}" data-mtab="${k}">${l}</button>`).join('')}</div>`;
 }
 /* Liste delle squadre (sotto Formazioni): le vede chiunque */
 function lineupsHTML(m, withFlags){
@@ -4933,7 +4940,7 @@ function renderTrophies(){
     return recCard(c, { broken, chain, mine });
   }).join('');
   const tt = ui.tTab === 'rec' ? 'rec' : 'plq';
-  const ttabs = `<div class="cs-tabs" role="tablist" aria-label="Trofei">${[['plq', 'Targhe'], ['rec', 'Trofei storici']].map(([k, l]) => `<button type="button" role="tab" class="cs-tab ${k === tt ? 'on' : ''}" aria-selected="${k === tt}" data-ttab="${k}">${l}</button>`).join('')}</div>`;
+  const ttabs = `<div class="sub-tabs" role="tablist" aria-label="Trofei">${[['plq', 'Targhe'], ['rec', 'Trofei storici']].map(([k, l]) => `<button type="button" role="tab" class="sub-tab ${k === tt ? 'on' : ''}" aria-selected="${k === tt}" data-ttab="${k}">${l}</button>`).join('')}</div>`;
   el.innerHTML = `${ttabs}<div class="glass th-hero"><h2>🏆 Trofei & Primati</h2><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa meglio.</p></div>
     ${tt === 'plq' ? `<div class="th-sec"><h3>Le ${PL.length} targhe stagionali</h3><span>Leader in tempo reale · Stagione 26/27</span></div>
     <div class="plk-grid">${plk}</div>` : `<div class="th-sec"><h3>Bacheca dei primati storici</h3><span>${nM} ${nM === 1 ? 'gara analizzata' : 'gare analizzate'}</span></div>
