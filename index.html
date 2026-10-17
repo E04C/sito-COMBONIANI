@@ -897,38 +897,23 @@ button.rec-who{cursor:pointer}
 @media (max-width:420px){.nav button{font-size:10px;padding:7px 2px 6px}}
 
 /* ================= v7: olografico, animazioni, podio, splash, PWA ================= */
-/* --- Carte olografiche (Oro e Diamante). La luce arriva da --tx/--ty: giroscopio, mouse o dito --- */
-.holo{position:absolute;top:0;left:0;right:0;bottom:0;z-index:4;pointer-events:none;mix-blend-mode:color-dodge;opacity:.2;
-  --px:calc(50% + var(--tx,0) * 55%);--py:calc(50% + var(--ty,0) * 55%);
-  background-image:
-    repeating-linear-gradient(115deg,#fff4c4 0%,#fbbf24 6%,#fde68a 12%,#f59e0b 18%,#fff4c4 24%),
-    repeating-linear-gradient(35deg,rgba(14,21,46,.5) 0%,rgba(143,163,163,.5) 4%,rgba(180,200,200,.5) 8%,rgba(14,21,46,.5) 12%);
-  background-size:400% 400%,300% 300%;
-  background-position:calc(50% + var(--tx,0) * 45%) calc(50% + var(--ty,0) * 45%),calc(50% - var(--tx,0) * 30%) calc(50% - var(--ty,0) * 30%);
-  /* banda di luce diagonale che scorre con l'inclinazione: il foil si accende solo lì, come su una carta vera */
-  -webkit-mask-image:linear-gradient(115deg,rgba(0,0,0,0) 20%,rgba(0,0,0,.35) 36%,#000 47%,#000 53%,rgba(0,0,0,.35) 64%,rgba(0,0,0,0) 80%);
-          mask-image:linear-gradient(115deg,rgba(0,0,0,0) 20%,rgba(0,0,0,.35) 36%,#000 47%,#000 53%,rgba(0,0,0,.35) 64%,rgba(0,0,0,0) 80%);
-  -webkit-mask-size:260% 260%;mask-size:260% 260%;
-  -webkit-mask-position:var(--px) var(--py);mask-position:var(--px) var(--py);
-  filter:brightness(.9) contrast(1.3);transition:background-position .12s linear,-webkit-mask-position .12s linear,mask-position .12s linear}
-.holo::after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;mix-blend-mode:overlay;opacity:.7;
-  background:radial-gradient(farthest-corner circle at calc(50% + var(--tx,0) * 55%) calc(50% + var(--ty,0) * 55%),rgba(255,255,255,.75) 0%,rgba(255,255,255,.1) 30%,rgba(0,0,0,.2) 90%)}
-.t-dia .holo{opacity:.26;
-  background-image:
-    repeating-linear-gradient(115deg,#ffb3b0 0%,#fff3b0 6%,#d2ffb8 12%,#c2fffb 18%,#bccaff 24%,#ecc2ff 30%,#ffb3b0 36%),
-    repeating-linear-gradient(35deg,rgba(14,21,46,.35) 0%,rgba(200,215,225,.45) 4%,rgba(225,240,245,.45) 8%,rgba(14,21,46,.35) 12%);
-  -webkit-mask-image:linear-gradient(115deg,rgba(0,0,0,0) 10%,rgba(0,0,0,.45) 32%,#000 46%,#000 54%,rgba(0,0,0,.45) 68%,rgba(0,0,0,.08) 90%);
-          mask-image:linear-gradient(115deg,rgba(0,0,0,0) 10%,rgba(0,0,0,.45) 32%,#000 46%,#000 54%,rgba(0,0,0,.45) 68%,rgba(0,0,0,0) 90%)}
-.t-dia .holo::before{content:"";position:absolute;top:0;left:0;right:0;bottom:0;mix-blend-mode:screen;opacity:.5;
-  background-image:radial-gradient(circle,#fff 0 .8px,rgba(255,255,255,0) 1.4px),radial-gradient(circle,#e0f2fe 0 .6px,rgba(255,255,255,0) 1.2px);
-  background-size:17px 17px,11px 11px;
-  background-position:calc(var(--tx,0) * 24px) calc(var(--ty,0) * 24px),calc(var(--tx,0) * -16px + 5px) calc(var(--ty,0) * -16px + 3px);
-  animation:twinkle 2.6s ease-in-out infinite}
-@keyframes twinkle{50%{opacity:.18}}
-.stage3d .t-dia .holo{opacity:.15}
-.stage3d .t-gold .holo{opacity:.12}
-body:not(.lit) .holo{animation:holoIdle 6s ease-in-out infinite alternate}
-@keyframes holoIdle{0%{background-position:20% 30%,70% 60%;-webkit-mask-position:0% 0%;mask-position:0% 0%}100%{background-position:80% 70%,30% 40%;-webkit-mask-position:100% 100%;mask-position:100% 100%}}
+/* --- Carte olografiche (Oro e Diamante): foil morbido e pulito, solo sfumature trasparenti (niente fusioni di colore, maschere o filtri: leggero per i telefoni).
+       La luce arriva da --lx/--ly (giroscopio, mouse, dito) e segue l'inclinazione solo sulla figurina aperta; nella griglia sta ferma --- */
+.holo{position:absolute;top:0;left:0;right:0;bottom:0;z-index:4;pointer-events:none;border-radius:inherit;opacity:.7;
+  background:
+    linear-gradient(115deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.2) 44%,rgba(255,243,190,.55) 50%,rgba(255,255,255,.2) 56%,rgba(255,255,255,0) 70%),
+    linear-gradient(155deg,rgba(253,224,71,.2),rgba(253,224,71,0) 42%,rgba(245,158,11,.18));
+  background-size:280% 100%,100% 100%;
+  background-position:calc(50% + var(--lx,0) * 65%) 0,0 0;
+  transition:background-position .12s linear}
+.t-dia .holo{
+  background:
+    linear-gradient(115deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.22) 44%,rgba(224,242,254,.6) 50%,rgba(255,255,255,.22) 56%,rgba(255,255,255,0) 70%),
+    linear-gradient(155deg,rgba(125,211,252,.22),rgba(167,139,250,.0) 42%,rgba(244,114,182,.18));
+  background-size:280% 100%,100% 100%;background-position:calc(50% + var(--lx,0) * 65%) 0,0 0}
+body:not(.lit) .stage3d .holo{animation:holoIdle 6s ease-in-out infinite alternate}
+@keyframes holoIdle{0%{background-position:30% 0,0 0}100%{background-position:70% 0,0 0}}
+@media (prefers-reduced-motion:reduce){.holo{animation:none!important;transition:none}}
 .mfig.t-gold .mfig-fr,.mfig.t-dia .mfig-fr{position:relative}
 
 /* --- Figurina in 3D: palco, flip, inclinazione --- */
@@ -942,7 +927,7 @@ body:not(.lit) .holo{animation:holoIdle 6s ease-in-out infinite alternate}
 .flip-hint{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:5;padding:6px 14px;border-radius:999px;background:rgba(10,13,20,.88);border:1px solid var(--line-strong);color:var(--tx);font:800 13px var(--body);white-space:nowrap;pointer-events:none;animation:hintOut .4s ease 2.2s forwards}
 @keyframes hintOut{to{opacity:0}}
 .tilt{transition:transform .14s linear}
-.tilt.on-holo{transform:rotateY(calc(var(--tx,0) * 9deg)) rotateX(calc(var(--ty,0) * -9deg));touch-action:none}
+.tilt.on-holo{transform:rotateY(calc(var(--lx,0) * 9deg)) rotateX(calc(var(--ly,0) * -9deg));touch-action:none}
 .face-front,.face-back{-webkit-backface-visibility:hidden;backface-visibility:hidden}
 .stage3d .fig-glow{filter:none}                       /* un filtro sulla faccia rompe retro e fusione dei colori in 3D */
 .fig-shadow{position:absolute;left:3%;right:3%;top:2%;bottom:2%;border-radius:34px;pointer-events:none;transform:translateZ(-2px);
@@ -1188,7 +1173,7 @@ body:not(.lit) .holo{animation:holoIdle 6s ease-in-out infinite alternate}
   box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -2px 0 rgba(0,0,0,.28)}
 .plate::after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;mix-blend-mode:overlay;
   background:linear-gradient(105deg,rgba(255,255,255,0) 36%,rgba(255,255,255,.75) 48%,rgba(255,255,255,0) 60%);background-size:260% 100%;
-  background-position:calc(50% - var(--tx,0) * 90%) 0;transition:background-position .12s linear}
+  background-position:calc(50% - var(--lx,0) * 90%) 0;transition:background-position .12s linear}
 body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alternate}
 @keyframes plateIdle{from{background-position:100% 0}to{background-position:0% 0}}
 .plate .plk-ic{width:34px;height:34px;border-radius:10px;background:rgba(0,0,0,.2);box-shadow:inset 0 1px 2px rgba(0,0,0,.35);font-size:18px}
@@ -1234,7 +1219,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
   box-shadow:inset 0 1px 0 rgba(255,255,255,.2),inset 0 0 30px rgba(255,255,255,.03),0 18px 40px -24px #000}
 .rec.glass::after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;
   background:linear-gradient(115deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.1) 42%,rgba(255,255,255,0) 50%,rgba(255,255,255,.06) 56%,rgba(255,255,255,0) 62%);
-  background-size:250% 100%;background-position:calc(50% - var(--tx,0) * 70%) 0;transition:background-position .12s linear}
+  background-size:250% 100%;background-position:calc(50% - var(--lx,0) * 70%) 0;transition:background-position .12s linear}
 .rec.mine{border-color:rgba(249,115,22,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 0 1px rgba(249,115,22,.5),0 0 26px rgba(249,115,22,.2)}
 .rec-hd .tua{margin-left:auto}
 .crack{position:absolute;top:0;left:0;width:100%;height:100%;z-index:3;pointer-events:none;opacity:0}
@@ -4572,10 +4557,10 @@ function handleSwap(mid, team, pid){
 const light = { tx:0, ty:0, raf:0, base:null };
 function applyLight(){
   light.raf = 0;
-  for(const el of [$('#pgrid'), $('#fig-body'), $('#rw-body'), $('#duel-body'), $('#troph')]){
+  for(const el of [$('#fig-body'), $('#rw-body'), $('#duel-body'), $('#troph')]){
     if(!el) continue;
-    el.style.setProperty('--tx', light.tx.toFixed(3));
-    el.style.setProperty('--ty', light.ty.toFixed(3));
+    el.style.setProperty('--lx', light.tx.toFixed(3));
+    el.style.setProperty('--ly', light.ty.toFixed(3));
   }
 }
 function setLight(tx, ty){
@@ -4609,10 +4594,10 @@ document.addEventListener('pointermove', e => {
   const t = e.target.closest && e.target.closest('.tilt.on-holo');
   if(!t || e.pointerType === 'mouse') return;
   const r = t.getBoundingClientRect();
-  t.style.setProperty('--tx', ((e.clientX - r.left) / r.width * 2 - 1).toFixed(3));
-  t.style.setProperty('--ty', ((e.clientY - r.top) / r.height * 2 - 1).toFixed(3));
+  t.style.setProperty('--lx', ((e.clientX - r.left) / r.width * 2 - 1).toFixed(3));
+  t.style.setProperty('--ly', ((e.clientY - r.top) / r.height * 2 - 1).toFixed(3));
 }, { passive:true });
-document.addEventListener('pointerup', e => { const t = e.target.closest && e.target.closest('.tilt.on-holo'); if(t){ t.style.removeProperty('--tx'); t.style.removeProperty('--ty'); } });
+document.addEventListener('pointerup', e => { const t = e.target.closest && e.target.closest('.tilt.on-holo'); if(t){ t.style.removeProperty('--lx'); t.style.removeProperty('--ly'); } });
 
 /* ---------- Il mio giocatore ---------- */
 function renderMe(){
