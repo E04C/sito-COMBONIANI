@@ -1055,29 +1055,20 @@ body:not(.lit) .holo{animation:holoIdle 6s ease-in-out infinite alternate}
 .rw-act{position:relative;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 .rw-cnt{position:relative;margin-top:10px;font:700 11.5px var(--body);color:var(--mu2)}
 
-/* --- Splash: due spade e un pallone --- */
-#splash{position:fixed;inset:0;z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
-  background:radial-gradient(circle at 50% 42%,#15100a,#050608 62%);transition:opacity .5s ease,visibility .5s}
+/* --- Splash: la scritta Comboniani viene frantumata da un pallone --- */
+#splash{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  background:radial-gradient(circle at 50% 46%,#24160a,#07080b 62%);transition:opacity .5s ease,visibility .5s}
 #splash.out{opacity:0;visibility:hidden}
-.sp-stage{position:relative;width:260px;height:260px}
-.sp-glow{position:absolute;inset:-30%;background:radial-gradient(circle,rgba(249,115,22,.35),rgba(249,115,22,0) 60%);opacity:0;animation:spGlow 1.2s ease-out .55s forwards}
-@keyframes spGlow{30%{opacity:1}100%{opacity:.55}}
-.sp-sword{position:absolute;left:50%;top:50%;width:46px;height:276px;margin:-138px 0 0 -23px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.6))}
-.sp-sword.l{transform:rotate(-42deg);animation:swordL .62s cubic-bezier(.3,1.3,.5,1) both .1s}
-.sp-sword.r{transform:rotate(42deg);animation:swordR .62s cubic-bezier(.3,1.3,.5,1) both .1s}
-@keyframes swordL{from{transform:translate(-75vw,25vh) rotate(-160deg);opacity:0}to{transform:rotate(-42deg);opacity:1}}
-@keyframes swordR{from{transform:translate(75vw,25vh) rotate(160deg);opacity:0}to{transform:rotate(42deg);opacity:1}}
-.sp-flash{position:absolute;left:50%;top:50%;width:220px;height:220px;margin:-110px 0 0 -110px;border-radius:50%;background:radial-gradient(circle,#fff 0%,rgba(253,230,138,.8) 18%,rgba(249,115,22,0) 60%);opacity:0;transform:scale(.2);animation:flash .5s ease-out .66s forwards}
-@keyframes flash{30%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.5)}}
-.sp-sparks{position:absolute;left:50%;top:50%}
-.sp-sparks i{position:absolute;left:-1.5px;top:0;width:3px;height:34px;border-radius:2px;background:linear-gradient(#fde68a,rgba(249,115,22,0));transform-origin:50% 0;transform:rotate(var(--a)) translateY(8px) scaleY(0);opacity:0;animation:spark .55s ease-out .68s forwards}
-@keyframes spark{40%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateY(70px) scaleY(1)}}
-.sp-ball{position:absolute;left:50%;top:50%;width:92px;height:92px;margin:-46px 0 0 -46px;filter:drop-shadow(0 10px 18px rgba(0,0,0,.7));opacity:0;animation:ballDrop 1s cubic-bezier(.3,.1,.3,1) .85s forwards}
-@keyframes ballDrop{0%{opacity:1;transform:translateY(-60vh) rotate(-240deg) scale(.7)}55%{transform:translateY(0) rotate(0) scale(1.08,.9)}70%{transform:translateY(-26px) rotate(40deg) scale(.98,1.03)}85%{transform:translateY(0) rotate(60deg) scale(1.03,.97)}100%{opacity:1;transform:translateY(0) rotate(70deg)}}
-.sp-title{display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0;animation:spTitle .6s var(--ease) 1.55s forwards}
-.sp-title b{font:italic 800 44px/1 var(--disp);letter-spacing:.01em;background:linear-gradient(90deg,#fbbf24,#f97316 50%,#fde68a);-webkit-background-clip:text;background-clip:text;color:transparent}
-.sp-title span{font:700 13px var(--body);letter-spacing:.3em;text-transform:uppercase;color:var(--mu)}
-@keyframes spTitle{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.sp2-stage{position:relative;display:flex;align-items:center;justify-content:center;width:100%}
+.sp2-glow{position:absolute;left:50%;top:50%;width:min(120vw,900px);height:min(60vw,420px);transform:translate(-50%,-50%);background:radial-gradient(closest-side,rgba(249,115,22,.34),rgba(249,115,22,0));pointer-events:none}
+.sp2-word{position:relative;display:flex;justify-content:center;font:italic 800 clamp(44px,15.5vw,150px)/1 var(--disp);letter-spacing:.01em;perspective:900px}
+.sp2-word>span{display:block;padding:.1em .12em;margin:-.1em -.12em;color:#f97316;-webkit-text-stroke:.07em #050505;paint-order:stroke fill;text-shadow:.045em .055em 0 #050505;opacity:0;will-change:transform,opacity}
+.sp2-word .sh{position:absolute;margin:0;backface-visibility:visible;will-change:transform,opacity}
+.sp2-sp{position:absolute;left:50%;top:50%;width:3px;height:16px;margin:-8px 0 0 -1.5px;border-radius:2px;background:linear-gradient(#fff7ed,#fdba74 40%,#f97316);box-shadow:0 0 8px rgba(249,115,22,.9);opacity:0;pointer-events:none;will-change:transform,opacity}
+.sp2-ghost{filter:blur(2.5px) drop-shadow(0 0 10px rgba(249,115,22,.6))}
+.sp2-ball{position:absolute;left:50%;top:50%;width:clamp(84px,24vw,150px);height:clamp(84px,24vw,150px);margin:calc(clamp(84px,24vw,150px) / -2) 0 0 calc(clamp(84px,24vw,150px) / -2);opacity:0;filter:drop-shadow(0 10px 18px rgba(0,0,0,.7));will-change:transform,opacity}
+.sp2-ring{position:absolute;left:50%;top:50%;width:40vmin;height:40vmin;margin:-20vmin 0 0 -20vmin;border-radius:50%;border:.35vmin solid rgba(253,230,138,.85);box-shadow:0 0 5vmin rgba(249,115,22,.55);opacity:0;pointer-events:none}
+.sp2-flash{position:absolute;left:50%;top:50%;width:70vmin;height:70vmin;margin:-35vmin 0 0 -35vmin;border-radius:50%;background:radial-gradient(circle,#fff 0%,rgba(253,230,138,.85) 22%,rgba(249,115,22,0) 62%);opacity:0;pointer-events:none}
 
 /* --- PWA: installazione --- */
 #installBtn[hidden]{display:none}
@@ -1672,15 +1663,13 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 </head>
 <body>
 <div id="splash" aria-hidden="true">
-  <div class="sp-stage">
-    <div class="sp-glow"></div>
-    <svg class="sp-sword l" viewBox="0 0 40 240" aria-hidden="true"><defs><linearGradient id="blL" x1="0" x2="1"><stop offset="0" stop-color="#94a3b8"/><stop offset=".48" stop-color="#f8fafc"/><stop offset=".52" stop-color="#cbd5e1"/><stop offset="1" stop-color="#64748b"/></linearGradient><linearGradient id="gdL" x1="0" x2="1"><stop offset="0" stop-color="#d97706"/><stop offset=".5" stop-color="#fde68a"/><stop offset="1" stop-color="#b45309"/></linearGradient></defs><path d="M20 0 27.5 18V168h-15V18z" fill="url(#blL)" stroke="#1e293b" stroke-width=".8"/><path d="M20 22V160" stroke="rgba(15,23,42,.35)" stroke-width="1.6"/><rect x="1" y="166" width="38" height="10" rx="5" fill="url(#gdL)" stroke="#78350f" stroke-width=".8"/><rect x="15.5" y="176" width="9" height="42" rx="2" fill="#3b2412"/><path d="M15.5 183h9M15.5 191h9M15.5 199h9M15.5 207h9" stroke="#f97316" stroke-width="1.4"/><circle cx="20" cy="226" r="8" fill="url(#gdL)" stroke="#78350f" stroke-width=".8"/></svg>
-    <svg class="sp-sword r" viewBox="0 0 40 240" aria-hidden="true"><defs><linearGradient id="blR" x1="0" x2="1"><stop offset="0" stop-color="#94a3b8"/><stop offset=".48" stop-color="#f8fafc"/><stop offset=".52" stop-color="#cbd5e1"/><stop offset="1" stop-color="#64748b"/></linearGradient><linearGradient id="gdR" x1="0" x2="1"><stop offset="0" stop-color="#d97706"/><stop offset=".5" stop-color="#fde68a"/><stop offset="1" stop-color="#b45309"/></linearGradient></defs><path d="M20 0 27.5 18V168h-15V18z" fill="url(#blR)" stroke="#1e293b" stroke-width=".8"/><path d="M20 22V160" stroke="rgba(15,23,42,.35)" stroke-width="1.6"/><rect x="1" y="166" width="38" height="10" rx="5" fill="url(#gdR)" stroke="#78350f" stroke-width=".8"/><rect x="15.5" y="176" width="9" height="42" rx="2" fill="#3b2412"/><path d="M15.5 183h9M15.5 191h9M15.5 199h9M15.5 207h9" stroke="#f97316" stroke-width="1.4"/><circle cx="20" cy="226" r="8" fill="url(#gdR)" stroke="#78350f" stroke-width=".8"/></svg>
-    <div class="sp-flash"></div>
-    <div class="sp-sparks"><i style="--a:0deg"></i><i style="--a:30deg"></i><i style="--a:60deg"></i><i style="--a:90deg"></i><i style="--a:120deg"></i><i style="--a:150deg"></i><i style="--a:180deg"></i><i style="--a:210deg"></i><i style="--a:240deg"></i><i style="--a:270deg"></i><i style="--a:300deg"></i><i style="--a:330deg"></i></div>
-    <svg class="sp-ball" viewBox="-50 -50 100 100" aria-hidden="true"><defs><clipPath id="bc"><circle r="46"/></clipPath><radialGradient id="bs" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#e6ebf2"/><stop offset="1" stop-color="#9aa4b4"/></radialGradient></defs><circle r="46" fill="url(#bs)"/><g clip-path="url(#bc)"><polygon points="0.00,-15.00 14.27,-4.64 8.82,12.14 -8.82,12.14 -14.27,-4.64" fill="#0a0d14"/><polygon points="17.63,-24.27 12.55,-39.92 25.86,-49.60 39.18,-39.92 34.09,-24.27" fill="#0a0d14"/><polygon points="28.53,9.27 41.85,-0.40 55.16,9.27 50.08,24.92 33.62,24.92" fill="#0a0d14"/><polygon points="0.00,30.00 13.31,39.67 8.23,55.33 -8.23,55.33 -13.31,39.67" fill="#0a0d14"/><polygon points="-28.53,9.27 -33.62,24.92 -50.08,24.92 -55.16,9.27 -41.85,-0.40" fill="#0a0d14"/><polygon points="-17.63,-24.27 -34.09,-24.27 -39.18,-39.92 -25.86,-49.60 -12.55,-39.92" fill="#0a0d14"/><path d="M0.00 -15.00L0.00 -29.00 M0.00 -29.00L-21.16 -29.12 M0.00 -29.00L21.16 -29.12 M14.27 -4.64L27.58 -8.96 M27.58 -8.96L21.16 -29.12 M27.58 -8.96L34.24 11.12 M8.82 12.14L17.05 23.46 M17.05 23.46L34.24 11.12 M17.05 23.46L0.00 36.00 M-8.82 12.14L-17.05 23.46 M-17.05 23.46L0.00 36.00 M-17.05 23.46L-34.24 11.12 M-14.27 -4.64L-27.58 -8.96 M-27.58 -8.96L-34.24 11.12 M-27.58 -8.96L-21.16 -29.12" stroke="#0a0d14" stroke-width="2.2" fill="none" stroke-linecap="round"/></g><circle r="46" fill="none" stroke="#0a0d14" stroke-width="3"/><ellipse cx="-16" cy="-22" rx="12" ry="6" fill="#fff" opacity=".55" transform="rotate(-30 -16 -22)"/></svg>
+  <div class="sp2-stage" id="sp2-stage">
+    <div class="sp2-glow"></div>
+    <div class="sp2-word" id="sp2-word"><span>C</span><span>o</span><span>m</span><span>b</span><span>o</span><span>n</span><span>i</span><span>a</span><span>n</span><span>i</span></div>
+    <div class="sp2-flash" id="sp2-flash"></div>
+    <div class="sp2-ring" id="sp2-ring"></div>
+    <svg class="sp2-ball" viewBox="-50 -50 100 100" aria-hidden="true"><defs><clipPath id="bc"><circle r="46"/></clipPath><radialGradient id="bs" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#e6ebf2"/><stop offset="1" stop-color="#9aa4b4"/></radialGradient></defs><circle r="46" fill="url(#bs)"/><g clip-path="url(#bc)"><polygon points="0.00,-15.00 14.27,-4.64 8.82,12.14 -8.82,12.14 -14.27,-4.64" fill="#0a0d14"/><polygon points="17.63,-24.27 12.55,-39.92 25.86,-49.60 39.18,-39.92 34.09,-24.27" fill="#0a0d14"/><polygon points="28.53,9.27 41.85,-0.40 55.16,9.27 50.08,24.92 33.62,24.92" fill="#0a0d14"/><polygon points="0.00,30.00 13.31,39.67 8.23,55.33 -8.23,55.33 -13.31,39.67" fill="#0a0d14"/><polygon points="-28.53,9.27 -33.62,24.92 -50.08,24.92 -55.16,9.27 -41.85,-0.40" fill="#0a0d14"/><polygon points="-17.63,-24.27 -34.09,-24.27 -39.18,-39.92 -25.86,-49.60 -12.55,-39.92" fill="#0a0d14"/><path d="M0.00 -15.00L0.00 -29.00 M0.00 -29.00L-21.16 -29.12 M0.00 -29.00L21.16 -29.12 M14.27 -4.64L27.58 -8.96 M27.58 -8.96L21.16 -29.12 M27.58 -8.96L34.24 11.12 M8.82 12.14L17.05 23.46 M17.05 23.46L34.24 11.12 M17.05 23.46L0.00 36.00 M-8.82 12.14L-17.05 23.46 M-17.05 23.46L0.00 36.00 M-17.05 23.46L-34.24 11.12 M-14.27 -4.64L-27.58 -8.96 M-27.58 -8.96L-34.24 11.12 M-27.58 -8.96L-21.16 -29.12" stroke="#0a0d14" stroke-width="2.2" fill="none" stroke-linecap="round"/></g><circle r="46" fill="none" stroke="#0a0d14" stroke-width="3"/><ellipse cx="-16" cy="-22" rx="12" ry="6" fill="#fff" opacity=".55" transform="rotate(-30 -16 -22)"/></svg>
   </div>
-  <div class="sp-title"><b>Comboniani</b><span>Stagione 26/27</span></div>
 </div>
 <div class="bg" aria-hidden="true">
   <svg class="pitch" viewBox="0 0 1050 680">
@@ -1956,7 +1945,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.7.4';
+const APP_VERSION = '1.7.6';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -3075,7 +3064,7 @@ function rankShift(){
       if(!s || s.prevRank == null || s.prevRank === s.rank) return;
       tr.animate([{ transform:`translateY(${(s.prevRank - s.rank) * rh}px)`, background:'rgba(249,115,22,.14)' }, { transform:'none', background:'rgba(249,115,22,0)' }], { duration:1000, easing:'cubic-bezier(.2,.8,.2,1)', delay:250 });
     });
-  }, $('#splash') ? 2800 : 150);
+  }, $('#splash') ? 3100 : 150);
 }
 function podiumHTML(){
   const k = ui.cView || 'gen', gen = k === 'gen';
@@ -7728,6 +7717,12 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.7.6', date:'2026-10-16', items:[
+    `✨ L’apertura dell’app è più fluida e pulita: le lettere di Comboniani salgono una alla volta, il pallone arriva con una scia e quando colpisce la scritta si rompe in schegge che volano via con tante scintille.`
+  ] },
+  { v:'1.7.5', date:'2026-10-16', items:[
+    `⚽ Nuova apertura dell’app: appare la scritta Comboniani, arancione e nera, e un pallone calciato fortissimo la manda in mille pezzi. Poi si apre l’app. Se vuoi saltarla, tocca lo schermo.`
+  ] },
   { v:'1.7.4', date:'2026-10-16', items:[
     `🥇 In ogni classifica (Capocannoniere, Assist man, % vittorie, Sconfitte, Autogol) ora c’è il podio dei primi 3, come nella classifica generale.`,
     `🏆 Il tasto “Premi stagionali” ora è dorato e sta tra la prossima partita e la classifica, così si nota subito.`,
@@ -7851,16 +7846,95 @@ function openNews(){
   openModal('#m-news');
 }
 
-/* Splash: due spade si incrociano, il pallone rimbalza al centro. Una volta per sessione, tocca per saltare */
+/* Splash: la scritta Comboniani appare e viene frantumata da un pallone calciato fortissimo, poi si apre l'app.
+   Una volta per sessione, tocca per saltare. Con "riduci animazioni" la scritta resta ferma e basta. */
 (function splash(){
   const el = $('#splash'); if(!el) return;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let seen = false; try{ seen = sessionStorage.getItem('cmb_splash') === '1'; sessionStorage.setItem('cmb_splash', '1'); }catch(e){}
-  const end = () => { if(!el.isConnected) return; el.classList.add('out'); setTimeout(() => el.remove(), 520); };
+  let ended = false;
+  const end = () => { if(ended || !el.isConnected) return; ended = true; el.classList.add('out'); setTimeout(() => el.remove(), 520); };
   if(seen){ el.remove(); return; }
   el.addEventListener('click', end);
-  setTimeout(end, reduce ? 500 : 2600);
-  setTimeout(() => { try{ flow(); }catch(e){} }, reduce ? 1200 : 3400);
+  if(reduce || !el.animate){ [...el.querySelectorAll('#sp2-word>span')].forEach(x => { x.style.opacity = '1'; }); setTimeout(end, 600); setTimeout(() => { try{ flow(); }catch(e){} }, 1300); return; }
+  const stage = $('#sp2-stage'), word = $('#sp2-word'), ball = $('.sp2-ball'), flash = $('#sp2-flash'), ring = $('#sp2-ring');
+  /* la scritta riempie quasi tutta la larghezza, qualunque font sia caricato */
+  const fit = () => { word.style.fontSize = '100px'; const w = word.getBoundingClientRect().width; if(w) word.style.fontSize = Math.min(100 * Math.min(innerWidth * .9, 1100) / w, 190) + 'px'; };
+  fit(); if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if(!ended && !word.querySelector('.sh')) fit(); });
+  const rnd = (a, b) => a + Math.random() * (b - a), sign = () => Math.random() < .5 ? -1 : 1;
+  const T_LAUNCH = 520, T_FLY = 540, T_HIT = T_LAUNCH + T_FLY;
+  /* Lettere: salgono una dopo l'altra con un piccolo rimbalzo */
+  [...word.children].forEach((ch, i) => ch.animate([
+    { opacity:0, transform:'translateY(.4em) scale(.7) rotate(-7deg)' },
+    { opacity:1, transform:'translateY(-.05em) scale(1.07) rotate(1deg)', offset:.62 },
+    { opacity:1, transform:'none' }
+  ], { duration:520, delay:60 + i * 40, easing:'cubic-bezier(.3,.8,.4,1)', fill:'both' }));
+  /* Fisica semplice: spinta iniziale che si smorza e gravità, campionata in fotogrammi (movimento morbido, niente linee dritte) */
+  const flightFrames = (vx, vy, T, G, k, n = 14) => Array.from({ length:n }, (_, i) => {
+    const t = i / (n - 1) * T, d = (1 - Math.exp(-k * t)) / k;
+    return { t:i / (n - 1), x:vx * d, y:vy * d + .5 * G * t * t };
+  });
+  const shatter = () => {
+    if(ended) return;
+    const wr = word.getBoundingClientRect(), sr = stage.getBoundingClientRect(), cx = wr.left + wr.width / 2, cy = wr.top + wr.height / 2, shards = [];
+    [...word.children].forEach(ch => {
+      if(ch.classList.contains('sh')) return;
+      const r = ch.getBoundingClientRect(), box = { l:r.left - wr.left, t:r.top - wr.top, w:r.width, h:r.height };
+      /* schegge irregolari: punti sul perimetro (angoli più uno o due per lato, spostati a caso) uniti a un centro spostato */
+      const px = rnd(32, 68), py = rnd(32, 68), pts = [];
+      [[0, 0, 100, 0], [100, 0, 100, 100], [100, 100, 0, 100], [0, 100, 0, 0]].forEach(([x0, y0, x1, y1]) => {
+        pts.push([x0, y0]);
+        const m = Math.random() < .55 ? 2 : 1;
+        for(let j = 1; j <= m; j++){ const t = (j + rnd(-.25, .25)) / (m + 1); pts.push([x0 + (x1 - x0) * t, y0 + (y1 - y0) * t]); }
+      });
+      for(let i = 0; i < pts.length; i++){
+        const A = pts[i], B = pts[(i + 1) % pts.length], sh = ch.cloneNode(true);
+        sh.className = 'sh'; sh.style.opacity = 1;
+        sh.style.cssText = `left:${box.l}px;top:${box.t}px;width:${box.w}px;height:${box.h}px;opacity:1;clip-path:polygon(${px}% ${py}%,${A[0]}% ${A[1]}%,${B[0]}% ${B[1]}%)`;
+        word.appendChild(sh);
+        shards.push({ sh, vx:(r.left + r.width * (A[0] + B[0] + px) / 300) - cx, vy:(r.top + r.height * (A[1] + B[1] + py) / 300) - cy });
+      }
+      ch.style.visibility = 'hidden';
+    });
+    const far = Math.max(1, ...shards.map(o => Math.hypot(o.vx, o.vy)));
+    shards.forEach(({ sh, vx, vy }) => {
+      const L = Math.max(1, Math.hypot(vx, vy)), sp = rnd(700, 1500) * (1.15 - .45 * L / far), T = rnd(1.0, 1.55);
+      const ux = vx / L + rnd(-.25, .25), uy = vy / L + rnd(-.35, .1) - .15;
+      const fr = flightFrames(ux * sp, uy * sp, T, 1700, 1.5), rz = sign() * rnd(180, 620), rx = sign() * rnd(120, 520), ry = sign() * rnd(120, 520);
+      sh.animate(fr.map(p => ({
+        transform:`translate(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px) rotateX(${(rx * p.t).toFixed(0)}deg) rotateY(${(ry * p.t).toFixed(0)}deg) rotate(${(rz * p.t).toFixed(0)}deg) scale(${(1 - .35 * p.t).toFixed(3)})`,
+        opacity:p.t < .55 ? 1 : Math.max(0, 1 - (p.t - .55) / .45), offset:p.t
+      })), { duration:T * 1000, easing:'linear', fill:'forwards' });
+    });
+    /* scintille veloci */
+    for(let i = 0; i < 34; i++){
+      const e = document.createElement('i'); e.className = 'sp2-sp'; stage.appendChild(e);
+      const a = rnd(0, Math.PI * 2), sp = rnd(900, 2100), T = rnd(.45, .85), fr = flightFrames(Math.cos(a) * sp, Math.sin(a) * sp, T, 1400, 3.2, 10), rot = a * 180 / Math.PI + 90;
+      e.animate(fr.map(p => ({ transform:`translate(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px) rotate(${rot.toFixed(0)}deg) scaleY(${(1 - .7 * p.t).toFixed(2)})`, opacity:p.t < .15 ? p.t / .15 : Math.max(0, 1 - (p.t - .15) / .85), offset:p.t })), { duration:T * 1000, easing:'linear', fill:'forwards' });
+    }
+    flash.animate([{ opacity:0, transform:'scale(.3)' }, { opacity:1, transform:'scale(.85)', offset:.22 }, { opacity:0, transform:'scale(1.4)' }], { duration:480, easing:'cubic-bezier(.2,.7,.3,1)', fill:'forwards' });
+    ring.animate([{ opacity:.9, transform:'scale(.15)' }, { opacity:0, transform:'scale(3.2)' }], { duration:760, easing:'cubic-bezier(.1,.75,.3,1)', fill:'forwards' });
+    stage.animate([{ transform:'translate(0,0) scale(1.035)' }, { transform:'translate(-9px,5px) scale(1.02)' }, { transform:'translate(7px,-6px) scale(1.012)' }, { transform:'translate(-4px,3px) scale(1.005)' }, { transform:'translate(0,0) scale(1)' }], { duration:360, easing:'ease-out' });
+  };
+  /* Il pallone parte piano da lontano e accelera con forza: i "fantasmi" dietro lo fanno sembrare veloce */
+  const W = innerWidth, H = innerHeight;
+  const fly = (el, delay, alpha, main) => {
+    const a = el.animate([
+      { transform:`translate(${-W * .6}px,${H * .52}px) scale(.1) rotate(0deg)`, opacity:alpha },
+      { transform:'translate(0,0) scale(1.2) rotate(1080deg)', opacity:alpha }
+    ], { duration:T_FLY, delay, easing:'cubic-bezier(.66,0,.96,.42)', fill:'both' });
+    a.onfinish = () => {
+      if(main) shatter();
+      el.animate([
+        { transform:'translate(0,0) scale(1.2) rotate(1080deg)', opacity:alpha },
+        { transform:`translate(${W * .42}px,${-H * .75}px) scale(3.4) rotate(1700deg)`, opacity:0 }
+      ], { duration:460, easing:'cubic-bezier(.25,.5,.45,1)', fill:'forwards' });
+    };
+  };
+  [.34, .2, .1].forEach((al, i) => { const g = ball.cloneNode(true); g.classList.add('sp2-ghost'); g.removeAttribute('id'); ball.parentNode.insertBefore(g, ball); fly(g, T_LAUNCH + 26 * (i + 1), al, false); });
+  fly(ball, T_LAUNCH, 1, true);
+  setTimeout(end, T_HIT + 1500);
+  setTimeout(() => { try{ flow(); }catch(e){} }, T_HIT + 2300);
 })();
 
 /* PWA: service worker, pulsante Installa (Android/Chrome), suggerimento per iPhone */
