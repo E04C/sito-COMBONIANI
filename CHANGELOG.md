@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.8.1
+- Nuova targa «Inarrestabile» (`winRun` su `hist`): la serie più lunga di vittorie di fila in stagione, da 2 in su; il pareggio la interrompe. Parità: serie in corso, poi più vittorie. Come le altre targhe, massimo 2 a testa.
+- Figurine Oro e Argento con cornice sottile e pulita (oro caldo con doppia linea, argento freddo con una linea); il bordo è circa la metà di prima e c'è una riga libera in fondo per il tasto di rotazione.
+- Tolta la riga tra foto e statistiche: la fascia sfuma nella foto (maschera sul fondo della fascia).
+- «Vedi bacheca» dal popup dei primati apre i Trofei storici (prima apriva le Targhe) e scende al primo primato cambiato; il popup si scorre con «Avanti ›» e mostra «N di M primati cambiati».
+- Figurina girata: il retro non si inclina più (`.tilt.on-holo` solo sul fronte) e la faccia nascosta sparisce a metà giro, così non sfarfalla. Solo interfaccia.
+
 ## 1.8.0
 - Figurine della griglia rifatte, una cornice per livello (overlay SVG statico sopra la carta, nessuna animazione, nessun filtro): Diamante cristallo sfaccettato con fascia low-poly e gemma, Oro telaio dorato a gradini con barre sui lati, Argento poche linee argentate, Bronzo una sola linea. Il bronzo (`--tier`) è ora un vero bronzo e non più arancione, anche nelle altre schermate.
 - Ruoli sulla carta scelti dall'admin: nel form «Modifica giocatore», sotto il ruolo generale (ATT/CEN/DIF/JOLLY, che decide il moltiplicatore e non cambia), si scelgono al massimo due sigle tra TS, TD, DC, CC, AD, AS, ST (campo opzionale `players/{id}/cardPos`, es. `AD/CC`). Compaiono sotto l'overall nella carta della griglia e nella figurina aperta; senza sigle resta il ruolo generico. Il «Ruolo preciso» della scheda giocatore non influisce più sulla carta.

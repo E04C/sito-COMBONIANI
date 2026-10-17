@@ -1999,7 +1999,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.8.0';
+const APP_VERSION = '1.8.1';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -2081,7 +2081,7 @@ PLAQUES.push({ id:'banco', feat:'casino', icon:'💰', name:'Il Banco', desc:`Il
   ok:s => !!s.mov && s.mov.length > 1 && s.balB > 0, cmp:(a,b) => (b.balB - a.balB) || (b.earn - a.earn), val:s => `${fmtPat(s.balB)} ${CURRENCY}` });
 PLAQUES.push({ id:'profeta', feat:'casino', icon:'🔮', name:'Il Profeta', desc:`La percentuale più alta di scommesse vinte (almeno ${CASINO.PROFETA_MIN} concluse, senza monti e rimborsi). Parità: più vittorie.`,
   ok:s => s.betN >= CASINO.PROFETA_MIN, cmp:(a,b) => (b.betPct - a.betPct) || (b.betWon - a.betWon), val:s => `${Math.round(s.betPct)}% vinte (${s.betWon} su ${s.betN})` });
-PLAQUES.push({ id:'striscia', icon:'🔥', name:'La Striscia', desc:'La serie più lunga di vittorie di fila in stagione (da 2 in su, il pareggio la interrompe). Parità: serie in corso, più vittorie.',
+PLAQUES.push({ id:'inarrestabile', icon:'🔥', name:'Inarrestabile', desc:'La serie più lunga di vittorie di fila in stagione (da 2 in su, il pareggio la interrompe). Parità: serie in corso, più vittorie.',
   ok:s => winRun(s).best >= 2, cmp:(a,b) => (winRun(b).best - winRun(a).best) || (winRun(b).cur - winRun(a).cur) || (b.v - a.v), val:s => `${winRun(s).best} vittorie di fila${winRun(s).cur === winRun(s).best ? ' (in corso)' : ''}` });
 const plqOn = P => !P.feat || feat(P.feat);
 /* Moduli per ogni misura di squadra (da 1 a 11 titolari). La prima riga è sempre un solo giocatore "in porta"; massimo 4 righe e 5 per riga.
@@ -2112,9 +2112,9 @@ const PLQ_GAP = {
   gladiatore:[s => s.mvp, 'MVP', 'MVP', 1, 0], amuleto:[s => s.v - s.s, 'di saldo', 'di saldo', 1, 0],
   roccia:[s => s.ovr, 'OVR', 'OVR', 1, 1], re:[s => s.hat, 'gara da 3+ gol', 'gare da 3+ gol', 1, 0],
   profeta:[s => s.betPct, 'punto %', 'punti %', 5, 0], muro:[s => s.minConcW, 'gol subito', 'gol subiti', 1, 0], banco:[s => s.balB, CURRENCY1, CURRENCY, 20, 0], treno:[s => s.g + s.a, 'bonus', 'bonus', 1, 0],
-  apriscatole:[s => s.firstG, 'primo gol', 'primi gol', 1, 0], ultimo:[s => s.lateG, 'gol', 'gol', 1, 0], striscia:[s => winRun(s).best, 'vittoria', 'vittorie', 1, 0]
+  apriscatole:[s => s.firstG, 'primo gol', 'primi gol', 1, 0], ultimo:[s => s.lateG, 'gol', 'gol', 1, 0], inarrestabile:[s => winRun(s).best, 'vittoria', 'vittorie', 1, 0]
 };
-const METALS = { noexcuses:'steel', cecchino:'gold', assist:'rose', vittoria:'gold', gladiatore:'bronze', amuleto:'emerald', roccia:'titanium', re:'gold', muro:'steel', treno:'copper', apriscatole:'silver', ultimo:'rose', striscia:'copper', banco:'gold', profeta:'emerald' };
+const METALS = { noexcuses:'steel', cecchino:'gold', assist:'rose', vittoria:'gold', gladiatore:'bronze', amuleto:'emerald', roccia:'titanium', re:'gold', muro:'steel', treno:'copper', apriscatole:'silver', ultimo:'rose', inarrestabile:'copper', banco:'gold', profeta:'emerald' };
 const COLS = [
   { k:'ovr',  l:'OVR', t:'Overall dinamico (50-99)' },
   { k:'pres', l:'Pr',  t:'Presenze' },
@@ -7938,6 +7938,12 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.8.1', date:'2026-10-18', items:[
+    `🔥 Nuova targa “Inarrestabile”: va a chi ha la serie più lunga di vittorie di fila in stagione.`,
+    `🃏 Le carte Oro e Argento sono più sottili e pulite: l’Oro ha una doppia linea dorata, l’Argento una linea argentata. Tra la foto e le statistiche ora c’è una dolce sfumatura al posto della riga.`,
+    `🏆 Quando ti arriva l’avviso di un primato battuto, “Vedi bacheca” ti porta ai trofei storici, fino al primo record cambiato, e puoi scorrere gli altri con “Avanti”.`,
+    `🔄 Girando la figurina il retro ora resta fermo e si legge bene, anche muovendo il telefono.`
+  ] },
   { v:'1.8.0', date:'2026-10-17', items:[
     `🃏 Le carte dei giocatori sono tutte nuove! Ogni livello ha la sua cornice: il Bronzo ha una linea color bronzo, l’Argento qualche filo argentato, l’Oro un telaio dorato a gradini e il Diamante un cristallo con riflessi colorati e una gemma in fondo.`,
     `🛡️ Sotto l’overall della carta ci sono i ruoli veri del giocatore (TS, TD, DC, CC, AD, AS, ST), al massimo due, per esempio AD/CC. Li sceglie l’organizzatore.`,
