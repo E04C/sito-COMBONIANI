@@ -913,23 +913,6 @@ button.rec-who{cursor:pointer}
 @media (max-width:420px){.nav button{font-size:10px;padding:7px 2px 6px}}
 
 /* ================= v7: olografico, animazioni, podio, splash, PWA ================= */
-/* --- Carte olografiche (Oro e Diamante): foil morbido e pulito, solo sfumature trasparenti (niente fusioni di colore, maschere o filtri: leggero per i telefoni).
-       La luce arriva da --lx/--ly (giroscopio, mouse, dito) e segue l'inclinazione solo sulla figurina aperta; nella griglia sta ferma --- */
-.holo{position:absolute;top:0;left:0;right:0;bottom:0;z-index:4;pointer-events:none;border-radius:inherit;opacity:.7;
-  background:
-    linear-gradient(115deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.2) 44%,rgba(255,243,190,.55) 50%,rgba(255,255,255,.2) 56%,rgba(255,255,255,0) 70%),
-    linear-gradient(155deg,rgba(253,224,71,.2),rgba(253,224,71,0) 42%,rgba(245,158,11,.18));
-  background-size:280% 100%,100% 100%;
-  background-position:calc(50% + var(--lx,0) * 65%) 0,0 0;
-  transition:background-position .12s linear}
-.t-dia .holo{
-  background:
-    linear-gradient(115deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.22) 44%,rgba(224,242,254,.6) 50%,rgba(255,255,255,.22) 56%,rgba(255,255,255,0) 70%),
-    linear-gradient(155deg,rgba(125,211,252,.22),rgba(167,139,250,.0) 42%,rgba(244,114,182,.18));
-  background-size:280% 100%,100% 100%;background-position:calc(50% + var(--lx,0) * 65%) 0,0 0}
-body:not(.lit) .stage3d .holo{animation:holoIdle 6s ease-in-out infinite alternate}
-@keyframes holoIdle{0%{background-position:30% 0,0 0}100%{background-position:70% 0,0 0}}
-@media (prefers-reduced-motion:reduce){.holo{animation:none!important;transition:none}}
 .mfig.t-gold .mfig-fr,.mfig.t-dia .mfig-fr{position:relative}
 
 /* --- Figurina in 3D: palco, flip, inclinazione --- */
@@ -1058,7 +1041,6 @@ body:not(.lit) .stage3d .holo{animation:holoIdle 6s ease-in-out infinite alterna
   background:linear-gradient(180deg,#1a1408,#0a0d14 62%);border:1.5px solid rgba(251,191,36,.65);box-shadow:0 0 70px rgba(251,191,36,.28);
   transform:scale(.8) translateY(20px);opacity:0;transition:transform .45s cubic-bezier(.2,1.4,.3,1),opacity .3s}
 .modal.open .recwin{transform:none;opacity:1}
-.recwin .holo{opacity:.18}
 .rw-k{position:relative;font:800 12px var(--body);letter-spacing:.26em;text-transform:uppercase;color:var(--gold)}
 .rw-ic{position:relative;display:block;font-size:58px;margin:10px 0 2px;animation:pop .7s cubic-bezier(.2,1.6,.3,1) both .15s}
 @keyframes pop{from{transform:scale(0) rotate(-20deg)}}
@@ -1105,7 +1087,6 @@ body:not(.lit) .stage3d .holo{animation:holoIdle 6s ease-in-out infinite alterna
 @keyframes flick{0%{opacity:.7;transform:scaleY(1)}50%{opacity:1;transform:scaleY(1.04) translateY(-2px)}100%{opacity:.8;transform:scaleY(.98)}}
 @keyframes frost{to{opacity:.5}}
 .mfig.ice .mfig-fr{box-shadow:inset 0 0 0 1px rgba(224,242,254,.75)}
-.fire .holo,.ice .holo{opacity:.08!important;animation:none!important}
 .stk{position:absolute;z-index:6;left:50%;top:-9px;transform:translateX(-50%);padding:0 8px;border-radius:999px;font:800 11px/17px var(--body);color:#fff;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.55)}
 .stk.fire,.stkc.fire{background:linear-gradient(90deg,#b91c1c,#f97316)}
 .stk.ice,.stkc.ice{background:linear-gradient(90deg,#075985,#38bdf8)}
@@ -3003,7 +2984,7 @@ function ovrChartHTML(s){
   const dots = pts.map((v, i) => `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${i === pts.length - 1 ? 4.5 : 2.5}" fill="${i === pts.length - 1 ? '#f97316' : '#0a0d14'}" stroke="#f97316" stroke-width="1.5"/>`).join('');
   return `<svg class="ovrchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Andamento OVR da ${OVR_START} a ${roundOvr(s.ovr)}"><defs><linearGradient id="oca" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f97316" stop-opacity=".35"/><stop offset="1" stop-color="#f97316" stop-opacity="0"/></linearGradient></defs>${th}${yl}${xl}<path d="${area}" fill="url(#oca)"/><path class="ocl" d="${line}" fill="none" stroke="#f97316" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" pathLength="1"/>${dots}</svg>`;
 }
-const holoSpan = ovr => isHolo(ovr) ? '<span class="holo" aria-hidden="true"></span>' : '';
+const holoSpan = () => '';   /* riflesso olografico tolto dalle carte Oro e Diamante */
 const teamMean = entries => { const l = list(entries); return l.length ? l.reduce((t, e) => t + ovrOf(e.pid), 0) / l.length : 0; };
 const fmtDateCap = iso => fmtDate(iso).replace(/ ([a-zà-ù])/, (x, c) => ' ' + c.toUpperCase());
 const whenLabel = m => [m.date ? fmtDateCap(m.date) : '', m.time ? 'ore ' + m.time : ''].filter(Boolean).join(', ');
@@ -3478,7 +3459,7 @@ function renderFigurina(){
   const sweep = anim && anim.cls ? `<span class="sweep" style="--sd:${({ 'reveal-gold':'.75s', 'reveal-dia':'1.3s', promo:'2s' }[anim.cls])}"></span>` : '';
   const banner = promo ? `<div class="promo-banner t-${t}"><span>⬆ Promozione</span><b>${TIERS[promo.from].l} → ${TIERS[t].l}</b></div>` : '';
   const back = backHTML(pid, p, backT);
-  $('#fig-body').innerHTML = `${banner}<div class="stage3d ${anim && anim.cls ? 'fade' : ''}">${burst}<div class="flip ${anim ? anim.cls : ''}${figTurned ? ' turned' : ''}"><div class="tilt ${holo ? 'on-holo' : ''} ${streakCls(s)}"><div class="fig-shadow t-${t}"></div><div class="fig-glow face-front t-${t}"><div class="fig chamf"><div class="fig-in chamf">${holo ? '<span class="holo" aria-hidden="true"></span>' : ''}${cardFx(pid).hx}${cardFx(pid).frm}${sweep}
+  $('#fig-body').innerHTML = `${banner}<div class="stage3d ${anim && anim.cls ? 'fade' : ''}">${burst}<div class="flip ${anim ? anim.cls : ''}${figTurned ? ' turned' : ''}"><div class="tilt ${holo ? 'on-holo' : ''} ${streakCls(s)}"><div class="fig-shadow t-${t}"></div><div class="fig-glow face-front t-${t}"><div class="fig chamf"><div class="fig-in chamf">${cardFx(pid).hx}${cardFx(pid).frm}${sweep}
     <div class="fig-top">${photoBlock(p)}
       <div class="fig-badges">
         <div class="fig-role">${ovrPlate(s.ovr, 'xl')}<span class="rf">${roleChip(p.role)}<span>${esc(FEET[p.foot] || '')}</span></span></div>
@@ -5180,7 +5161,7 @@ function showNextRec(){
   const who = c.pair
     ? `<span class="rec-pair">${avatar(store.players[c.pair[0]], 'md')}${avatar(store.players[c.pair[1]], 'md')}</span><span>${esc(pname(c.pair[0]))}<br>${esc(pname(c.pair[1]))}</span>`
     : c.pid ? `${avatar(store.players[c.pid], 'md')}<span>${esc(pname(c.pid))}</span>` : `<span>${esc(c.label)}</span>`;
-  $('#rw-body').innerHTML = `<span class="holo" aria-hidden="true"></span><div class="burst b-gold" style="--bd:.1s"></div>
+  $('#rw-body').innerHTML = `<div class="burst b-gold" style="--bd:.1s"></div>
     <div class="rw-k">${same ? 'Record migliorato' : 'Nuovo record'}</div>
     <span class="rw-ic">${c.icon}</span>
     <div class="rw-t" id="rw-t">${c.title}</div>
