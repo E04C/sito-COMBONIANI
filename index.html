@@ -763,6 +763,17 @@ button.pcard:active .pc-fr{transform:scale(.96)}
 .capinfo small{font:700 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--mu)}
 .vs .capinfo{margin-top:2px}
 .vs .vv{font:italic 800 42px/1 var(--disp);color:var(--or)}
+.vsx{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:6px;margin:14px 0 10px}
+.vsx-t{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
+.vsx-card{width:min(200px,100%);cursor:pointer;border-radius:14px;-webkit-tap-highlight-color:transparent}
+.vsx-card:focus-visible{outline:3px solid var(--or);outline-offset:3px}
+.vsx-card .mfig{width:100%}
+.vsx-none{width:64px;cursor:default}
+.vsx .side-n{font-size:clamp(24px,7vw,36px)}
+.vsx-cap{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;max-width:100%;text-align:center}
+.vsx-cap small{font:700 11px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--mu)}
+.vsx-cap b{font:800 15px/1.15 var(--body);overflow-wrap:anywhere}
+.vsx .vv{font:italic 800 clamp(34px,11vw,60px)/1 var(--disp);color:var(--or);text-shadow:0 0 24px rgba(249,115,22,.6);padding:0 2px}
 .ovbar{display:flex;align-items:center;gap:10px;margin:8px auto 4px;max-width:420px;font:italic 800 22px var(--disp)}
 .ovbar .bar{flex:1;height:8px;border-radius:4px;background:#1d2027;overflow:hidden;display:flex}
 .ovbar .bar i{display:block;height:100%;background:#eef1f6}
@@ -4105,13 +4116,24 @@ setInterval(() => {
 }, 15000);
 
 /* ---------- Gara in programma ---------- */
+/* Sfida dei capitani: le due figurine una contro l'altra con il VS in mezzo, sotto le scritte Bianchi e Neri */
+function capsVsHTML(m){
+  const side = team => {
+    const pid = captainFor(m, team), st = pid && STATS.byId[pid], nm = team === 'white' ? 'Bianchi' : 'Neri';
+    const card = st
+      ? `<div class="vsx-card" role="button" tabindex="0" data-open-player="${pid}" aria-label="Figurina del capitano ${esc(st.name)}">${miniFigHTML(st)}</div>`
+      : `<div class="vsx-card vsx-none">${kit(team)}</div>`;
+    return `<div class="vsx-t ${team === 'white' ? 'w' : 'b'}">${card}<span class="side-n">${nm}</span>${st ? `<span class="vsx-cap"><small>Capitano</small><b>${esc(st.name)}</b></span>` : ''}</div>`;
+  };
+  return `<div class="vsx">${side('white')}<span class="vv" aria-label="contro">VS</span>${side('black')}</div>`;
+}
 function scheduledDetailHTML(m){
   const mW = teamMean(m.white), mB = teamMean(m.black);
   const share = mW + mB ? mW / (mW + mB) * 100 : 50;
   if(ui.mTab === 'form') return `<div class="mone form">${pitchPanelHTML(m)}${lineupsHTML(m, false)}</div>`;
   return `<div class="mone"><article class="glass tab">
     <div class="hero-meta"><span class="tag">🗓️ In programma</span><span>Giornata ${num(m.day)}</span><span>${esc(whenLabel(m) || 'Data da definire')}</span>${cdSpan(m)}<span class="sum">${list(m.white).length} contro ${list(m.black).length}</span></div>
-    <div class="vs"><div class="side">${kit('white')}<span class="side-n">Bianchi</span>${capInfoHTML(m, 'white')}</div><span class="vv">VS</span><div class="side">${kit('black')}<span class="side-n">Neri</span>${capInfoHTML(m, 'black')}</div></div>
+    ${capsVsHTML(m)}
     <div class="ovbar" aria-label="OVR medio Bianchi ${mW.toFixed(1)}, Neri ${mB.toFixed(1)}"><span>${mW.toFixed(1)}</span><span class="bar"><i style="width:${share}%"></i><em></em></span><span>${mB.toFixed(1)}</span></div>
     <p class="mu sm" style="text-align:center;margin:0 0 12px">OVR medio delle due squadre</p>
     ${mkAdminHTML(m)}
