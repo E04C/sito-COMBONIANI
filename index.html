@@ -3932,8 +3932,15 @@ function flow(){
     if(!Object.keys(store.players).length) return;
     if(!identityKnown()){ openWho(); return; }
     const me = myPid(), seen = seenFinal(), rev = [...STATS.matches].reverse();
-    const fin = rev.find(x => x.vote2 && !seen[x.id] && Date.now() - num(x.createdAt) < 30 * 864e5);
-    if(fin){ markFinal(fin.id); showFinal(fin); return; }
+    /* "Fischio finale": se ne mostra una sola (la più recente) e le altre si segnano come viste, così su un telefono nuovo non arriva una raffica di popup retroattivi.
+       Al primo avvio su un telefono si festeggia solo una gara di meno di un giorno e mezzo fa. */
+    const unseen = rev.filter(x => x.vote2 && !seen[x.id] && Date.now() - num(x.createdAt) < 30 * 864e5);
+    if(unseen.length){
+      let firstRun = true; try{ firstRun = localStorage.getItem('cmb2627_seenFinal') === null; }catch(e){}
+      const fin = unseen[0];
+      unseen.forEach(x => markFinal(x.id));
+      if(!firstRun || Date.now() - num(fin.createdAt) < 36 * 36e5){ showFinal(fin); return; }
+    }
     if(me){
       const pend = !feat('mvp') ? null : rev.find(x => {
         if(!x.vote2 || (ui.voteLater && ui.voteLater[x.id]) || pvHas(x.id)) return false;
@@ -5091,6 +5098,7 @@ function showNextRec(){
   if($('#m-rec').classList.contains('open') || !recQueue.length) return;
   if(!recShown) recTotal = recQueue.length;
   const { card:c, prev, same } = recQueue.shift();
+  const rest = recQueue.length; recQueue = [];   // un solo popup: gli altri primati cambiati si vedono in bacheca
   recShown++;
   const who = c.pair
     ? `<span class="rec-pair">${avatar(store.players[c.pair[0]], 'md')}${avatar(store.players[c.pair[1]], 'md')}</span><span>${esc(pname(c.pair[0]))}<br>${esc(pname(c.pair[1]))}</span>`
@@ -5103,8 +5111,7 @@ function showNextRec(){
     <div class="rw-who">${who}</div>
     <div class="rw-val"><b>${c.value}</b><span>${c.unit}</span></div>
     <div class="rw-prev">${prev ? `Precedente: <b>${esc(prev)}</b>` : 'Primo detentore di questo primato'}</div>
-    <div class="rw-act">${recQueue.length ? `<button class="btn primary" data-action="rec-next">Avanti (${recQueue.length})</button>` : `<button class="btn primary" data-action="rec-board">Vedi bacheca</button>`}<button class="btn ghost" data-action="rec-close">Chiudi</button></div>
-    ${recTotal > 1 ? `<div class="rw-cnt">${recShown} di ${recTotal}</div>` : ''}`;
+    <div class="rw-act">${rest ? `<button class="btn primary" data-action="rec-board">Vedi bacheca (+${rest} ${rest === 1 ? 'altro primato' : 'altri primati'})</button>` : `<button class="btn primary" data-action="rec-board">Vedi bacheca</button>`}<button class="btn ghost" data-action="rec-close">Chiudi</button></div>`;
   openModal('#m-rec');
   haptic();
 }
