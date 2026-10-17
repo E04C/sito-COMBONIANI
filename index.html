@@ -110,6 +110,7 @@ body.is-admin .lockbtn{border-color:var(--line-strong);color:var(--or);backgroun
   .nav button{flex-direction:row;gap:8px;padding:8px 15px;font-size:13.5px}
   .nav svg{width:18px;height:18px}
 }
+@media (min-width:900px) and (max-width:1279px){.nav button{font-size:0;gap:0;padding:9px 16px}.nav svg{width:20px;height:20px}}
 
 main{max-width:1440px;margin:0 auto;padding:18px max(14px,env(safe-area-inset-left,0px)) calc(100px + env(safe-area-inset-bottom,0px))}
 @media (min-width:900px){main{padding:26px 28px 56px}}
@@ -254,6 +255,7 @@ table.cls{width:100%;border-collapse:separate;border-spacing:0;font-variant-nume
 .mfig-in{--c:14px;position:relative;display:flex;flex-direction:column;aspect-ratio:3/4.15;background:var(--bg1);overflow:hidden;text-align:left}
 .mfig-in .ph{flex:1}
 .mfig-in>.role{position:absolute;top:11px;left:12px;z-index:2}
+.mfig-in>.role,.fig-role .role{background:rgba(10,13,20,.78);border-color:rgba(249,115,22,.5)}
 .mfig-in>.ovr{position:absolute;top:9px;right:10px;z-index:2}
 .mfig-b{display:block;padding:8px 11px 12px}
 .mfig-n{display:block;font:italic 800 20px/1.02 var(--disp);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -3134,7 +3136,7 @@ function tableHTML(){
     return `<td class="${big}${on}">${val}</td>`;
   };
   return `<table class="cls"><thead><tr>${th(cv.sort, '#  Giocatore', gen ? 'Posizione in classifica' : 'Riordina', 'c-pl')}${cols.map(c => th(c.k, c.l, c.t)).join('')}</tr></thead><tbody>${
-    rows.map((s, i) => `<tr class="r${s.rank} ${gen && STATS.matches.length && s.rank <= 3 ? 'pod' + s.rank : ''}${rowCls(s.pid) ? ' ' + rowCls(s.pid) : ''}${s.pid === meId ? ' me' : ''}" data-open-player="${s.pid}">
+    rows.map((s, i) => `<tr class="r${gen ? s.rank : (s[cv.sort] > 0 ? i + 1 : 0)} ${gen && STATS.matches.length && s.rank <= 3 ? 'pod' + s.rank : ''}${rowCls(s.pid) ? ' ' + rowCls(s.pid) : ''}${s.pid === meId ? ' me' : ''}" data-open-player="${s.pid}">
       <td class="c-pl"><div class="pl-cell"><span class="pos">${gen ? s.rank : i + 1}</span>${mvArrow(s)}${avatar(s.p, 'sm')}<span><span class="pl-name">${nameHTML(s.pid)}</span><span class="pl-sub">${roleChip(s.p.role)}<span class="foot">${esc(FEET[s.p.foot] || '')}</span>${s.pid === meId ? '<span class="me-tag">Tu</span>' : ''}</span></span></div></td>
       ${cols.map(c => cell(c, s)).join('')}
     </tr>`).join('')}</tbody></table>`;
