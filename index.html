@@ -3709,7 +3709,8 @@ function watchMyKey(){
   let me = ''; try{ me = localStorage.getItem('cmb_me') || ''; }catch(e){}
   const pk = pkGet();
   if(!me || !pk || pk.p !== me){ if(keyWatch){ try{ keyWatch.ref.off('value', keyWatch.fn); }catch(e){} keyWatch = null; } return; }
-  if(!db){ const r = store.playerKeys && store.playerKeys[me]; keyJudge(me, pk, r); return; }
+  /* All'avvio la prima schermata si disegna prima che il database sia collegato (db è ancora null): solo in vera modalità locale si controlla la copia locale dei codici */
+  if(!db){ if(localMode){ const r = store.playerKeys && store.playerKeys[me]; keyJudge(me, pk, r); } return; }
   if(keyWatch && keyWatch.pid === me) return;
   if(keyWatch){ try{ keyWatch.ref.off('value', keyWatch.fn); }catch(e){} }
   const ref = db.ref('playerKeys/' + me);
