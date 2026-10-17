@@ -5220,14 +5220,9 @@ function showFinal(m){
   countUp($('#fin-body'));
   haptic();
 }
-function showNextRec(){
-  if($('#m-final').classList.contains('open') || $('#m-vote').classList.contains('open') || $('#m-who').classList.contains('open')){ setTimeout(showNextRec, 700); return; }
-  if($('#splash')){ setTimeout(showNextRec, 700); return; }
-  if($('#m-rec').classList.contains('open') || !recQueue.length) return;
-  if(!recShown) recTotal = recQueue.length;
-  const { card:c, prev, same } = recQueue.shift();
-  const rest = recQueue.length; recQueue = [];   // un solo popup: gli altri primati cambiati si vedono in bacheca
-  recShown++;
+let recList = [], recIdx = 0;
+function drawRec(){
+  const { card:c, prev, same } = recList[recIdx], rest = recList.length - 1 - recIdx;
   const who = c.pair
     ? `<span class="rec-pair">${avatar(store.players[c.pair[0]], 'md')}${avatar(store.players[c.pair[1]], 'md')}</span><span>${esc(pname(c.pair[0]))}<br>${esc(pname(c.pair[1]))}</span>`
     : c.pid ? `${avatar(store.players[c.pid], 'md')}<span>${esc(pname(c.pid))}</span>` : `<span>${esc(c.label)}</span>`;
@@ -5239,7 +5234,17 @@ function showNextRec(){
     <div class="rw-who">${who}</div>
     <div class="rw-val"><b>${c.value}</b><span>${c.unit}</span></div>
     <div class="rw-prev">${prev ? `Precedente: <b>${esc(prev)}</b>` : 'Primo detentore di questo primato'}</div>
-    <div class="rw-act">${rest ? `<button class="btn primary" data-action="rec-board">Vedi bacheca (+${rest} ${rest === 1 ? 'altro primato' : 'altri primati'})</button>` : `<button class="btn primary" data-action="rec-board">Vedi bacheca</button>`}<button class="btn ghost" data-action="rec-close">Chiudi</button></div>`;
+    ${recList.length > 1 ? `<div class="rw-cnt">${recIdx + 1} di ${recList.length} primati cambiati</div>` : ''}
+    <div class="rw-act">${rest ? `<button class="btn primary" data-action="rec-next">Avanti ›</button>` : ''}<button class="btn ${rest ? '' : 'primary'}" data-action="rec-board">Vedi bacheca</button><button class="btn ghost" data-action="rec-close">Chiudi</button></div>`;
+}
+function showNextRec(){
+  if($('#m-final').classList.contains('open') || $('#m-vote').classList.contains('open') || $('#m-who').classList.contains('open')){ setTimeout(showNextRec, 700); return; }
+  if($('#splash')){ setTimeout(showNextRec, 700); return; }
+  if($('#m-rec').classList.contains('open') || !recQueue.length) return;
+  if(!recShown) recTotal = recQueue.length;
+  recList = recQueue; recQueue = []; recIdx = 0;   // un solo popup: i primati cambiati si scorrono con Avanti, oppure si vedono tutti in bacheca
+  recShown++;
+  drawRec();
   openModal('#m-rec');
   haptic();
 }
@@ -7704,9 +7709,12 @@ document.addEventListener('click', async e => {
     case 'keys-open': openKeys(); break;
     case 'key-reset': resetKey(d.pid); break;
     case 'final-close': closeModal('#m-final'); setTimeout(showNextRec, 300); break;
-    case 'rec-next': closeModal('#m-rec'); setTimeout(showNextRec, 250); break;
-    case 'rec-close': recQueue = []; recShown = 0; closeModal('#m-rec'); break;
-    case 'rec-board': recQueue = []; recShown = 0; closeModal('#m-rec'); go('trophies'); break;
+    case 'rec-next': if(recIdx < recList.length - 1){ recIdx++; drawRec(); } break;
+    case 'rec-close': recQueue = []; recList = []; recShown = 0; closeModal('#m-rec'); break;
+    case 'rec-board':   /* si apre sui trofei storici (non sulle targhe) e si scende al primo primato cambiato */
+      recQueue = []; recList = []; recShown = 0; closeModal('#m-rec'); ui.tTab = 'rec'; go('trophies');
+      setTimeout(() => { const r = $('#troph .rec.broken'); if(r) window.scrollTo({ top:Math.max(0, r.getBoundingClientRect().top + scrollY - 96), behavior:matchMedia('(prefers-reduced-motion:reduce)').matches ? 'auto' : 'smooth' }); }, 120);
+      break;
     case 'install': if(installEvt){ installEvt.prompt(); installEvt.userChoice.finally(() => { installEvt = null; $('#installBtn').hidden = true; }); } break;
     case 'ios-hint-close': $('#ios-hint').hidden = true; localStorage.setItem('cmb_iosHint', '1'); break;
     case 'duel-swap': if(ui.duel){ ui.duel = { a:ui.duel.b, b:ui.duel.a }; renderDuel(); } break;
