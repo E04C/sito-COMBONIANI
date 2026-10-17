@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.0
+- Figurine della griglia rifatte, una cornice per livello (overlay SVG statico sopra la carta, nessuna animazione, nessun filtro): Diamante cristallo sfaccettato con fascia low-poly e gemma, Oro telaio dorato a gradini con barre sui lati, Argento poche linee argentate, Bronzo una sola linea. Il bronzo (`--tier`) è ora un vero bronzo e non più arancione, anche nelle altre schermate.
+- Ruoli sulla carta scelti dall'admin: nel form «Modifica giocatore», sotto il ruolo generale (ATT/CEN/DIF/JOLLY, che decide il moltiplicatore e non cambia), si scelgono al massimo due sigle tra TS, TD, DC, CC, AD, AS, ST (campo opzionale `players/{id}/cardPos`, es. `AD/CC`). Compaiono sotto l'overall nella carta della griglia e nella figurina aperta; senza sigle resta il ruolo generico. Il «Ruolo preciso» della scheda giocatore non influisce più sulla carta.
+- Cinque statistiche centrate: gol, assist, presenze, vittorie, sconfitte. Solo interfaccia: nessun dato o percorso del database cambia.
+
 ## 1.7.10
 - Corretto: all'apertura dell'app il giocatore scelto veniva dimenticato (bug dalla 1.7.3). La prima schermata si disegna prima che il database sia collegato (`db` ancora `null`) e `watchMyKey` lo scambiava per modalità locale: non trovava il codice e scollegava il giocatore a ogni avvio. Ora la copia locale dei codici si controlla solo con `localMode`.
 - Accesso admin ricordato su questo dispositivo per 30 giorni (`cmb_admin_until` in `localStorage`), finché non si esce o il PIN cambia (`cmb_admin_sig`: da un altro telefono serve rifare l'accesso; dal telefono che lo cambia resta admin). Chi perde il telefono: cambiare il PIN da Admin.
