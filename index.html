@@ -1945,7 +1945,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.7.9';
+const APP_VERSION = '1.7.10';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -2082,11 +2082,16 @@ const CVIEW_ORDER = ['gen', 'g', 'a', 'pct', 's', 'og'];
 const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{}, casino:{}, messages:{}, playerKeys:{} };
 const loaded = { players:false, matches:false, settings:false };
 let localMode = false;
+/* Accesso admin ricordato su questo dispositivo per 30 giorni (finché non si esce o non cambia il PIN) */
+function pinSig(p){ let h = 5381; for(const c of 'cmb|' + p) h = ((h << 5) + h + c.charCodeAt(0)) | 0; return String(h); }
+function adminRemembered(){ try{ return (+localStorage.getItem('cmb_admin_until') || 0) > Date.now(); }catch(e){ return false; } }
+function adminRemember(pin){ try{ sessionStorage.setItem('cmb_admin', '1'); localStorage.setItem('cmb_admin_until', String(Date.now() + 30 * 864e5)); localStorage.setItem('cmb_admin_sig', pinSig(pin)); }catch(e){} }
+function adminForget(){ try{ sessionStorage.removeItem('cmb_admin'); localStorage.removeItem('cmb_admin_until'); localStorage.removeItem('cmb_admin_sig'); }catch(e){} }
 const ui = {
   view:'dashboard',
   sort:{ key:'rank', dir:1 },
   matchId:null,
-  admin: sessionStorage.getItem('cmb_admin') === '1',
+  admin: sessionStorage.getItem('cmb_admin') === '1' || adminRemembered(),
   flip:false,
   swapMode:false,
   swapSel:null,
@@ -3009,8 +3014,14 @@ function boardHTML(sc){
    ========================================================= */
 let rq = false;
 function scheduleRender(){ if(rq) return; rq = true; requestAnimationFrame(() => { rq = false; render(); }); }
+/* Se il PIN è cambiato da un altro dispositivo, l'accesso admin ricordato qui non vale più */
+function adminCheck(){
+  if(!ui.admin || !loaded.settings || localMode) return;
+  let sig = ''; try{ sig = localStorage.getItem('cmb_admin_sig') || ''; }catch(e){}
+  if(sig && sig !== pinSig(currentPin())){ adminForget(); ui.admin = false; toast('Il PIN è cambiato: rifai l’accesso admin', 'warn'); }
+}
 function render(){
-  featSync();
+  featSync(); adminCheck();
   watchRatings(); watchProfileReq(); watchMyKey();
   /* Ruolo Portiere eliminato: i POR già salvati valgono come DIF solo in memoria, nel database non si riscrive nulla */
   for(const id in store.players){ const p = store.players[id]; if(p && p.role === 'POR') p.role = 'DIF'; }
@@ -3709,7 +3720,8 @@ function watchMyKey(){
   let me = ''; try{ me = localStorage.getItem('cmb_me') || ''; }catch(e){}
   const pk = pkGet();
   if(!me || !pk || pk.p !== me){ if(keyWatch){ try{ keyWatch.ref.off('value', keyWatch.fn); }catch(e){} keyWatch = null; } return; }
-  if(!db){ const r = store.playerKeys && store.playerKeys[me]; keyJudge(me, pk, r); return; }
+  /* All'avvio la prima schermata si disegna prima che il database sia collegato (db è ancora null): solo in vera modalità locale si controlla la copia locale dei codici */
+  if(!db){ if(localMode){ const r = store.playerKeys && store.playerKeys[me]; keyJudge(me, pk, r); } return; }
   if(keyWatch && keyWatch.pid === me) return;
   if(keyWatch){ try{ keyWatch.ref.off('value', keyWatch.fn); }catch(e){} }
   const ref = db.ref('playerKeys/' + me);
@@ -7678,7 +7690,7 @@ document.addEventListener('click', async e => {
     case 'feat-toggle': toggleFeature(d.fx); break;
     case 'change-pin': if(requireAdmin()){ $('#cpin-form').reset(); openModal('#m-cpin'); } break;
     case 'logout':
-      ui.admin = false; ui.profToasted = false; ui.swapMode = false; ui.swapSel = null; sessionStorage.removeItem('cmb_admin');
+      ui.admin = false; ui.profToasted = false; ui.swapMode = false; ui.swapSel = null; adminForget();
       toast('Sei tornato in sola lettura'); render(); go('dashboard'); break;
     case 'pf-rm': PF.photo = null; $('#pf-file').value = ''; $('#pf-info').textContent = ''; renderPfPreview(); break;
     case 'ed-save': saveMatch(); break;
@@ -7803,7 +7815,7 @@ $('#pin-form').addEventListener('submit', e => {
   e.preventDefault();
   const inp = $('#pin-in');
   if(inp.value.trim() === currentPin()){
-    ui.admin = true; sessionStorage.setItem('cmb_admin', '1');
+    ui.admin = true; adminRemember(inp.value.trim());
     try{ localStorage.setItem('cmb_noTrack', '1'); }catch(e){} anPurge();
     inp.value = ''; closeModal('#m-pin');
     toast('Area admin sbloccata'); render(); go('admin');
@@ -7821,6 +7833,7 @@ $('#cpin-form').addEventListener('submit', e => {
   if(!/^\d{4,8}$/.test(n1)){ toast('Il nuovo PIN deve avere da 4 a 8 cifre', 'err'); return; }
   if(n1 !== n2){ toast('I due PIN nuovi non coincidono', 'err'); return; }
   closeModal('#m-cpin');
+  try{ if(localStorage.getItem('cmb_admin_until')) localStorage.setItem('cmb_admin_sig', pinSig(n1)); }catch(e){}   // questo telefono resta admin con il PIN nuovo; gli altri dovranno rifare l'accesso
   commit({ 'settings/pin': n1 }, 'PIN aggiornato');
 });
 
@@ -7833,6 +7846,10 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.7.10', date:'2026-10-17', items:[
+    `🛠️ Corretto un errore fastidioso: aprendo l’app il giocatore scelto veniva dimenticato e bisognava rimettere il codice ogni volta. Ora resti collegato.`,
+    `🔑 Anche l’accesso admin dell’organizzatore resta ricordato su quel telefono (per 30 giorni, finché non esce o cambia il PIN).`
+  ] },
   { v:'1.7.9', date:'2026-10-17', items:[
     `🃏 Sulle carte Oro e Diamante non c’è più il riflesso di luce: la grafica ora è più pulita.`
   ] },
