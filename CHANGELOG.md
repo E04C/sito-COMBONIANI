@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.10
+- Corretto: all'apertura dell'app il giocatore scelto veniva dimenticato (bug dalla 1.7.3). La prima schermata si disegna prima che il database sia collegato (`db` ancora `null`) e `watchMyKey` lo scambiava per modalità locale: non trovava il codice e scollegava il giocatore a ogni avvio. Ora la copia locale dei codici si controlla solo con `localMode`.
+- Accesso admin ricordato su questo dispositivo per 30 giorni (`cmb_admin_until` in `localStorage`), finché non si esce o il PIN cambia (`cmb_admin_sig`: da un altro telefono serve rifare l'accesso; dal telefono che lo cambia resta admin). Chi perde il telefono: cambiare il PIN da Admin.
+
 ## 1.7.9
 - Carte Oro e Diamante: tolto del tutto il riflesso olografico (griglia, figurina aperta, popup dei record, confronto). Restano cornice, colori e inclinazione della figurina aperta. Gli ologrammi comprati nel Negozio non cambiano. Solo interfaccia.
 
