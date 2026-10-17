@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.7.7
+- Sicurezza senza passaggi per gli utenti: nel database il codice giocatore è ora `{ s, h2, v:2 }` con `h2` = SHA-256 dell'hash che resta sul telefono (prima l'hash letto dal database bastava per entrare come quel giocatore); i record vecchi `{ s, h, v:1 }` si aggiornano da soli, con lo stesso salt, alla prossima apertura del giocatore e i telefoni già collegati restano validi. Dati sporchi (nomi non testuali, id come `constructor`, date e orari con codice, foto che non sono immagini) scartati o resi innocui solo in memoria; ogni sezione si disegna per conto suo e un errore all'avvio svuota la cache invece di bloccare l'app. `meta robots`, `robots.txt` e `_headers` (noindex, nosniff, niente incorniciamento, referrer e permessi ridotti).
+- Carte Oro e Diamante: nuovo foil con sole sfumature trasparenti (via color-dodge, maschere, filtri e animazioni infinite nella griglia); la luce segue l'inclinazione solo sulla figurina aperta. Le variabili della luce passano da `--tx/--ty` (che si scontravano con il colore del testo e rendevano grigi i numeri delle figurine) a `--lx/--ly`.
+- Prestazioni: tolto `backdrop-filter` da card, tile, targhe, primati e dalle finestre chiuse (nelle prove da ~10 a ~58 fps con CPU 4x, differenza visiva minima).
+- Classifica e Giocatori: la tua riga e la tua carta evidenziate in arancione (pillola "Tu"); il pulsante in alto mostra il nome di chi ha fatto l'accesso.
+- Correzioni grafiche: colori e numeri delle viste diverse dalla Generale, barra in alto tra 900 e 1280 px (solo icone), chip ruolo sulle foto con sfondo scuro.
+- Popup: un solo "Fischio finale" (e al primo avvio su un telefono solo se la gara ha meno di un giorno e mezzo); più primati cambiati diventano un solo popup con il pulsante per la bacheca.
+- Restano da fare lato Firebase (console del proprietario): regole del database, controllo del PIN e restrizione della chiave. Vedi il resoconto della release.
+
 ## 1.7.6
 - Animazione d'ingresso rifatta in modo più naturale: lettere che salgono una dopo l'altra, pallone con scia, schegge irregolari con fisica (spinta che si smorza, gravità, rotazioni 3D), scintille, lampo e onda d'urto più morbidi. Niente filtri sulle singole schegge, così i bordi dei tagli sono puliti. Con "riduci animazioni" resta solo la scritta ferma. Solo interfaccia.
 

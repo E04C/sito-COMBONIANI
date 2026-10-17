@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#050608">
+<meta name="robots" content="noindex, nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -109,6 +110,7 @@ body.is-admin .lockbtn{border-color:var(--line-strong);color:var(--or);backgroun
   .nav button{flex-direction:row;gap:8px;padding:8px 15px;font-size:13.5px}
   .nav svg{width:18px;height:18px}
 }
+@media (min-width:900px) and (max-width:1279px){.nav button{font-size:0;gap:0;padding:9px 16px}.nav svg{width:20px;height:20px}}
 
 main{max-width:1440px;margin:0 auto;padding:18px max(14px,env(safe-area-inset-left,0px)) calc(100px + env(safe-area-inset-bottom,0px))}
 @media (min-width:900px){main{padding:26px 28px 56px}}
@@ -117,7 +119,6 @@ main{max-width:1440px;margin:0 auto;padding:18px max(14px,env(safe-area-inset-le
 
 /* ---------- Surfaces & controls ---------- */
 .glass{background:var(--panel);border:1px solid var(--line);border-radius:20px;
-  -webkit-backdrop-filter:blur(18px) saturate(1.15);backdrop-filter:blur(18px) saturate(1.15);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 20px 50px -30px rgba(0,0,0,.8)}
 .panel-h{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;padding:16px 18px 8px}
 .panel-h h2{margin:0;font:italic 800 25px/1 var(--disp);display:flex;align-items:center;gap:8px}
@@ -223,6 +224,10 @@ table.cls{width:100%;border-collapse:separate;border-spacing:0;font-variant-nume
 .r1 .pos{color:var(--gold)} .r2 .pos{color:#d6dbe4} .r3 .pos{color:#e08a3a}
 .pl-name{display:block;font-weight:800;font-size:14.5px;line-height:1.15;max-width:170px;overflow:hidden;text-overflow:ellipsis}
 .pl-sub{display:flex;gap:6px;margin-top:3px}
+.me-tag{align-self:center;padding:1px 7px;border-radius:999px;background:var(--or);color:#1a0b02;font:800 10.5px/1.5 var(--body);letter-spacing:.02em}
+.cls tbody tr.me:not([class*="rw-"]) td{background:rgba(249,115,22,.17)}
+.cls tbody tr.me:not([class*="rw-"]) td.c-pl{background:#2b1709;box-shadow:inset 4px 0 0 var(--or)}
+.mfig-w.me::after{content:"TU";position:absolute;left:22px;top:-9px;z-index:5;padding:1px 10px;border-radius:999px;background:var(--or);color:#1a0b02;font:800 11px/1.6 var(--body);letter-spacing:.04em;box-shadow:0 3px 10px rgba(249,115,22,.5);pointer-events:none}
 .legend{margin:0;padding:8px 18px 16px;color:var(--mu2);font-size:12px;line-height:1.5}
 .boards{display:grid;gap:16px;align-content:start}
 @media (min-width:640px) and (max-width:1099px){.boards{grid-template-columns:1fr 1fr}}
@@ -250,6 +255,7 @@ table.cls{width:100%;border-collapse:separate;border-spacing:0;font-variant-nume
 .mfig-in{--c:14px;position:relative;display:flex;flex-direction:column;aspect-ratio:3/4.15;background:var(--bg1);overflow:hidden;text-align:left}
 .mfig-in .ph{flex:1}
 .mfig-in>.role{position:absolute;top:11px;left:12px;z-index:2}
+.mfig-in>.role,.fig-role .role{background:rgba(10,13,20,.78);border-color:rgba(249,115,22,.5)}
 .mfig-in>.ovr{position:absolute;top:9px;right:10px;z-index:2}
 .mfig-b{display:block;padding:8px 11px 12px}
 .mfig-n{display:block;font:italic 800 20px/1.02 var(--disp);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -325,7 +331,7 @@ button.affr:hover{border-color:var(--line)}
 
 /* ---------- Admin ---------- */
 .admin-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
-.tile{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:18px;text-align:left;border-radius:18px;border:1px solid var(--line);background:var(--panel);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);transition:border-color .2s,transform .15s var(--ease)}
+.tile{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:18px;text-align:left;border-radius:18px;border:1px solid var(--line);background:var(--panel);transition:border-color .2s,transform .15s var(--ease)}
 .tile:hover{border-color:var(--line-strong)}
 .tile:active{transform:scale(.98)}
 .tile .ic{font-size:22px}
@@ -462,8 +468,8 @@ body.theme-casino .slip{background:rgba(7,76,44,.98)}
 .warnline{margin-top:12px;padding:12px 16px;border-radius:14px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.07);color:#fde68a;font-weight:600;font-size:13.5px}
 
 /* ---------- Modals ---------- */
-.modal{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:16px;background:rgba(3,4,6,.74);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .22s}
-.modal.open{opacity:1;pointer-events:auto}
+.modal{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:16px;background:rgba(3,4,6,.74);opacity:0;pointer-events:none;transition:opacity .22s}
+.modal.open{opacity:1;pointer-events:auto;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .sheet{position:relative;width:min(560px,100%);max-height:calc(100dvh - 32px);overflow:auto;padding:20px;border-radius:22px;background:rgba(11,14,21,.97);transform:translateY(16px) scale(.98);transition:transform .3s var(--ease)}
 .modal.open .sheet{transform:none}
 .sheet.wide{width:min(1020px,100%)}
@@ -858,7 +864,7 @@ button.awd:hover{border-color:var(--line)}
 .th-sec h3{margin:0;font:italic 800 28px/1 var(--disp)}
 .th-sec span{color:var(--mu);font-size:13px;font-weight:600}
 .plk-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
-.plk{position:relative;display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:20px;text-align:left;border:1px solid rgba(251,191,36,.3);background:linear-gradient(160deg,rgba(251,191,36,.1),rgba(12,16,24,.7) 45%);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);width:100%;transition:transform .15s var(--ease),border-color .2s}
+.plk{position:relative;display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:20px;text-align:left;border:1px solid rgba(251,191,36,.3);background:linear-gradient(160deg,rgba(251,191,36,.1),rgba(12,16,24,.7) 45%);width:100%;transition:transform .15s var(--ease),border-color .2s}
 button.plk:hover{border-color:rgba(251,191,36,.6)}
 button.plk:active{transform:scale(.98)}
 .plk-hd{display:flex;align-items:center;gap:10px}
@@ -872,7 +878,7 @@ button.plk:active{transform:scale(.98)}
 .plk.off{border-color:var(--hair);background:rgba(255,255,255,.02)}
 .plk.off .plk-t{color:var(--mu)}
 .rec-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
-.rec{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:10px;padding:16px 16px 14px;border-radius:20px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(18,22,32,.85),rgba(10,13,20,.8));-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.rec{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:10px;padding:16px 16px 14px;border-radius:20px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(18,22,32,.85),rgba(10,13,20,.8));backdrop-filter:blur(14px)}
 .rec::before{content:"";position:absolute;left:16px;right:16px;top:0;height:2px;background:linear-gradient(90deg,rgba(249,115,22,0),var(--or),rgba(249,115,22,0));box-shadow:0 0 14px var(--or)}
 .rec-hd{display:flex;align-items:center;gap:10px}
 .rec-ic{font-size:24px;flex:none}
@@ -896,38 +902,23 @@ button.rec-who{cursor:pointer}
 @media (max-width:420px){.nav button{font-size:10px;padding:7px 2px 6px}}
 
 /* ================= v7: olografico, animazioni, podio, splash, PWA ================= */
-/* --- Carte olografiche (Oro e Diamante). La luce arriva da --tx/--ty: giroscopio, mouse o dito --- */
-.holo{position:absolute;top:0;left:0;right:0;bottom:0;z-index:4;pointer-events:none;mix-blend-mode:color-dodge;opacity:.2;
-  --px:calc(50% + var(--tx,0) * 55%);--py:calc(50% + var(--ty,0) * 55%);
-  background-image:
-    repeating-linear-gradient(115deg,#fff4c4 0%,#fbbf24 6%,#fde68a 12%,#f59e0b 18%,#fff4c4 24%),
-    repeating-linear-gradient(35deg,rgba(14,21,46,.5) 0%,rgba(143,163,163,.5) 4%,rgba(180,200,200,.5) 8%,rgba(14,21,46,.5) 12%);
-  background-size:400% 400%,300% 300%;
-  background-position:calc(50% + var(--tx,0) * 45%) calc(50% + var(--ty,0) * 45%),calc(50% - var(--tx,0) * 30%) calc(50% - var(--ty,0) * 30%);
-  /* banda di luce diagonale che scorre con l'inclinazione: il foil si accende solo lì, come su una carta vera */
-  -webkit-mask-image:linear-gradient(115deg,rgba(0,0,0,0) 20%,rgba(0,0,0,.35) 36%,#000 47%,#000 53%,rgba(0,0,0,.35) 64%,rgba(0,0,0,0) 80%);
-          mask-image:linear-gradient(115deg,rgba(0,0,0,0) 20%,rgba(0,0,0,.35) 36%,#000 47%,#000 53%,rgba(0,0,0,.35) 64%,rgba(0,0,0,0) 80%);
-  -webkit-mask-size:260% 260%;mask-size:260% 260%;
-  -webkit-mask-position:var(--px) var(--py);mask-position:var(--px) var(--py);
-  filter:brightness(.9) contrast(1.3);transition:background-position .12s linear,-webkit-mask-position .12s linear,mask-position .12s linear}
-.holo::after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;mix-blend-mode:overlay;opacity:.7;
-  background:radial-gradient(farthest-corner circle at calc(50% + var(--tx,0) * 55%) calc(50% + var(--ty,0) * 55%),rgba(255,255,255,.75) 0%,rgba(255,255,255,.1) 30%,rgba(0,0,0,.2) 90%)}
-.t-dia .holo{opacity:.26;
-  background-image:
-    repeating-linear-gradient(115deg,#ffb3b0 0%,#fff3b0 6%,#d2ffb8 12%,#c2fffb 18%,#bccaff 24%,#ecc2ff 30%,#ffb3b0 36%),
-    repeating-linear-gradient(35deg,rgba(14,21,46,.35) 0%,rgba(200,215,225,.45) 4%,rgba(225,240,245,.45) 8%,rgba(14,21,46,.35) 12%);
-  -webkit-mask-image:linear-gradient(115deg,rgba(0,0,0,0) 10%,rgba(0,0,0,.45) 32%,#000 46%,#000 54%,rgba(0,0,0,.45) 68%,rgba(0,0,0,.08) 90%);
-          mask-image:linear-gradient(115deg,rgba(0,0,0,0) 10%,rgba(0,0,0,.45) 32%,#000 46%,#000 54%,rgba(0,0,0,.45) 68%,rgba(0,0,0,0) 90%)}
-.t-dia .holo::before{content:"";position:absolute;top:0;left:0;right:0;bottom:0;mix-blend-mode:screen;opacity:.5;
-  background-image:radial-gradient(circle,#fff 0 .8px,rgba(255,255,255,0) 1.4px),radial-gradient(circle,#e0f2fe 0 .6px,rgba(255,255,255,0) 1.2px);
-  background-size:17px 17px,11px 11px;
-  background-position:calc(var(--tx,0) * 24px) calc(var(--ty,0) * 24px),calc(var(--tx,0) * -16px + 5px) calc(var(--ty,0) * -16px + 3px);
-  animation:twinkle 2.6s ease-in-out infinite}
-@keyframes twinkle{50%{opacity:.18}}
-.stage3d .t-dia .holo{opacity:.15}
-.stage3d .t-gold .holo{opacity:.12}
-body:not(.lit) .holo{animation:holoIdle 6s ease-in-out infinite alternate}
-@keyframes holoIdle{0%{background-position:20% 30%,70% 60%;-webkit-mask-position:0% 0%;mask-position:0% 0%}100%{background-position:80% 70%,30% 40%;-webkit-mask-position:100% 100%;mask-position:100% 100%}}
+/* --- Carte olografiche (Oro e Diamante): foil morbido e pulito, solo sfumature trasparenti (niente fusioni di colore, maschere o filtri: leggero per i telefoni).
+       La luce arriva da --lx/--ly (giroscopio, mouse, dito) e segue l'inclinazione solo sulla figurina aperta; nella griglia sta ferma --- */
+.holo{position:absolute;top:0;left:0;right:0;bottom:0;z-index:4;pointer-events:none;border-radius:inherit;opacity:.7;
+  background:
+    linear-gradient(115deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.2) 44%,rgba(255,243,190,.55) 50%,rgba(255,255,255,.2) 56%,rgba(255,255,255,0) 70%),
+    linear-gradient(155deg,rgba(253,224,71,.2),rgba(253,224,71,0) 42%,rgba(245,158,11,.18));
+  background-size:280% 100%,100% 100%;
+  background-position:calc(50% + var(--lx,0) * 65%) 0,0 0;
+  transition:background-position .12s linear}
+.t-dia .holo{
+  background:
+    linear-gradient(115deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.22) 44%,rgba(224,242,254,.6) 50%,rgba(255,255,255,.22) 56%,rgba(255,255,255,0) 70%),
+    linear-gradient(155deg,rgba(125,211,252,.22),rgba(167,139,250,.0) 42%,rgba(244,114,182,.18));
+  background-size:280% 100%,100% 100%;background-position:calc(50% + var(--lx,0) * 65%) 0,0 0}
+body:not(.lit) .stage3d .holo{animation:holoIdle 6s ease-in-out infinite alternate}
+@keyframes holoIdle{0%{background-position:30% 0,0 0}100%{background-position:70% 0,0 0}}
+@media (prefers-reduced-motion:reduce){.holo{animation:none!important;transition:none}}
 .mfig.t-gold .mfig-fr,.mfig.t-dia .mfig-fr{position:relative}
 
 /* --- Figurina in 3D: palco, flip, inclinazione --- */
@@ -941,7 +932,7 @@ body:not(.lit) .holo{animation:holoIdle 6s ease-in-out infinite alternate}
 .flip-hint{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:5;padding:6px 14px;border-radius:999px;background:rgba(10,13,20,.88);border:1px solid var(--line-strong);color:var(--tx);font:800 13px var(--body);white-space:nowrap;pointer-events:none;animation:hintOut .4s ease 2.2s forwards}
 @keyframes hintOut{to{opacity:0}}
 .tilt{transition:transform .14s linear}
-.tilt.on-holo{transform:rotateY(calc(var(--tx,0) * 9deg)) rotateX(calc(var(--ty,0) * -9deg));touch-action:none}
+.tilt.on-holo{transform:rotateY(calc(var(--lx,0) * 9deg)) rotateX(calc(var(--ly,0) * -9deg));touch-action:none}
 .face-front,.face-back{-webkit-backface-visibility:hidden;backface-visibility:hidden}
 .stage3d .fig-glow{filter:none}                       /* un filtro sulla faccia rompe retro e fusione dei colori in 3D */
 .fig-shadow{position:absolute;left:3%;right:3%;top:2%;bottom:2%;border-radius:34px;pointer-events:none;transform:translateZ(-2px);
@@ -1187,7 +1178,7 @@ body:not(.lit) .holo{animation:holoIdle 6s ease-in-out infinite alternate}
   box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -2px 0 rgba(0,0,0,.28)}
 .plate::after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;mix-blend-mode:overlay;
   background:linear-gradient(105deg,rgba(255,255,255,0) 36%,rgba(255,255,255,.75) 48%,rgba(255,255,255,0) 60%);background-size:260% 100%;
-  background-position:calc(50% - var(--tx,0) * 90%) 0;transition:background-position .12s linear}
+  background-position:calc(50% - var(--lx,0) * 90%) 0;transition:background-position .12s linear}
 body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alternate}
 @keyframes plateIdle{from{background-position:100% 0}to{background-position:0% 0}}
 .plate .plk-ic{width:34px;height:34px;border-radius:10px;background:rgba(0,0,0,.2);box-shadow:inset 0 1px 2px rgba(0,0,0,.35);font-size:18px}
@@ -1233,7 +1224,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
   box-shadow:inset 0 1px 0 rgba(255,255,255,.2),inset 0 0 30px rgba(255,255,255,.03),0 18px 40px -24px #000}
 .rec.glass::after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;
   background:linear-gradient(115deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.1) 42%,rgba(255,255,255,0) 50%,rgba(255,255,255,.06) 56%,rgba(255,255,255,0) 62%);
-  background-size:250% 100%;background-position:calc(50% - var(--tx,0) * 70%) 0;transition:background-position .12s linear}
+  background-size:250% 100%;background-position:calc(50% - var(--lx,0) * 70%) 0;transition:background-position .12s linear}
 .rec.mine{border-color:rgba(249,115,22,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 0 1px rgba(249,115,22,.5),0 0 26px rgba(249,115,22,.2)}
 .rec-hd .tua{margin-left:auto}
 .crack{position:absolute;top:0;left:0;width:100%;height:100%;z-index:3;pointer-events:none;opacity:0}
@@ -1945,7 +1936,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.7.6';
+const APP_VERSION = '1.7.7';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -2117,6 +2108,46 @@ const list = x => !x ? [] : (Array.isArray(x) ? x : Object.values(x)).filter(Boo
 const num = v => { const n = Number(v); return Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0; };
 const norm = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 const validKey = k => typeof k === 'string' && k.length > 0 && k.length < 120 && !/[.#$\[\]\/]/.test(k);
+/* ---------- Difesa dai dati sporchi (solo in memoria: il database non viene mai riscritto) ----------
+   Chiunque conosca l'indirizzo del database può scriverci: giocatori e gare con id strani, nomi non testuali, date con codice dentro
+   o foto non immagine non devono rompere l'app né eseguire codice. */
+const BAD_IDS = new Set(['__proto__', 'constructor', 'prototype', 'toString', 'valueOf', 'hasOwnProperty', 'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString', '__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__']);
+const idOk = k => typeof k === 'string' && k.length > 0 && k.length <= 80 && !/[<>"'`&\\\s]/.test(k) && !BAD_IDS.has(k);
+const safeImg = u => typeof u === 'string' && u.length < 600000 && /^data:image\/(?:png|jpe?g|webp|gif|heic|heif|avif);base64,[A-Za-z0-9+\/=]+$/.test(u);
+const txt = (v, n = 80) => typeof v === 'string' ? v.slice(0, n) : (typeof v === 'number' ? String(v) : '');
+function cleanPlayers(raw){
+  const out = {};
+  if(!raw || typeof raw !== 'object') return out;
+  for(const [id, p] of Object.entries(raw)){
+    if(!idOk(id) || !p || typeof p !== 'object') continue;
+    const c = { ...p };
+    c.name = txt(p.name, 80); if('role' in c) c.role = txt(p.role, 12); if('foot' in c) c.foot = txt(p.foot, 12);
+    if('photo' in c && !safeImg(c.photo)) delete c.photo;
+    out[id] = c;
+  }
+  return out;
+}
+function cleanEntries(x){
+  const fix = e => (e && typeof e === 'object' && idOk(e.pid)) ? { ...e, pid:e.pid, n:txt(e.n, 80) } : null;
+  if(Array.isArray(x)) return x.map(fix).filter(Boolean);
+  if(x && typeof x === 'object'){ const o = {}; for(const [k, e] of Object.entries(x)){ const f = fix(e); if(f && idOk(k)) o[k] = f; } return o; }
+  return x;
+}
+function cleanMatches(raw){
+  const out = {};
+  if(!raw || typeof raw !== 'object') return out;
+  for(const [id, m] of Object.entries(raw)){
+    if(!idOk(id) || !m || typeof m !== 'object') continue;
+    const c = { ...m };
+    if('date' in c) c.date = (typeof c.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(c.date)) ? c.date : '';
+    for(const k of ['time', 'end']) if(k in c) c[k] = (typeof c[k] === 'string' && /^\d{1,2}[:.]\d{2}$/.test(c[k])) ? c[k] : '';
+    if('status' in c) c.status = txt(c.status, 20);
+    for(const k of ['white', 'black']) if(k in c) c[k] = cleanEntries(c[k]);
+    for(const k of ['capW', 'capB']) if(k in c && !(c[k] === null || idOk(c[k]))) c[k] = null;
+    out[id] = c;
+  }
+  return out;
+}
 const initials = n => (n || '?').split(/\s+/).filter(Boolean).slice(0,2).map(w => w[0]).join('').toUpperCase();
 const pname = (pid, fallback) => store.players[pid]?.name || fallback || 'Ex giocatore';
 const fmtPts = p => String(Math.round(p * 100) / 100).replace('.', ',');
@@ -2124,7 +2155,7 @@ const todayISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.g
 function fmtDate(iso){
   if(!iso) return '';
   const d = new Date(iso + 'T12:00:00');
-  if(isNaN(d)) return iso;
+  if(isNaN(d)) return '';
   return d.toLocaleDateString('it-IT', { day:'numeric', month:'short', year:'numeric' });
 }
 function haptic(){ try{ navigator.vibrate && navigator.vibrate(8); }catch(e){} }
@@ -2196,7 +2227,7 @@ function featuresHTML(){
 function loadCache(){
   try{
     const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    if(c){ store.players = c.players || {}; store.matches = c.matches || {}; store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; store.playerKeys = c.playerKeys || {}; store.casino = c.casino || {}; }
+    if(c){ store.players = cleanPlayers(c.players); store.matches = cleanMatches(c.matches); store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; store.playerKeys = c.playerKeys || {}; store.casino = c.casino || {}; }
   }catch(e){}
 }
 let cacheT;
@@ -2272,8 +2303,8 @@ function initFirebase(){
   }
   setSync('connecting');
   const onErr = err => { console.error(err); setSync('error'); toast('Lettura dal database negata. Controlla le regole di Firebase.', 'err'); };
-  db.ref('players').on('value',  s => { store.players  = s.val() || {}; loaded.players = true; afterData(); }, onErr);
-  db.ref('matches').on('value',  s => { store.matches  = s.val() || {}; loaded.matches = true; afterData(); }, onErr);
+  db.ref('players').on('value',  s => { store.players  = cleanPlayers(s.val()); loaded.players = true; afterData(); }, onErr);
+  db.ref('matches').on('value',  s => { store.matches  = cleanMatches(s.val()); loaded.matches = true; afterData(); }, onErr);
   db.ref('settings').on('value', s => { store.settings = s.val() || {}; loaded.settings = true; afterData(); }, onErr);
   db.ref('votes').on('value', s => { store.votes = s.val() || {}; afterData(); }, onErr);
   /* CASiNO: se le regole non permettono questo percorso l'app continua a funzionare e l'admin vede il motivo nel pannello */
@@ -2351,6 +2382,7 @@ function attachPhotos(){
     p.photo = mem ? mem.url : null;
     loadPhoto(pid, p.photoV);
   }
+  for(const p of Object.values(store.players || {})) if(p && p.photo && !safeImg(p.photo)) p.photo = null;
 }
 function photoUpdates(id, url){
   const v = Date.now();
@@ -2968,14 +3000,16 @@ function render(){
   attachPhotos();
   STATS = computeStats();
   document.body.classList.toggle('is-admin', ui.admin);
-  $('#lock-label').textContent = ui.admin ? 'Admin' : 'Ospite';
+  { const me = myPid(); $('#lock-label').textContent = ui.admin ? 'Admin' : (me && store.players[me] ? pname(me).split(/\s+/)[0].slice(0, 12) : 'Ospite'); }
   $('#lock-shackle').setAttribute('d', ui.admin ? 'M8 11V8a4 4 0 0 1 7.5-2' : 'M8 11V8a4 4 0 0 1 8 0v3');
   const cOn = feat('casino');
   $('#nav-casino').hidden = !cOn;
   $('#msgBtn').hidden = !feat('messages');
   $('#lock-dot').hidden = !(ui.admin && feat('messages') && msgNew() > 0);
   if(ui.view === 'casino' && !cOn) go('dashboard'); else applyTheme();
-  renderDashboard(); renderPlayers(); renderMatches(); renderMe(); if(ui.view === 'trophies') renderTrophies(); if(ui.view === 'casino') renderCasino(); renderAdmin();
+  /* ogni sezione si disegna per conto suo: un dato sbagliato in una non deve fermare le altre (né voti e finestre obbligatorie) */
+  const sx = fn => { try{ fn(); }catch(e){ console.error('render', e); } };
+  sx(renderDashboard); sx(renderPlayers); sx(renderMatches); sx(renderMe); if(ui.view === 'trophies') sx(renderTrophies); if(ui.view === 'casino') sx(renderCasino); sx(renderAdmin);
   if(ui.duel && $('#m-duel').classList.contains('open')) renderDuel();
   if(openFigPid && Date.now() > figAnimUntil) renderFigurina();   // non interrompe il flip se arrivano dati durante l'animazione
   if(ED && $('#m-match').classList.contains('open')) renderEditor();
@@ -3093,7 +3127,7 @@ function tableHTML(){
     const s = ui.sort.key === k ? (ui.sort.dir === 1 ? 'ascending' : 'descending') : 'none';
     return `<th class="${cls}" aria-sort="${s}" title="${t}"><button data-sort="${k}">${l}</button></th>`;
   };
-  const k = ui.sort.key, cols = cv.cols.map(c => COLS.find(x => x.k === c));
+  const k = ui.sort.key, cols = cv.cols.map(c => COLS.find(x => x.k === c)), meId = myPid();
   const cell = (c, s) => {
     const on = k === c.k ? 'on' : '';
     if(c.k === 'ovr') return `<td class="ov">${ovrPlate(s.ovr, 'pill')}</td>`;
@@ -3102,8 +3136,8 @@ function tableHTML(){
     return `<td class="${big}${on}">${val}</td>`;
   };
   return `<table class="cls"><thead><tr>${th(cv.sort, '#  Giocatore', gen ? 'Posizione in classifica' : 'Riordina', 'c-pl')}${cols.map(c => th(c.k, c.l, c.t)).join('')}</tr></thead><tbody>${
-    rows.map((s, i) => `<tr class="r${s.rank} ${gen && STATS.matches.length && s.rank <= 3 ? 'pod' + s.rank : ''}${rowCls(s.pid) ? ' ' + rowCls(s.pid) : ''}" data-open-player="${s.pid}">
-      <td class="c-pl"><div class="pl-cell"><span class="pos">${gen ? s.rank : i + 1}</span>${mvArrow(s)}${avatar(s.p, 'sm')}<span><span class="pl-name">${nameHTML(s.pid)}</span><span class="pl-sub">${roleChip(s.p.role)}<span class="foot">${esc(FEET[s.p.foot] || '')}</span></span></span></div></td>
+    rows.map((s, i) => `<tr class="r${gen ? s.rank : (s[cv.sort] > 0 ? i + 1 : 0)} ${gen && STATS.matches.length && s.rank <= 3 ? 'pod' + s.rank : ''}${rowCls(s.pid) ? ' ' + rowCls(s.pid) : ''}${s.pid === meId ? ' me' : ''}" data-open-player="${s.pid}">
+      <td class="c-pl"><div class="pl-cell"><span class="pos">${gen ? s.rank : i + 1}</span>${mvArrow(s)}${avatar(s.p, 'sm')}<span><span class="pl-name">${nameHTML(s.pid)}</span><span class="pl-sub">${roleChip(s.p.role)}<span class="foot">${esc(FEET[s.p.foot] || '')}</span>${s.pid === meId ? '<span class="me-tag">Tu</span>' : ''}</span></span></div></td>
       ${cols.map(c => cell(c, s)).join('')}
     </tr>`).join('')}</tbody></table>`;
 }
@@ -3132,7 +3166,8 @@ function renderPlayers(){
     .sort((a, b) => cmp(a, b) || a.name.localeCompare(b.name, 'it'));
   $('#pcount').textContent = `${ps.length} ${ps.length === 1 ? 'giocatore' : 'giocatori'}${ui.pRole === 'CEN' ? ' (Jolly inclusi)' : ''}`;
   const key = { ovr:null, g:'g', a:'a', pres:'pres', az:null }[ui.pSort];
-  grid.innerHTML = ps.map(s => `<div class="mfig-w"><button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}${roleChip(s.p.role)}${ovrPlate(s.ovr, 'sm')}${holoSpan(s.ovr)}${cardFx(s.pid).hx}${cardFx(s.pid).frm}<span class="mfig-b"><span class="mfig-n">${nameHTML(s.pid)}</span><span class="mfig-s"><span${key === 'g' ? ' style="color:var(--or)"' : ''}><b>${s.g}</b>gol</span><span${key === 'a' ? ' style="color:var(--or)"' : ''}><b>${s.a}</b>ass</span><span${key === 'pres' ? ' style="color:var(--or)"' : ''}><b>${s.pres}</b>pres</span></span></span></span></span></button><button type="button" class="mfig-turn" data-action="fig-back" data-pid="${s.pid}" aria-label="Retro della figurina di ${esc(s.name)}" title="Retro della figurina">↻</button></div>`).join('')
+  const meId = myPid();
+  grid.innerHTML = ps.map(s => `<div class="mfig-w${s.pid === meId ? ' me' : ''}"><button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}${roleChip(s.p.role)}${ovrPlate(s.ovr, 'sm')}${holoSpan(s.ovr)}${cardFx(s.pid).hx}${cardFx(s.pid).frm}<span class="mfig-b"><span class="mfig-n">${nameHTML(s.pid)}</span><span class="mfig-s"><span${key === 'g' ? ' style="color:var(--or)"' : ''}><b>${s.g}</b>gol</span><span${key === 'a' ? ' style="color:var(--or)"' : ''}><b>${s.a}</b>ass</span><span${key === 'pres' ? ' style="color:var(--or)"' : ''}><b>${s.pres}</b>pres</span></span></span></span></span></button><button type="button" class="mfig-turn" data-action="fig-back" data-pid="${s.pid}" aria-label="Retro della figurina di ${esc(s.name)}" title="Retro della figurina">↻</button></div>`).join('')
     || `<p class="mu" style="grid-column:1/-1">Nessun giocatore${ui.pRole !== 'ALL' ? ' ' + ui.pRole : ''}${raw ? ` corrisponde a “${esc(raw)}”` : ' in questo ruolo'}.</p>`;
 }
 
@@ -3597,7 +3632,13 @@ async function keyHash(code, saltHex){
   const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(String(code)), 'PBKDF2', false, ['deriveBits']);
   return toHex(await crypto.subtle.deriveBits({ name:'PBKDF2', hash:'SHA-256', salt:fromHex(saltHex), iterations:KEY_ITER }, km, 256));
 }
-async function keyMake(code){ const s = toHex(rndBytes(16)); return { s, h:await keyHash(code, s), v:1 }; }
+/* Nel database sta h2 = SHA-256(h), non h: leggere il database non basta per entrare come un altro (serve indovinare il codice).
+   I record vecchi { s, h, v:1 } restano validi e si aggiornano da soli appena il giocatore apre l'app. */
+const keyH2 = async h => toHex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('cmb|' + h)));
+async function keyMake(code){ const s = toHex(rndBytes(16)), h = await keyHash(code, s); return { rec:{ s, h2:await keyH2(h), v:2 }, h }; }
+const keyTok = r => r ? (r.h2 || r.h || '') : '';
+async function keyCheck(rec, code){ const h = await keyHash(code, rec.s); return (rec.h2 ? (await keyH2(h)) === rec.h2 : h === rec.h) ? h : null; }
+async function keyProof(rec, h){ return !!rec && !!h && (rec.h2 ? (await keyH2(h)) === rec.h2 : h === rec.h); }
 function pkGet(){ try{ return JSON.parse(localStorage.getItem(PK_KEY) || 'null'); }catch(e){ return null; } }
 const myPid = () => {
   try{
@@ -3626,9 +3667,9 @@ async function keyClaim(pid, rec){
   return !!(await db.ref('playerKeys/' + pid).transaction(cur => cur ? undefined : rec)).committed;
 }
 /* Cambio codice: scrive solo se il codice nel database è ancora quello che abbiamo verificato */
-async function keyReplace(pid, oldH, rec){
-  if(!db){ const c = store.playerKeys[pid]; if(!c || c.h !== oldH) return false; applyPath(store, 'playerKeys/' + pid, rec); saveCache(); return true; }
-  return !!(await db.ref('playerKeys/' + pid).transaction(cur => cur && cur.h === oldH ? rec : undefined)).committed;
+async function keyReplace(pid, oldTok, rec){
+  if(!db){ const c = store.playerKeys[pid]; if(!c || keyTok(c) !== oldTok) return false; applyPath(store, 'playerKeys/' + pid, rec); saveCache(); return true; }
+  return !!(await db.ref('playerKeys/' + pid).transaction(cur => cur && keyTok(cur) === oldTok ? rec : undefined)).committed;
 }
 function keyLogin(pid, h){
   try{ localStorage.setItem('cmb_me', pid); localStorage.setItem(PK_KEY, JSON.stringify({ p:pid, h })); localStorage.removeItem('cmb_guest'); }catch(e){}
@@ -3638,15 +3679,24 @@ function keyLogout(){ try{ localStorage.removeItem('cmb_me'); localStorage.remov
 /* Se il codice nel database cambia o viene azzerato (da un altro telefono o dall'admin) questo telefono deve rifare l'accesso */
 let keyWatch = null;
 function keyInvalid(why){ keyLogout(); toast(`Il codice del tuo giocatore è stato ${why}: rifai l’accesso.`, 'warn'); render(); }
+/* Confronta la prova salvata sul telefono con il record nel database: se non coincide si rifà l'accesso; un record vecchio si aggiorna da solo */
+async function keyJudge(me, p, rec){
+  try{
+    const same = () => { const c = pkGet(); return !!c && c.p === me && c.h === p.h; };
+    if(!rec){ if(same()) keyInvalid('azzerato'); return; }
+    if(!(await keyProof(rec, p.h))){ if(same()) keyInvalid('cambiato'); return; }
+    if(!rec.h2 && same() && keyOnline()) await keyReplace(me, keyTok(rec), { s:rec.s, h2:await keyH2(p.h), v:2 });
+  }catch(e){ console.warn('keyJudge', e); }
+}
 function watchMyKey(){
   let me = ''; try{ me = localStorage.getItem('cmb_me') || ''; }catch(e){}
   const pk = pkGet();
   if(!me || !pk || pk.p !== me){ if(keyWatch){ try{ keyWatch.ref.off('value', keyWatch.fn); }catch(e){} keyWatch = null; } return; }
-  if(!db){ const r = store.playerKeys && store.playerKeys[me]; if(!r || r.h !== pk.h) keyInvalid(!r ? 'azzerato' : 'cambiato'); return; }
+  if(!db){ const r = store.playerKeys && store.playerKeys[me]; keyJudge(me, pk, r); return; }
   if(keyWatch && keyWatch.pid === me) return;
   if(keyWatch){ try{ keyWatch.ref.off('value', keyWatch.fn); }catch(e){} }
   const ref = db.ref('playerKeys/' + me);
-  const fn = sn => { const v = sn.val(), p = pkGet(); if(!p || p.p !== me) return; if(!v || v.h !== p.h) keyInvalid(!v ? 'azzerato' : 'cambiato'); };
+  const fn = sn => { const p = pkGet(); if(p && p.p === me) keyJudge(me, p, sn.val()); };
   ref.on('value', fn, () => {});
   keyWatch = { pid:me, ref, fn };
 }
@@ -3810,17 +3860,18 @@ async function whoCodeSubmit(form){
   whoBusy = true;
   try{
     if(mode === 'new'){
-      const rec = await keyMake(code);
-      if(!(await keyClaim(pid, rec))){ toast('Qualcuno ha appena scelto questo giocatore. Inserisci il suo codice.', 'warn'); whoBusy = false; whoCodeUI(pid, 'enter'); return; }
-      keyLogin(pid, rec.h);
+      const mk = await keyMake(code);
+      if(!(await keyClaim(pid, mk.rec))){ toast('Qualcuno ha appena scelto questo giocatore. Inserisci il suo codice.', 'warn'); whoBusy = false; whoCodeUI(pid, 'enter'); return; }
+      keyLogin(pid, mk.h);
     }else{
       const rec = await keyFetch(pid);
       if(!rec){ whoBusy = false; whoCodeUI(pid, 'new'); return; }
-      if(await keyHash(code, rec.s) !== rec.h){
+      const hh = await keyCheck(rec, code);
+      if(hh === null){
         const left = keyFail(), sh = form.closest('.sheet'); sh.classList.remove('shake'); void sh.offsetWidth; sh.classList.add('shake');
         toast(left ? `Codice sbagliato. Tentativi rimasti: ${left}` : keyLockMsg(), 'err'); $('#key-in').value = ''; $('#key-in').focus(); return;
       }
-      keyLogin(pid, rec.h);
+      keyLogin(pid, hh);
     }
     closeModal('#m-who', true); render(); toast(`Ciao ${pname(pid)}`);
   }catch(e){
@@ -3852,10 +3903,10 @@ async function acctSave(){
   try{
     const rec = await keyFetch(me);
     if(!rec){ keyInvalid('azzerato'); closeModal('#m-acct'); return; }
-    if(await keyHash(oc, rec.s) !== rec.h){ const left = keyFail(); toast(left ? `Codice attuale sbagliato. Tentativi rimasti: ${left}` : keyLockMsg(), 'err'); return; }
+    if(await keyCheck(rec, oc) === null){ const left = keyFail(); toast(left ? `Codice attuale sbagliato. Tentativi rimasti: ${left}` : keyLockMsg(), 'err'); return; }
     keyOk();
     const nr = await keyMake(nc);
-    if(!(await keyReplace(me, rec.h, nr))){ toast('Il codice è cambiato nel frattempo: riprova.', 'warn'); return; }
+    if(!(await keyReplace(me, keyTok(rec), nr.rec))){ toast('Il codice è cambiato nel frattempo: riprova.', 'warn'); return; }
     try{ localStorage.setItem(PK_KEY, JSON.stringify({ p:me, h:nr.h })); }catch(e){}
     closeModal('#m-acct'); toast('Codice cambiato');
   }catch(e){ console.warn('acct', e); toast(isPermErr(e) ? 'Il database rifiuta il salvataggio del codice: avvisa l’organizzatore.' : 'Non è andata a buon fine: riprova tra poco.', 'err'); }
@@ -3881,8 +3932,15 @@ function flow(){
     if(!Object.keys(store.players).length) return;
     if(!identityKnown()){ openWho(); return; }
     const me = myPid(), seen = seenFinal(), rev = [...STATS.matches].reverse();
-    const fin = rev.find(x => x.vote2 && !seen[x.id] && Date.now() - num(x.createdAt) < 30 * 864e5);
-    if(fin){ markFinal(fin.id); showFinal(fin); return; }
+    /* "Fischio finale": se ne mostra una sola (la più recente) e le altre si segnano come viste, così su un telefono nuovo non arriva una raffica di popup retroattivi.
+       Al primo avvio su un telefono si festeggia solo una gara di meno di un giorno e mezzo fa. */
+    const unseen = rev.filter(x => x.vote2 && !seen[x.id] && Date.now() - num(x.createdAt) < 30 * 864e5);
+    if(unseen.length){
+      let firstRun = true; try{ firstRun = localStorage.getItem('cmb2627_seenFinal') === null; }catch(e){}
+      const fin = unseen[0];
+      unseen.forEach(x => markFinal(x.id));
+      if(!firstRun || Date.now() - num(fin.createdAt) < 36 * 36e5){ showFinal(fin); return; }
+    }
     if(me){
       const pend = !feat('mvp') ? null : rev.find(x => {
         if(!x.vote2 || (ui.voteLater && ui.voteLater[x.id]) || pvHas(x.id)) return false;
@@ -4512,10 +4570,10 @@ function handleSwap(mid, team, pid){
 const light = { tx:0, ty:0, raf:0, base:null };
 function applyLight(){
   light.raf = 0;
-  for(const el of [$('#pgrid'), $('#fig-body'), $('#rw-body'), $('#duel-body'), $('#troph')]){
+  for(const el of [$('#fig-body'), $('#rw-body'), $('#duel-body'), $('#troph')]){
     if(!el) continue;
-    el.style.setProperty('--tx', light.tx.toFixed(3));
-    el.style.setProperty('--ty', light.ty.toFixed(3));
+    el.style.setProperty('--lx', light.tx.toFixed(3));
+    el.style.setProperty('--ly', light.ty.toFixed(3));
   }
 }
 function setLight(tx, ty){
@@ -4549,10 +4607,10 @@ document.addEventListener('pointermove', e => {
   const t = e.target.closest && e.target.closest('.tilt.on-holo');
   if(!t || e.pointerType === 'mouse') return;
   const r = t.getBoundingClientRect();
-  t.style.setProperty('--tx', ((e.clientX - r.left) / r.width * 2 - 1).toFixed(3));
-  t.style.setProperty('--ty', ((e.clientY - r.top) / r.height * 2 - 1).toFixed(3));
+  t.style.setProperty('--lx', ((e.clientX - r.left) / r.width * 2 - 1).toFixed(3));
+  t.style.setProperty('--ly', ((e.clientY - r.top) / r.height * 2 - 1).toFixed(3));
 }, { passive:true });
-document.addEventListener('pointerup', e => { const t = e.target.closest && e.target.closest('.tilt.on-holo'); if(t){ t.style.removeProperty('--tx'); t.style.removeProperty('--ty'); } });
+document.addEventListener('pointerup', e => { const t = e.target.closest && e.target.closest('.tilt.on-holo'); if(t){ t.style.removeProperty('--lx'); t.style.removeProperty('--ly'); } });
 
 /* ---------- Il mio giocatore ---------- */
 function renderMe(){
@@ -5040,6 +5098,7 @@ function showNextRec(){
   if($('#m-rec').classList.contains('open') || !recQueue.length) return;
   if(!recShown) recTotal = recQueue.length;
   const { card:c, prev, same } = recQueue.shift();
+  const rest = recQueue.length; recQueue = [];   // un solo popup: gli altri primati cambiati si vedono in bacheca
   recShown++;
   const who = c.pair
     ? `<span class="rec-pair">${avatar(store.players[c.pair[0]], 'md')}${avatar(store.players[c.pair[1]], 'md')}</span><span>${esc(pname(c.pair[0]))}<br>${esc(pname(c.pair[1]))}</span>`
@@ -5052,8 +5111,7 @@ function showNextRec(){
     <div class="rw-who">${who}</div>
     <div class="rw-val"><b>${c.value}</b><span>${c.unit}</span></div>
     <div class="rw-prev">${prev ? `Precedente: <b>${esc(prev)}</b>` : 'Primo detentore di questo primato'}</div>
-    <div class="rw-act">${recQueue.length ? `<button class="btn primary" data-action="rec-next">Avanti (${recQueue.length})</button>` : `<button class="btn primary" data-action="rec-board">Vedi bacheca</button>`}<button class="btn ghost" data-action="rec-close">Chiudi</button></div>
-    ${recTotal > 1 ? `<div class="rw-cnt">${recShown} di ${recTotal}</div>` : ''}`;
+    <div class="rw-act">${rest ? `<button class="btn primary" data-action="rec-board">Vedi bacheca (+${rest} ${rest === 1 ? 'altro primato' : 'altri primati'})</button>` : `<button class="btn primary" data-action="rec-board">Vedi bacheca</button>`}<button class="btn ghost" data-action="rec-close">Chiudi</button></div>`;
   openModal('#m-rec');
   haptic();
 }
@@ -7717,6 +7775,13 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.7.7', date:'2026-10-17', items:[
+    `🔒 Più sicurezza, senza niente da fare per voi: il codice di ogni giocatore ora è protetto meglio, l’app non si blocca più con dati sbagliati e il sito non compare più su Google.`,
+    `✨ Le carte Oro e Diamante hanno una luce nuova, più pulita, e tutta l’app scorre molto più fluida, soprattutto sui telefoni meno recenti.`,
+    `🟠 In classifica e tra i giocatori la tua riga e la tua carta sono evidenziate in arancione, e in alto vedi il tuo nome.`,
+    `🔔 Basta raffiche di popup quando apri l’app dopo un po’: ne compare uno solo.`,
+    `🛠️ Sistemati i colori e i numeri delle classifiche (gol, assist…), la barra in alto sui tablet e la leggibilità del ruolo sulle foto.`
+  ] },
   { v:'1.7.6', date:'2026-10-16', items:[
     `✨ L’apertura dell’app è più fluida e pulita: le lettere di Comboniani salgono una alla volta, il pallone arriva con una scia e quando colpisce la scritta si rompe in schegge che volano via con tante scintille.`
   ] },
@@ -7974,7 +8039,7 @@ try{
   }
 }catch(e){}
 loadCache();
-render();
+try{ render(); }catch(e){ console.error('avvio', e); try{ localStorage.removeItem(CACHE_KEY); }catch(_){} }   // cache rovinata: si riparte dal database
 initFirebase();
 </script>
 </body>
