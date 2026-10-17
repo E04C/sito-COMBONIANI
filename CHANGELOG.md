@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.7.9
+- Carte Oro e Diamante: tolto del tutto il riflesso olografico (griglia, figurina aperta, popup dei record, confronto). Restano cornice, colori e inclinazione della figurina aperta. Gli ologrammi comprati nel Negozio non cambiano. Solo interfaccia.
+
 ## 1.7.8
 - Io: nuova sezione "Overall spiegato" (sola lettura). `ovrDelta` ora poggia su `ovrParts`, che restituisce anche il dettaglio (vittoria/sconfitta, gol e assist con moltiplicatore di ruolo, premio di reparto, autogol, tetti, voti dei compagni, ritardo, limite 50-99); `computeStats` lo salva in `hist[].parts`. Gli OVR sono identici a prima (verificato su tutti i giocatori e su 27.648 combinazioni) e le voci si sommano esattamente alla variazione reale.
 - Gara in programma (Resoconto): i capitani si sfidano con le figurine in grande e il VS in mezzo, al posto delle magliette; sotto restano le scritte Bianchi e Neri e il nome del capitano. Nessun nuovo campo nel database.
