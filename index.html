@@ -2117,6 +2117,46 @@ const list = x => !x ? [] : (Array.isArray(x) ? x : Object.values(x)).filter(Boo
 const num = v => { const n = Number(v); return Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0; };
 const norm = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 const validKey = k => typeof k === 'string' && k.length > 0 && k.length < 120 && !/[.#$\[\]\/]/.test(k);
+/* ---------- Difesa dai dati sporchi (solo in memoria: il database non viene mai riscritto) ----------
+   Chiunque conosca l'indirizzo del database può scriverci: giocatori e gare con id strani, nomi non testuali, date con codice dentro
+   o foto non immagine non devono rompere l'app né eseguire codice. */
+const BAD_IDS = new Set(['__proto__', 'constructor', 'prototype', 'toString', 'valueOf', 'hasOwnProperty', 'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString', '__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__']);
+const idOk = k => typeof k === 'string' && k.length > 0 && k.length <= 80 && !/[<>"'`&\\\s]/.test(k) && !BAD_IDS.has(k);
+const safeImg = u => typeof u === 'string' && u.length < 600000 && /^data:image\/(?:png|jpe?g|webp|gif|heic|heif|avif);base64,[A-Za-z0-9+\/=]+$/.test(u);
+const txt = (v, n = 80) => typeof v === 'string' ? v.slice(0, n) : (typeof v === 'number' ? String(v) : '');
+function cleanPlayers(raw){
+  const out = {};
+  if(!raw || typeof raw !== 'object') return out;
+  for(const [id, p] of Object.entries(raw)){
+    if(!idOk(id) || !p || typeof p !== 'object') continue;
+    const c = { ...p };
+    c.name = txt(p.name, 80); if('role' in c) c.role = txt(p.role, 12); if('foot' in c) c.foot = txt(p.foot, 12);
+    if('photo' in c && !safeImg(c.photo)) delete c.photo;
+    out[id] = c;
+  }
+  return out;
+}
+function cleanEntries(x){
+  const fix = e => (e && typeof e === 'object' && idOk(e.pid)) ? { ...e, pid:e.pid, n:txt(e.n, 80) } : null;
+  if(Array.isArray(x)) return x.map(fix).filter(Boolean);
+  if(x && typeof x === 'object'){ const o = {}; for(const [k, e] of Object.entries(x)){ const f = fix(e); if(f && idOk(k)) o[k] = f; } return o; }
+  return x;
+}
+function cleanMatches(raw){
+  const out = {};
+  if(!raw || typeof raw !== 'object') return out;
+  for(const [id, m] of Object.entries(raw)){
+    if(!idOk(id) || !m || typeof m !== 'object') continue;
+    const c = { ...m };
+    if('date' in c) c.date = (typeof c.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(c.date)) ? c.date : '';
+    for(const k of ['time', 'end']) if(k in c) c[k] = (typeof c[k] === 'string' && /^\d{1,2}[:.]\d{2}$/.test(c[k])) ? c[k] : '';
+    if('status' in c) c.status = txt(c.status, 20);
+    for(const k of ['white', 'black']) if(k in c) c[k] = cleanEntries(c[k]);
+    for(const k of ['capW', 'capB']) if(k in c && !(c[k] === null || idOk(c[k]))) c[k] = null;
+    out[id] = c;
+  }
+  return out;
+}
 const initials = n => (n || '?').split(/\s+/).filter(Boolean).slice(0,2).map(w => w[0]).join('').toUpperCase();
 const pname = (pid, fallback) => store.players[pid]?.name || fallback || 'Ex giocatore';
 const fmtPts = p => String(Math.round(p * 100) / 100).replace('.', ',');
@@ -2124,7 +2164,7 @@ const todayISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.g
 function fmtDate(iso){
   if(!iso) return '';
   const d = new Date(iso + 'T12:00:00');
-  if(isNaN(d)) return iso;
+  if(isNaN(d)) return '';
   return d.toLocaleDateString('it-IT', { day:'numeric', month:'short', year:'numeric' });
 }
 function haptic(){ try{ navigator.vibrate && navigator.vibrate(8); }catch(e){} }
@@ -2196,7 +2236,7 @@ function featuresHTML(){
 function loadCache(){
   try{
     const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    if(c){ store.players = c.players || {}; store.matches = c.matches || {}; store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; store.playerKeys = c.playerKeys || {}; store.casino = c.casino || {}; }
+    if(c){ store.players = cleanPlayers(c.players); store.matches = cleanMatches(c.matches); store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; store.playerKeys = c.playerKeys || {}; store.casino = c.casino || {}; }
   }catch(e){}
 }
 let cacheT;
@@ -2272,8 +2312,8 @@ function initFirebase(){
   }
   setSync('connecting');
   const onErr = err => { console.error(err); setSync('error'); toast('Lettura dal database negata. Controlla le regole di Firebase.', 'err'); };
-  db.ref('players').on('value',  s => { store.players  = s.val() || {}; loaded.players = true; afterData(); }, onErr);
-  db.ref('matches').on('value',  s => { store.matches  = s.val() || {}; loaded.matches = true; afterData(); }, onErr);
+  db.ref('players').on('value',  s => { store.players  = cleanPlayers(s.val()); loaded.players = true; afterData(); }, onErr);
+  db.ref('matches').on('value',  s => { store.matches  = cleanMatches(s.val()); loaded.matches = true; afterData(); }, onErr);
   db.ref('settings').on('value', s => { store.settings = s.val() || {}; loaded.settings = true; afterData(); }, onErr);
   db.ref('votes').on('value', s => { store.votes = s.val() || {}; afterData(); }, onErr);
   /* CASiNO: se le regole non permettono questo percorso l'app continua a funzionare e l'admin vede il motivo nel pannello */
@@ -2351,6 +2391,7 @@ function attachPhotos(){
     p.photo = mem ? mem.url : null;
     loadPhoto(pid, p.photoV);
   }
+  for(const p of Object.values(store.players || {})) if(p && p.photo && !safeImg(p.photo)) p.photo = null;
 }
 function photoUpdates(id, url){
   const v = Date.now();
@@ -2975,7 +3016,9 @@ function render(){
   $('#msgBtn').hidden = !feat('messages');
   $('#lock-dot').hidden = !(ui.admin && feat('messages') && msgNew() > 0);
   if(ui.view === 'casino' && !cOn) go('dashboard'); else applyTheme();
-  renderDashboard(); renderPlayers(); renderMatches(); renderMe(); if(ui.view === 'trophies') renderTrophies(); if(ui.view === 'casino') renderCasino(); renderAdmin();
+  /* ogni sezione si disegna per conto suo: un dato sbagliato in una non deve fermare le altre (né voti e finestre obbligatorie) */
+  const sx = fn => { try{ fn(); }catch(e){ console.error('render', e); } };
+  sx(renderDashboard); sx(renderPlayers); sx(renderMatches); sx(renderMe); if(ui.view === 'trophies') sx(renderTrophies); if(ui.view === 'casino') sx(renderCasino); sx(renderAdmin);
   if(ui.duel && $('#m-duel').classList.contains('open')) renderDuel();
   if(openFigPid && Date.now() > figAnimUntil) renderFigurina();   // non interrompe il flip se arrivano dati durante l'animazione
   if(ED && $('#m-match').classList.contains('open')) renderEditor();
@@ -7990,7 +8033,7 @@ try{
   }
 }catch(e){}
 loadCache();
-render();
+try{ render(); }catch(e){ console.error('avvio', e); try{ localStorage.removeItem(CACHE_KEY); }catch(_){} }   // cache rovinata: si riparte dal database
 initFirebase();
 </script>
 </body>
