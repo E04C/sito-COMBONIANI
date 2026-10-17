@@ -2037,6 +2037,13 @@ const PHOTO = { maxW:480, maxH:600, q:0.78, minQ:0.58, maxChars:120000 };
 const WEBP_OK = (() => { try{ const c = document.createElement('canvas'); c.width = c.height = 1; return c.toDataURL('image/webp').startsWith('data:image/webp'); }catch(e){ return false; } })();
 const TIERS = { dia:{ l:'Diamante', i:'💎' }, gold:{ l:'Oro', i:'🥇' }, silver:{ l:'Argento', i:'🥈' }, bronze:{ l:'Bronzo', i:'🥉' } };
 const isDef = s => s.p.role === 'DIF';
+/* Serie di vittorie di fila (le partite si leggono in ordine di gara, il pareggio e la sconfitta interrompono): la migliore della stagione e quella in corso */
+function winRun(s){
+  if(s._wr) return s._wr;
+  let best = 0, cur = 0;
+  for(const x of s.hist || []){ if(x.r === 'v'){ cur++; if(cur > best) best = cur; } else cur = 0; }
+  return s._wr = { best, cur };
+}
 /* Gerarchia = ordine dell'array. Max 2 targhe a testa; ultimo spareggio sempre alfabetico. */
 const PLAQUES = [
   { id:'noexcuses', icon:'⏱️', name:'NO EXCUSES', desc:'Più presenze in stagione. Parità: più vittorie.',
@@ -2070,6 +2077,8 @@ PLAQUES.push({ id:'banco', feat:'casino', icon:'💰', name:'Il Banco', desc:`Il
   ok:s => !!s.mov && s.mov.length > 1 && s.balB > 0, cmp:(a,b) => (b.balB - a.balB) || (b.earn - a.earn), val:s => `${fmtPat(s.balB)} ${CURRENCY}` });
 PLAQUES.push({ id:'profeta', feat:'casino', icon:'🔮', name:'Il Profeta', desc:`La percentuale più alta di scommesse vinte (almeno ${CASINO.PROFETA_MIN} concluse, senza monti e rimborsi). Parità: più vittorie.`,
   ok:s => s.betN >= CASINO.PROFETA_MIN, cmp:(a,b) => (b.betPct - a.betPct) || (b.betWon - a.betWon), val:s => `${Math.round(s.betPct)}% vinte (${s.betWon} su ${s.betN})` });
+PLAQUES.push({ id:'striscia', icon:'🔥', name:'La Striscia', desc:'La serie più lunga di vittorie di fila in stagione (da 2 in su, il pareggio la interrompe). Parità: serie in corso, più vittorie.',
+  ok:s => winRun(s).best >= 2, cmp:(a,b) => (winRun(b).best - winRun(a).best) || (winRun(b).cur - winRun(a).cur) || (b.v - a.v), val:s => `${winRun(s).best} vittorie di fila${winRun(s).cur === winRun(s).best ? ' (in corso)' : ''}` });
 const plqOn = P => !P.feat || feat(P.feat);
 /* Moduli per ogni misura di squadra (da 1 a 11 titolari). La prima riga è sempre un solo giocatore "in porta"; massimo 4 righe e 5 per riga.
    Quelli a 8 sono i quattro di sempre. Il menu del modulo mostra solo quelli la cui somma è uguale ai titolari. */
@@ -2099,9 +2108,9 @@ const PLQ_GAP = {
   gladiatore:[s => s.mvp, 'MVP', 'MVP', 1, 0], amuleto:[s => s.v - s.s, 'di saldo', 'di saldo', 1, 0],
   roccia:[s => s.ovr, 'OVR', 'OVR', 1, 1], re:[s => s.hat, 'gara da 3+ gol', 'gare da 3+ gol', 1, 0],
   profeta:[s => s.betPct, 'punto %', 'punti %', 5, 0], muro:[s => s.minConcW, 'gol subito', 'gol subiti', 1, 0], banco:[s => s.balB, CURRENCY1, CURRENCY, 20, 0], treno:[s => s.g + s.a, 'bonus', 'bonus', 1, 0],
-  apriscatole:[s => s.firstG, 'primo gol', 'primi gol', 1, 0], ultimo:[s => s.lateG, 'gol', 'gol', 1, 0]
+  apriscatole:[s => s.firstG, 'primo gol', 'primi gol', 1, 0], ultimo:[s => s.lateG, 'gol', 'gol', 1, 0], striscia:[s => winRun(s).best, 'vittoria', 'vittorie', 1, 0]
 };
-const METALS = { noexcuses:'steel', cecchino:'gold', assist:'rose', vittoria:'gold', gladiatore:'bronze', amuleto:'emerald', roccia:'titanium', re:'gold', muro:'steel', treno:'copper', apriscatole:'silver', ultimo:'rose', banco:'gold', profeta:'emerald' };
+const METALS = { noexcuses:'steel', cecchino:'gold', assist:'rose', vittoria:'gold', gladiatore:'bronze', amuleto:'emerald', roccia:'titanium', re:'gold', muro:'steel', treno:'copper', apriscatole:'silver', ultimo:'rose', striscia:'copper', banco:'gold', profeta:'emerald' };
 const COLS = [
   { k:'ovr',  l:'OVR', t:'Overall dinamico (50-99)' },
   { k:'pres', l:'Pr',  t:'Presenze' },
