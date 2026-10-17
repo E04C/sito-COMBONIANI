@@ -3597,7 +3597,13 @@ async function keyHash(code, saltHex){
   const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(String(code)), 'PBKDF2', false, ['deriveBits']);
   return toHex(await crypto.subtle.deriveBits({ name:'PBKDF2', hash:'SHA-256', salt:fromHex(saltHex), iterations:KEY_ITER }, km, 256));
 }
-async function keyMake(code){ const s = toHex(rndBytes(16)); return { s, h:await keyHash(code, s), v:1 }; }
+/* Nel database sta h2 = SHA-256(h), non h: leggere il database non basta per entrare come un altro (serve indovinare il codice).
+   I record vecchi { s, h, v:1 } restano validi e si aggiornano da soli appena il giocatore apre l'app. */
+const keyH2 = async h => toHex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('cmb|' + h)));
+async function keyMake(code){ const s = toHex(rndBytes(16)), h = await keyHash(code, s); return { rec:{ s, h2:await keyH2(h), v:2 }, h }; }
+const keyTok = r => r ? (r.h2 || r.h || '') : '';
+async function keyCheck(rec, code){ const h = await keyHash(code, rec.s); return (rec.h2 ? (await keyH2(h)) === rec.h2 : h === rec.h) ? h : null; }
+async function keyProof(rec, h){ return !!rec && !!h && (rec.h2 ? (await keyH2(h)) === rec.h2 : h === rec.h); }
 function pkGet(){ try{ return JSON.parse(localStorage.getItem(PK_KEY) || 'null'); }catch(e){ return null; } }
 const myPid = () => {
   try{
@@ -3626,9 +3632,9 @@ async function keyClaim(pid, rec){
   return !!(await db.ref('playerKeys/' + pid).transaction(cur => cur ? undefined : rec)).committed;
 }
 /* Cambio codice: scrive solo se il codice nel database è ancora quello che abbiamo verificato */
-async function keyReplace(pid, oldH, rec){
-  if(!db){ const c = store.playerKeys[pid]; if(!c || c.h !== oldH) return false; applyPath(store, 'playerKeys/' + pid, rec); saveCache(); return true; }
-  return !!(await db.ref('playerKeys/' + pid).transaction(cur => cur && cur.h === oldH ? rec : undefined)).committed;
+async function keyReplace(pid, oldTok, rec){
+  if(!db){ const c = store.playerKeys[pid]; if(!c || keyTok(c) !== oldTok) return false; applyPath(store, 'playerKeys/' + pid, rec); saveCache(); return true; }
+  return !!(await db.ref('playerKeys/' + pid).transaction(cur => cur && keyTok(cur) === oldTok ? rec : undefined)).committed;
 }
 function keyLogin(pid, h){
   try{ localStorage.setItem('cmb_me', pid); localStorage.setItem(PK_KEY, JSON.stringify({ p:pid, h })); localStorage.removeItem('cmb_guest'); }catch(e){}
@@ -3638,15 +3644,24 @@ function keyLogout(){ try{ localStorage.removeItem('cmb_me'); localStorage.remov
 /* Se il codice nel database cambia o viene azzerato (da un altro telefono o dall'admin) questo telefono deve rifare l'accesso */
 let keyWatch = null;
 function keyInvalid(why){ keyLogout(); toast(`Il codice del tuo giocatore è stato ${why}: rifai l’accesso.`, 'warn'); render(); }
+/* Confronta la prova salvata sul telefono con il record nel database: se non coincide si rifà l'accesso; un record vecchio si aggiorna da solo */
+async function keyJudge(me, p, rec){
+  try{
+    const same = () => { const c = pkGet(); return !!c && c.p === me && c.h === p.h; };
+    if(!rec){ if(same()) keyInvalid('azzerato'); return; }
+    if(!(await keyProof(rec, p.h))){ if(same()) keyInvalid('cambiato'); return; }
+    if(!rec.h2 && same() && keyOnline()) await keyReplace(me, keyTok(rec), { s:rec.s, h2:await keyH2(p.h), v:2 });
+  }catch(e){ console.warn('keyJudge', e); }
+}
 function watchMyKey(){
   let me = ''; try{ me = localStorage.getItem('cmb_me') || ''; }catch(e){}
   const pk = pkGet();
   if(!me || !pk || pk.p !== me){ if(keyWatch){ try{ keyWatch.ref.off('value', keyWatch.fn); }catch(e){} keyWatch = null; } return; }
-  if(!db){ const r = store.playerKeys && store.playerKeys[me]; if(!r || r.h !== pk.h) keyInvalid(!r ? 'azzerato' : 'cambiato'); return; }
+  if(!db){ const r = store.playerKeys && store.playerKeys[me]; keyJudge(me, pk, r); return; }
   if(keyWatch && keyWatch.pid === me) return;
   if(keyWatch){ try{ keyWatch.ref.off('value', keyWatch.fn); }catch(e){} }
   const ref = db.ref('playerKeys/' + me);
-  const fn = sn => { const v = sn.val(), p = pkGet(); if(!p || p.p !== me) return; if(!v || v.h !== p.h) keyInvalid(!v ? 'azzerato' : 'cambiato'); };
+  const fn = sn => { const p = pkGet(); if(p && p.p === me) keyJudge(me, p, sn.val()); };
   ref.on('value', fn, () => {});
   keyWatch = { pid:me, ref, fn };
 }
@@ -3810,17 +3825,18 @@ async function whoCodeSubmit(form){
   whoBusy = true;
   try{
     if(mode === 'new'){
-      const rec = await keyMake(code);
-      if(!(await keyClaim(pid, rec))){ toast('Qualcuno ha appena scelto questo giocatore. Inserisci il suo codice.', 'warn'); whoBusy = false; whoCodeUI(pid, 'enter'); return; }
-      keyLogin(pid, rec.h);
+      const mk = await keyMake(code);
+      if(!(await keyClaim(pid, mk.rec))){ toast('Qualcuno ha appena scelto questo giocatore. Inserisci il suo codice.', 'warn'); whoBusy = false; whoCodeUI(pid, 'enter'); return; }
+      keyLogin(pid, mk.h);
     }else{
       const rec = await keyFetch(pid);
       if(!rec){ whoBusy = false; whoCodeUI(pid, 'new'); return; }
-      if(await keyHash(code, rec.s) !== rec.h){
+      const hh = await keyCheck(rec, code);
+      if(hh === null){
         const left = keyFail(), sh = form.closest('.sheet'); sh.classList.remove('shake'); void sh.offsetWidth; sh.classList.add('shake');
         toast(left ? `Codice sbagliato. Tentativi rimasti: ${left}` : keyLockMsg(), 'err'); $('#key-in').value = ''; $('#key-in').focus(); return;
       }
-      keyLogin(pid, rec.h);
+      keyLogin(pid, hh);
     }
     closeModal('#m-who', true); render(); toast(`Ciao ${pname(pid)}`);
   }catch(e){
@@ -3852,10 +3868,10 @@ async function acctSave(){
   try{
     const rec = await keyFetch(me);
     if(!rec){ keyInvalid('azzerato'); closeModal('#m-acct'); return; }
-    if(await keyHash(oc, rec.s) !== rec.h){ const left = keyFail(); toast(left ? `Codice attuale sbagliato. Tentativi rimasti: ${left}` : keyLockMsg(), 'err'); return; }
+    if(await keyCheck(rec, oc) === null){ const left = keyFail(); toast(left ? `Codice attuale sbagliato. Tentativi rimasti: ${left}` : keyLockMsg(), 'err'); return; }
     keyOk();
     const nr = await keyMake(nc);
-    if(!(await keyReplace(me, rec.h, nr))){ toast('Il codice è cambiato nel frattempo: riprova.', 'warn'); return; }
+    if(!(await keyReplace(me, keyTok(rec), nr.rec))){ toast('Il codice è cambiato nel frattempo: riprova.', 'warn'); return; }
     try{ localStorage.setItem(PK_KEY, JSON.stringify({ p:me, h:nr.h })); }catch(e){}
     closeModal('#m-acct'); toast('Codice cambiato');
   }catch(e){ console.warn('acct', e); toast(isPermErr(e) ? 'Il database rifiuta il salvataggio del codice: avvisa l’organizzatore.' : 'Non è andata a buon fine: riprova tra poco.', 'err'); }
