@@ -763,6 +763,17 @@ button.pcard:active .pc-fr{transform:scale(.96)}
 .capinfo small{font:700 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--mu)}
 .vs .capinfo{margin-top:2px}
 .vs .vv{font:italic 800 42px/1 var(--disp);color:var(--or)}
+.vsx{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:6px;margin:14px 0 10px}
+.vsx-t{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
+.vsx-card{width:min(200px,100%);cursor:pointer;border-radius:14px;-webkit-tap-highlight-color:transparent}
+.vsx-card:focus-visible{outline:3px solid var(--or);outline-offset:3px}
+.vsx-card .mfig{width:100%}
+.vsx-none{width:64px;cursor:default}
+.vsx .side-n{font-size:clamp(24px,7vw,36px)}
+.vsx-cap{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;max-width:100%;text-align:center}
+.vsx-cap small{font:700 11px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--mu)}
+.vsx-cap b{font:800 15px/1.15 var(--body);overflow-wrap:anywhere}
+.vsx .vv{font:italic 800 clamp(34px,11vw,60px)/1 var(--disp);color:var(--or);text-shadow:0 0 24px rgba(249,115,22,.6);padding:0 2px}
 .ovbar{display:flex;align-items:center;gap:10px;margin:8px auto 4px;max-width:420px;font:italic 800 22px var(--disp)}
 .ovbar .bar{flex:1;height:8px;border-radius:4px;background:#1d2027;overflow:hidden;display:flex}
 .ovbar .bar i{display:block;height:100%;background:#eef1f6}
@@ -946,6 +957,23 @@ body:not(.lit) .stage3d .holo{animation:holoIdle 6s ease-in-out infinite alterna
 .pb-row i{font-style:normal;font-size:19px;line-height:1.2}
 .pb-row span{display:flex;flex-direction:column;min-width:0;letter-spacing:0;text-transform:none;font-size:inherit}
 .back-in .pb-row small{font:600 11.5px var(--body);color:var(--mu);letter-spacing:0;text-transform:none}
+.ox-how{margin:0 0 10px;color:var(--mu);font-size:13px;line-height:1.5}
+.ox-how summary,.ox-more summary{cursor:pointer;color:var(--or);font-weight:700;min-height:36px;display:flex;align-items:center}
+.ox-how p{margin:6px 0 0}
+.ox{border:1px solid var(--hair);border-radius:12px;background:rgba(255,255,255,.025);margin-bottom:8px;overflow:hidden}
+.ox summary{display:grid;grid-template-columns:1fr auto;gap:1px 10px;align-items:center;padding:8px 12px;cursor:pointer;list-style:none;min-height:48px}
+.ox summary::-webkit-details-marker{display:none}
+.ox summary span{font-weight:800}
+.ox summary small{font-weight:600;color:var(--mu)}
+.ox summary b{font:italic 800 21px var(--disp)}
+.ox summary b.up{color:#4ade80}.ox summary b.dn{color:var(--bad)}
+.ox summary i{grid-column:1/-1;font-style:normal;color:var(--mu);font-size:12.5px;font-variant-numeric:tabular-nums}
+.ox-b{padding:2px 12px 12px;display:grid;gap:5px}
+.ox-b>div{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;font-variant-numeric:tabular-nums}
+.ox-b small{color:var(--mu2)}
+.ox-b .nt{color:var(--mu);font-size:12.5px}
+.ox-b .tot{border-top:1px dashed var(--hair);padding-top:6px;margin-top:2px;font-weight:800}
+.ox-more{margin-top:4px}
 .pb-sec{padding-top:8px;border-top:1px dashed rgba(255,255,255,.12)}
 .back-in .pb-sec h4{margin:0 0 6px;font:600 12px var(--body);color:var(--mu);letter-spacing:0;text-transform:none}
 .pb-sts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
@@ -1936,7 +1964,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.7.7';
+const APP_VERSION = '1.7.8';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -2700,19 +2728,24 @@ function rankCmp(a, b){
 }
 /* Delta OVR di una gara, per ruolo. Vittoria: mai malus (solo l'autogol toglie). Fascia riscatto < 65. Cap ±6. */
 /* Motore OVR v3. Delta senza arrotondamenti; tetti +5 / -3; elite >=90 rallenta la salita, riscatto <65 la accelera. */
-function ovrDelta(role, ovr, c){
+/* Variazione di OVR di una gara con il dettaglio di come si forma. I numeri sono quelli di sempre: ovrDelta restituisce solo il totale. */
+function ovrParts(role, ovr, c){
   const R = ROLES[role] ? role : 'JOLLY';
   const shown = roundOvr(ovr);
   let pos = 0, loss = 0;
-  if(c.res === 'v') pos += Math.max(0, 2 - 0.1 * c.conceded);
-  else if(c.res === 's') loss += c.margin >= 3 ? 2 : 1;
+  const vPts = c.res === 'v' ? Math.max(0, 2 - 0.1 * c.conceded) : 0, lPts = c.res === 's' ? (c.margin >= 3 ? 2 : 1) : 0;
+  pos += vPts; loss += lPts;
   pos += (c.g * 1 + c.a * 0.5) * ROLE_MULT[R];
   if(c.award) pos += 0.2;
-  if(shown >= 90) pos *= 0.5;
-  else if(shown < 65){ pos *= 1.5; loss *= 0.5; }
-  const d = pos - loss - c.og * OG_PEN;
-  return Math.max(-OVR_LOSS_CAP, Math.min(OVR_GAIN_CAP, d));
+  let fp = 1, fl = 1;
+  if(shown >= 90){ pos *= 0.5; fp = 0.5; }
+  else if(shown < 65){ pos *= 1.5; loss *= 0.5; fp = 1.5; fl = 0.5; }
+  const raw = pos - loss - c.og * OG_PEN;
+  const d = Math.max(-OVR_LOSS_CAP, Math.min(OVR_GAIN_CAP, raw));
+  return { d, fp, fl, mult:ROLE_MULT[R],
+    v:vPts * fp, l:lPts * fl, g:c.g * ROLE_MULT[R] * fp, a:c.a * 0.5 * ROLE_MULT[R] * fp, aw:c.award ? 0.2 * fp : 0, og:c.og * OG_PEN, cap:d - raw };
 }
+function ovrDelta(role, ovr, c){ return ovrParts(role, ovr, c).d; }
 /* Premi di reparto: solo punti individuali (gol + assist pesati dal ruolo - autogol), niente esito. Parità: gol, assist, alfabeto. */
 function matchAwards(m){
   const best = { ATT:null, CEN:null, DIF:null };
@@ -2840,11 +2873,14 @@ function computeStats(upto){
         if(award) st.awards = (st.awards || 0) + 1;
         const preOvr = st.ovr;
         /* il bonus delle stelle e la penalità del ritardo (LATE_PEN) si sommano dopo il delta già limitato dai tetti (+5/-3); la variazione mostrata li include */
-        const d = ovrDelta(st.p.role, st.ovr, { res:r, margin, conceded, g, a, og, mvp:isMvp, award }) + (RR[e.pid] ? RR[e.pid].bonus : 0) - (e.late ? LATE_PEN : 0);
+        const P = ovrParts(st.p.role, st.ovr, { res:r, margin, conceded, g, a, og, mvp:isMvp, award });
+        const bonus = RR[e.pid] ? RR[e.pid].bonus : 0, latePen = e.late ? LATE_PEN : 0;
+        const d = P.d + bonus - latePen;
         st.ovr = Math.max(OVR_MIN, Math.min(OVR_MAX, st.ovr + d));
+        const parts = { ...P, bonus, late:latePen, clamp:st.ovr - (preOvr + d), conceded, margin };
         st.last = { d, day:num(m.day) };
         (log[m.id] = log[m.id] || {})[e.pid] = { d, ovr:st.ovr, pre:preOvr };
-        st.hist.push({ m, team, r, g, a, og, d, ovr:st.ovr });
+        st.hist.push({ m, team, r, g, a, og, d, ovr:st.ovr, pre:preOvr, parts });
         for(const o of es){
           if(o.pid === e.pid) continue;
           const mt = st.mates[o.pid] || (st.mates[o.pid] = { n:0, v:0, pa:0, s:0 });
@@ -4080,13 +4116,24 @@ setInterval(() => {
 }, 15000);
 
 /* ---------- Gara in programma ---------- */
+/* Sfida dei capitani: le due figurine una contro l'altra con il VS in mezzo, sotto le scritte Bianchi e Neri */
+function capsVsHTML(m){
+  const side = team => {
+    const pid = captainFor(m, team), st = pid && STATS.byId[pid], nm = team === 'white' ? 'Bianchi' : 'Neri';
+    const card = st
+      ? `<div class="vsx-card" role="button" tabindex="0" data-open-player="${pid}" aria-label="Figurina del capitano ${esc(st.name)}">${miniFigHTML(st)}</div>`
+      : `<div class="vsx-card vsx-none">${kit(team)}</div>`;
+    return `<div class="vsx-t ${team === 'white' ? 'w' : 'b'}">${card}<span class="side-n">${nm}</span>${st ? `<span class="vsx-cap"><small>Capitano</small><b>${esc(st.name)}</b></span>` : ''}</div>`;
+  };
+  return `<div class="vsx">${side('white')}<span class="vv" aria-label="contro">VS</span>${side('black')}</div>`;
+}
 function scheduledDetailHTML(m){
   const mW = teamMean(m.white), mB = teamMean(m.black);
   const share = mW + mB ? mW / (mW + mB) * 100 : 50;
   if(ui.mTab === 'form') return `<div class="mone form">${pitchPanelHTML(m)}${lineupsHTML(m, false)}</div>`;
   return `<div class="mone"><article class="glass tab">
     <div class="hero-meta"><span class="tag">🗓️ In programma</span><span>Giornata ${num(m.day)}</span><span>${esc(whenLabel(m) || 'Data da definire')}</span>${cdSpan(m)}<span class="sum">${list(m.white).length} contro ${list(m.black).length}</span></div>
-    <div class="vs"><div class="side">${kit('white')}<span class="side-n">Bianchi</span>${capInfoHTML(m, 'white')}</div><span class="vv">VS</span><div class="side">${kit('black')}<span class="side-n">Neri</span>${capInfoHTML(m, 'black')}</div></div>
+    ${capsVsHTML(m)}
     <div class="ovbar" aria-label="OVR medio Bianchi ${mW.toFixed(1)}, Neri ${mB.toFixed(1)}"><span>${mW.toFixed(1)}</span><span class="bar"><i style="width:${share}%"></i><em></em></span><span>${mB.toFixed(1)}</span></div>
     <p class="mu sm" style="text-align:center;margin:0 0 12px">OVR medio delle due squadre</p>
     ${mkAdminHTML(m)}
@@ -4613,6 +4660,35 @@ document.addEventListener('pointermove', e => {
 document.addEventListener('pointerup', e => { const t = e.target.closest && e.target.closest('.tilt.on-holo'); if(t){ t.style.removeProperty('--lx'); t.style.removeProperty('--ly'); } });
 
 /* ---------- Il mio giocatore ---------- */
+/* Overall spiegato: per ogni gara da dove partivi, cosa ti ha mosso e dove sei arrivato (sola lettura, stessi numeri del calcolo) */
+function ovrExplainHTML(s){
+  const sg = v => (v < 0 ? '−' : '+') + String(Math.round(Math.abs(v) * 100) / 100).replace('.', ',');
+  const o1 = v => v.toFixed(1).replace('.', ',');
+  const how = `<details class="ox-how"><summary>Come si calcola</summary><p>Parti da ${OVR_START}. Dopo ogni gara: vittoria +2 (meno 0,1 per ogni gol subito), sconfitta −1 (−2 se perdi con 3 gol di scarto o più), pareggio 0. Ogni gol vale 1 e ogni assist 0,5, moltiplicati per il tuo ruolo (difensore ×${String(ROLE_MULT.DIF).replace('.', ',')}, centrocampista e jolly ×${String(ROLE_MULT.CEN).replace('.', ',')}, attaccante ×${String(ROLE_MULT.ATT).replace('.', ',')}). Il premio di reparto dà +0,2, ogni autogol −${OG_PEN}. Se sei a 90 o più i punti positivi si dimezzano; sotto 65 valgono il 50% in più e le perdite metà. In una gara non puoi salire più di ${OVR_GAIN_CAP} né scendere più di ${OVR_LOSS_CAP}. Poi si aggiungono i voti dei compagni (da −0,2 a +0,2) e −${String(LATE_PEN).replace('.', ',')} se arrivi in ritardo. L'OVR resta sempre tra ${OVR_MIN} e ${OVR_MAX}.</p></details>`;
+  if(!s.hist.length) return how + '<p class="mu sm" style="margin:8px 0 0">Dopo la tua prima gara vedrai qui come si forma ogni variazione.</p>';
+  const one = h => {
+    const P = h.parts; if(!P) return '';
+    const rows = [];
+    const add = (label, v, note) => { if(Math.abs(v) > 1e-9) rows.push(`<div><span>${label}${note ? ` <small>${note}</small>` : ''}</span><b>${sg(v)}</b></div>`); };
+    if(h.r === 'v') add('Vittoria', P.v, P.conceded ? `${P.conceded} ${P.conceded === 1 ? 'gol subito' : 'gol subiti'}` : 'porta inviolata');
+    else if(h.r === 's') add('Sconfitta', -P.l, P.margin >= 3 ? 'di 3 o più gol' : '');
+    else rows.push('<div><span>Pareggio</span><b>0</b></div>');
+    add(`Gol${h.g > 1 ? ' ×' + h.g : ''}`, P.g, `ruolo ×${String(P.mult).replace('.', ',')}`);
+    add(`Assist${h.a > 1 ? ' ×' + h.a : ''}`, P.a);
+    add('Premio di reparto', P.aw);
+    add(`Autogol${h.og > 1 ? ' ×' + h.og : ''}`, -P.og);
+    if(P.fp !== 1) rows.push(`<div class="nt"><span>${P.fp < 1 ? 'OVR da 90: i punti positivi sono dimezzati' : 'OVR sotto 65: i punti positivi valgono +50%, le perdite metà'}</span><b></b></div>`);
+    add(P.cap > 0 ? 'Tetto: massimo −' + OVR_LOSS_CAP + ' a gara' : 'Tetto: massimo +' + OVR_GAIN_CAP + ' a gara', P.cap);
+    add('Voti dei compagni', P.bonus);
+    add('Ritardo', -P.late);
+    add('Limite tra ' + OVR_MIN + ' e ' + OVR_MAX, P.clamp);
+    const tot = h.ovr - h.pre;
+    const res = h.r === 'v' ? 'vittoria' : h.r === 's' ? 'sconfitta' : 'pareggio';
+    return `<details class="ox"><summary><span>Giornata ${num(h.m.day)} <small>${res}</small></span><b class="${tot < -1e-9 ? 'dn' : 'up'}">${Math.abs(tot) < 1e-9 ? '0' : sg(tot)}</b><i>${o1(h.pre)} → ${o1(h.ovr)}</i></summary><div class="ox-b">${rows.join('')}<div class="tot"><span>Totale</span><b>${Math.abs(tot) < 1e-9 ? '0' : sg(tot)}</b></div></div></details>`;
+  };
+  const hs = [...s.hist].reverse(), recent = hs.slice(0, 6).map(one).join(''), older = hs.slice(6).map(one).join('');
+  return how + recent + (older ? `<details class="ox-more"><summary>Gare precedenti (${hs.length - 6})</summary>${older}</details>` : '');
+}
 function renderMe(){
   const el = $('#me'); if(!el) return;
   const ae = document.activeElement; if(ae && typeof ae.id === 'string' && /^pf2-/.test(ae.id)) return;   /* mentre scrivi la scheda la pagina non si ridisegna */
@@ -4707,6 +4783,7 @@ function renderMe(){
       <div class="row"><button class="btn sm" data-open-player="${s.pid}">Apri figurina</button><button class="btn sm ghost" data-action="acct-open">Gestisci account</button></div></div></div>
     <div class="me-grid">
       <section class="glass me-sec wide"><h3>📈 Andamento OVR</h3>${ovrChartHTML(s)}</section>
+      <section class="glass me-sec wide"><h3>🔍 Overall spiegato</h3>${ovrExplainHTML(s)}</section>
       <section class="glass me-sec"><h3>⬆️ Prossimo livello</h3>${tierBox}</section>
       <section class="glass me-sec"><h3>📊 Forma recente</h3>${form}</section>
       <section class="glass me-sec"><h3>⭐ La tua miglior partita</h3>${bestBox}</section>
@@ -7775,6 +7852,10 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.7.8', date:'2026-10-17', items:[
+    `🔍 In “Io” c’è “Overall spiegato”: per ogni gara vedi da dove partivi, cosa ti ha fatto salire o scendere (vittoria, gol, assist, autogol, voti dei compagni…) e dove sei arrivato. Così sai sempre perché il tuo overall è cambiato.`,
+    `⚔️ Nella gara in programma i due capitani si sfidano: le loro figurine in grande, una contro l’altra, con il VS in mezzo. Toccandole si apre la scheda.`
+  ] },
   { v:'1.7.7', date:'2026-10-17', items:[
     `🔒 Più sicurezza, senza niente da fare per voi: il codice di ogni giocatore ora è protetto meglio, l’app non si blocca più con dati sbagliati e il sito non compare più su Google.`,
     `✨ Le carte Oro e Diamante hanno una luce nuova, più pulita, e tutta l’app scorre molto più fluida, soprattutto sui telefoni meno recenti.`,

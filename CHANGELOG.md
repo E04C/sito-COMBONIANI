@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.8
+- Io: nuova sezione "Overall spiegato" (sola lettura). `ovrDelta` ora poggia su `ovrParts`, che restituisce anche il dettaglio (vittoria/sconfitta, gol e assist con moltiplicatore di ruolo, premio di reparto, autogol, tetti, voti dei compagni, ritardo, limite 50-99); `computeStats` lo salva in `hist[].parts`. Gli OVR sono identici a prima (verificato su tutti i giocatori e su 27.648 combinazioni) e le voci si sommano esattamente alla variazione reale.
+- Gara in programma (Resoconto): i capitani si sfidano con le figurine in grande e il VS in mezzo, al posto delle magliette; sotto restano le scritte Bianchi e Neri e il nome del capitano. Nessun nuovo campo nel database.
+
 ## 1.7.7
 - Sicurezza senza passaggi per gli utenti: nel database il codice giocatore è ora `{ s, h2, v:2 }` con `h2` = SHA-256 dell'hash che resta sul telefono (prima l'hash letto dal database bastava per entrare come quel giocatore); i record vecchi `{ s, h, v:1 }` si aggiornano da soli, con lo stesso salt, alla prossima apertura del giocatore e i telefoni già collegati restano validi. Dati sporchi (nomi non testuali, id come `constructor`, date e orari con codice, foto che non sono immagini) scartati o resi innocui solo in memoria; ogni sezione si disegna per conto suo e un errore all'avvio svuota la cache invece di bloccare l'app. `meta robots`, `robots.txt` e `_headers` (noindex, nosniff, niente incorniciamento, referrer e permessi ridotti).
 - Carte Oro e Diamante: nuovo foil con sole sfumature trasparenti (via color-dodge, maschere, filtri e animazioni infinite nella griglia); la luce segue l'inclinazione solo sulla figurina aperta. Le variabili della luce passano da `--tx/--ty` (che si scontravano con il colore del testo e rendevano grigi i numeri delle figurine) a `--lx/--ly`.
