@@ -223,6 +223,10 @@ table.cls{width:100%;border-collapse:separate;border-spacing:0;font-variant-nume
 .r1 .pos{color:var(--gold)} .r2 .pos{color:#d6dbe4} .r3 .pos{color:#e08a3a}
 .pl-name{display:block;font-weight:800;font-size:14.5px;line-height:1.15;max-width:170px;overflow:hidden;text-overflow:ellipsis}
 .pl-sub{display:flex;gap:6px;margin-top:3px}
+.me-tag{align-self:center;padding:1px 7px;border-radius:999px;background:var(--or);color:#1a0b02;font:800 10.5px/1.5 var(--body);letter-spacing:.02em}
+.cls tbody tr.me:not([class*="rw-"]) td{background:rgba(249,115,22,.17)}
+.cls tbody tr.me:not([class*="rw-"]) td.c-pl{background:#2b1709;box-shadow:inset 4px 0 0 var(--or)}
+.mfig-w.me::after{content:"TU";position:absolute;left:22px;top:-9px;z-index:5;padding:1px 10px;border-radius:999px;background:var(--or);color:#1a0b02;font:800 11px/1.6 var(--body);letter-spacing:.04em;box-shadow:0 3px 10px rgba(249,115,22,.5);pointer-events:none}
 .legend{margin:0;padding:8px 18px 16px;color:var(--mu2);font-size:12px;line-height:1.5}
 .boards{display:grid;gap:16px;align-content:start}
 @media (min-width:640px) and (max-width:1099px){.boards{grid-template-columns:1fr 1fr}}
@@ -2994,7 +2998,7 @@ function render(){
   attachPhotos();
   STATS = computeStats();
   document.body.classList.toggle('is-admin', ui.admin);
-  $('#lock-label').textContent = ui.admin ? 'Admin' : 'Ospite';
+  { const me = myPid(); $('#lock-label').textContent = ui.admin ? 'Admin' : (me && store.players[me] ? pname(me).split(/\s+/)[0].slice(0, 12) : 'Ospite'); }
   $('#lock-shackle').setAttribute('d', ui.admin ? 'M8 11V8a4 4 0 0 1 7.5-2' : 'M8 11V8a4 4 0 0 1 8 0v3');
   const cOn = feat('casino');
   $('#nav-casino').hidden = !cOn;
@@ -3121,7 +3125,7 @@ function tableHTML(){
     const s = ui.sort.key === k ? (ui.sort.dir === 1 ? 'ascending' : 'descending') : 'none';
     return `<th class="${cls}" aria-sort="${s}" title="${t}"><button data-sort="${k}">${l}</button></th>`;
   };
-  const k = ui.sort.key, cols = cv.cols.map(c => COLS.find(x => x.k === c));
+  const k = ui.sort.key, cols = cv.cols.map(c => COLS.find(x => x.k === c)), meId = myPid();
   const cell = (c, s) => {
     const on = k === c.k ? 'on' : '';
     if(c.k === 'ovr') return `<td class="ov">${ovrPlate(s.ovr, 'pill')}</td>`;
@@ -3130,8 +3134,8 @@ function tableHTML(){
     return `<td class="${big}${on}">${val}</td>`;
   };
   return `<table class="cls"><thead><tr>${th(cv.sort, '#  Giocatore', gen ? 'Posizione in classifica' : 'Riordina', 'c-pl')}${cols.map(c => th(c.k, c.l, c.t)).join('')}</tr></thead><tbody>${
-    rows.map((s, i) => `<tr class="r${s.rank} ${gen && STATS.matches.length && s.rank <= 3 ? 'pod' + s.rank : ''}${rowCls(s.pid) ? ' ' + rowCls(s.pid) : ''}" data-open-player="${s.pid}">
-      <td class="c-pl"><div class="pl-cell"><span class="pos">${gen ? s.rank : i + 1}</span>${mvArrow(s)}${avatar(s.p, 'sm')}<span><span class="pl-name">${nameHTML(s.pid)}</span><span class="pl-sub">${roleChip(s.p.role)}<span class="foot">${esc(FEET[s.p.foot] || '')}</span></span></span></div></td>
+    rows.map((s, i) => `<tr class="r${s.rank} ${gen && STATS.matches.length && s.rank <= 3 ? 'pod' + s.rank : ''}${rowCls(s.pid) ? ' ' + rowCls(s.pid) : ''}${s.pid === meId ? ' me' : ''}" data-open-player="${s.pid}">
+      <td class="c-pl"><div class="pl-cell"><span class="pos">${gen ? s.rank : i + 1}</span>${mvArrow(s)}${avatar(s.p, 'sm')}<span><span class="pl-name">${nameHTML(s.pid)}</span><span class="pl-sub">${roleChip(s.p.role)}<span class="foot">${esc(FEET[s.p.foot] || '')}</span>${s.pid === meId ? '<span class="me-tag">Tu</span>' : ''}</span></span></div></td>
       ${cols.map(c => cell(c, s)).join('')}
     </tr>`).join('')}</tbody></table>`;
 }
@@ -3160,7 +3164,8 @@ function renderPlayers(){
     .sort((a, b) => cmp(a, b) || a.name.localeCompare(b.name, 'it'));
   $('#pcount').textContent = `${ps.length} ${ps.length === 1 ? 'giocatore' : 'giocatori'}${ui.pRole === 'CEN' ? ' (Jolly inclusi)' : ''}`;
   const key = { ovr:null, g:'g', a:'a', pres:'pres', az:null }[ui.pSort];
-  grid.innerHTML = ps.map(s => `<div class="mfig-w"><button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}${roleChip(s.p.role)}${ovrPlate(s.ovr, 'sm')}${holoSpan(s.ovr)}${cardFx(s.pid).hx}${cardFx(s.pid).frm}<span class="mfig-b"><span class="mfig-n">${nameHTML(s.pid)}</span><span class="mfig-s"><span${key === 'g' ? ' style="color:var(--or)"' : ''}><b>${s.g}</b>gol</span><span${key === 'a' ? ' style="color:var(--or)"' : ''}><b>${s.a}</b>ass</span><span${key === 'pres' ? ' style="color:var(--or)"' : ''}><b>${s.pres}</b>pres</span></span></span></span></span></button><button type="button" class="mfig-turn" data-action="fig-back" data-pid="${s.pid}" aria-label="Retro della figurina di ${esc(s.name)}" title="Retro della figurina">↻</button></div>`).join('')
+  const meId = myPid();
+  grid.innerHTML = ps.map(s => `<div class="mfig-w${s.pid === meId ? ' me' : ''}"><button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}${roleChip(s.p.role)}${ovrPlate(s.ovr, 'sm')}${holoSpan(s.ovr)}${cardFx(s.pid).hx}${cardFx(s.pid).frm}<span class="mfig-b"><span class="mfig-n">${nameHTML(s.pid)}</span><span class="mfig-s"><span${key === 'g' ? ' style="color:var(--or)"' : ''}><b>${s.g}</b>gol</span><span${key === 'a' ? ' style="color:var(--or)"' : ''}><b>${s.a}</b>ass</span><span${key === 'pres' ? ' style="color:var(--or)"' : ''}><b>${s.pres}</b>pres</span></span></span></span></span></button><button type="button" class="mfig-turn" data-action="fig-back" data-pid="${s.pid}" aria-label="Retro della figurina di ${esc(s.name)}" title="Retro della figurina">↻</button></div>`).join('')
     || `<p class="mu" style="grid-column:1/-1">Nessun giocatore${ui.pRole !== 'ALL' ? ' ' + ui.pRole : ''}${raw ? ` corrisponde a “${esc(raw)}”` : ' in questo ruolo'}.</p>`;
 }
 
