@@ -964,6 +964,9 @@ button.rec-who{cursor:pointer}
 .tilt{transition:transform .14s linear}
 .tilt.on-holo{transform:rotateY(calc(var(--lx,0) * 9deg)) rotateX(calc(var(--ly,0) * -9deg));touch-action:none}
 .face-front,.face-back{-webkit-backface-visibility:hidden;backface-visibility:hidden}
+/* Figurina girata: il retro sta fermo (niente inclinazione) e la faccia nascosta sparisce a metà giro, così muovendo il telefono il retro non sfarfalla né si sovrappone al fronte */
+.flip.turned .tilt.on-holo{transform:none;touch-action:pan-y}
+.flip.turned .face-front,.flip:not(.turned):not(.peek) .face-back{visibility:hidden;transition:visibility 0s .3s}
 .stage3d .fig-glow{filter:none}                       /* un filtro sulla faccia rompe retro e fusione dei colori in 3D */
 .fig-shadow{position:absolute;left:3%;right:3%;top:2%;bottom:2%;border-radius:34px;pointer-events:none;transform:translateZ(-2px);
   box-shadow:0 30px 60px rgba(0,0,0,.65),0 0 calc(var(--gr) * 1.8) var(--glow)}
