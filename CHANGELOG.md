@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.2
+- «Best Comeback» e «Il Downfall» ricalcolati: contano i punti di OVR guadagnati (persi) in gare consecutive senza che l'OVR si muova nel verso opposto. Prima si misurava dal punto più basso al picco successivo anche con cali in mezzo. Una gara con variazione nulla (es. sconfitta a OVR al minimo o senza perdita) non interrompe la serie; una che muove l'OVR al contrario sì (`swing` in `computeRecords`).
+- Primati storici: a parità in cima il primato resta a chi lo teneva già, cioè a chi lo ha raggiunto per primo (`recPick`); cambia mano solo se qualcuno supera davvero il detentore. Il detentore precedente si legge dalla storia gara per gara (`trophyHistory` ora salva `hold` per passo); fuori dalla storia si consulta l'ultimo passo, solo se c'è un pareggio in cima. I primati «di evento» (manita, mida, ecc.) erano già a favore di chi arriva prima. Nessun dato o percorso del database cambia.
+- Possibile effetto alla prima apertura: dove i detentori cambiano per le nuove regole, chi apre l'app vede il solito avviso di primato cambiato.
+
 ## 1.8.1
 - Nuova targa «Inarrestabile» (`winRun` su `hist`): la serie più lunga di vittorie di fila in stagione, da 2 in su; il pareggio la interrompe. Parità: serie in corso, poi più vittorie. Come le altre targhe, massimo 2 a testa.
 - Figurine Oro e Argento con cornice sottile e pulita (oro caldo con doppia linea, argento freddo con una linea); il bordo è circa la metà di prima e c'è una riga libera in fondo per il tasto di rotazione.

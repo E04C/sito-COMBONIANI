@@ -4949,6 +4949,24 @@ function casinoRecords(){
   }
   return { colp, kami };
 }
+/* Primati: se più candidati sono pari in cima, il primato resta a chi lo teneva già (cioè a chi lo ha raggiunto per primo); si cambia solo se qualcuno supera davvero il detentore.
+   Il detentore precedente viene dalla storia gara per gara (trophyHistory): dentro la storia arriva da REC_PREV, fuori dalla storia si legge dall'ultimo passo. */
+let REC_PREV = null, HIST_BUSY = false;
+function recPrevHolder(key){
+  if(REC_PREV) return REC_PREV[key];
+  if(HIST_BUSY) return undefined;
+  const h = trophyHistory(), last = h[h.length - 1];
+  return last && last.hold ? last.hold[key] : undefined;
+}
+function recPick(key, arr, eq, idOf){
+  const best = arr[0];
+  if(!best) return best;
+  const tied = arr.filter(x => x === best || eq(x, best));
+  if(tied.length < 2) return best;
+  const prev = recPrevHolder(key);
+  return tied.find(x => idOf(x) === prev) || best;
+}
+const RID = { pid:s => s.pid, pair:e => e[0].replace('|', '+') }, near = (x, y) => Math.abs(x - y) < 1e-9;
 function computeRecords(){
   const known = pid => !!store.players[pid];
   const dept = pid => store.players[pid]?.role;
@@ -5018,31 +5036,35 @@ function computeRecords(){
   }
   const L = STATS.list, alpha = (a, b) => a.name.localeCompare(b.name, 'it');
   const nameOfPair = k => k.split('|').map(id => pname(id)).sort((x, y) => x.localeCompare(y, 'it')).join('');
-  const cecchino = L.filter(s => s.pres >= 3).sort((a, b) => (b.avg - a.avg) || (b.g - a.g) || alpha(a, b))[0];
-  const fortino = L.filter(s => isDef(s) && s.pres >= 3).sort((a, b) => (conc[a.pid] - conc[b.pid]) || (b.pres - a.pres) || alpha(a, b))[0];
-  const inarr = L.filter(s => streak[s.pid]?.best > 0).sort((a, b) => (streak[b.pid].best - streak[a.pid].best) || alpha(a, b))[0];
-  const mina = L.filter(s => s.p.role !== 'ATT' && s.g > 0).sort((a, b) => (b.g - a.g) || (a.pres - b.pres) || alpha(a, b))[0];
-  /* Scalata di fila: dal punto più basso al picco successivo (Comeback) o dal picco al punto più basso successivo (Downfall), partendo dal 75 iniziale */
+  const cecchino = recPick('cecchino', L.filter(s => s.pres >= 3).sort((a, b) => (b.avg - a.avg) || (b.g - a.g) || alpha(a, b)), (x, y) => near(x.avg, y.avg) && x.g === y.g, RID.pid);
+  const fortino = recPick('fortino', L.filter(s => isDef(s) && s.pres >= 3).sort((a, b) => (conc[a.pid] - conc[b.pid]) || (b.pres - a.pres) || alpha(a, b)), (x, y) => conc[x.pid] === conc[y.pid] && x.pres === y.pres, RID.pid);
+  const inarr = recPick('inarr', L.filter(s => streak[s.pid]?.best > 0).sort((a, b) => (streak[b.pid].best - streak[a.pid].best) || alpha(a, b)), (x, y) => streak[x.pid].best === streak[y.pid].best, RID.pid);
+  const mina = recPick('mina', L.filter(s => s.p.role !== 'ATT' && s.g > 0).sort((a, b) => (b.g - a.g) || (a.pres - b.pres) || alpha(a, b)), (x, y) => x.g === y.g && x.pres === y.pres, RID.pid);
+  /* Scalata (o caduta) di fila: gare consecutive in cui l'OVR non scende (non sale per la caduta). Una gara che non cambia l'OVR non interrompe la serie; una che lo muove nel verso opposto sì.
+     Si contano i punti guadagnati (persi) dall'inizio alla fine della serie, quindi una salita con un calo in mezzo non vale come una salita di fila. */
   const swing = (s, dir) => {
-    const v = [OVR_START, ...s.hist.map(x => x.ovr)].map(x => x * dir);
-    let lo = 0, best = null;
-    for(let k = 1; k < v.length; k++){
-      if(v[k] < v[lo]){ lo = k; continue; }
-      const d = v[k] - v[lo];
-      if(d > 1e-9 && (!best || d > best.d + 1e-9)) best = { d, lo, hi:k };
+    let cur = null, best = null;
+    for(let i = 0; i < s.hist.length; i++){
+      const x = s.hist[i], g = (x.ovr - x.pre) * dir;
+      if(g > 1e-9){
+        if(!cur) cur = { lo:i, d:0 };
+        cur.d += g; cur.hi = i;
+        if(!best || cur.d > best.d + 1e-9) best = { d:cur.d, lo:cur.lo, hi:cur.hi };
+      }else if(g < -1e-9) cur = null;
     }
     if(!best) return null;
-    const from = v[best.lo] * dir, to = v[best.hi] * dir;
-    return { pid:s.pid, s, d:best.d, from:roundOvr(from), to:roundOvr(to), dr:Math.abs(roundOvr(to) - roundOvr(from)), d1:num(s.hist[best.lo].m.day), d2:num(s.hist[best.hi - 1].m.day) };
+    const from = s.hist[best.lo].pre, to = s.hist[best.hi].ovr;
+    return { pid:s.pid, s, d:best.d, from:roundOvr(from), to:roundOvr(to), dr:Math.abs(roundOvr(to) - roundOvr(from)), d1:num(s.hist[best.lo].m.day), d2:num(s.hist[best.hi].m.day) };
   };
-  const come = L.map(s => swing(s, 1)).filter(Boolean).sort((a, b) => (b.dr - a.dr) || (b.d - a.d) || (b.to - a.to) || alpha(a.s, b.s))[0];
-  const down = L.map(s => swing(s, -1)).filter(Boolean).sort((a, b) => (b.dr - a.dr) || (b.d - a.d) || (a.to - b.to) || alpha(a.s, b.s))[0];
-  const eroe = L.filter(s => s.votesRx >= 1).sort((a, b) => (b.votesRx - a.votesRx) || (b.mvp - a.mvp) || alpha(a, b))[0];
-  const oro = Object.entries(pairs).filter(([, p]) => p.v > 0).sort(([ka, a], [kb, b]) => (b.v - a.v) || (b.v / b.n - a.v / a.n) || (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it'))[0];
-  const derby = Object.entries(opp).sort(([ka, a], [kb, b]) => (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it'))[0];
-  const bunk = Object.entries(bunker).filter(([, b]) => b.n >= 2).sort(([ka, a], [kb, b]) => (a.c / a.n - b.c / b.n) || (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it'))[0];
-  const ritard = L.filter(s => s.ritardi > 0).sort((a, b) => (b.ritardi - a.ritardi) || ((b.ritardi / b.pres) - (a.ritardi / a.pres)) || alpha(a, b))[0];
-  const intesa = Object.entries(combo).sort(([ka, a], [kb, b]) => (b.c - a.c) || ((b.c / ((pairs[kb] && pairs[kb].n) || 1)) - (a.c / ((pairs[ka] && pairs[ka].n) || 1))) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it'))[0];
+  const swEq = (x, y) => x.dr === y.dr && near(x.d, y.d);
+  const come = recPick('come', L.map(s => swing(s, 1)).filter(Boolean).sort((a, b) => (b.dr - a.dr) || (b.d - a.d) || (b.to - a.to) || alpha(a.s, b.s)), swEq, RID.pid);
+  const down = recPick('down', L.map(s => swing(s, -1)).filter(Boolean).sort((a, b) => (b.dr - a.dr) || (b.d - a.d) || (a.to - b.to) || alpha(a.s, b.s)), swEq, RID.pid);
+  const eroe = recPick('eroe', L.filter(s => s.votesRx >= 1).sort((a, b) => (b.votesRx - a.votesRx) || (b.mvp - a.mvp) || alpha(a, b)), (x, y) => x.votesRx === y.votesRx && x.mvp === y.mvp, RID.pid);
+  const oro = recPick('oro', Object.entries(pairs).filter(([, p]) => p.v > 0).sort(([ka, a], [kb, b]) => (b.v - a.v) || (b.v / b.n - a.v / a.n) || (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([, a], [, b]) => a.v === b.v && near(a.v / a.n, b.v / b.n) && a.n === b.n, RID.pair);
+  const derby = recPick('derby', Object.entries(opp).sort(([ka, a], [kb, b]) => (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([, a], [, b]) => a.n === b.n, RID.pair);
+  const bunk = recPick('bunk', Object.entries(bunker).filter(([, b]) => b.n >= 2).sort(([ka, a], [kb, b]) => (a.c / a.n - b.c / b.n) || (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([, a], [, b]) => near(a.c / a.n, b.c / b.n) && a.n === b.n, RID.pair);
+  const ritard = recPick('rit', L.filter(s => s.ritardi > 0).sort((a, b) => (b.ritardi - a.ritardi) || ((b.ritardi / b.pres) - (a.ritardi / a.pres)) || alpha(a, b)), (x, y) => x.ritardi === y.ritardi && near(x.ritardi / x.pres, y.ritardi / y.pres), RID.pid);
+  const intesa = recPick('intesa', Object.entries(combo).sort(([ka, a], [kb, b]) => (b.c - a.c) || ((b.c / ((pairs[kb] && pairs[kb].n) || 1)) - (a.c / ((pairs[ka] && pairs[ka].n) || 1))) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([ka, a], [kb, b]) => a.c === b.c && near(a.c / ((pairs[ka] && pairs[ka].n) || 1), b.c / ((pairs[kb] && pairs[kb].n) || 1)), RID.pair);
   const { colp, kami } = casinoRecords();
   return { colp, kami, manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, ritard, bunkerAny:Object.keys(bunker).length };
 }
@@ -5072,16 +5094,19 @@ function trophyHistory(){
   if(histCache.key === key) return histCache.data;
   const keep = STATS, steps = [];
   try{
+    HIST_BUSY = true;
     for(let k = 1; k <= keep.matches.length; k++){
       STATS = computeStats(k);
+      REC_PREV = k > 1 ? steps[k - 2].hold : null;
       const cards = buildRecordCards(computeRecords(), k);
       steps.push({
+        hold:Object.fromEntries(cards.filter(c => !c.lock).map(c => [c.key, recHolder(c)])),
         m:STATS.matches[k - 1],
         plaques:Object.fromEntries(Object.entries(STATS.plaques).map(([id, h]) => [id, h.pid])),
         recs:Object.fromEntries(cards.map(c => [c.key, c.lock ? null : { holder:recHolder(c), value:c.value, txt:recText(c) }]))
       });
     }
-  }finally{ STATS = keep; }
+  }finally{ STATS = keep; REC_PREV = null; HIST_BUSY = false; }
   histCache = { key, data:steps };
   return steps;
 }
@@ -5135,7 +5160,7 @@ function renderTrophies(){
   }).join('');
   const tt = ui.tTab === 'rec' ? 'rec' : 'plq';
   const ttabs = `<div class="sub-tabs" role="tablist" aria-label="Trofei">${[['plq', 'Targhe'], ['rec', 'Trofei storici']].map(([k, l]) => `<button type="button" role="tab" class="sub-tab ${k === tt ? 'on' : ''}" aria-selected="${k === tt}" data-ttab="${k}">${l}</button>`).join('')}</div>`;
-  el.innerHTML = `${ttabs}<div class="glass th-hero"><h2>🏆 Trofei & Primati</h2><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa meglio.</p></div>
+  el.innerHTML = `${ttabs}<div class="glass th-hero"><h2>🏆 Trofei & Primati</h2><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa davvero meglio: a pari merito non cambiano mano.</p></div>
     ${tt === 'plq' ? `<div class="th-sec"><h3>Le ${PL.length} targhe stagionali</h3><span>Leader in tempo reale · Stagione 26/27</span></div>
     <div class="plk-grid">${plk}</div>` : `<div class="th-sec"><h3>Bacheca dei primati storici</h3><span>${nM} ${nM === 1 ? 'gara analizzata' : 'gare analizzate'}</span></div>
     <div class="rec-grid">${recs}</div>`}`;
@@ -5166,10 +5191,10 @@ function buildRecordCards(R, nM){
       : { icon:'🔥', title:'Inarrestabile', desc:'Striscia più lunga di vittorie consecutive.', lock:need('Ancora nessuna vittoria') },
     R.mina ? { icon:'💣', title:'Mina Vagante', desc:'Il non-attaccante con più gol segnati.', pid:R.mina.pid, sub:`${ROLES[R.mina.p.role] || 'Jolly'}, ${R.mina.pres} presenze`, value:R.mina.g, unit:'gol totali' }
       : { icon:'💣', title:'Mina Vagante', desc:'Il non-attaccante con più gol segnati.', lock:need('Nessun gol da un non-attaccante') },
-    R.come ? { icon:'🧗', title:'Best Comeback', desc:'La maggiore scalata di OVR di fila: dal punto più basso al picco successivo.', pid:R.come.pid, sub:`da ${R.come.from} a ${R.come.to}, ${R.come.d1 === R.come.d2 ? 'G' + R.come.d1 : 'dalla G' + R.come.d1 + ' alla G' + R.come.d2}`, value:'+' + R.come.dr, unit:'OVR di scalata' }
-      : { icon:'🧗', title:'Best Comeback', desc:'La maggiore scalata di OVR di fila: dal punto più basso al picco successivo.', lock:need('Nessuna scalata di OVR finora') },
-    R.down ? { icon:'📉', title:'Il Downfall', desc:'La maggiore caduta di OVR di fila: dal picco al punto più basso successivo.', pid:R.down.pid, sub:`da ${R.down.from} a ${R.down.to}, ${R.down.d1 === R.down.d2 ? 'G' + R.down.d1 : 'dalla G' + R.down.d1 + ' alla G' + R.down.d2}`, value:'-' + R.down.dr, unit:'OVR di caduta' }
-      : { icon:'📉', title:'Il Downfall', desc:'La maggiore caduta di OVR di fila: dal picco al punto più basso successivo.', lock:need('Nessuna caduta di OVR finora') },
+    R.come ? { icon:'🧗', title:'Best Comeback', desc:'La maggiore scalata di OVR di fila: gare consecutive in cui l’OVR non scende (una gara che non toglie punti non interrompe la serie).', pid:R.come.pid, sub:`da ${R.come.from} a ${R.come.to}, ${R.come.d1 === R.come.d2 ? 'G' + R.come.d1 : 'dalla G' + R.come.d1 + ' alla G' + R.come.d2}`, value:'+' + R.come.dr, unit:'OVR di scalata' }
+      : { icon:'🧗', title:'Best Comeback', desc:'La maggiore scalata di OVR di fila: gare consecutive in cui l’OVR non scende (una gara che non toglie punti non interrompe la serie).', lock:need('Nessuna scalata di OVR finora') },
+    R.down ? { icon:'📉', title:'Il Downfall', desc:'La maggiore caduta di OVR di fila: gare consecutive in cui l’OVR non sale (una gara che non dà punti non interrompe la serie).', pid:R.down.pid, sub:`da ${R.down.from} a ${R.down.to}, ${R.down.d1 === R.down.d2 ? 'G' + R.down.d1 : 'dalla G' + R.down.d1 + ' alla G' + R.down.d2}`, value:'-' + R.down.dr, unit:'OVR di caduta' }
+      : { icon:'📉', title:'Il Downfall', desc:'La maggiore caduta di OVR di fila: gare consecutive in cui l’OVR non sale (una gara che non dà punti non interrompe la serie).', lock:need('Nessuna caduta di OVR finora') },
     R.eroe ? { icon:'🦸', title:'Eroe del Popolo', desc:'Più voti MVP ricevuti dai compagni. Parità: più titoli MVP.', pid:R.eroe.pid, sub:`${R.eroe.mvp} ${R.eroe.mvp === 1 ? 'titolo' : 'titoli'} MVP`, value:R.eroe.votesRx, unit:R.eroe.votesRx === 1 ? 'voto MVP' : 'voti MVP' }
       : { icon:'🦸', title:'Eroe del Popolo', desc:'Più voti MVP ricevuti dai compagni. Parità: più titoli MVP.', lock:need('Ancora nessun voto MVP') },
     R.goleada ? { icon:'⚡', title:'Goleada Storica', desc:'La partita con più gol complessivi.', label:`Bianchi ${R.goleada.sc.w} – ${R.goleada.sc.b} Neri`, sub:matchWhen(R.goleada.m), value:R.goleada.total, unit:'gol totali' }
