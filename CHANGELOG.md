@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.8.3
+- Tolto del tutto il ruolo JOLLY: non c'è più nel form giocatore, nelle etichette, nei filtri, nell'import Excel (un ruolo sconosciuto diventa CEN), nei moltiplicatori e nell'ordine dei ruoli. Un giocatore con un ruolo non valido è trattato come CEN (moltiplicatore 1, come prima il Jolly): nessun numero cambia. Nessun giocatore era Jolly.
+
 ## 1.8.2
 - «Best Comeback» e «Il Downfall» ricalcolati: contano i punti di OVR guadagnati (persi) in gare consecutive senza che l'OVR si muova nel verso opposto. Prima si misurava dal punto più basso al picco successivo anche con cali in mezzo. Una gara con variazione nulla (es. sconfitta a OVR al minimo o senza perdita) non interrompe la serie; una che muove l'OVR al contrario sì (`swing` in `computeRecords`).
 - Primati storici: a parità in cima il primato resta a chi lo teneva già, cioè a chi lo ha raggiunto per primo (`recPick`); cambia mano solo se qualcuno supera davvero il detentore. Il detentore precedente si legge dalla storia gara per gara (`trophyHistory` ora salva `hold` per passo); fuori dalla storia si consulta l'ultimo passo, solo se c'è un pareggio in cima. I primati «di evento» (manita, mida, ecc.) erano già a favore di chi arriva prima. Nessun dato o percorso del database cambia.

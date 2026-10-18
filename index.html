@@ -146,7 +146,6 @@ option{background:#0c1018;color:var(--tx)}
 
 /* ---------- Chips, avatar, photo layers ---------- */
 .role{display:inline-flex;align-items:center;height:19px;padding:0 6px;border-radius:5px;font:800 10.5px/1 var(--body);letter-spacing:.04em;background:var(--or-soft);color:var(--or);border:1px solid var(--line);white-space:nowrap}
-.role.JOLLY{color:#fde68a;background:linear-gradient(90deg,rgba(249,115,22,.2),rgba(251,191,36,.2));border-color:rgba(251,191,36,.35)}
 .foot{font:700 11px/19px var(--body);color:var(--mu)}
 .av{flex:none;display:inline-grid;place-items:center;border-radius:10px;background:#141a26 center 18%/cover no-repeat;border:1px solid var(--hair);font:italic 800 14px var(--disp);color:var(--or)}
 .av-xs{width:26px;height:26px;border-radius:8px;font-size:12px}
@@ -1698,7 +1697,6 @@ body.theme-casino .rec.mine{border-color:rgba(245,197,66,.8);box-shadow:inset 0 
 body.theme-casino .plk.mine{box-shadow:0 0 0 1px var(--or),0 0 24px rgba(245,197,66,.25)}
 body.theme-casino .av{background-color:#0d6e40}
 body.theme-casino .ph-ini{color:rgba(245,197,66,.6)}
-body.theme-casino .role.JOLLY{background:linear-gradient(90deg,rgba(74,222,128,.25),rgba(251,191,36,.25))}
 body.theme-casino .vbox{background:linear-gradient(180deg,rgba(245,197,66,.1),rgba(255,255,255,.03))}
 body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 @media (prefers-reduced-motion:reduce){body{transition:none}.bg::after,body::after{transition:none}}
@@ -1834,7 +1832,6 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
             <input type="radio" name="pf-role" id="r-ATT" value="ATT"><label for="r-ATT">ATT</label>
             <input type="radio" name="pf-role" id="r-CEN" value="CEN"><label for="r-CEN">CEN</label>
             <input type="radio" name="pf-role" id="r-DIF" value="DIF"><label for="r-DIF">DIF</label>
-            <input type="radio" name="pf-role" id="r-JOLLY" value="JOLLY"><label for="r-JOLLY">JOLLY</label>
           </div>
           <span class="lbl">Ruoli sulla carta <small class="mu">(al massimo 2)</small></span>
           <div class="seg" id="pf-cp">
@@ -1999,7 +1996,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.8.2';
+const APP_VERSION = '1.8.3';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -2024,11 +2021,11 @@ const FEATURES = [
   { k:'messages', name:'Messaggi',                    desc:'La finestra per scrivere all’organizzatore e la zona Richieste nel pannello admin.' }
 ];
 const CACHE_KEY = 'cmb2627_cache_v1';
-const ROLES = { ATT:'Attaccante', CEN:'Centrocampista', DIF:'Difensore', JOLLY:'Jolly' };
+const ROLES = { ATT:'Attaccante', CEN:'Centrocampista', DIF:'Difensore' };
 const FEET = { DX:'Destro', SX:'Sinistro', AMB:'Ambidestro' };
 const OG_PEN = 1;   /* punti tolti per ogni autogol (OVR, premi di reparto, Uomo Partita) */
 const OVR_START = 75, OVR_MIN = 50, OVR_MAX = 99, OVR_GAIN_CAP = 5, OVR_LOSS_CAP = 3;
-const ROLE_MULT = { ATT:0.8, CEN:1, JOLLY:1, DIF:1.2 };
+const ROLE_MULT = { ATT:0.8, CEN:1, DIF:1.2 };
 /* Half-up solo sull'OVR finale: .00-.49 per difetto, .50-.99 per eccesso (epsilon contro gli errori float) */
 const roundOvr = x => Math.floor(Math.round(x * 1e6) / 1e6 + 0.5);
 const fmtD = d => { const v = Math.round(d * 100) / 100; const t = Number.isInteger(v) ? v.toFixed(1) : String(v); return (v > 0 ? '+' : '') + t; };
@@ -2104,7 +2101,7 @@ const MAX_START = 11, MAX_BENCH = 2;                          /* titolari e gioc
 const MAX_CALLED = 2 * (MAX_START + MAX_BENCH);               /* 26 giocatori in distinta; 22 per una gara in programma */
 const fmSize = k => (FORMATIONS[k] || []).reduce((t, v) => t + v, 0);
 const fmOptions = n => Object.keys(FORMATIONS).filter(k => fmSize(k) === n);
-const ROLE_ORDER = { DIF:1, CEN:2, JOLLY:2.5, ATT:3 };
+const ROLE_ORDER = { DIF:1, CEN:2, ATT:3 };
 /* [valore, unità singolare, plurale, soglia "in pericolo", decimali] */
 const PLQ_GAP = {
   noexcuses:[s => s.pres, 'presenza', 'presenze', 1, 0], cecchino:[s => s.avg, 'di media', 'di media', 0.2, 2],
@@ -2659,7 +2656,7 @@ const voteW = m => (m && m.vote2 ? VOTE_W2 : VOTE_W);   /* le gare con vote2 (nu
    Punti = gol + ½ assist, senza bonus né malus di vittoria o sconfitta. A pari punti entra chi ha il ruolo con priorità
    difensore > centrocampista > attaccante, poi più gol, poi OVR prima della gara. Se meno di 4 giocatori hanno punti,
    i posti restanti vanno ai più alti per OVR prima della gara. Vale solo per le gare con top4:1 (le precedenti restano com'erano). */
-const ROLE_PRI = { DIF:0, CEN:1, JOLLY:1, ATT:2 };
+const ROLE_PRI = { DIF:0, CEN:1, ATT:2 };
 const mvpPre = m => { const lg = (m.id && STATS && STATS.log && STATS.log[m.id]) || {}; return pid => (lg[pid] && lg[pid].pre != null) ? lg[pid].pre : (STATS.byId[pid]?.ovr ?? OVR_START); };
 function mvpCands(m, preFn){
   const pf = preFn || mvpPre(m), rows = [];
@@ -2780,7 +2777,7 @@ function rankCmp(a, b){
 /* Motore OVR v3. Delta senza arrotondamenti; tetti +5 / -3; elite >=90 rallenta la salita, riscatto <65 la accelera. */
 /* Variazione di OVR di una gara con il dettaglio di come si forma. I numeri sono quelli di sempre: ovrDelta restituisce solo il totale. */
 function ovrParts(role, ovr, c){
-  const R = ROLES[role] ? role : 'JOLLY';
+  const R = ROLES[role] ? role : 'CEN';
   const shown = roundOvr(ovr);
   let pos = 0, loss = 0;
   const vPts = c.res === 'v' ? Math.max(0, 2 - 0.1 * c.conceded) : 0, lPts = c.res === 's' ? (c.margin >= 3 ? 2 : 1) : 0;
@@ -2801,7 +2798,7 @@ function matchAwards(m){
   const best = { ATT:null, CEN:null, DIF:null };
   const dept = r => r === 'ATT' ? 'ATT' : r === 'DIF' ? 'DIF' : 'CEN';
   for(const team of ['white','black']) for(const e of effEntries(m)[team]){
-    const role = ROLES[store.players[e.pid]?.role] ? store.players[e.pid].role : 'JOLLY';
+    const role = ROLES[store.players[e.pid]?.role] ? store.players[e.pid].role : 'CEN';
     const g = num(e.g), a = num(e.a), og = num(e.og);
     const pts = (g + a * 0.5) * ROLE_MULT[role] - og * OG_PEN;
     if(pts <= 0) continue;
@@ -3063,10 +3060,10 @@ const cardPosList = v => [...new Set(String(v || '').split('/').filter(x => CARD
 function roleTag(pid, p){
   const cp = cardPosList(p && p.cardPos);
   if(!cp.length) return roleChip(p.role);
-  const k = ROLES[p.role] ? p.role : 'JOLLY';
+  const k = ROLES[p.role] ? p.role : 'CEN';
   return `<span class="role ${k} spec" title="${esc(cp.map(x => CARD_POS[x]).join(' / '))}">${cp.join('/')}</span>`;
 }
-function roleChip(r){ const k = ROLES[r] ? r : 'JOLLY'; return `<span class="role ${k}" title="${ROLES[k]}">${k}</span>`; }
+function roleChip(r){ const k = ROLES[r] ? r : 'CEN'; return `<span class="role ${k}" title="${ROLES[k]}">${k}</span>`; }
 function kit(team, cls='kit'){
   const w = team === 'white';
   return `<svg class="${cls}" viewBox="0 0 64 64" aria-hidden="true"><path d="M22 6 10 12 2 26l10 5 3-5v32h34V26l3 5 10-5-8-14-12-6c-1 5-5 8-10 8s-9-3-10-8z" fill="${w ? '#eef1f6' : '#10141d'}" stroke="${w ? '#ffffff' : '#f97316'}" stroke-width="2" stroke-linejoin="round"/><path d="M15 36h34" stroke="#f97316" stroke-width="3"/></svg>`;
@@ -3250,7 +3247,7 @@ const PSORT = {
   pres:(a, b) => (b.pres - a.pres) || (b.v - a.v),
   az:() => 0
 };
-function roleGroup(r){ return r === 'JOLLY' ? 'CEN' : (ROLES[r] ? r : 'CEN'); }
+function roleGroup(r){ return ROLES[r] ? r : 'CEN'; }
 function renderPlayers(){
   const grid = $('#pgrid');
   $$('[data-prole]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.prole === ui.pRole)));
@@ -3265,7 +3262,7 @@ function renderPlayers(){
     .filter(s => ui.pRole === 'ALL' || roleGroup(s.p.role) === ui.pRole)
     .filter(s => !q || norm(s.name).includes(q))
     .sort((a, b) => cmp(a, b) || a.name.localeCompare(b.name, 'it'));
-  $('#pcount').textContent = `${ps.length} ${ps.length === 1 ? 'giocatore' : 'giocatori'}${ui.pRole === 'CEN' ? ' (Jolly inclusi)' : ''}`;
+  $('#pcount').textContent = `${ps.length} ${ps.length === 1 ? 'giocatore' : 'giocatori'}`;
   const key = { ovr:null, g:'g', a:'a', pres:'pres', az:null }[ui.pSort];
   const meId = myPid();
   grid.innerHTML = ps.map(s => `<div class="mfig-w${s.pid === meId ? ' me' : ''}"><button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}<span class="mfig-rt">${ovrPlate(s.ovr, 'sm')}${roleTag(s.pid, s.p)}</span>${cardFx(s.pid).hx}${cardFx(s.pid).frm}<span class="mfig-b"><span class="mfig-n">${nameHTML(s.pid)}</span><span class="mfig-s">${[['gol', s.g, 'g'], ['ass', s.a, 'a'], ['pres', s.pres, 'pres'], ['vit', s.v, 'v'], ['sco', s.s, 's']].map(([l, v, k]) => `<span${key === k ? ' style="color:var(--or)"' : ''}><b>${v}</b><i>${l}</i></span>`).join('')}</span><span class="mfig-orn" aria-hidden="true"></span></span></span></span></button><button type="button" class="mfig-turn" data-action="fig-back" data-pid="${s.pid}" aria-label="Retro della figurina di ${esc(s.name)}" title="Retro della figurina">↻</button></div>`).join('')
@@ -4733,7 +4730,7 @@ document.addEventListener('pointerup', e => { const t = e.target.closest && e.ta
 function ovrExplainHTML(s){
   const sg = v => (v < 0 ? '−' : '+') + String(Math.round(Math.abs(v) * 100) / 100).replace('.', ',');
   const o1 = v => v.toFixed(1).replace('.', ',');
-  const how = `<details class="ox-how"><summary>Come si calcola</summary><p>Parti da ${OVR_START}. Dopo ogni gara: vittoria +2 (meno 0,1 per ogni gol subito), sconfitta −1 (−2 se perdi con 3 gol di scarto o più), pareggio 0. Ogni gol vale 1 e ogni assist 0,5, moltiplicati per il tuo ruolo (difensore ×${String(ROLE_MULT.DIF).replace('.', ',')}, centrocampista e jolly ×${String(ROLE_MULT.CEN).replace('.', ',')}, attaccante ×${String(ROLE_MULT.ATT).replace('.', ',')}). Il premio di reparto dà +0,2, ogni autogol −${OG_PEN}. Se sei a 90 o più i punti positivi si dimezzano; sotto 65 valgono il 50% in più e le perdite metà. In una gara non puoi salire più di ${OVR_GAIN_CAP} né scendere più di ${OVR_LOSS_CAP}. Poi si aggiungono i voti dei compagni (da −0,2 a +0,2) e −${String(LATE_PEN).replace('.', ',')} se arrivi in ritardo. L'OVR resta sempre tra ${OVR_MIN} e ${OVR_MAX}.</p></details>`;
+  const how = `<details class="ox-how"><summary>Come si calcola</summary><p>Parti da ${OVR_START}. Dopo ogni gara: vittoria +2 (meno 0,1 per ogni gol subito), sconfitta −1 (−2 se perdi con 3 gol di scarto o più), pareggio 0. Ogni gol vale 1 e ogni assist 0,5, moltiplicati per il tuo ruolo (difensore ×${String(ROLE_MULT.DIF).replace('.', ',')}, centrocampista ×${String(ROLE_MULT.CEN).replace('.', ',')}, attaccante ×${String(ROLE_MULT.ATT).replace('.', ',')}). Il premio di reparto dà +0,2, ogni autogol −${OG_PEN}. Se sei a 90 o più i punti positivi si dimezzano; sotto 65 valgono il 50% in più e le perdite metà. In una gara non puoi salire più di ${OVR_GAIN_CAP} né scendere più di ${OVR_LOSS_CAP}. Poi si aggiungono i voti dei compagni (da −0,2 a +0,2) e −${String(LATE_PEN).replace('.', ',')} se arrivi in ritardo. L'OVR resta sempre tra ${OVR_MIN} e ${OVR_MAX}.</p></details>`;
   if(!s.hist.length) return how + '<p class="mu sm" style="margin:8px 0 0">Dopo la tua prima gara vedrai qui come si forma ogni variazione.</p>';
   const one = h => {
     const P = h.parts; if(!P) return '';
@@ -5004,7 +5001,7 @@ function computeRecords(){
         const g = num(e.g), a = num(e.a), og = num(e.og);
         if(g > 0 && (!manita || g > manita.v)) manita = { pid:e.pid, v:g, m };
         if(a > 0 && (!mida || a > mida.v)) mida = { pid:e.pid, v:a, m };
-        const role = ROLES[dept(e.pid)] ? dept(e.pid) : 'JOLLY';
+        const role = ROLES[dept(e.pid)] ? dept(e.pid) : 'CEN';
         const pts = (g + a * 0.5) * ROLE_MULT[role] - og * OG_PEN;
         if(pts > 0 && (!uomo || pts > uomo.v + 1e-9)) uomo = { pid:e.pid, v:pts, m, g, a };
         conc[e.pid] = (conc[e.pid] || 0) + against;
@@ -5189,7 +5186,7 @@ function buildRecordCards(R, nM){
       : { icon:'🏰', title:'Il Fortino', desc:'Difensore con meno gol subiti in totale.', lock:'In attesa di sblocco (min. 3 presenze)' },
     R.inarr ? (() => { const st = R.streak[R.inarr.pid]; return { icon:'🔥', title:'Inarrestabile', desc:'Striscia più lunga di vittorie consecutive.', pid:R.inarr.pid, sub:st.best > 1 ? `dalla G${num(st.bFrom.day)} alla G${num(st.bTo.day)}` : matchWhen(st.bTo), value:st.best, unit:st.best === 1 ? 'vittoria' : 'vittorie di fila' }; })()
       : { icon:'🔥', title:'Inarrestabile', desc:'Striscia più lunga di vittorie consecutive.', lock:need('Ancora nessuna vittoria') },
-    R.mina ? { icon:'💣', title:'Mina Vagante', desc:'Il non-attaccante con più gol segnati.', pid:R.mina.pid, sub:`${ROLES[R.mina.p.role] || 'Jolly'}, ${R.mina.pres} presenze`, value:R.mina.g, unit:'gol totali' }
+    R.mina ? { icon:'💣', title:'Mina Vagante', desc:'Il non-attaccante con più gol segnati.', pid:R.mina.pid, sub:`${ROLES[R.mina.p.role] || 'Centrocampista'}, ${R.mina.pres} presenze`, value:R.mina.g, unit:'gol totali' }
       : { icon:'💣', title:'Mina Vagante', desc:'Il non-attaccante con più gol segnati.', lock:need('Nessun gol da un non-attaccante') },
     R.come ? { icon:'🧗', title:'Best Comeback', desc:'La maggiore scalata di OVR di fila: gare consecutive in cui l’OVR non scende (una gara che non toglie punti non interrompe la serie).', pid:R.come.pid, sub:`da ${R.come.from} a ${R.come.to}, ${R.come.d1 === R.come.d2 ? 'G' + R.come.d1 : 'dalla G' + R.come.d1 + ' alla G' + R.come.d2}`, value:'+' + R.come.dr, unit:'OVR di scalata' }
       : { icon:'🧗', title:'Best Comeback', desc:'La maggiore scalata di OVR di fila: gare consecutive in cui l’OVR non scende (una gara che non toglie punti non interrompe la serie).', lock:need('Nessuna scalata di OVR finora') },
@@ -5316,7 +5313,7 @@ function bmBinom(n, k, p){
   return Math.exp(bmLogF[n] - bmLogF[k] - bmLogF[n - k] + k * Math.log(p) + (n - k) * Math.log(1 - p));
 }
 const bmGE = (G, p, r) => { let c = 0; for(let j = 0; j < r; j++) c += bmBinom(G, j, p); return Math.max(0, 1 - c); };   /* P(Binomiale(G, p) >= r) */
-const bmRoleOf = r => (r === 'JOLLY' ? 'CEN' : (ROLES[r] ? r : 'CEN'));
+const bmRoleOf = r => (ROLES[r] ? r : 'CEN');
 function bmBase(P, n){ return P.MARGIN + P.MARGIN_FEW * P.FEW_K / (P.FEW_K + Math.max(0, n - 5)); }
 const bmMargin = (m, k) => BM_HARD_K.includes(k) ? Math.max(m.p.MARGIN_HARD, bmBase(m.p, m.n)) : bmBase(m.p, m.n);
 /* Snapshot: tutto ciò che serve per ricalcolare le quote in modo deterministico (numeri arrotondati a 6 decimali) */
@@ -5330,7 +5327,7 @@ function buildModel(lineup, ctx){
   const mT = (ctx.totalGoals + cparam('GOALS_PRIOR') * cparam('GOALS_PRIOR_W')) / (n + cparam('GOALS_PRIOR_W')) * nL / 16;
   const d = (mean('W') - mean('B')) + cparam('W_N') * Math.log(Math.max(1, nW) / Math.max(1, nB));
   const pW = 1 / (1 + Math.exp(-d / cparam('SENS')));
-  /* tassi per ruolo (JOLLY come CEN) su tutta la rosa */
+  /* tassi per ruolo (ruolo non valido come CEN) su tutta la rosa */
   const agg = {}; for(const r of ['ATT', 'CEN', 'DIF']) agg[r] = { pres:0, g:0, a:0 };
   let sumG = 0, sumA = 0;
   for(const x of Object.values(ro)){ const r = bmRoleOf(x.role); agg[r].pres += num(x.pres); agg[r].g += num(x.g); agg[r].a += num(x.a); sumG += num(x.g); sumA += num(x.a); }
@@ -6682,7 +6679,7 @@ function savePlayer(){
   const base = `players/${id}/`;
   const up = {
     [base + 'name']: name,
-    [base + 'role']: getRadio('pf-role') || 'JOLLY',
+    [base + 'role']: getRadio('pf-role') || 'CEN',
     [base + 'foot']: getRadio('pf-foot') || 'DX',
     [base + 'cardPos']: (PF.cp || []).join('/') || null,
     [base + 'updatedAt']: Date.now()
@@ -6855,7 +6852,7 @@ function balanceTeams(){
   if(n > 2 * MAX_START){ toast(`Il bilanciatore sistema fino a ${2 * MAX_START} titolari (${MAX_START} per squadra): togli ${n - 2 * MAX_START} convocati e aggiungili poi come giocatori in più`, 'warn'); return; }
   const sz = edSizes(n);
   if(sz.err){ toast(sz.err, 'warn'); return; }
-  const o = ids.map(ovrOf), role = ids.map(id => store.players[id]?.role || 'JOLLY');
+  const o = ids.map(ovrOf), role = ids.map(id => store.players[id]?.role || 'CEN');
   const mask = balanceSplit(o, role, sz.w, 120);
   const old = Object.fromEntries([...ED.white, ...ED.black].map(e => [e.pid, e]));
   const mk = id => old[id] || { pid:id, n:pname(id), g:0, a:0, og:0 };
@@ -7353,7 +7350,7 @@ function shareCardHTML(s, ph){
       ${p.photo ? `<div class="sc-bgph" style="background-image:url('${p.photo}')"></div><div class="sc-ph"${ph ? '' : ` style="background-image:url('${p.photo}')"`}>${ph ? `<canvas data-cv="fig" style="width:${ph.w}px;height:${ph.h}px;display:block"></canvas>` : ''}</div>` : `<div class="sc-ini">${esc(initials(p.name))}</div>`}
       <div class="sc-shade"></div>
       <div class="sc-ovr"><b>${roundOvr(s.ovr)}</b><span>OVR</span></div>
-      <div class="sc-role"><b>${esc(ROLES[p.role] ? p.role : 'JOLLY')}</b><span>${esc(FEET[p.foot] || '')}</span></div>
+      <div class="sc-role"><b>${esc(ROLES[p.role] ? p.role : 'CEN')}</b><span>${esc(FEET[p.foot] || '')}</span></div>
       <div class="sc-tier">${TIERS[t].i} ${TIERS[t].l}</div>
       <div class="sc-name">${esc(p.name)}</div>
     </div>
@@ -7435,7 +7432,7 @@ function normRole(v){
   if(ROLES[s]) return s;
   for(const k of ['ATT','CEN','DIF']) if(s.startsWith(k)) return k;
   if(s.startsWith('POR')) return 'DIF';   /* ruolo Portiere eliminato: file Excel vecchi */
-  return 'JOLLY';
+  return 'CEN';
 }
 function normFoot(v){
   const s = norm(v);
@@ -7496,7 +7493,7 @@ async function importXlsx(file){
     if(!pid){
       if(!pnm) continue;
       pid = newId(); byName.set(norm(pnm), pid); if(gid) idMap.set(gid, pid);
-      touch(pid, pnm, 'JOLLY', 'DX');
+      touch(pid, pnm, 'CEN', 'DX');
     }
     const day = num(F(r, 'giornata'));
     const date = toISO(F(r, 'data'));
@@ -7963,6 +7960,9 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.8.3', date:'2026-10-19', items:[
+    `🧹 Il ruolo “Jolly” non esiste più: restano Attaccante, Centrocampista e Difensore. Cambia solo la scelta del ruolo, nessun numero.`
+  ] },
   { v:'1.8.2', date:'2026-10-18', items:[
     `🧗 “Best Comeback” e “Il Downfall” ora contano solo i punti guadagnati (o persi) di fila: se in mezzo c’è un calo (o una risalita) la serie si interrompe. Una partita persa che non ti toglie punti non la interrompe.`,
     `🏆 I primati storici cambiano mano solo se qualcuno fa davvero meglio di chi li tiene: a pari merito il primato resta a chi ci è arrivato per primo.`
