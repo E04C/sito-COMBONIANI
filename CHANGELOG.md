@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.2
+- Figurine del campo TOTW/TOTM: il ruolo è più piccolo e, anche con due ruoli (es. AD/CC), non è mai più largo dell'overall.
+- Sotto la media di ogni giocatore compaiono le presenze nel periodo (campo opzionale `np` nei team salvati; le bozze vecchie non lo hanno e non lo mostrano). La soglia del TOTM resta di 3 presenze: verificato che chi ne ha esattamente 3 entra e chi ne ha 2 no.
+- Campo un po' più alto per far respirare le righe.
+
 ## 1.9.1
 - Nuova scheda «TOTM» in Trofei: Team of the Month, stessa formazione 2-4-2 e stesso punteggio del TOTW (media a gara), calcolato sul mese di calendario secondo la data delle gare, con almeno 3 presenze. Stesso flusso admin: «Ricalcola» (bozza visibile solo all'admin) e «Mostra a tutti»; frecce per scorrere i mesi; nel mese in corso il team è provvisorio.
 - Dati nuovi e opzionali: `totm/draft/{AAAA-MM}` e `totm/pub/{AAAA-MM}`, stessa struttura di `totw`. **Le regole di Firebase devono permettere il percorso `totm`.**
