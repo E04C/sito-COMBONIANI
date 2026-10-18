@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9.4
+- Campo TOTW/TOTM: overall e ruolo sulle figurine ridotti a circa metà (`.tw-x .mfig-rt` in scala .55), così coprono meno la foto. Solo interfaccia, senza voce nelle Novità.
+- Le presenze nel periodo si mostrano anche per i team TOTW/TOTM salvati prima della 1.9.2 (che non le avevano): se mancano si contano dalle gare (`twCount`).
+
 ## 1.9.3
 - Campo TOTW/TOTM: ogni giocatore è la stessa figurina della griglia Giocatori (cornice, targhetta overall e ruolo, nome), rimpicciolita in scala (`twFit`); al posto delle cinque statistiche ci sono media e presenze, e le targhe stanno sotto la carta. TOTW arancio e viola; TOTM con la nuova cornice bianca e oro (`.mfig.totm`), usata solo nella scheda TOTM.
 - Tolte le vecchie figurine a scudo del campo.
