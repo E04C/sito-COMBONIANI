@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9.8
+- TOTW: il punteggio è cumulativo, la somma dei punteggi di tutte le gare della settimana (stesso punteggio di gara: gol e assist pesati dal ruolo, MVP, voti dei compagni, meno autogol e ritardi), qualunque sia il numero di presenze (minimo 1). Parità: più gol, poi più vittorie, poi alfabetico. Il TOTM resta la media di tutte le gare del mese (minimo 3 presenze).
+- Figurine del campo e immagine esportata: nel TOTW i contatori di gol e assist totali della settimana al posto di giornata e prestazione migliore (dato `tt` salvato nel team, o ricalcolato per i team vecchi).
+
 ## 1.9.7
 - TOTW: nessuna media, conta solo la gara migliore della settimana di ogni giocatore (max 2 gare a settimana), qualunque sia il numero di presenze (minimo 1). Parità: esito di quella gara, poi i gol in quella gara, poi l'ordine alfabetico.
 - TOTM: media di tutte le gare del mese, qualunque sia il numero di presenze (minimo 3 per entrare); nessuno scarto. Parità: esito medio, gol totali.

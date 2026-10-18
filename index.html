@@ -1747,9 +1747,6 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 .tw-x .mfig-n{font-size:20px}
 .tw-x .mfig-s{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:4px}
 .tw-x .mfig-s b{font-size:24px} .tw-x .mfig-s i{font-size:11px;margin-top:3px}
-.tw-bst{display:flex;flex-direction:column;align-items:center;gap:3px;margin-top:4px;line-height:1}
-.tw-bst b{font:italic 800 26px/1 var(--disp);color:var(--tx)}
-.tw-bst i{font:700 12px/1 var(--body);font-style:normal;color:#c7cddb;white-space:nowrap}
 .tw-x .mfig-rt{transform:scale(.55);transform-origin:100% 0}   /* overall e ruolo a metà: visibili ma senza coprire la foto */
 .twc-pl{display:flex;justify-content:center;gap:2px;font-size:calc(var(--twk) * 26px);line-height:1;min-height:calc(var(--twk) * 26px)}
 .twc-pl i{font-style:normal;filter:drop-shadow(0 1px 2px rgba(0,0,0,.8))}
@@ -2053,7 +2050,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.9.7';
+const APP_VERSION = '1.9.8';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -5200,9 +5197,9 @@ function twLabel(wk){
 }
 /* Calcolo del team di una settimana (wk = lunedì). Ritorna { d, m, f, sc, n, t } con gli id separati da virgola per riga. */
 /* Punteggi del periodo per ogni giocatore con almeno una presenza.
-   TOTW (max 2 gare a settimana): nessuna media, conta solo la gara migliore, qualunque sia il numero di presenze.
+   TOTW: somma cumulativa dei punteggi di tutte le gare della settimana (e totale di gol e assist), qualunque sia il numero di presenze.
    TOTM: media di tutte le gare del mese, qualunque sia il numero di presenze (minimo 3 per entrare).
-   best = la gara migliore (giornata, prestazione, esito). */
+   tg/ta/mvn = totali di gol, assist e MVP nel periodo. */
 function twAgg(wk, kind){
   const mo = kind === 'm', start = mo ? wk + '-01' : wk, end = mo ? wk + '-31' : addDays(wk, 6), per = {}, games = new Set();
   for(const s of STATS.list){
@@ -5213,20 +5210,19 @@ function twAgg(wk, kind){
       games.add(x.m.id);
       const mv = matchMvp(x.m);
       const sc = (x.g + x.a * 0.5) * ROLE_MULT[role] - x.og * OG_PEN + (mv && mv.pid === s.pid ? 1.5 : 0) + num(x.parts && x.parts.bonus) - num(x.parts && x.parts.late);
-      const c = per[s.pid] || (per[s.pid] = { pid:s.pid, name:s.name, role, n:0, scs:[], res:0, g:0, best:null });
-      c.n++; c.scs.push(sc);
-      if(!c.best || sc > c.best.sc) c.best = { sc, d:num(x.m.day), g:x.g, a:x.a, mv:mv && mv.pid === s.pid ? 1 : 0, r:x.r === 'v' ? 2 : x.r === 'pa' ? 1 : 0 }; c.g += x.g; c.res += x.r === 'v' ? 2 : x.r === 'pa' ? 1 : 0;
+      const c = per[s.pid] || (per[s.pid] = { pid:s.pid, name:s.name, role, n:0, scs:[], res:0, g:0, tg:0, ta:0, mvn:0 });
+      c.n++; c.scs.push(sc); c.tg += x.g; c.ta += x.a; if(mv && mv.pid === s.pid) c.mvn++; c.g += x.g; c.res += x.r === 'v' ? 2 : x.r === 'pa' ? 1 : 0;
     }
   }
   const all = Object.values(per).map(c => {
-    const mean = c.scs.reduce((t, v) => t + v, 0) / c.n;
-    return { ...c, avg:mo ? mean : c.best.sc, ra:c.res / c.n };
+    const tot = c.scs.reduce((t, v) => t + v, 0);
+    return { ...c, avg:mo ? tot / c.n : tot, ra:c.res / c.n };
   });
   return { all, games, min:mo ? TM_MIN : TW_MIN };
 }
-/* Parità: nel TOTW l'esito della gara migliore e poi i gol in quella gara, nel TOTM l'esito medio e poi i gol totali */
+/* Parità: nel TOTW i gol totali e poi le vittorie, nel TOTM l'esito medio e poi i gol totali */
 const twSort = mo => mo ? (a, b) => (b.avg - a.avg) || (b.ra - a.ra) || (b.g - a.g) || a.name.localeCompare(b.name, 'it')
-  : (a, b) => (b.avg - a.avg) || (b.best.r - a.best.r) || (b.best.g - a.best.g) || a.name.localeCompare(b.name, 'it');
+  : (a, b) => (b.avg - a.avg) || (b.tg - a.tg) || (b.res - a.res) || a.name.localeCompare(b.name, 'it');
 function twCalc(wk, kind){
   const mo = kind === 'm', ag = twAgg(wk, kind), games = ag.games;
   const cands = ag.all.filter(c => c.n >= ag.min).sort(twSort(mo));
@@ -5240,8 +5236,8 @@ function twCalc(wk, kind){
   for(const c of left.filter(c => !front.includes(c) && !cen.includes(c)).sort(rank)){ if(front.length >= 2) break; front.push(c); }
   const mid = left.filter(c => !front.includes(c)).sort(rank);
   const ids = a => a.map(c => c.pid).join(',');
-  const sc = {}, np = {}, bs = {}; for(const c of all){ sc[c.pid] = Math.round(c.avg * 10) / 10; np[c.pid] = c.n; bs[c.pid] = { d:c.best.d, g:c.best.g, a:c.best.a, mv:c.best.mv }; }
-  return { d:ids(back), m:ids(mid), f:ids(front), sc, np, bs, n:games.size, t:Date.now() };
+  const sc = {}, np = {}, tt = {}; for(const c of all){ sc[c.pid] = Math.round(c.avg * 10) / 10; np[c.pid] = c.n; tt[c.pid] = { g:c.tg, a:c.ta }; }
+  return { d:ids(back), m:ids(mid), f:ids(front), sc, np, tt, n:games.size, t:Date.now() };
 }
 const twGet = (kind, key, root = 'totw') => { const o = store[root] && store[root][kind] && store[root][kind][key]; return o && typeof o === 'object' ? o : null; };
 const twRow = (t, k) => String((t && t[k]) || '').split(',').filter(x => x && idOk(x) && store.players[x]);
@@ -5260,21 +5256,15 @@ function twActive(){
 const twHas = pid => { const a = twActive(); return a && a.ids.has(pid) ? a : null; };
 const twChip = pid => { const a = twHas(pid); return a ? `<span class="twchip" title="Nel Team of the Week, settimana ${esc(twLabel(a.wk))}">⭐ TOTW ${a.label}</span>` : ''; };
 const twTag = pid => { const a = twHas(pid); return a ? `<span class="mfig-tw">TOTW <i>${a.label}</i></span>` : ''; };
-/* Perché un giocatore è nel team: giornata della sua gara migliore e prestazione (gol, assist, MVP) */
 /* Dati mostrati per un giocatore: salvati nel team, o ricalcolati per i team vecchi */
-const twInfo = (t, pid, agg) => ({ sc:t.sc && t.sc[pid] != null ? t.sc[pid] : (agg[pid] ? Math.round(agg[pid].avg * 10) / 10 : null), bs:(t.bs && t.bs[pid]) || (agg[pid] && agg[pid].best), np:t.np && t.np[pid] != null ? t.np[pid] : (agg[pid] ? agg[pid].n : null) });
-function twBestText(b){
-  if(!b) return { tag:'–', txt:'' };
-  const parts = []; if(b.g) parts.push(`${b.g} gol`); if(b.a) parts.push(`${b.a} assist`); if(b.mv) parts.push('MVP');
-  return { tag:'G' + b.d, txt:parts.length ? parts.slice(0, 2).join(' · ') : 'ottimi voti' };
-}
+const twInfo = (t, pid, agg) => ({ sc:t.sc && t.sc[pid] != null ? t.sc[pid] : (agg[pid] ? Math.round(agg[pid].avg * 10) / 10 : null), tt:(t.tt && t.tt[pid]) || (agg[pid] && { g:agg[pid].tg, a:agg[pid].ta }), np:t.np && t.np[pid] != null ? t.np[pid] : (agg[pid] ? agg[pid].n : null) });
 function twSlot(pid, info, mode, o = {}){   /* la stessa figurina della griglia Giocatori (arancio e viola nel TOTW, bianca e oro nel TOTM), con media e presenze al posto delle cinque statistiche */
   const s = STATS.byId[pid]; if(!s) return '';
   const pl = (s.plaques || []).map(id => plaqueById(id)).filter(Boolean).slice(0, 3).map(P => `<i title="${esc(P.name)}">${P.icon}</i>`).join('');
-  const bt = twBestText(info.bs), md = info.sc != null ? String(info.sc).replace('.', ',') : '–';
+  const md = info.sc != null ? String(info.sc).replace('.', ',') : '–';
   const ph = o.ph && o.ph[pid] ? `<span class="ph"><canvas data-cv="${pid}" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:${o.ph[pid].w}px;height:${o.ph[pid].h}px"></canvas></span>` : photoBlock(s.p);
   const act = o.swap ? `data-action="tw-swap" data-pid="${pid}"` : `data-open-player="${pid}"`;
-  return `<span class="twc${o.sel === pid ? ' sel' : ''}"><span class="twc-s"><button type="button" class="mfig t-${tierOf(s.ovr)} ${mode === 'm' ? 'totm' : 'totw'}" ${act} aria-label="${esc(s.name)}, overall ${roundOvr(s.ovr)}"><span class="mfig-fr chamf"><span class="mfig-in chamf">${ph}<span class="mfig-rt">${ovrPlate(s.ovr, 'sm')}${roleTag(pid, s.p)}</span><span class="mfig-b"><span class="mfig-n">${nameHTML(pid)}</span>${mode === 'm' ? `<span class="mfig-s"><span><b>${md}</b><i>media</i></span><span><b>${info.np != null ? info.np : '–'}</b><i>${info.np === 1 ? 'presenza' : 'presenze'}</i></span></span>` : `<span class="tw-bst"><b>${esc(bt.tag)}</b><i>${esc(bt.txt)}</i></span>`}</span></span></span></button></span><span class="twc-pl">${pl}</span></span>`;
+  return `<span class="twc${o.sel === pid ? ' sel' : ''}"><span class="twc-s"><button type="button" class="mfig t-${tierOf(s.ovr)} ${mode === 'm' ? 'totm' : 'totw'}" ${act} aria-label="${esc(s.name)}, overall ${roundOvr(s.ovr)}"><span class="mfig-fr chamf"><span class="mfig-in chamf">${ph}<span class="mfig-rt">${ovrPlate(s.ovr, 'sm')}${roleTag(pid, s.p)}</span><span class="mfig-b"><span class="mfig-n">${nameHTML(pid)}</span>${mode === 'm' ? `<span class="mfig-s"><span><b>${md}</b><i>media</i></span><span><b>${info.np != null ? info.np : '–'}</b><i>${info.np === 1 ? 'presenza' : 'presenze'}</i></span></span>` : `<span class="mfig-s"><span><b>${info.tt ? info.tt.g : '–'}</b><i>gol</i></span><span><b>${info.tt ? info.tt.a : '–'}</b><i>assist</i></span></span>`}</span></span></span></button></span><span class="twc-pl">${pl}</span></span>`;
 }
 const TW_LINES = `<svg class="tw-lines" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="rgba(255,255,255,.55)" stroke-width=".45"><rect x="2" y="2" width="96" height="136"/><path d="M2 70H98"/><circle cx="50" cy="70" r="13"/><rect x="26" y="2" width="48" height="16"/><rect x="38" y="2" width="24" height="6"/><path d="M40 18a10 10 0 0 0 20 0"/><rect x="26" y="122" width="48" height="16"/><rect x="38" y="132" width="24" height="6"/><path d="M40 122a10 10 0 0 1 20 0"/></g><circle cx="50" cy="70" r=".9" fill="rgba(255,255,255,.7)"/></svg>`;
 function twView(mode){
@@ -5305,7 +5295,7 @@ function twView(mode){
     if(!rows[0].length && !rows[1].length && !rows[2].length) body = `<div class="glass tw-empty">${mo ? 'Nessun giocatore con almeno 3 presenze in questo mese: il team è vuoto.' : 'Nessuna partita giocata in questa settimana: il team è vuoto.'}</div>`;
     else body = `<div class="tw-x"><div class="tw-field${mo ? ' mo' : ''}">${TW_LINES}${[2, 1, 0].map(i => `<div class="tw-row r${rows[i].length}">${rows[i].map(pid => twSlot(pid, twInfo(t, pid, aggMap), mode, { swap:adm && ui.twSwap, sel:ui.twSel })).join('')}</div>`).join('')}</div></div>
       <div class="row" style="justify-content:center;margin-top:10px"><button type="button" class="btn sm" data-action="tw-export" data-k="${mode || 'w'}" data-wk="${key}">📸 Esporta la grafica</button></div>
-      <p class="mu sm tw-note">${dr ? 'BOZZA · ' : ''}${t.n} ${t.n === 1 ? 'gara' : 'gare'} ${mo ? 'nel mese' : 'nella settimana'}. ${mo ? 'Punteggio = media di tutte le gare del mese (gol, assist, MVP e voti dei compagni, meno autogol e ritardi), qualunque sia il numero di presenze; servono almeno 3 presenze. A parità: esito delle gare.' : 'Punteggio = la tua gara migliore della settimana (gol, assist, MVP e voti dei compagni, meno autogol e ritardi), qualunque sia il numero di presenze. A parità: esito di quella gara, poi i gol.'}</p>`;
+      <p class="mu sm tw-note">${dr ? 'BOZZA · ' : ''}${t.n} ${t.n === 1 ? 'gara' : 'gare'} ${mo ? 'nel mese' : 'nella settimana'}. ${mo ? 'Punteggio = media di tutte le gare del mese (gol, assist, MVP e voti dei compagni, meno autogol e ritardi), qualunque sia il numero di presenze; servono almeno 3 presenze. A parità: esito delle gare.' : 'Punteggio = somma di tutte le gare della settimana (gol e assist pesati dal ruolo, MVP e voti dei compagni, meno autogol e ritardi), qualunque sia il numero di presenze. A parità: più gol, poi più vittorie.'}</p>`;
   }
   return `${nav}${admin}${body}`;
 }
@@ -5367,9 +5357,8 @@ async function twDrawCard(c, x, y, w, pid, info, mode, art, fonts){
     const md = info.sc != null ? String(info.sc).replace('.', ',') : '–', np = info.np;
     for(const [v, l, fx] of [[md, 'MEDIA', .3], [np != null ? String(np) : '–', np === 1 ? 'PRESENZA' : 'PRESENZE', .7]]){ c.fillStyle = '#fff'; c.font = `italic 800 ${w * .15}px ${fonts.disp}`; c.fillText(v, w * fx, h * .835); c.fillStyle = '#9aa3b5'; c.font = `800 ${w * .068}px ${fonts.body}`; c.fillText(l, w * fx, h * .91); }
   }else{
-    const bt = twBestText(info.bs);
-    c.fillStyle = '#fff'; c.font = `italic 800 ${w * .15}px ${fonts.disp}`; c.fillText(bt.tag, w / 2, h * .835);
-    c.fillStyle = '#c7cddb'; c.font = `700 ${w * .075}px ${fonts.body}`; c.fillText(bt.txt, w / 2, h * .915);
+    const tt = info.tt || {};
+    for(const [v, l, fx] of [[tt.g != null ? String(tt.g) : '–', 'GOL', .3], [tt.a != null ? String(tt.a) : '–', 'ASSIST', .7]]){ c.fillStyle = '#fff'; c.font = `italic 800 ${w * .15}px ${fonts.disp}`; c.fillText(v, w * fx, h * .835); c.fillStyle = '#9aa3b5'; c.font = `800 ${w * .068}px ${fonts.body}`; c.fillText(l, w * fx, h * .91); }
   }
   c.restore();
   // targhe sotto la carta
@@ -8301,6 +8290,9 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.9.8', date:'2026-10-20', items:[
+    `⭐ Team of the Week: ora contano tutte le partite della settimana sommate (gol, assist e il resto), quindi chi gioca di più ha più occasioni. Sulla figurina vedi il totale dei gol e degli assist della settimana.`
+  ] },
   { v:'1.9.7', date:'2026-10-20', items:[
     `⭐ Team of the Week: entra chi ha giocato la partita migliore della settimana, senza medie e senza contare quante partite hai fatto. Team of the Month: conta la media di tutte le partite del mese (servono almeno 3 presenze).`,
     `📋 Sulla figurina del Team of the Week vedi perché sei dentro: la giornata in cui hai giocato meglio e la prestazione, per esempio “G6 · 2 gol · 3 assist”. Nel Team of the Month vedi la media e le presenze.`
