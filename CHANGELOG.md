@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9.6
+- TOTW: il numero accanto a «TOTW» è la settimana di stagione (S1 = settimana della prima gara giocata) e non più la settimana dell'anno (`twSeasonNum`). Lo stesso numero compare nel bollino della figurina aperta e sotto il titolo della settimana.
+- La linguetta «TOTW» sulle figurine della griglia è centrata in basso (in alto la coprivano il badge «TU» e quello delle serie di vittorie). Solo interfaccia, senza voce nelle Novità.
+
 ## 1.9.5
 - TOTW e TOTM: tasto «Esporta la grafica» (immagine verticale 1080 px, pronta da condividere o scaricare) e, per l'admin, «Sposta giocatori» come nelle formazioni delle gare: si toccano due giocatori e si scambiano di posto. Lo spostamento modifica la bozza (se non c'è parte dal team pubblicato) e va pubblicato con «Mostra a tutti». Senza voce nelle Novità.
 - L'esportazione disegna il campo direttamente su un canvas con le stesse immagini SVG dell'app (html2canvas deformava cornici e sfondi); nessun dato nuovo.

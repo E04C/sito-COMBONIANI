@@ -1712,7 +1712,7 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 .mfig.totw .mfig-rt{top:calc(3.6% + 6px);right:calc(5.67% + 6px)}
 .mfig.totw .mfig-orn{height:22px;background:none}
 .mfig.totw .mfig-turn{right:12px;bottom:12px}
-.mfig-tw{position:absolute;left:12%;top:0;z-index:6;display:flex;align-items:center;gap:5px;height:18px;padding:0 11px;border-radius:0 0 9px 9px;background:linear-gradient(90deg,#fb923c,#f43f5e 50%,#8b5cf6);color:#fff;font:900 10px/1 var(--body);letter-spacing:.14em;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.5);text-shadow:0 1px 1px rgba(0,0,0,.4);pointer-events:none}
+.mfig-tw{position:absolute;left:50%;bottom:5px;transform:translateX(-50%);z-index:6;display:flex;align-items:center;gap:5px;height:18px;padding:0 11px;border-radius:9px;background:linear-gradient(90deg,#fb923c,#f43f5e 50%,#8b5cf6);color:#fff;font:900 10px/1 var(--body);letter-spacing:.14em;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.5);text-shadow:0 1px 1px rgba(0,0,0,.4);pointer-events:none}
 .mfig-tw i{font-style:normal;font-weight:800;letter-spacing:.04em;opacity:.9}
 .tw-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0 12px;text-align:center}
 .tw-nav b{display:block;font:italic 800 20px/1.1 var(--disp)} .tw-nav small{color:var(--mu);font-weight:700}
@@ -2049,7 +2049,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.9.5';
+const APP_VERSION = '1.9.6';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -5182,6 +5182,12 @@ const isoOk = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
 function addDays(iso, n){ const [y, m, d] = iso.split('-').map(Number), dt = new Date(y, m - 1, d + n); return isoDay(dt); }
 function weekStart(iso){ const [y, m, d] = iso.split('-').map(Number), dt = new Date(y, m - 1, d); return addDays(iso, -((dt.getDay() + 6) % 7)); }
 function isoWeekNum(iso){ const [y, m, d] = iso.split('-').map(Number), dt = new Date(Date.UTC(y, m - 1, d)); dt.setUTCDate(dt.getUTCDate() + 3 - ((dt.getUTCDay() + 6) % 7)); const w1 = new Date(Date.UTC(dt.getUTCFullYear(), 0, 4)); return 1 + Math.round(((dt - w1) / 864e5 - 3 + ((w1.getUTCDay() + 6) % 7)) / 7); }
+/* Settimana di stagione: S1 è la settimana (lunedì-domenica) della prima gara giocata */
+function twSeasonNum(wk){
+  const days = STATS.matches.map(matchDay).filter(Boolean).sort(), first = days.length ? weekStart(days[0]) : wk;
+  const [y1, m1, d1] = first.split('-').map(Number), [y2, m2, d2] = wk.split('-').map(Number);
+  return Math.max(1, Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / (7 * 864e5)) + 1);
+}
 const matchDay = m => (m && isoOk(m.date)) ? m.date : (m && m.createdAt ? isoDay(new Date(num(m.createdAt))) : '');
 const MESI_BREVI = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
 function twLabel(wk){
@@ -5237,7 +5243,7 @@ function twActive(){
   const ks = twPubKeys(), wk = ks[ks.length - 1];
   if(!wk) return null;
   const t = twGet('pub', wk), ids = new Set([...twRow(t, 'd'), ...twRow(t, 'm'), ...twRow(t, 'f')]);
-  return { wk, ids, label:'S' + isoWeekNum(wk) };
+  return { wk, ids, label:'S' + twSeasonNum(wk) };
 }
 const twHas = pid => { const a = twActive(); return a && a.ids.has(pid) ? a : null; };
 const twChip = pid => { const a = twHas(pid); return a ? `<span class="twchip" title="Nel Team of the Week, settimana ${esc(twLabel(a.wk))}">⭐ TOTW ${a.label}</span>` : ''; };
@@ -5262,7 +5268,7 @@ function twView(mode){
   const pub = twGet('pub', key, root), dr = adm ? twGet('draft', key, root) : null, t = dr || pub;
   const prevK = adm ? (key > first ? step(key, -1) : null) : pubKs.filter(k => k < key).pop() || null;
   const nextK = adm ? (key < cur ? step(key, 1) : null) : pubKs.find(k => k > key) || null;
-  const title = mo ? `<b>${esc(monthLabel(key))}</b><small>${key === cur ? 'in corso' : 'mese chiuso'}</small>` : `<b>Settimana ${esc(twLabel(key))}</b><small>${key === cur ? 'in corso' : 'S' + isoWeekNum(key)}</small>`;
+  const title = mo ? `<b>${esc(monthLabel(key))}</b><small>${key === cur ? 'in corso' : 'mese chiuso'}</small>` : `<b>Settimana ${esc(twLabel(key))}</b><small>${key === cur ? 'in corso' : 'S' + twSeasonNum(key)}</small>`;
   const nav = `<div class="tw-nav"><button type="button" class="btn ghost sm" data-action="tw-week" data-k="${mode || 'w'}" data-wk="${prevK || ''}" ${prevK ? '' : 'disabled'} aria-label="${mo ? 'Mese precedente' : 'Settimana precedente'}">‹</button><div>${title}</div><button type="button" class="btn ghost sm" data-action="tw-week" data-k="${mode || 'w'}" data-wk="${nextK || ''}" ${nextK ? '' : 'disabled'} aria-label="${mo ? 'Mese successivo' : 'Settimana successiva'}">›</button></div>`;
   let admin = '';
   if(adm){
