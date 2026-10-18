@@ -1999,7 +1999,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.8.1';
+const APP_VERSION = '1.8.2';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -7963,6 +7963,10 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.8.2', date:'2026-10-18', items:[
+    `🧗 “Best Comeback” e “Il Downfall” ora contano solo i punti guadagnati (o persi) di fila: se in mezzo c’è un calo (o una risalita) la serie si interrompe. Una partita persa che non ti toglie punti non la interrompe.`,
+    `🏆 I primati storici cambiano mano solo se qualcuno fa davvero meglio di chi li tiene: a pari merito il primato resta a chi ci è arrivato per primo.`
+  ] },
   { v:'1.8.1', date:'2026-10-18', items:[
     `🔥 Nuova targa “Inarrestabile”: va a chi ha la serie più lunga di vittorie di fila in stagione.`,
     `🃏 Le carte Oro e Argento sono più sottili e pulite: l’Oro ha una doppia linea dorata, l’Argento una linea argentata. Tra la foto e le statistiche ora c’è una dolce sfumatura al posto della riga.`,
