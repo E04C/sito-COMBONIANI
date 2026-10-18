@@ -1618,6 +1618,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .sub-tab:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .sub-tab.on{border-color:#fb923c;background:linear-gradient(135deg,#fb923c,#f97316 55%,#ea580c);color:#1a0b02;box-shadow:0 6px 22px rgba(249,115,22,.5),inset 0 1px 0 rgba(255,255,255,.4)}
 @media (prefers-reduced-motion:reduce){.sub-tab{transition:none}}
+@media (max-width:480px){.sub-tabs{gap:6px}.sub-tab{min-width:0;min-height:48px;padding:0 4px;font-size:12.5px;border-radius:14px}}
 @media (min-width:1100px){.sub-tabs,.mone:not(.form){max-width:900px;margin-inline:auto}}
 .cs-tab{flex:none;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--hair);background:rgba(255,255,255,.04);color:var(--mu);font:700 14px var(--body);white-space:nowrap;transition:color .2s,background .2s,border-color .2s}
 .cs-tab.on{color:var(--or);border-color:var(--line-strong);background:var(--or-soft)}
@@ -1741,6 +1742,10 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 .twc-pl i{font-style:normal}
 .twc-n{position:absolute;left:6%;right:6%;bottom:12%;z-index:3;padding-top:2cqw;font:italic 800 4.1cqw/1.05 var(--disp);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 4px rgba(0,0,0,.9);background:linear-gradient(180deg,rgba(7,3,15,0),rgba(7,3,15,.88) 40%)}
 .twc-avg{display:block;min-width:60%;padding:.9cqw 2cqw;border-radius:999px;background:rgba(10,4,20,.82);border:1px solid rgba(168,85,247,.6);font:800 3.2cqw/1.2 var(--body);letter-spacing:.03em;white-space:nowrap;color:#fed7aa}
+.tw-field.mo{box-shadow:0 0 0 .6cqw rgba(245,197,66,.7),0 0 6cqw rgba(245,197,66,.3),0 6cqw 12cqw -6cqw rgba(0,0,0,.8)}
+.mo .twc-card{background:linear-gradient(160deg,#fffdf0,#f5c542 45%,#b7791f)}
+.mo .twc-card::before{background:radial-gradient(90% 60% at 50% 25%,rgba(201,162,39,.5),rgba(12,10,6,0) 70%),linear-gradient(180deg,#2a2314,#0b0a06)}
+.mo .twc-avg{border-color:rgba(245,197,66,.7);color:#fff3b0}
 .tw-note{margin:10px 2px 0;text-align:center}
 </style>
 </head>
@@ -2038,7 +2043,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.9.0';
+const APP_VERSION = '1.9.1';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -2181,7 +2186,7 @@ const CVIEW_ORDER = ['gen', 'g', 'a', 'pct', 's', 'og'];
 /* =========================================================
    STATE
    ========================================================= */
-const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{}, casino:{}, messages:{}, playerKeys:{}, totw:{} };
+const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{}, casino:{}, messages:{}, playerKeys:{}, totw:{}, totm:{} };
 const loaded = { players:false, matches:false, settings:false };
 let localMode = false;
 /* Accesso admin ricordato su questo dispositivo per 30 giorni (finché non si esce o non cambia il PIN) */
@@ -2202,6 +2207,7 @@ const ui = {
   cView:'gen',
   tTab:'plq',
   twWeek:null,
+  twMonth:null,
   mTab:'rep',
   cf:{ q:'', played:false, min:0, open:false },
   duel:null
@@ -2345,7 +2351,7 @@ function featuresHTML(){
 function loadCache(){
   try{
     const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    if(c){ store.players = cleanPlayers(c.players); store.matches = cleanMatches(c.matches); store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; store.playerKeys = c.playerKeys || {}; store.casino = c.casino || {}; store.totw = c.totw || {}; }
+    if(c){ store.players = cleanPlayers(c.players); store.matches = cleanMatches(c.matches); store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; store.playerKeys = c.playerKeys || {}; store.casino = c.casino || {}; store.totw = c.totw || {}; store.totm = c.totm || {}; }
   }catch(e){}
 }
 let cacheT;
@@ -2358,7 +2364,7 @@ function saveCache(){
       const { photo, ...rest } = p;
       return [k, (!rest.photoV && photo) ? p : rest];
     }));
-    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, profileReq:store.profileReq, casino:store.casino, totw:store.totw, photos:localMode ? store.photos : {}, ...(localMode ? { playerKeys:store.playerKeys } : {}) };
+    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, profileReq:store.profileReq, casino:store.casino, totw:store.totw, totm:store.totm, photos:localMode ? store.photos : {}, ...(localMode ? { playerKeys:store.playerKeys } : {}) };
     try{ localStorage.setItem(CACHE_KEY, JSON.stringify(data)); }
     catch(e){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, players:Object.fromEntries(Object.entries(players).map(([k, p]) => { const { photo, ...r } = p || {}; return [k, r]; })) })); }catch(e2){} }
   }, 400);
@@ -2430,6 +2436,7 @@ function initFirebase(){
   db.ref('messages').on('value', s => { store.messages = s.val() || {}; messagesIssue = false; afterData(); }, () => { messagesIssue = true; scheduleRender(); });
   /* Team of the Week: se le regole non permettono questo percorso l'app continua a funzionare e l'admin vede il motivo nella scheda TOTW */
   db.ref('totw').on('value', s => { store.totw = s.val() || {}; totwIssue = false; afterData(); }, () => { totwIssue = true; scheduleRender(); });
+  db.ref('totm').on('value', s => { store.totm = s.val() || {}; totwIssue = false; afterData(); }, () => { totwIssue = true; scheduleRender(); });
   db.ref('casino').on('value', s => { store.casino = s.val() || {}; casinoIssue = false; afterData(); }, () => { casinoIssue = true; scheduleRender(); });
   /* Voto ai compagni: se le regole non permettono questi percorsi l'app continua a funzionare e l'admin vede il motivo nel pannello */
   db.ref('ratingsDone').on('value', s => { store.ratingsDone = s.val() || {}; loaded.ratingsDone = true; afterData(); }, () => { loaded.ratingsDone = true; ratingsProblem('read', 'ratingsDone'); });
@@ -2443,7 +2450,7 @@ function afterData(){ saveCache(); scheduleRender(); }
 const dataReady = () => localMode || (loaded.players && loaded.matches && ratingsReady());
 /* ---------- Voto anonimo ai compagni: percorsi ratings/{gara}/{rid} e ratingsDone/{gara}/{pid} ---------- */
 let messagesIssue = false;        /* true se il database rifiuta la lettura di «messages» */
-let totwIssue = false;            /* true se il database rifiuta la lettura di «totw» */
+let totwIssue = false;            /* true se il database rifiuta la lettura di «totw» o «totm» */
 let casinoIssue = false;          /* true se il database rifiuta la lettura di «casino» */
 let ratingsIssue = null;           /* { kind:'read'|'write', path } se il database rifiuta questi percorsi: lo vede l'admin */
 const ratingsLoaded = {}, ratingsWatch = {};
@@ -5160,7 +5167,7 @@ function trophyHistory(){
    Settimana = da lunedì a domenica secondo la data della gara; si calcola la media sulle gare giocate (almeno 1 presenza).
    Dati: totw/draft/{lunedì} = bozza che vede solo l'admin, totw/pub/{lunedì} = team mostrato a tutti. Valgono la grafica speciale e il bollino del team pubblicato più recente.
    ========================================================= */
-const TW_MIN = 1;
+const TW_MIN = 1, TM_MIN = 3;   /* presenze minime per entrare: 1 nella settimana, 3 nel mese */
 const isoDay = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 const isoOk = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
 function addDays(iso, n){ const [y, m, d] = iso.split('-').map(Number), dt = new Date(y, m - 1, d + n); return isoDay(dt); }
@@ -5173,14 +5180,14 @@ function twLabel(wk){
   return a[1] === b[1] ? `${a[2]}–${b[2]} ${MESI_BREVI[a[1] - 1]}` : `${a[2]} ${MESI_BREVI[a[1] - 1]} – ${b[2]} ${MESI_BREVI[b[1] - 1]}`;
 }
 /* Calcolo del team di una settimana (wk = lunedì). Ritorna { d, m, f, sc, n, t } con gli id separati da virgola per riga. */
-function twCalc(wk){
-  const end = addDays(wk, 6), per = {};
+function twCalc(wk, kind){
+  const mo = kind === 'm', start = mo ? wk + '-01' : wk, end = mo ? wk + '-31' : addDays(wk, 6), per = {};
   let games = new Set();
   for(const s of STATS.list){
     const role = ROLES[s.p.role] ? s.p.role : 'CEN';
     for(const x of s.hist){
       const day = matchDay(x.m);
-      if(!day || day < wk || day > end) continue;
+      if(!day || day < start || day > end) continue;
       games.add(x.m.id);
       const mv = matchMvp(x.m);
       const sc = (x.g + x.a * 0.5) * ROLE_MULT[role] - x.og * OG_PEN + (mv && mv.pid === s.pid ? 1.5 : 0) + num(x.parts && x.parts.bonus) - num(x.parts && x.parts.late);
@@ -5188,7 +5195,7 @@ function twCalc(wk){
       c.n++; c.sum += sc; c.g += x.g; c.res += x.r === 'v' ? 2 : x.r === 'pa' ? 1 : 0;
     }
   }
-  const cands = Object.values(per).filter(c => c.n >= TW_MIN).map(c => ({ ...c, avg:c.sum / c.n, ra:c.res / c.n }))
+  const cands = Object.values(per).filter(c => c.n >= (mo ? TM_MIN : TW_MIN)).map(c => ({ ...c, avg:c.sum / c.n, ra:c.res / c.n }))
     .sort((a, b) => (b.avg - a.avg) || (b.ra - a.ra) || (b.g - a.g) || a.name.localeCompare(b.name, 'it'));
   const used = new Set(), take = (arr, k) => { const out = []; for(const c of arr){ if(out.length >= k) break; if(!used.has(c.pid)){ out.push(c); used.add(c.pid); } } return out; };
   const dif = take(cands.filter(c => c.role === 'DIF'), 2), cen = take(cands.filter(c => c.role === 'CEN'), 2);
@@ -5203,9 +5210,13 @@ function twCalc(wk){
   const sc = {}; for(const c of all) sc[c.pid] = Math.round(c.avg * 10) / 10;
   return { d:ids(back), m:ids(mid), f:ids(front), sc, n:games.size, t:Date.now() };
 }
-const twGet = (kind, wk) => { const o = store.totw && store.totw[kind] && store.totw[kind][wk]; return o && typeof o === 'object' ? o : null; };
+const twGet = (kind, key, root = 'totw') => { const o = store[root] && store[root][kind] && store[root][kind][key]; return o && typeof o === 'object' ? o : null; };
 const twRow = (t, k) => String((t && t[k]) || '').split(',').filter(x => x && idOk(x) && store.players[x]);
-function twPubKeys(){ return Object.keys((store.totw && store.totw.pub) || {}).filter(isoOk).sort(); }
+const monthOk = v => typeof v === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(v);
+function twPubKeys(root = 'totw', ok = isoOk){ return Object.keys((store[root] && store[root].pub) || {}).filter(ok).sort(); }
+const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+const monthLabel = k => { const [y, m] = k.split('-').map(Number); return `${MESI[m - 1]} ${y}`; };
+function addMonths(k, n){ const [y, m] = k.split('-').map(Number), d = new Date(y, m - 1 + n, 1); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`; }
 /* Il team pubblicato più recente: da lui dipendono grafica e bollino delle figurine */
 function twActive(){
   const ks = twPubKeys(), wk = ks[ks.length - 1];
@@ -5216,7 +5227,7 @@ function twActive(){
 const twHas = pid => { const a = twActive(); return a && a.ids.has(pid) ? a : null; };
 const twChip = pid => { const a = twHas(pid); return a ? `<span class="twchip" title="Nel Team of the Week, settimana ${esc(twLabel(a.wk))}">⭐ TOTW ${a.label}</span>` : ''; };
 const twTag = pid => { const a = twHas(pid); return a ? `<span class="mfig-tw">TOTW <i>${a.label}</i></span>` : ''; };
-function twSlot(pid, sc){
+function twSlot(pid, sc){   /* il TOTM usa le stesse figurine, con la cornice bianca e oro (classe del campo) */
   const s = STATS.byId[pid]; if(!s) return '';
   const cp = cardPosList(s.p.cardPos), role = cp.length ? cp.join('/') : s.p.role;
   const pl = (s.plaques || []).map(id => plaqueById(id)).filter(Boolean).slice(0, 3).map(P => `<i title="${esc(P.name)}">${P.icon}</i>`).join('');
@@ -5224,34 +5235,41 @@ function twSlot(pid, sc){
   return `<button type="button" class="twc t-${tierOf(s.ovr)}" data-open-player="${pid}" aria-label="${esc(s.name)}, overall ${roundOvr(s.ovr)}"><span class="twc-card">${ph}<span class="twc-o"><b>${roundOvr(s.ovr)}</b><em>${esc(role)}</em></span>${pl ? `<span class="twc-pl">${pl}</span>` : ''}<span class="twc-n">${esc(s.name)}</span></span><span class="twc-avg">${sc != null ? 'media ' + String(sc).replace('.', ',') : ''}</span></button>`;
 }
 const TW_LINES = `<svg class="tw-lines" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="rgba(255,255,255,.55)" stroke-width=".45"><rect x="2" y="2" width="96" height="136"/><path d="M2 70H98"/><circle cx="50" cy="70" r="13"/><rect x="26" y="2" width="48" height="16"/><rect x="38" y="2" width="24" height="6"/><path d="M40 18a10 10 0 0 0 20 0"/><rect x="26" y="122" width="48" height="16"/><rect x="38" y="132" width="24" height="6"/><path d="M40 122a10 10 0 0 1 20 0"/></g><circle cx="50" cy="70" r=".9" fill="rgba(255,255,255,.7)"/></svg>`;
-function twView(){
-  const adm = !!ui.admin, cur = weekStart(isoDay(new Date())), pubKs = twPubKeys();
+function twView(mode){
+  const mo = mode === 'm', root = mo ? 'totm' : 'totw', ok = mo ? monthOk : isoOk;
+  const adm = !!ui.admin, today = isoDay(new Date()), cur = mo ? today.slice(0, 7) : weekStart(today), pubKs = twPubKeys(root, ok);
   const firstDay = STATS.matches.map(matchDay).filter(Boolean).sort()[0];
-  const first = firstDay ? weekStart(firstDay) : cur;
-  let wk = ui.twWeek && isoOk(ui.twWeek) ? ui.twWeek : (adm ? cur : (pubKs[pubKs.length - 1] || cur));
-  const pub = twGet('pub', wk), dr = adm ? twGet('draft', wk) : null, t = dr || pub;
-  const prevWk = adm ? (wk > first ? addDays(wk, -7) : null) : pubKs.filter(k => k < wk).pop() || null;
-  const nextWk = adm ? (wk < cur ? addDays(wk, 7) : null) : pubKs.find(k => k > wk) || null;
-  const nav = `<div class="tw-nav"><button type="button" class="btn ghost sm" data-action="tw-week" data-wk="${prevWk || ''}" ${prevWk ? '' : 'disabled'} aria-label="Settimana precedente">‹</button><div><b>Settimana ${esc(twLabel(wk))}</b><small>${wk === cur ? 'in corso' : 'S' + isoWeekNum(wk)}</small></div><button type="button" class="btn ghost sm" data-action="tw-week" data-wk="${nextWk || ''}" ${nextWk ? '' : 'disabled'} aria-label="Settimana successiva">›</button></div>`;
+  const first = firstDay ? (mo ? firstDay.slice(0, 7) : weekStart(firstDay)) : cur;
+  const step = (k, n) => mo ? addMonths(k, n) : addDays(k, 7 * n);
+  const sel = mo ? ui.twMonth : ui.twWeek;
+  const key = sel && ok(sel) ? sel : (adm ? cur : (pubKs[pubKs.length - 1] || cur));
+  const pub = twGet('pub', key, root), dr = adm ? twGet('draft', key, root) : null, t = dr || pub;
+  const prevK = adm ? (key > first ? step(key, -1) : null) : pubKs.filter(k => k < key).pop() || null;
+  const nextK = adm ? (key < cur ? step(key, 1) : null) : pubKs.find(k => k > key) || null;
+  const title = mo ? `<b>${esc(monthLabel(key))}</b><small>${key === cur ? 'in corso' : 'mese chiuso'}</small>` : `<b>Settimana ${esc(twLabel(key))}</b><small>${key === cur ? 'in corso' : 'S' + isoWeekNum(key)}</small>`;
+  const nav = `<div class="tw-nav"><button type="button" class="btn ghost sm" data-action="tw-week" data-k="${mode || 'w'}" data-wk="${prevK || ''}" ${prevK ? '' : 'disabled'} aria-label="${mo ? 'Mese precedente' : 'Settimana precedente'}">‹</button><div>${title}</div><button type="button" class="btn ghost sm" data-action="tw-week" data-k="${mode || 'w'}" data-wk="${nextK || ''}" ${nextK ? '' : 'disabled'} aria-label="${mo ? 'Mese successivo' : 'Settimana successiva'}">›</button></div>`;
   let admin = '';
   if(adm){
     const state = !dr ? (pub ? 'Pubblicato a tutti.' : 'Nessuna bozza: premi Ricalcola.') : (pub && pub.t === dr.t ? 'Pubblicato a tutti.' : (pub ? 'Bozza diversa da quella pubblicata: la vedi solo tu.' : 'Bozza: la vedi solo tu.'));
-    admin = `<div class="tw-adm"><div class="row" style="gap:8px;flex-wrap:wrap"><button type="button" class="btn" data-action="tw-calc" data-wk="${wk}">🔄 Ricalcola</button><button type="button" class="btn primary" data-action="tw-pub" data-wk="${wk}" ${dr && !(pub && pub.t === dr.t) ? '' : 'disabled'}>📣 Mostra a tutti</button></div><small>${state}${totwIssue ? ' <b class="neg">Il database rifiuta il percorso «totw»: aggiungilo alle regole di Firebase.</b>' : ''}</small></div>`;
+    const prov = mo && key === cur && dr ? ' Il mese non è finito: il team è provvisorio e cambia con le prossime gare.' : '';
+    admin = `<div class="tw-adm"><div class="row" style="gap:8px;flex-wrap:wrap"><button type="button" class="btn" data-action="tw-calc" data-k="${mode || 'w'}" data-wk="${key}">🔄 Ricalcola</button><button type="button" class="btn primary" data-action="tw-pub" data-k="${mode || 'w'}" data-wk="${key}" ${dr && !(pub && pub.t === dr.t) ? '' : 'disabled'}>📣 Mostra a tutti</button></div><small>${state}${prov}${totwIssue ? ` <b class="neg">Il database rifiuta il percorso «${root}»: aggiungilo alle regole di Firebase.</b>` : ''}</small></div>`;
   }
+  const per = mo ? 'questo mese' : 'questa settimana', nome = mo ? 'Team of the Month' : 'Team of the Week';
   let body;
-  if(!t) body = `<div class="glass tw-empty">${adm ? 'Questa settimana non è ancora stata calcolata.' : 'Nessun Team of the Week pubblicato per questa settimana.'}</div>`;
+  if(!t) body = `<div class="glass tw-empty">${adm ? `Per ${per} non è ancora stato calcolato.` : `Nessun ${nome} pubblicato per ${per}.`}</div>`;
   else{
-    const rows = [['d', 'Difesa'], ['m', 'Centrocampo'], ['f', 'Attacco']].map(([k]) => twRow(t, k));
-    if(!rows[0].length && !rows[1].length && !rows[2].length) body = `<div class="glass tw-empty">Nessuna partita giocata in questa settimana: il team è vuoto.</div>`;
-    else body = `<div class="tw-x"><div class="tw-field">${TW_LINES}${[2, 1, 0].map(i => `<div class="tw-row r${rows[i].length}">${rows[i].map(pid => twSlot(pid, t.sc && t.sc[pid])).join('')}</div>`).join('')}</div></div>
-      <p class="mu sm tw-note">${dr ? 'BOZZA · ' : ''}${t.n} ${t.n === 1 ? 'gara' : 'gare'} nella settimana. Punteggio = rendimento medio a gara (gol, assist, MVP e voti dei compagni, meno autogol e ritardi). Vittoria e sconfitta contano solo a parità.</p>`;
+    const rows = ['d', 'm', 'f'].map(k => twRow(t, k));
+    if(!rows[0].length && !rows[1].length && !rows[2].length) body = `<div class="glass tw-empty">${mo ? 'Nessun giocatore con almeno 3 presenze in questo mese: il team è vuoto.' : 'Nessuna partita giocata in questa settimana: il team è vuoto.'}</div>`;
+    else body = `<div class="tw-x"><div class="tw-field${mo ? ' mo' : ''}">${TW_LINES}${[2, 1, 0].map(i => `<div class="tw-row r${rows[i].length}">${rows[i].map(pid => twSlot(pid, t.sc && t.sc[pid])).join('')}</div>`).join('')}</div></div>
+      <p class="mu sm tw-note">${dr ? 'BOZZA · ' : ''}${t.n} ${t.n === 1 ? 'gara' : 'gare'} ${mo ? 'nel mese' : 'nella settimana'}. Punteggio = rendimento medio a gara (gol, assist, MVP e voti dei compagni, meno autogol e ritardi). Vittoria e sconfitta contano solo a parità.${mo ? ' Servono almeno 3 presenze nel mese.' : ''}</p>`;
   }
   return `${nav}${admin}${body}`;
 }
-function twAction(kind, wk){
-  if(!ui.admin || !isoOk(wk)) return;
-  if(kind === 'calc'){ commit({ [`totw/draft/${wk}`]: twCalc(wk) }, 'Team calcolato: lo vedi solo tu finché non lo mostri a tutti'); }
-  else{ const dr = twGet('draft', wk); if(!dr) return; commit({ [`totw/pub/${wk}`]: dr }, 'Team of the Week mostrato a tutti'); }
+function twAction(act, key, mode){
+  const mo = mode === 'm', root = mo ? 'totm' : 'totw';
+  if(!ui.admin || !(mo ? monthOk(key) : isoOk(key))) return;
+  if(act === 'calc'){ commit({ [`${root}/draft/${key}`]: twCalc(key, mode) }, 'Team calcolato: lo vedi solo tu finché non lo mostri a tutti'); }
+  else{ const dr = twGet('draft', key, root); if(!dr) return; commit({ [`${root}/pub/${key}`]: dr }, `${mo ? 'Team of the Month' : 'Team of the Week'} mostrato a tutti`); }
 }
 function renderTrophies(){
   const el = $('#troph'); if(!el) return;
@@ -5301,10 +5319,10 @@ function renderTrophies(){
     const mine = !!me && (c.pid === me || (c.pair && c.pair.includes(me)));
     return recCard(c, { broken, chain, mine });
   }).join('');
-  const tt = ui.tTab === 'rec' ? 'rec' : ui.tTab === 'tw' ? 'tw' : 'plq';
-  const ttabs = `<div class="sub-tabs" role="tablist" aria-label="Trofei">${[['plq', 'Targhe'], ['rec', 'Trofei storici'], ['tw', 'TOTW']].map(([k, l]) => `<button type="button" role="tab" class="sub-tab ${k === tt ? 'on' : ''}" aria-selected="${k === tt}" data-ttab="${k}">${l}</button>`).join('')}</div>`;
-  el.innerHTML = `${ttabs}${tt === 'tw' ? '' : `<div class="glass th-hero"><h2>🏆 Trofei & Primati</h2><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa davvero meglio: a pari merito non cambiano mano.</p></div>`}
-    ${tt === 'tw' ? `<div class="th-sec"><h3>Team of the Week</h3><span>2-4-2 · da lunedì a domenica</span></div>${twView()}` : tt === 'plq' ? `<div class="th-sec"><h3>Le ${PL.length} targhe stagionali</h3><span>Leader in tempo reale · Stagione 26/27</span></div>
+  const tt = ui.tTab === 'rec' ? 'rec' : ui.tTab === 'tw' ? 'tw' : ui.tTab === 'tm' ? 'tm' : 'plq';
+  const ttabs = `<div class="sub-tabs" role="tablist" aria-label="Trofei">${[['plq', 'Targhe'], ['rec', 'Trofei storici'], ['tw', 'TOTW'], ['tm', 'TOTM']].map(([k, l]) => `<button type="button" role="tab" class="sub-tab ${k === tt ? 'on' : ''}" aria-selected="${k === tt}" data-ttab="${k}">${l}</button>`).join('')}</div>`;
+  el.innerHTML = `${ttabs}${tt === 'tw' || tt === 'tm' ? '' : `<div class="glass th-hero"><h2>🏆 Trofei & Primati</h2><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa davvero meglio: a pari merito non cambiano mano.</p></div>`}
+    ${tt === 'tw' ? `<div class="th-sec"><h3>Team of the Week</h3><span>2-4-2 · da lunedì a domenica</span></div>${twView('w')}` : tt === 'tm' ? `<div class="th-sec"><h3>Team of the Month</h3><span>2-4-2 · dal primo all’ultimo del mese</span></div>${twView('m')}` : tt === 'plq' ? `<div class="th-sec"><h3>Le ${PL.length} targhe stagionali</h3><span>Leader in tempo reale · Stagione 26/27</span></div>
     <div class="plk-grid">${plk}</div>` : `<div class="th-sec"><h3>Bacheca dei primati storici</h3><span>${nM} ${nM === 1 ? 'gara analizzata' : 'gare analizzate'}</span></div>
     <div class="rec-grid">${recs}</div>`}`;
   try{ localStorage.setItem('cmb2627_seenPlq', JSON.stringify(curP)); localStorage.setItem('cmb2627_seenRecV', JSON.stringify(curR)); }catch(e){}
@@ -7833,7 +7851,7 @@ document.addEventListener('click', async e => {
     renderBoardPart(); return;
   }
   if(d.mtab){ ui.mTab = d.mtab === 'form' ? 'form' : 'rep'; ui.swapSel = null; if(ui.mTab === 'rep') ui.swapMode = false; paintMatch(); return; }
-  if(d.ttab){ ui.tTab = d.ttab === 'rec' ? 'rec' : d.ttab === 'tw' ? 'tw' : 'plq'; renderTrophies(); return; }
+  if(d.ttab){ ui.tTab = d.ttab === 'rec' ? 'rec' : d.ttab === 'tw' ? 'tw' : d.ttab === 'tm' ? 'tm' : 'plq'; renderTrophies(); return; }
   if(d.ctab){ if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; } ui.cTab = d.ctab; renderCasino(); renderSlip(); return; }
   if(d.mpool){ const [k, a, b] = d.mpool.split('|'); placePool(d.mid, k, k === 'mvp' ? a : b, k === 'duel' ? a : undefined); return; }
   if(d.dlKind){ if(ui.dlForm){ ui.dlForm.kind = d.dlKind; $('#dl-pl').hidden = d.dlKind === 't'; $$('[data-dl-kind]').forEach(b => b.classList.toggle('primary', b.dataset.dlKind === d.dlKind)); } return; }
@@ -7895,9 +7913,9 @@ document.addEventListener('click', async e => {
     case 'keys-open': openKeys(); break;
     case 'key-reset': resetKey(d.pid); break;
     case 'final-close': closeModal('#m-final'); setTimeout(showNextRec, 300); break;
-    case 'tw-week': if(t.dataset.wk){ ui.twWeek = t.dataset.wk; renderTrophies(); } break;
-    case 'tw-calc': twAction('calc', t.dataset.wk); break;
-    case 'tw-pub': twAction('pub', t.dataset.wk); break;
+    case 'tw-week': if(t.dataset.wk){ if(t.dataset.k === 'm') ui.twMonth = t.dataset.wk; else ui.twWeek = t.dataset.wk; renderTrophies(); } break;
+    case 'tw-calc': twAction('calc', t.dataset.wk, t.dataset.k); break;
+    case 'tw-pub': twAction('pub', t.dataset.wk, t.dataset.k); break;
     case 'rec-next': if(recIdx < recList.length - 1){ recIdx++; drawRec(); } break;
     case 'rec-close': recQueue = []; recList = []; recShown = 0; closeModal('#m-rec'); break;
     case 'rec-board':   /* si apre sui trofei storici (non sulle targhe) e si scende al primo primato cambiato */
@@ -8109,6 +8127,9 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.9.1', date:'2026-10-19', items:[
+    `🌟 Nuovo “Team of the Month” nei Trofei: i migliori 8 del mese (dal primo all’ultimo giorno) in campo con la formazione 2-4-2, con la grafica bianca e oro. Per entrare servono almeno 3 presenze nel mese e conta la media a partita, come per il Team of the Week.`
+  ] },
   { v:'1.9.0', date:'2026-10-19', items:[
     `⭐ Nuovo “Team of the Week” nei Trofei: i migliori 8 della settimana (da lunedì a domenica) schierati in campo con la formazione 2-4-2, senza portiere. Contano i gol, gli assist, l’MVP e i voti dei compagni: vincere o perdere serve solo a parità.`,
     `🃏 Chi entra nel Team of the Week ha la figurina speciale arancione e viola, anche tra i giocatori, e il bollino “TOTW” nella scheda. Resta finché l’organizzatore non pubblica il team successivo.`

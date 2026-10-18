@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.1
+- Nuova scheda «TOTM» in Trofei: Team of the Month, stessa formazione 2-4-2 e stesso punteggio del TOTW (media a gara), calcolato sul mese di calendario secondo la data delle gare, con almeno 3 presenze. Stesso flusso admin: «Ricalcola» (bozza visibile solo all'admin) e «Mostra a tutti»; frecce per scorrere i mesi; nel mese in corso il team è provvisorio.
+- Dati nuovi e opzionali: `totm/draft/{AAAA-MM}` e `totm/pub/{AAAA-MM}`, stessa struttura di `totw`. **Le regole di Firebase devono permettere il percorso `totm`.**
+- La grafica bianca e oro vale solo nella scheda TOTM: le figurine dei giocatori non cambiano. Le quattro schede dei Trofei si stringono su telefono per stare in una riga.
+
 ## 1.9.0
 - Nuova scheda «TOTW» in Trofei: Team of the Week, 8 giocatori in 2-4-2 senza portiere, almeno 2 DIF e 2 CEN, gli altri i migliori. Punteggio di gara = rendimento personale (gol e assist pesati dal ruolo, MVP, voto dei compagni, meno autogol e ritardo); la vittoria e la sconfitta servono solo da spareggio. Settimana da lunedì a domenica secondo la data della gara (senza data, quella di inserimento), media sulle gare giocate, minimo 1 presenza; settimana senza gare = team vuoto.
 - Admin: «Ricalcola» salva una bozza che vede solo l'admin, «Mostra a tutti» la pubblica; frecce per scorrere le settimane (l'admin può ricalcolare anche quelle passate).
