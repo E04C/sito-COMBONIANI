@@ -1,9 +1,10 @@
 # Changelog
 
 ## 1.9.7
-- TOTW/TOTM: con 2 o più gare nel periodo si scarta la peggiore e si fa la media delle altre (`twAgg`); con 2 gare conta quindi solo la migliore, con 1 gara resta quella. Così chi gioca di più non è svantaggiato da una gara andata male. Il TOTM scarta sempre la peggiore (servono 3 presenze).
-- Sulle figurine del campo e nell'immagine esportata, al posto di media e presenze c'è il motivo dell'ingresso: la giornata della gara migliore e la prestazione (es. «G6 · 2 gol · 3 assist»), salvate nel team (`bs`: giornata, gol, assist, MVP) o ricalcolate per i team vecchi.
-- Solo admin: sotto i tasti, «Chi è in corsa» elenca i giocatori con le presenze e il punteggio, e chi è fuori per poche presenze, per controllare la soglia (3 nel mese, 1 nella settimana).
+- TOTW: nessuna media, conta solo la gara migliore della settimana di ogni giocatore (max 2 gare a settimana), qualunque sia il numero di presenze (minimo 1). Parità: esito di quella gara, poi i gol in quella gara, poi l'ordine alfabetico.
+- TOTM: media di tutte le gare del mese, qualunque sia il numero di presenze (minimo 3 per entrare); nessuno scarto. Parità: esito medio, gol totali.
+- Figurine del campo e immagine esportata: nel TOTW la giornata della gara migliore e la prestazione (es. «G6 · 2 gol · 3 assist», dati salvati nel team come `bs` o ricalcolati per i team vecchi); nel TOTM media e presenze.
+- Solo admin: sotto i tasti, «Chi è in corsa» elenca i giocatori con le presenze e il punteggio, e chi è fuori per poche presenze, per controllare la soglia.
 
 ## 1.9.6
 - TOTW: il numero accanto a «TOTW» è la settimana di stagione (S1 = settimana della prima gara giocata) e non più la settimana dell'anno (`twSeasonNum`). Lo stesso numero compare nel bollino della figurina aperta e sotto il titolo della settimana.
