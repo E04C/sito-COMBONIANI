@@ -1719,15 +1719,28 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 .tw-adm{margin:0 0 12px;padding:12px;border-radius:14px;border:1px solid rgba(168,85,247,.4);background:rgba(139,92,246,.08)}
 .tw-adm small{display:block;margin-top:8px;color:var(--mu)}
 .tw-empty{padding:22px 16px;text-align:center;color:var(--mu)}
-.tw-pitch{position:relative;display:flex;flex-direction:column;gap:16px;padding:22px 8px 18px;border-radius:22px;border:1.5px solid rgba(168,85,247,.45);overflow:hidden;
-  background:radial-gradient(120% 60% at 50% 0,rgba(139,92,246,.35),rgba(10,4,20,0) 70%),radial-gradient(100% 50% at 50% 100%,rgba(249,115,22,.28),rgba(10,4,20,0) 70%),#0a0414}
-.tw-row{position:relative;display:flex;justify-content:space-evenly;gap:6px}
-.tw-p{width:25%;max-width:92px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0;border:0;background:none;color:var(--tx);text-align:center}
-.tw-av{position:relative;display:block;padding:3px;border-radius:50%;background:linear-gradient(135deg,#fb923c,#f43f5e 50%,#8b5cf6);box-shadow:0 0 14px rgba(168,85,247,.5)}
-.tw-av .av{display:block;border:2px solid #0a0414}
-.tw-o{position:absolute;right:-6px;bottom:-4px;min-width:26px;height:20px;padding:0 4px;display:grid;place-items:center;border-radius:7px;background:var(--tier);color:#0a0d14;font:italic 800 13px/1 var(--disp)}
-.tw-n{max-width:100%;font:800 12.5px/1.1 var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tw-s{font:700 11px/1 var(--body);color:var(--mu)}
+.tw-x{container-type:inline-size;width:100%;max-width:520px;margin:0 auto}
+.tw-field{position:relative;width:100%;aspect-ratio:100/146;border-radius:3cqw;overflow:hidden;display:flex;flex-direction:column;justify-content:space-evenly;padding:4cqw 0 7cqw;
+  background:repeating-linear-gradient(0deg,#17702b 0 8.33%,#1d8234 8.33% 16.66%);box-shadow:0 0 0 .6cqw rgba(168,85,247,.55),0 0 6cqw rgba(139,92,246,.35),0 6cqw 12cqw -6cqw rgba(0,0,0,.8)}
+.tw-field::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 45%,rgba(0,0,0,0) 55%,rgba(0,0,0,.45))}
+.tw-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.tw-row{position:relative;z-index:1;display:flex;justify-content:space-evenly;align-items:flex-start}
+.tw-row.r2{padding:0 14cqw}
+.twc{position:relative;width:23.5cqw;padding:0;border:0;background:none;color:#fff;text-align:center;display:flex;flex-direction:column;align-items:center;gap:1.2cqw;transition:transform .2s var(--ease)}
+.twc:active{transform:scale(.96)}
+.twc-card{position:relative;display:block;width:100%;aspect-ratio:100/140;overflow:hidden;
+  clip-path:polygon(0 5%,9% 0,39% 0,50% 3.4%,61% 0,91% 0,100% 5%,100% 90%,50% 100%,0 90%);
+  background:linear-gradient(160deg,#fb923c,#f43f5e 45%,#8b5cf6);padding:0}
+.twc-card::before{content:"";position:absolute;inset:.9cqw;z-index:0;clip-path:polygon(0 5%,9% 0,39% 0,50% 3.4%,61% 0,91% 0,100% 5%,100% 90%,50% 100%,0 90%);background:radial-gradient(90% 60% at 50% 25%,rgba(124,58,237,.65),rgba(10,4,20,0) 70%),linear-gradient(180deg,#1a0b33,#07030f)}
+.twc-ph{position:absolute;left:5%;right:5%;top:8%;bottom:26%;z-index:1;background:center top/cover no-repeat;border-radius:2cqw 2cqw 0 0;-webkit-mask-image:linear-gradient(180deg,#000 78%,transparent);mask-image:linear-gradient(180deg,#000 78%,transparent)}
+.twc-ini{display:grid;place-items:center;font:italic 800 8cqw/1 var(--disp);color:rgba(255,255,255,.5)}
+.twc-o{position:absolute;left:9%;top:10%;z-index:3;display:flex;flex-direction:column;align-items:flex-start;line-height:1;text-shadow:0 1px 4px rgba(0,0,0,.85)}
+.twc-o b{font:italic 900 7.2cqw/1 var(--disp);color:var(--tier-ink)}
+.twc-o em{margin-top:.6cqw;font:800 3.1cqw/1 var(--body);font-style:normal;letter-spacing:.04em;color:#fff}
+.twc-pl{position:absolute;right:9%;top:19%;z-index:3;display:flex;flex-direction:column;gap:.8cqw;font-size:4.2cqw;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.8))}
+.twc-pl i{font-style:normal}
+.twc-n{position:absolute;left:6%;right:6%;bottom:12%;z-index:3;padding-top:2cqw;font:italic 800 4.1cqw/1.05 var(--disp);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 4px rgba(0,0,0,.9);background:linear-gradient(180deg,rgba(7,3,15,0),rgba(7,3,15,.88) 40%)}
+.twc-avg{display:block;min-width:60%;padding:.9cqw 2cqw;border-radius:999px;background:rgba(10,4,20,.82);border:1px solid rgba(168,85,247,.6);font:800 3.2cqw/1.2 var(--body);letter-spacing:.03em;white-space:nowrap;color:#fed7aa}
 .tw-note{margin:10px 2px 0;text-align:center}
 </style>
 </head>
@@ -5205,8 +5218,12 @@ const twChip = pid => { const a = twHas(pid); return a ? `<span class="twchip" t
 const twTag = pid => { const a = twHas(pid); return a ? `<span class="mfig-tw">TOTW <i>${a.label}</i></span>` : ''; };
 function twSlot(pid, sc){
   const s = STATS.byId[pid]; if(!s) return '';
-  return `<button type="button" class="tw-p t-${tierOf(s.ovr)}" data-open-player="${pid}"><span class="tw-av">${avatar(s.p, 'md')}<span class="tw-o">${roundOvr(s.ovr)}</span></span><span class="tw-n">${esc(s.name)}</span><span class="tw-s">${sc != null ? String(sc).replace('.', ',') + ' pt' : ''}</span></button>`;
+  const cp = cardPosList(s.p.cardPos), role = cp.length ? cp.join('/') : s.p.role;
+  const pl = (s.plaques || []).map(id => plaqueById(id)).filter(Boolean).slice(0, 3).map(P => `<i title="${esc(P.name)}">${P.icon}</i>`).join('');
+  const ph = s.p.photo ? `<span class="twc-ph" style="background-image:url('${s.p.photo}')"></span>` : `<span class="twc-ph twc-ini">${esc(initials(s.p.name))}</span>`;
+  return `<button type="button" class="twc t-${tierOf(s.ovr)}" data-open-player="${pid}" aria-label="${esc(s.name)}, overall ${roundOvr(s.ovr)}"><span class="twc-card">${ph}<span class="twc-o"><b>${roundOvr(s.ovr)}</b><em>${esc(role)}</em></span>${pl ? `<span class="twc-pl">${pl}</span>` : ''}<span class="twc-n">${esc(s.name)}</span></span><span class="twc-avg">${sc != null ? 'media ' + String(sc).replace('.', ',') : ''}</span></button>`;
 }
+const TW_LINES = `<svg class="tw-lines" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="rgba(255,255,255,.55)" stroke-width=".45"><rect x="2" y="2" width="96" height="136"/><path d="M2 70H98"/><circle cx="50" cy="70" r="13"/><rect x="26" y="2" width="48" height="16"/><rect x="38" y="2" width="24" height="6"/><path d="M40 18a10 10 0 0 0 20 0"/><rect x="26" y="122" width="48" height="16"/><rect x="38" y="132" width="24" height="6"/><path d="M40 122a10 10 0 0 1 20 0"/></g><circle cx="50" cy="70" r=".9" fill="rgba(255,255,255,.7)"/></svg>`;
 function twView(){
   const adm = !!ui.admin, cur = weekStart(isoDay(new Date())), pubKs = twPubKeys();
   const firstDay = STATS.matches.map(matchDay).filter(Boolean).sort()[0];
@@ -5226,7 +5243,7 @@ function twView(){
   else{
     const rows = [['d', 'Difesa'], ['m', 'Centrocampo'], ['f', 'Attacco']].map(([k]) => twRow(t, k));
     if(!rows[0].length && !rows[1].length && !rows[2].length) body = `<div class="glass tw-empty">Nessuna partita giocata in questa settimana: il team è vuoto.</div>`;
-    else body = `<div class="tw-pitch">${[2, 1, 0].map(i => `<div class="tw-row">${rows[i].map(pid => twSlot(pid, t.sc && t.sc[pid])).join('')}</div>`).join('')}</div>
+    else body = `<div class="tw-x"><div class="tw-field">${TW_LINES}${[2, 1, 0].map(i => `<div class="tw-row r${rows[i].length}">${rows[i].map(pid => twSlot(pid, t.sc && t.sc[pid])).join('')}</div>`).join('')}</div></div>
       <p class="mu sm tw-note">${dr ? 'BOZZA · ' : ''}${t.n} ${t.n === 1 ? 'gara' : 'gare'} nella settimana. Punteggio = rendimento medio a gara (gol, assist, MVP e voti dei compagni, meno autogol e ritardi). Vittoria e sconfitta contano solo a parità.</p>`;
   }
   return `${nav}${admin}${body}`;
