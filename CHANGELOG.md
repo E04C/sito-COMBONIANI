@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.0
+- Nuova scheda «TOTW» in Trofei: Team of the Week, 8 giocatori in 2-4-2 senza portiere, almeno 2 DIF e 2 CEN, gli altri i migliori. Punteggio di gara = rendimento personale (gol e assist pesati dal ruolo, MVP, voto dei compagni, meno autogol e ritardo); la vittoria e la sconfitta servono solo da spareggio. Settimana da lunedì a domenica secondo la data della gara (senza data, quella di inserimento), media sulle gare giocate, minimo 1 presenza; settimana senza gare = team vuoto.
+- Admin: «Ricalcola» salva una bozza che vede solo l'admin, «Mostra a tutti» la pubblica; frecce per scorrere le settimane (l'admin può ricalcolare anche quelle passate).
+- Dati nuovi e opzionali: `totw/draft/{lunedì}` e `totw/pub/{lunedì}` = `{ d, m, f, sc, n, t }` (id per riga separati da virgola, punteggi, gare, orario). **Le regole di Firebase devono permettere il percorso `totw`**; se lo rifiutano l'app funziona e l'admin vede l'avviso nella scheda.
+- Il team pubblicato più recente dà la figurina speciale arancio e viola (overlay SVG statico, nessuna animazione) nella griglia Giocatori e il bollino «TOTW» nella figurina aperta; chi non è più nel team torna normale alla pubblicazione successiva.
+
 ## 1.8.3
 - Tolto del tutto il ruolo JOLLY: non c'è più nel form giocatore, nelle etichette, nei filtri, nell'import Excel (un ruolo sconosciuto diventa CEN), nei moltiplicatori e nell'ordine dei ruoli. Un giocatore con un ruolo non valido è trattato come CEN (moltiplicatore 1, come prima il Jolly): nessun numero cambia. Nessun giocatore era Jolly.
 
