@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.7
+- TOTW/TOTM: con 3 o più gare nel periodo si scarta la peggiore e si fa la media delle altre (`twAgg`); con 1 o 2 gare resta la media. Così chi gioca di più non è svantaggiato da una gara andata male. Il TOTM, che richiede almeno 3 presenze, scarta sempre la peggiore.
+- TOTW: tolte media e presenze dalle figurine del campo e dall'immagine esportata; restano nel TOTM.
+- Solo admin: sotto i tasti, «Chi è in corsa» elenca i giocatori con le presenze e il punteggio, e chi è fuori per poche presenze, per controllare la soglia (3 nel mese, 1 nella settimana).
+
 ## 1.9.6
 - TOTW: il numero accanto a «TOTW» è la settimana di stagione (S1 = settimana della prima gara giocata) e non più la settimana dell'anno (`twSeasonNum`). Lo stesso numero compare nel bollino della figurina aperta e sotto il titolo della settimana.
 - La linguetta «TOTW» sulle figurine della griglia è centrata in basso (in alto la coprivano il badge «TU» e quello delle serie di vittorie). Solo interfaccia, senza voce nelle Novità.
