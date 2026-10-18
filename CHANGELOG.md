@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9.5
+- TOTW e TOTM: tasto «Esporta la grafica» (immagine verticale 1080 px, pronta da condividere o scaricare) e, per l'admin, «Sposta giocatori» come nelle formazioni delle gare: si toccano due giocatori e si scambiano di posto. Lo spostamento modifica la bozza (se non c'è parte dal team pubblicato) e va pubblicato con «Mostra a tutti». Senza voce nelle Novità.
+- L'esportazione disegna il campo direttamente su un canvas con le stesse immagini SVG dell'app (html2canvas deformava cornici e sfondi); nessun dato nuovo.
+
 ## 1.9.4
 - Campo TOTW/TOTM: overall e ruolo sulle figurine ridotti a circa metà (`.tw-x .mfig-rt` in scala .55), così coprono meno la foto. Solo interfaccia, senza voce nelle Novità.
 - Le presenze nel periodo si mostrano anche per i team TOTW/TOTM salvati prima della 1.9.2 (che non le avevano): se mancano si contano dalle gare (`twCount`).

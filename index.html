@@ -1751,6 +1751,7 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 .twc-pl{display:flex;justify-content:center;gap:2px;font-size:calc(var(--twk) * 26px);line-height:1;min-height:calc(var(--twk) * 26px)}
 .twc-pl i{font-style:normal;filter:drop-shadow(0 1px 2px rgba(0,0,0,.8))}
 .tw-field.mo{box-shadow:0 0 0 .6cqw rgba(245,197,66,.7),0 0 6cqw rgba(245,197,66,.3),0 6cqw 12cqw -6cqw rgba(0,0,0,.8)}
+.twc.sel .twc-s{outline:3px solid #fde047;outline-offset:3px;border-radius:calc(var(--twk) * 18px);animation:none}
 .tw-note{margin:10px 2px 0;text-align:center}
 </style>
 </head>
@@ -2048,7 +2049,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.9.4';
+const APP_VERSION = '1.9.5';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -2213,6 +2214,9 @@ const ui = {
   tTab:'plq',
   twWeek:null,
   twMonth:null,
+  twSwap:false,
+  twSel:null,
+  twCtx:null,
   mTab:'rep',
   cf:{ q:'', played:false, min:0, open:false },
   duel:null
@@ -5238,11 +5242,13 @@ function twActive(){
 const twHas = pid => { const a = twActive(); return a && a.ids.has(pid) ? a : null; };
 const twChip = pid => { const a = twHas(pid); return a ? `<span class="twchip" title="Nel Team of the Week, settimana ${esc(twLabel(a.wk))}">⭐ TOTW ${a.label}</span>` : ''; };
 const twTag = pid => { const a = twHas(pid); return a ? `<span class="mfig-tw">TOTW <i>${a.label}</i></span>` : ''; };
-function twSlot(pid, sc, np, mode){   /* la stessa figurina della griglia Giocatori (arancio e viola nel TOTW, bianca e oro nel TOTM), con media e presenze al posto delle cinque statistiche */
+function twSlot(pid, sc, np, mode, o = {}){   /* la stessa figurina della griglia Giocatori (arancio e viola nel TOTW, bianca e oro nel TOTM), con media e presenze al posto delle cinque statistiche */
   const s = STATS.byId[pid]; if(!s) return '';
   const pl = (s.plaques || []).map(id => plaqueById(id)).filter(Boolean).slice(0, 3).map(P => `<i title="${esc(P.name)}">${P.icon}</i>`).join('');
   const md = sc != null ? String(sc).replace('.', ',') : '–';
-  return `<span class="twc"><span class="twc-s"><button type="button" class="mfig t-${tierOf(s.ovr)} ${mode === 'm' ? 'totm' : 'totw'}" data-open-player="${pid}" aria-label="${esc(s.name)}, overall ${roundOvr(s.ovr)}"><span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}<span class="mfig-rt">${ovrPlate(s.ovr, 'sm')}${roleTag(pid, s.p)}</span><span class="mfig-b"><span class="mfig-n">${nameHTML(pid)}</span><span class="mfig-s"><span><b>${md}</b><i>media</i></span><span><b>${np != null ? np : '–'}</b><i>${np === 1 ? 'presenza' : 'presenze'}</i></span></span></span></span></span></button></span><span class="twc-pl">${pl}</span></span>`;
+  const ph = o.ph && o.ph[pid] ? `<span class="ph"><canvas data-cv="${pid}" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:${o.ph[pid].w}px;height:${o.ph[pid].h}px"></canvas></span>` : photoBlock(s.p);
+  const act = o.swap ? `data-action="tw-swap" data-pid="${pid}"` : `data-open-player="${pid}"`;
+  return `<span class="twc${o.sel === pid ? ' sel' : ''}"><span class="twc-s"><button type="button" class="mfig t-${tierOf(s.ovr)} ${mode === 'm' ? 'totm' : 'totw'}" ${act} aria-label="${esc(s.name)}, overall ${roundOvr(s.ovr)}"><span class="mfig-fr chamf"><span class="mfig-in chamf">${ph}<span class="mfig-rt">${ovrPlate(s.ovr, 'sm')}${roleTag(pid, s.p)}</span><span class="mfig-b"><span class="mfig-n">${nameHTML(pid)}</span><span class="mfig-s"><span><b>${md}</b><i>media</i></span><span><b>${np != null ? np : '–'}</b><i>${np === 1 ? 'presenza' : 'presenze'}</i></span></span></span></span></span></button></span><span class="twc-pl">${pl}</span></span>`;
 }
 const TW_LINES = `<svg class="tw-lines" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="rgba(255,255,255,.55)" stroke-width=".45"><rect x="2" y="2" width="96" height="136"/><path d="M2 70H98"/><circle cx="50" cy="70" r="13"/><rect x="26" y="2" width="48" height="16"/><rect x="38" y="2" width="24" height="6"/><path d="M40 18a10 10 0 0 0 20 0"/><rect x="26" y="122" width="48" height="16"/><rect x="38" y="132" width="24" height="6"/><path d="M40 122a10 10 0 0 1 20 0"/></g><circle cx="50" cy="70" r=".9" fill="rgba(255,255,255,.7)"/></svg>`;
 function twView(mode){
@@ -5262,21 +5268,133 @@ function twView(mode){
   if(adm){
     const state = !dr ? (pub ? 'Pubblicato a tutti.' : 'Nessuna bozza: premi Ricalcola.') : (pub && pub.t === dr.t ? 'Pubblicato a tutti.' : (pub ? 'Bozza diversa da quella pubblicata: la vedi solo tu.' : 'Bozza: la vedi solo tu.'));
     const prov = mo && key === cur && dr ? ' Il mese non è finito: il team è provvisorio e cambia con le prossime gare.' : '';
-    admin = `<div class="tw-adm"><div class="row" style="gap:8px;flex-wrap:wrap"><button type="button" class="btn" data-action="tw-calc" data-k="${mode || 'w'}" data-wk="${key}">🔄 Ricalcola</button><button type="button" class="btn primary" data-action="tw-pub" data-k="${mode || 'w'}" data-wk="${key}" ${dr && !(pub && pub.t === dr.t) ? '' : 'disabled'}>📣 Mostra a tutti</button></div><small>${state}${prov}${totwIssue ? ` <b class="neg">Il database rifiuta il percorso «${root}»: aggiungilo alle regole di Firebase.</b>` : ''}</small></div>`;
+    admin = `<div class="tw-adm"><div class="row" style="gap:8px;flex-wrap:wrap"><button type="button" class="btn" data-action="tw-calc" data-k="${mode || 'w'}" data-wk="${key}">🔄 Ricalcola</button><button type="button" class="btn primary" data-action="tw-pub" data-k="${mode || 'w'}" data-wk="${key}" ${dr && !(pub && pub.t === dr.t) ? '' : 'disabled'}>📣 Mostra a tutti</button>${t ? `<button type="button" class="btn sm ${ui.twSwap ? 'primary' : ''}" data-action="tw-swapmode">${ui.twSwap ? '✓ Fine spostamenti' : '🔀 Sposta giocatori'}</button>` : ''}</div>${ui.twSwap && t ? `<div class="swap-hint">${ui.twSel ? `Selezionato <b>${esc(pname(ui.twSel))}</b>: tocca il giocatore con cui scambiarlo.` : 'Tocca due giocatori per scambiarli di posto. Lo spostamento modifica la bozza: poi premi «Mostra a tutti».'}</div>` : ''}<small>${state}${prov}${totwIssue ? ` <b class="neg">Il database rifiuta il percorso «${root}»: aggiungilo alle regole di Firebase.</b>` : ''}</small></div>`;
   }
+  ui.twCtx = { mode:mode || 'w', key };
   const per = mo ? 'questo mese' : 'questa settimana', nome = mo ? 'Team of the Month' : 'Team of the Week';
   let body;
   if(!t) body = `<div class="glass tw-empty">${adm ? `Per ${per} non è ancora stato calcolato.` : `Nessun ${nome} pubblicato per ${per}.`}</div>`;
   else{
     const rows = ['d', 'm', 'f'].map(k => twRow(t, k));
     if(!rows[0].length && !rows[1].length && !rows[2].length) body = `<div class="glass tw-empty">${mo ? 'Nessun giocatore con almeno 3 presenze in questo mese: il team è vuoto.' : 'Nessuna partita giocata in questa settimana: il team è vuoto.'}</div>`;
-    else body = `<div class="tw-x"><div class="tw-field${mo ? ' mo' : ''}">${TW_LINES}${[2, 1, 0].map(i => `<div class="tw-row r${rows[i].length}">${rows[i].map(pid => twSlot(pid, t.sc && t.sc[pid], t.np && t.np[pid] != null ? t.np[pid] : twCount(pid, key, mode), mode)).join('')}</div>`).join('')}</div></div>
+    else body = `<div class="tw-x"><div class="tw-field${mo ? ' mo' : ''}">${TW_LINES}${[2, 1, 0].map(i => `<div class="tw-row r${rows[i].length}">${rows[i].map(pid => twSlot(pid, t.sc && t.sc[pid], t.np && t.np[pid] != null ? t.np[pid] : twCount(pid, key, mode), mode, { swap:adm && ui.twSwap, sel:ui.twSel })).join('')}</div>`).join('')}</div></div>
+      <div class="row" style="justify-content:center;margin-top:10px"><button type="button" class="btn sm" data-action="tw-export" data-k="${mode || 'w'}" data-wk="${key}">📸 Esporta la grafica</button></div>
       <p class="mu sm tw-note">${dr ? 'BOZZA · ' : ''}${t.n} ${t.n === 1 ? 'gara' : 'gare'} ${mo ? 'nel mese' : 'nella settimana'}. Punteggio = rendimento medio a gara (gol, assist, MVP e voti dei compagni, meno autogol e ritardi). Vittoria e sconfitta contano solo a parità.${mo ? ' Servono almeno 3 presenze nel mese.' : ''}</p>`;
   }
   return `${nav}${admin}${body}`;
 }
 function twFit(){ document.querySelectorAll('.tw-x').forEach(x => { const w = x.clientWidth; if(w) x.style.setProperty('--twk', (w * 0.236 / 160).toFixed(4)); }); }
 window.addEventListener('resize', twFit);
+/* Sposta giocatori: scambia di posto due giocatori della bozza (se non c'è si parte dal team pubblicato) */
+function twSwapPlayers(a, b){
+  const c = ui.twCtx; if(!ui.admin || !c || a === b) return;
+  const root = c.mode === 'm' ? 'totm' : 'totw', base = twGet('draft', c.key, root) || twGet('pub', c.key, root); if(!base) return;
+  const rows = ['d', 'm', 'f'].map(k => twRow(base, k)), pos = pid => { for(let r = 0; r < 3; r++){ const i = rows[r].indexOf(pid); if(i >= 0) return [r, i]; } return null; };
+  const pa = pos(a), pb = pos(b); if(!pa || !pb) return;
+  rows[pa[0]][pa[1]] = b; rows[pb[0]][pb[1]] = a;
+  commit({ [`${root}/draft/${c.key}`]: { ...base, d:rows[0].join(','), m:rows[1].join(','), f:rows[2].join(','), t:Date.now() } });
+}
+/* Esportazione della grafica: il campo si disegna direttamente su un canvas (html2canvas deforma cornici e sfondi SVG), con le stesse immagini dell'app.
+   Immagine verticale 1080 px, pronta da condividere o scaricare. */
+const TW_TIER = { dia:['#38bdf8', '#e0f2fe'], gold:['#fbbf24', '#fef08a'], silver:['#94a3b8', '#f1f5f9'], bronze:['#7a4c28', '#d9a574'] };
+const twUrl = v => { const m = /url\("(data:[^"]*)"\)/.exec(v || ''); return m ? decodeURIComponent(m[1]).replace(/^data:image\/svg\+xml,/, '') : null; };
+const twImg = svg => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); });
+function twRound(c, x, y, w, h, r){ c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+async function twDrawCard(c, x, y, w, pid, sc, np, mode, art, fonts){
+  const s = STATS.byId[pid], h = w * 238 / 160, tier = tierOf(s.ovr), mo = mode === 'm';
+  c.save(); c.shadowColor = mo ? 'rgba(245,197,66,.55)' : 'rgba(168,85,247,.6)'; c.shadowBlur = w * .18;
+  c.fillStyle = '#07030f'; twRound(c, x + w * .06, y + h * .05, w * .88, h * .9, w * .06); c.fill(); c.restore();
+  c.save(); c.translate(x, y);
+  c.drawImage(art.panel, 0, 0, w, h);                                        // sfondo della foto
+  const px = w * .0567, py = h * .0533, pw = w - 2 * px, ph = h * .66 - py;   // riquadro foto
+  if(s.p.photo){
+    try{
+      const im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = s.p.photo; });
+      const k = Math.min(pw / im.naturalWidth, ph / im.naturalHeight), iw = im.naturalWidth * k, ih = im.naturalHeight * k;
+      const o = document.createElement('canvas'); o.width = Math.ceil(pw); o.height = Math.ceil(ph);
+      const oc = o.getContext('2d'); oc.imageSmoothingQuality = 'high'; oc.drawImage(im, (pw - iw) / 2, (ph - ih) / 2, iw, ih);
+      oc.globalCompositeOperation = 'destination-in'; const g = oc.createLinearGradient(0, 0, 0, ph); g.addColorStop(.7, '#000'); g.addColorStop(1, 'rgba(0,0,0,0)'); oc.fillStyle = g; oc.fillRect(0, 0, pw, ph);
+      c.drawImage(o, px, py, pw, ph);
+    }catch(e){ /* senza foto resta lo sfondo */ }
+  }else{ c.fillStyle = 'rgba(255,255,255,.4)'; c.font = `italic 800 ${w * .25}px ${fonts.disp}`; c.textAlign = 'center'; c.fillText(initials(s.p.name), w / 2, h * .42); }
+  // fascia delle statistiche che sfuma nella foto
+  const by = h * .6, bh = h - py - by, o2 = document.createElement('canvas'); o2.width = Math.ceil(pw); o2.height = Math.ceil(bh);
+  const bc = o2.getContext('2d'); bc.drawImage(art.band, 0, 0, pw, bh); bc.fillStyle = 'rgba(0,0,0,.3)'; bc.fillRect(0, 0, pw, bh);
+  bc.globalCompositeOperation = 'destination-in'; const gm = bc.createLinearGradient(0, 0, 0, bh); gm.addColorStop(0, 'rgba(0,0,0,0)'); gm.addColorStop(.18, 'rgba(0,0,0,.55)'); gm.addColorStop(.3, '#000'); bc.fillStyle = gm; bc.fillRect(0, 0, pw, bh);
+  c.drawImage(o2, px, by, pw, bh);
+  c.drawImage(art.frame, 0, 0, w, h);                                         // cornice
+  // targhetta overall e ruolo, in alto a destra
+  const pw2 = w * .2, ph2 = pw2 * 1.1, tx = w - px - w * .035 - pw2, ty = h * .075, tc = TW_TIER[tier];
+  const gt = c.createLinearGradient(tx, ty, tx + pw2, ty + ph2); gt.addColorStop(0, tc[0]); gt.addColorStop(1, tc[1]);
+  c.fillStyle = gt; twRound(c, tx, ty, pw2, ph2, w * .03); c.fill();
+  c.fillStyle = '#0a0d14'; c.textAlign = 'center'; c.font = `italic 900 ${w * .105}px ${fonts.disp}`; c.fillText(String(roundOvr(s.ovr)), tx + pw2 / 2, ty + ph2 * .62);
+  c.font = `800 ${w * .04}px ${fonts.body}`; c.fillText('OVR', tx + pw2 / 2, ty + ph2 * .9);
+  const cp = cardPosList(s.p.cardPos), role = cp.length ? cp.join('/') : (ROLES[s.p.role] ? s.p.role : 'CEN');
+  c.font = `800 ${w * .045}px ${fonts.body}`; const rw = Math.max(pw2, c.measureText(role).width + w * .05), rx = tx + pw2 - rw, ry = ty + ph2 + w * .02;
+  c.fillStyle = 'rgba(10,13,20,.85)'; twRound(c, rx, ry, rw, w * .075, w * .02); c.fill(); c.strokeStyle = 'rgba(249,115,22,.6)'; c.lineWidth = Math.max(1, w * .006); c.stroke();
+  c.fillStyle = '#f97316'; c.fillText(role, rx + rw / 2, ry + w * .053);
+  // nome, media e presenze
+  c.fillStyle = '#fff'; c.textAlign = 'center'; c.font = `italic 800 ${w * .125}px ${fonts.disp}`; c.shadowColor = 'rgba(0,0,0,.8)'; c.shadowBlur = w * .02;
+  let nm = s.name; while(nm.length > 3 && c.measureText(nm).width > w * .8) nm = nm.slice(0, -2);
+  c.fillText(nm === s.name ? nm : nm + '…', w / 2, h * .715); c.shadowBlur = 0;
+  const num2 = [[sc != null ? String(sc).replace('.', ',') : '–', 'MEDIA', .3], [np != null ? String(np) : '–', np === 1 ? 'PRESENZA' : 'PRESENZE', .7]];
+  for(const [v, l, fx] of num2){ c.fillStyle = '#fff'; c.font = `italic 800 ${w * .15}px ${fonts.disp}`; c.fillText(v, w * fx, h * .835); c.fillStyle = '#9aa3b5'; c.font = `800 ${w * .068}px ${fonts.body}`; c.fillText(l, w * fx, h * .91); }
+  c.restore();
+  // targhe sotto la carta
+  const pl = (s.plaques || []).map(id => plaqueById(id)).filter(Boolean).slice(0, 3).map(P => P.icon).join(' ');
+  if(pl){ c.font = `${w * .16}px ${fonts.body}`; c.textAlign = 'center'; c.fillStyle = '#fff'; c.fillText(pl, x + w / 2, y + h + w * .2); }
+}
+async function twRenderCanvas(t, key, mode){
+  const mo = mode === 'm', probe = document.querySelector(`.tw-x .mfig.${mo ? 'totm' : 'totw'}`);
+  const cs = probe ? getComputedStyle(probe) : null;
+  const svgs = cs ? { frame:twUrl(cs.getPropertyValue('--frame')), panel:twUrl(cs.getPropertyValue('--tw-panel')), band:twUrl(cs.getPropertyValue('--tw-band')) } : null;
+  if(!svgs || !svgs.frame || !svgs.panel || !svgs.band) throw new Error('grafica');
+  const art = { frame:await twImg(svgs.frame), panel:await twImg(svgs.panel), band:await twImg(svgs.band) };
+  if(document.fonts?.ready) await document.fonts.ready;
+  const fonts = { disp:getComputedStyle(document.querySelector('.mfig-n') || document.body).fontFamily, body:getComputedStyle(document.body).fontFamily };
+  const K = 2, W = 540, FW = 457, FH = FW * 154 / 100, FX = (W - FW) / 2, FY = 100, H = FY + FH + 70;
+  const cv = document.createElement('canvas'); cv.width = W * K; cv.height = Math.round(H * K); const c = cv.getContext('2d'); c.scale(K, K);
+  c.fillStyle = '#050608'; c.fillRect(0, 0, W, H);
+  const gl = c.createRadialGradient(W * .85, 0, 10, W * .85, 0, 420); gl.addColorStop(0, mo ? 'rgba(245,197,66,.28)' : 'rgba(139,92,246,.35)'); gl.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = gl; c.fillRect(0, 0, W, H);
+  c.textAlign = 'left'; c.fillStyle = '#f97316'; c.font = `800 13px ${fonts.body}`; c.fillText('Torneo Comboniani', 24, 36);
+  c.fillStyle = '#eef1f6'; c.font = `italic 800 34px ${fonts.disp}`; c.fillText(mo ? 'Team of the Month' : 'Team of the Week', 24, 72);
+  c.textAlign = 'right'; c.fillStyle = '#8a93a6'; c.font = `700 13px ${fonts.body}`; c.fillText(mo ? monthLabel(key) : 'Settimana ' + twLabel(key), W - 24, 46); c.fillText('Formazione 2-4-2', W - 24, 64);
+  // campo
+  c.save(); twRound(c, FX, FY, FW, FH, 14); c.clip();
+  for(let i = 0; i < 12; i++){ c.fillStyle = i % 2 ? '#1d8234' : '#17702b'; c.fillRect(FX, FY + i * FH / 12, FW, FH / 12 + 1); }
+  const vg = c.createRadialGradient(FX + FW / 2, FY + FH * .45, FH * .25, FX + FW / 2, FY + FH * .45, FH * .75); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.45)'); c.fillStyle = vg; c.fillRect(FX, FY, FW, FH);
+  const sx = FW / 100, sy = FH / 140; c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = .45 * sx;
+  const rect = (x0, y0, w0, h0) => c.strokeRect(FX + x0 * sx, FY + y0 * sy, w0 * sx, h0 * sy);
+  rect(2, 2, 96, 136); c.beginPath(); c.moveTo(FX + 2 * sx, FY + 70 * sy); c.lineTo(FX + 98 * sx, FY + 70 * sy); c.stroke();
+  c.beginPath(); c.ellipse(FX + 50 * sx, FY + 70 * sy, 13 * sx, 13 * sy, 0, 0, Math.PI * 2); c.stroke();
+  rect(26, 2, 48, 16); rect(38, 2, 24, 6); rect(26, 122, 48, 16); rect(38, 132, 24, 6);
+  c.restore();
+  c.save(); twRound(c, FX, FY, FW, FH, 14); c.lineWidth = 3; c.strokeStyle = mo ? 'rgba(245,197,66,.8)' : 'rgba(168,85,247,.7)'; c.stroke(); c.restore();
+  // giocatori
+  const cw = FW * .236, ch = cw * 238 / 160, blk = ch + 24, free = FH - FW * .04 - FW * .07 - 3 * blk, gap = free / 4;
+  const rows = ['d', 'm', 'f'].map(k => twRow(t, k));
+  for(let ri = 0; ri < 3; ri++){
+    const list2 = rows[[2, 1, 0][ri]], n = list2.length, y = FY + FW * .04 + gap * (ri + 1) + blk * ri;
+    const inner = n === 2 ? FW - 2 * FW * .14 : FW, left = n === 2 ? FW * .14 : 0, sp = (inner - n * cw) / (n + 1);
+    for(let i = 0; i < n; i++){
+      const pid = list2[i], np = t.np && t.np[pid] != null ? t.np[pid] : twCount(pid, key, mode);
+      await twDrawCard(c, FX + left + sp * (i + 1) + cw * i, y, cw, pid, t.sc && t.sc[pid], np, mode, art, fonts);
+    }
+  }
+  c.textAlign = 'left'; c.fillStyle = '#f97316'; c.font = `italic 800 20px ${fonts.disp}`; c.fillText('Stagione 26/27', 24, H - 24);
+  c.textAlign = 'right'; c.fillStyle = '#586074'; c.font = `700 11px ${fonts.body}`; c.fillText('media a gara · risultato solo a parità', W - 24, H - 24);
+  return await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.94));
+}
+async function exportTW(key, mode, btn){
+  const mo = mode === 'm', root = mo ? 'totm' : 'totw', t = (ui.admin && twGet('draft', key, root)) || twGet('pub', key, root); if(!t) return;
+  anBump('f/export');
+  const old = btn && btn.innerHTML; if(btn){ btn.disabled = true; btn.textContent = 'Genero la grafica…'; }
+  try{
+    const blob = await twRenderCanvas(t, key, mode); if(!blob) throw new Error('blob');
+    await shareOrDownload(blob, `comboniani-2627-${mo ? 'totm' : 'totw'}-${key}.jpg`, mo ? 'Team of the Month' : 'Team of the Week');
+  }catch(e){ console.error(e); toast('Esportazione non riuscita. Riprova.', 'err'); }
+  finally{ if(btn){ btn.disabled = false; btn.innerHTML = old; } }
+}
 function twAction(act, key, mode){
   const mo = mode === 'm', root = mo ? 'totm' : 'totw';
   if(!ui.admin || !(mo ? monthOk(key) : isoOk(key))) return;
@@ -7926,7 +8044,10 @@ document.addEventListener('click', async e => {
     case 'keys-open': openKeys(); break;
     case 'key-reset': resetKey(d.pid); break;
     case 'final-close': closeModal('#m-final'); setTimeout(showNextRec, 300); break;
-    case 'tw-week': if(t.dataset.wk){ if(t.dataset.k === 'm') ui.twMonth = t.dataset.wk; else ui.twWeek = t.dataset.wk; renderTrophies(); } break;
+    case 'tw-swapmode': ui.twSwap = !ui.twSwap; ui.twSel = null; renderTrophies(); break;
+    case 'tw-swap': if(!ui.twSel){ ui.twSel = t.dataset.pid; renderTrophies(); } else { const a = ui.twSel; ui.twSel = null; twSwapPlayers(a, t.dataset.pid); renderTrophies(); } break;
+    case 'tw-export': exportTW(t.dataset.wk, t.dataset.k, t); break;
+    case 'tw-week': ui.twSel = null; if(t.dataset.wk){ if(t.dataset.k === 'm') ui.twMonth = t.dataset.wk; else ui.twWeek = t.dataset.wk; renderTrophies(); } break;
     case 'tw-calc': twAction('calc', t.dataset.wk, t.dataset.k); break;
     case 'tw-pub': twAction('pub', t.dataset.wk, t.dataset.k); break;
     case 'rec-next': if(recIdx < recList.length - 1){ recIdx++; drawRec(); } break;
