@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9.3
+- Campo TOTW/TOTM: ogni giocatore è la stessa figurina della griglia Giocatori (cornice, targhetta overall e ruolo, nome), rimpicciolita in scala (`twFit`); al posto delle cinque statistiche ci sono media e presenze, e le targhe stanno sotto la carta. TOTW arancio e viola; TOTM con la nuova cornice bianca e oro (`.mfig.totm`), usata solo nella scheda TOTM.
+- Tolte le vecchie figurine a scudo del campo.
+
 ## 1.9.2
 - Figurine del campo TOTW/TOTM: il ruolo è più piccolo e, anche con due ruoli (es. AD/CC), non è mai più largo dell'overall.
 - Sotto la media di ogni giocatore compaiono le presenze nel periodo (campo opzionale `np` nei team salvati; le bozze vecchie non lo hanno e non lo mostrano). La soglia del TOTM resta di 3 presenze: verificato che chi ne ha esattamente 3 entra e chi ne ha 2 no.
