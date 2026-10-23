@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.10.0
+- Infermeria: nuovo filtro «✚ Infermeria» (in rosso, con il numero degli infortunati) nella rosa dei Giocatori. Solo lì compare, sulla figurina, «🩹 da N giorni». Gli infortunati restano in tutti gli altri filtri e classifiche, con una piccola croce rossa e bianca accanto al nome (`nameHTML`).
+- Admin: nel form «Modifica giocatore» l'opzione «✚ Infortunato» con la data di inizio a scelta. Togliendolo dall'infermeria l'infortunio si archivia. Campi nuovi e opzionali del giocatore: `injured`, `injuredSince` (AAAA-MM-GG), `injHist` (`[{ f, t }]`, ultimi 30). Nessun campo esistente cambia.
+- Gare: un infortunato non si può convocare (chip attenuato e avviso), salvo nelle gare con data precedente all'infortunio. Nell'editor, accanto al ritardo, il tasto 🩹 segna chi si è infortunato durante la gara (campo opzionale `inj` nella riga del giocatore): al salvataggio entra in infermeria dalla data della gara, se non c'è già. Il segno compare anche nell'elenco dei convocati.
+- Nuovo primato «Il Cristallo» (🩹): l'infortunio singolo più lungo, quello in corso conta fino a oggi. È un primato «di classifica» (festeggiato solo al cambio di detentore).
+
 ## 1.9.8
 - TOTW: il punteggio è cumulativo, la somma dei punteggi di tutte le gare della settimana (stesso punteggio di gara: gol e assist pesati dal ruolo, MVP, voti dei compagni, meno autogol e ritardi), qualunque sia il numero di presenze (minimo 1). Parità: più gol, poi più vittorie, poi alfabetico. Il TOTM resta la media di tutte le gare del mese (minimo 3 presenze).
 - Figurine del campo e immagine esportata: nel TOTW i contatori di gol e assist totali della settimana al posto di giornata e prestazione migliore (dato `tt` salvato nel team, o ricalcolato per i team vecchi).

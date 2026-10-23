@@ -565,7 +565,7 @@ body.theme-casino .slip{background:rgba(7,76,44,.98)}
 .ed-team h4>span:first-child{display:flex;align-items:center;gap:8px}
 .cnt{font:800 12px var(--body);color:var(--mu);padding:3px 8px;border-radius:7px;background:rgba(255,255,255,.05)}
 .cnt.full{color:var(--or);background:var(--or-soft)}
-.erow{display:grid;grid-template-columns:auto 1fr auto auto auto;align-items:center;gap:8px 10px;padding:9px 4px;border-top:1px solid rgba(255,255,255,.05)}
+.erow{display:grid;grid-template-columns:auto 1fr auto auto auto auto;align-items:center;gap:8px 10px;padding:9px 4px;border-top:1px solid rgba(255,255,255,.05)}
 .erow .nm{font-weight:800;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .steps{grid-column:1/-1;display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
 .stp{display:inline-flex;align-items:center;border:1px solid var(--hair);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.02)}
@@ -860,6 +860,18 @@ button.awd:hover{border-color:var(--line)}
 .rolepills{display:flex;gap:4px;padding:4px;border-radius:13px;border:1px solid var(--hair);background:rgba(255,255,255,.03)}
 .rolepills button{height:34px;min-width:46px;padding:0 12px;border:0;border-radius:9px;background:none;color:var(--mu);font:800 13px var(--body);transition:background .15s,color .15s}
 .rolepills button[aria-pressed=true]{background:linear-gradient(180deg,var(--or),var(--or2));color:#1a0a00}
+.rolepills button.inf{color:#fca5a5;white-space:nowrap}
+.rolepills button.inf[aria-pressed=true]{background:linear-gradient(180deg,#ef4444,#b91c1c);color:#fff}
+.injx{display:inline-block;width:.8em;height:.8em;margin-left:.3em;vertical-align:-.06em;flex:none}
+.injx svg{display:block;width:100%;height:100%}
+/* giorni in infermeria: solo nella scheda Infermeria, in alto a sinistra sulla figurina */
+.mfig-w{position:relative}
+.inj-days{position:absolute;left:9%;top:6.5%;z-index:7;pointer-events:none;width:max-content;max-width:58%;padding:3px 8px;border-radius:999px;border:1px solid rgba(248,113,113,.8);background:rgba(127,29,29,.88);color:#fee2e2;font:800 11px/1.2 var(--body);white-space:nowrap}
+.inj-chk{display:flex;align-items:center;gap:8px;min-height:38px;font-weight:700}
+.inj-chk input{width:20px;height:20px;accent-color:#dc2626}
+.pchip.hurt{opacity:.5}
+.pchip .hx{font-size:12px}
+.latb.injb[aria-pressed=true]{background:rgba(220,38,38,.25);border-color:#ef4444}
 .psort{display:flex;align-items:center;gap:8px;font:700 12.5px var(--body);color:var(--mu)}
 .psort .field{height:40px;font-size:13.5px}
 .mfig.static{cursor:default}
@@ -1820,6 +1832,7 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
         <button data-prole="DIF" aria-pressed="false">DIF</button>
         <button data-prole="CEN" aria-pressed="false">CEN</button>
         <button data-prole="ATT" aria-pressed="false">ATT</button>
+        <button data-prole="INF" aria-pressed="false" class="inf">✚ Infermeria</button>
       </div>
       <label class="psort">Ordina per
         <select id="psort" class="field">
@@ -1904,6 +1917,10 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
             <input type="radio" name="pf-foot" id="f-SX" value="SX"><label for="f-SX">Sinistro</label>
             <input type="radio" name="pf-foot" id="f-AMB" value="AMB"><label for="f-AMB">Ambidestro</label>
           </div>
+          <span class="lbl">Infermeria</span>
+          <label class="inj-chk"><input type="checkbox" id="pf-inj"> ✚ Infortunato</label>
+          <div id="pf-injd-w" hidden><label class="lbl" for="pf-injd">Infortunato dal</label><input id="pf-injd" class="field" type="date"></div>
+          <p class="hint">Un infortunato resta in tutte le classifiche ma non si può convocare nelle gare. Quando lo togli dall’infermeria l’infortunio si archivia (conta per il record «Il Cristallo»).</p>
         </div>
       </div>
       <div class="row end" style="margin-top:20px">
@@ -2050,7 +2067,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.9.8';
+const APP_VERSION = '1.10.0';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -2256,6 +2273,9 @@ function cleanPlayers(raw){
     const c = { ...p };
     c.name = txt(p.name, 80); if('role' in c) c.role = txt(p.role, 12); if('foot' in c) c.foot = txt(p.foot, 12);
     if('cardPos' in c) c.cardPos = cardPosList(p.cardPos).join('/');
+    if('injured' in c) c.injured = c.injured ? 1 : 0;
+    if('injuredSince' in c) c.injuredSince = /^\d{4}-\d{2}-\d{2}$/.test(c.injuredSince) ? c.injuredSince : '';
+    if('injHist' in c) c.injHist = list(c.injHist).filter(h => h && /^\d{4}-\d{2}-\d{2}$/.test(h.f) && /^\d{4}-\d{2}-\d{2}$/.test(h.t) && h.f <= h.t).map(h => ({ f:h.f, t:h.t })).slice(-30);
     if('photo' in c && !safeImg(c.photo)) delete c.photo;
     out[id] = c;
   }
@@ -2285,6 +2305,14 @@ function cleanMatches(raw){
 const initials = n => (n || '?').split(/\s+/).filter(Boolean).slice(0,2).map(w => w[0]).join('').toUpperCase();
 const pname = (pid, fallback) => store.players[pid]?.name || fallback || 'Ex giocatore';
 const fmtPts = p => String(Math.round(p * 100) / 100).replace('.', ',');
+/* Infermeria: players/{id}/injured (1), injuredSince (AAAA-MM-GG), injHist [{ f, t }] con gli infortuni passati */
+const isInj = pid => !!(store.players[pid] && store.players[pid].injured);
+const daysBetween = (a, b) => { const [y1, m1, d1] = a.split('-').map(Number), [y2, m2, d2] = b.split('-').map(Number); return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 864e5); };
+const injDays = pid => { const p = store.players[pid]; return p && p.injured && /^\d{4}-\d{2}-\d{2}$/.test(p.injuredSince || '') ? Math.max(0, daysBetween(p.injuredSince, todayISO())) : 0; };
+const injOn = (pid, date) => { const p = store.players[pid]; return !!(p && p.injured && (!date || !p.injuredSince || date >= p.injuredSince)); };
+const injLabel = d => d === 0 ? 'da oggi' : d === 1 ? 'da 1 giorno' : `da ${d} giorni`;
+const shortDay = iso => { const [, m, d] = iso.split('-').map(Number); return `${d} ${['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'][m - 1]}`; };
+const injIcon = pid => isInj(pid) ? '<span class="injx" role="img" aria-label="Infortunato" title="Infortunato"><svg viewBox="0 0 16 16" aria-hidden="true"><rect width="16" height="16" rx="3" fill="#dc2626"/><path d="M6.4 3h3.2v3.4H13v3.2H9.6V13H6.4V9.6H3V6.4h3.4z" fill="#fff"/></svg></span>' : '';
 const todayISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
 function fmtDate(iso){
   if(!iso) return '';
@@ -3322,14 +3350,15 @@ function renderPlayers(){
   const raw = $('#psearch').value, q = norm(raw);
   const cmp = PSORT[ui.pSort] || PSORT.ovr;
   const ps = STATS.list
-    .filter(s => ui.pRole === 'ALL' || roleGroup(s.p.role) === ui.pRole)
+    .filter(s => ui.pRole === 'ALL' || (ui.pRole === 'INF' ? isInj(s.pid) : roleGroup(s.p.role) === ui.pRole))
     .filter(s => !q || norm(s.name).includes(q))
     .sort((a, b) => cmp(a, b) || a.name.localeCompare(b.name, 'it'));
   $('#pcount').textContent = `${ps.length} ${ps.length === 1 ? 'giocatore' : 'giocatori'}`;
+  const nInj = STATS.list.filter(s => isInj(s.pid)).length, ib = $('[data-prole="INF"]'); if(ib) ib.textContent = '✚ Infermeria' + (nInj ? ` (${nInj})` : '');
   const key = { ovr:null, g:'g', a:'a', pres:'pres', az:null }[ui.pSort];
   const meId = myPid();
-  grid.innerHTML = ps.map(s => `<div class="mfig-w${s.pid === meId ? ' me' : ''}"><button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}${twHas(s.pid) ? ' totw' : ''}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}<span class="mfig-rt">${ovrPlate(s.ovr, 'sm')}${roleTag(s.pid, s.p)}</span>${cardFx(s.pid).hx}${cardFx(s.pid).frm}${twTag(s.pid)}<span class="mfig-b"><span class="mfig-n">${nameHTML(s.pid)}</span><span class="mfig-s">${[['gol', s.g, 'g'], ['ass', s.a, 'a'], ['pres', s.pres, 'pres'], ['vit', s.v, 'v'], ['sco', s.s, 's']].map(([l, v, k]) => `<span${key === k ? ' style="color:var(--or)"' : ''}><b>${v}</b><i>${l}</i></span>`).join('')}</span><span class="mfig-orn" aria-hidden="true"></span></span></span></span></button><button type="button" class="mfig-turn" data-action="fig-back" data-pid="${s.pid}" aria-label="Retro della figurina di ${esc(s.name)}" title="Retro della figurina">↻</button></div>`).join('')
-    || `<p class="mu" style="grid-column:1/-1">Nessun giocatore${ui.pRole !== 'ALL' ? ' ' + ui.pRole : ''}${raw ? ` corrisponde a “${esc(raw)}”` : ' in questo ruolo'}.</p>`;
+  grid.innerHTML = ps.map(s => `<div class="mfig-w${s.pid === meId ? ' me' : ''}"><button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}${twHas(s.pid) ? ' totw' : ''}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}<span class="mfig-rt">${ovrPlate(s.ovr, 'sm')}${roleTag(s.pid, s.p)}</span>${cardFx(s.pid).hx}${cardFx(s.pid).frm}${twTag(s.pid)}<span class="mfig-b"><span class="mfig-n">${nameHTML(s.pid)}</span><span class="mfig-s">${[['gol', s.g, 'g'], ['ass', s.a, 'a'], ['pres', s.pres, 'pres'], ['vit', s.v, 'v'], ['sco', s.s, 's']].map(([l, v, k]) => `<span${key === k ? ' style="color:var(--or)"' : ''}><b>${v}</b><i>${l}</i></span>`).join('')}</span><span class="mfig-orn" aria-hidden="true"></span></span></span></span></button><button type="button" class="mfig-turn" data-action="fig-back" data-pid="${s.pid}" aria-label="Retro della figurina di ${esc(s.name)}" title="Retro della figurina">↻</button>${ui.pRole === 'INF' ? `<span class="inj-days"${store.players[s.pid].injuredSince ? ` title="Infortunato dal ${shortDay(store.players[s.pid].injuredSince)}"` : ''}>🩹 ${injLabel(injDays(s.pid))}</span>` : ''}</div>`).join('')
+    || `<p class="mu" style="grid-column:1/-1">${ui.pRole === 'INF' && !raw ? 'Infermeria vuota: sono tutti in forma 💪' : `Nessun giocatore${ui.pRole !== 'ALL' && ui.pRole !== 'INF' ? ' ' + ui.pRole : ''}${raw ? ` corrisponde a “${esc(raw)}”` : ' in questo ruolo'}.`}</p>`;
 }
 
 /* ---------- Figurina ---------- */
@@ -3695,7 +3724,7 @@ function mTabsHTML(){
 /* Liste delle squadre (sotto Formazioni): le vede chiunque */
 function lineupsHTML(m, withFlags){
   const col = team => `<div class="tcol"><h3><span class="dot ${team === 'white' ? 'w' : 'b'}"></span>Squadra ${team === 'white' ? 'Bianca' : 'Nera'}</h3>
-    <div class="lineup" style="margin-top:0;padding-top:0;border:0">${list(m[team]).map(e => `<button class="lu" data-open-player="${e.pid}" ${store.players[e.pid] ? '' : 'disabled'}>${avatar(store.players[e.pid] || { name:e.n }, 'xs')}${esc(pname(e.pid, e.n))}${withFlags && e.late ? '<em class="lt-ic" title="In ritardo">⏰</em>' : ''}${withFlags && e.bench ? '<em class="bn">in più</em>' : ''}</button>`).join('') || '<span class="mu sm">Nessun convocato</span>'}</div></div>`;
+    <div class="lineup" style="margin-top:0;padding-top:0;border:0">${list(m[team]).map(e => `<button class="lu" data-open-player="${e.pid}" ${store.players[e.pid] ? '' : 'disabled'}>${avatar(store.players[e.pid] || { name:e.n }, 'xs')}${esc(pname(e.pid, e.n))}${withFlags && e.late ? '<em class="lt-ic" title="In ritardo">⏰</em>' : ''}${withFlags && e.inj ? '<em class="lt-ic" title="Infortunato durante la gara">🩹</em>' : ''}${withFlags && e.bench ? '<em class="bn">in più</em>' : ''}</button>`).join('') || '<span class="mu sm">Nessun convocato</span>'}</div></div>`;
   return `<section class="glass tab"><div class="tab-cols" style="margin-top:0">${col('white')}${col('black')}</div></section>`;
 }
 function matchDetailHTML(id){
@@ -5125,8 +5154,15 @@ function computeRecords(){
   const bunk = recPick('bunk', Object.entries(bunker).filter(([, b]) => b.n >= 2).sort(([ka, a], [kb, b]) => (a.c / a.n - b.c / b.n) || (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([, a], [, b]) => near(a.c / a.n, b.c / b.n) && a.n === b.n, RID.pair);
   const ritard = recPick('rit', L.filter(s => s.ritardi > 0).sort((a, b) => (b.ritardi - a.ritardi) || ((b.ritardi / b.pres) - (a.ritardi / a.pres)) || alpha(a, b)), (x, y) => x.ritardi === y.ritardi && near(x.ritardi / x.pres, y.ritardi / y.pres), RID.pid);
   const intesa = recPick('intesa', Object.entries(combo).sort(([ka, a], [kb, b]) => (b.c - a.c) || ((b.c / ((pairs[kb] && pairs[kb].n) || 1)) - (a.c / ((pairs[ka] && pairs[ka].n) || 1))) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([ka, a], [kb, b]) => a.c === b.c && near(a.c / ((pairs[ka] && pairs[ka].n) || 1), b.c / ((pairs[kb] && pairs[kb].n) || 1)), RID.pair);
+  /* Il Cristallo: l'infortunio singolo più lungo (quello in corso conta fino a oggi) */
+  const t0 = todayISO();
+  const inf = recPick('inf', L.map(s => {
+    const st = list(s.p.injHist).map(h => ({ f:h.f, t:h.t, on:false })); if(s.p.injured && /^\d{4}-\d{2}-\d{2}$/.test(s.p.injuredSince || '')) st.push({ f:s.p.injuredSince, t:t0, on:true });
+    let b = null; for(const x of st){ const d = daysBetween(x.f, x.t); if(!b || d > b.d) b = { ...x, d }; }
+    return b && b.d >= 1 ? { pid:s.pid, s, ...b } : null;
+  }).filter(Boolean).sort((a, b) => (b.d - a.d) || a.f.localeCompare(b.f) || alpha(a.s, b.s)), (x, y) => x.d === y.d, RID.pid);
   const { colp, kami } = casinoRecords();
-  return { colp, kami, manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, ritard, bunkerAny:Object.keys(bunker).length };
+  return { inf, colp, kami, manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, ritard, bunkerAny:Object.keys(bunker).length };
 }
 const matchWhen = m => `Giornata ${num(m.day)}${m.date ? ', ' + fmtDateCap(m.date) : ''}`;
 function recCard(o, x = {}){
@@ -5150,7 +5186,7 @@ const lockSVG = st => `<svg class="lk" viewBox="0 0 24 24" aria-hidden="true"><p
 /* Ricalcola targhe e primati dopo ogni gara (k = 1..N) per avere regno, storia e passaggi di mano */
 let histCache = { key:null, data:[] };
 function trophyHistory(){
-  const key = STATS.matches.map(m => m.id + ':' + (m.updatedAt || '')).join(',') + '|' + Object.keys(store.players).length + '|' + JSON.stringify(store.votes || {}).length + '|' + Object.values(store.players).map(p => p && p.role).join('') + '|' + featSig();
+  const key = STATS.matches.map(m => m.id + ':' + (m.updatedAt || '')).join(',') + '|' + Object.keys(store.players).length + '|' + JSON.stringify(store.votes || {}).length + '|' + Object.values(store.players).map(p => p && p.role).join('') + '|' + Object.values(store.players).map(p => p ? (p.injured ? 1 : 0) + (p.injuredSince || '') + list(p.injHist).length : '').join(',') + '|' + featSig();
   if(histCache.key === key) return histCache.data;
   const keep = STATS, steps = [];
   try{
@@ -5487,9 +5523,9 @@ function renderTrophies(){
   twFit();
   try{ localStorage.setItem('cmb2627_seenPlq', JSON.stringify(curP)); localStorage.setItem('cmb2627_seenRecV', JSON.stringify(curR)); }catch(e){}
 }
-const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk','rit','colp','kami'];
+const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk','rit','inf','colp','kami'];
 /* event = record di una singola impresa (festeggiato anche se lo stesso giocatore si migliora); lead = primato di classifica (festeggiato solo al cambio di detentore) */
-const REC_KIND = { manita:'event', mitra:'event', lampo:'event', scadere:'event', mida:'event', uomo:'event', inarr:'event', goleada:'event', cappotto:'event', cecchino:'lead', fortino:'lead', mina:'lead', come:'lead', down:'lead', eroe:'lead', oro:'lead', intesa:'lead', derby:'lead', bunk:'lead', rit:'lead', colp:'event', kami:'event' };
+const REC_KIND = { manita:'event', mitra:'event', lampo:'event', scadere:'event', mida:'event', uomo:'event', inarr:'event', goleada:'event', cappotto:'event', cecchino:'lead', fortino:'lead', mina:'lead', come:'lead', down:'lead', eroe:'lead', oro:'lead', intesa:'lead', derby:'lead', bunk:'lead', rit:'lead', inf:'lead', colp:'event', kami:'event' };
 /* Primati legati a una funzione: con la funzione spenta la scheda non si mostra e non fa popup */
 const REC_FEAT = { eroe:'mvp', colp:'casino', kami:'casino' };
 function buildRecordCards(R, nM){
@@ -5536,6 +5572,8 @@ function buildRecordCards(R, nM){
       : { icon:'🧱', title:'Coppia Bunker', desc:'Coppia di difensori con la media gol subiti più bassa giocando insieme.', lock:R.bunkerAny ? 'In attesa di sblocco (min. 2 gare insieme)' : need('Nessuna coppia di difensori schierata insieme') }
     ,R.ritard ? { icon:'⏰', title:'Il Ritardatario', desc:'Più ritardi in stagione. Parità: percentuale di ritardi sulle presenze.', pid:R.ritard.pid, sub:`${R.ritard.pres} ${R.ritard.pres === 1 ? 'presenza' : 'presenze'}, ${Math.round(R.ritard.ritardi / R.ritard.pres * 100)}% delle gare`, value:R.ritard.ritardi, unit:R.ritard.ritardi === 1 ? 'ritardo' : 'ritardi' }
       : { icon:'⏰', title:'Il Ritardatario', desc:'Più ritardi in stagione. Parità: percentuale di ritardi sulle presenze.', lock:'Nessun ritardo registrato' }
+    ,R.inf ? { icon:'🩹', title:'Il Cristallo', desc:'L’infortunio più lungo: i giorni di fila passati in infermeria.', pid:R.inf.pid, sub:R.inf.on ? `dal ${shortDay(R.inf.f)}, ancora in corso` : `dal ${shortDay(R.inf.f)} al ${shortDay(R.inf.t)}`, value:R.inf.d, unit:R.inf.d === 1 ? 'giorno' : 'giorni' }
+      : { icon:'🩹', title:'Il Cristallo', desc:'L’infortunio più lungo: i giorni di fila passati in infermeria.', lock:'Nessun infortunio registrato' }
     ,R.colp ? { icon:'🎯', title:'Il Colpaccio', desc:'La vincita netta più grande in una singola scommessa.', pid:R.colp.pid, sub:matchWhen(R.colp.m), value:'+' + fmtPat(R.colp.net), unit:`${CURRENCY} in una scommessa`, foot:`${fmtPat(R.colp.stake)} a ${(Math.round(R.colp.payout / R.colp.stake * 100) / 100).toFixed(2).replace('.', ',')}: ${R.colp.legs.map(l => esc(bmLegText(R.colp.S, l, pid => pname(pid)))).join(' + ')}` }
       : { icon:'🎯', title:'Il Colpaccio', desc:'La vincita netta più grande in una singola scommessa.', lock:'Ancora nessuna scommessa vinta' }
     ,R.kami ? { icon:'💣', title:'Il Kamikaze', desc:'L’all-in vinto con il moltiplicatore più alto. Parità: puntata più alta.', pid:R.kami.pid, sub:matchWhen(R.kami.m), value:'×' + (Math.round(R.kami.mult * 100) / 100).toFixed(2).replace('.', ','), unit:'la puntata', foot:`${fmtPat(R.kami.stake)} ${CURRENCY} diventate ${fmtPat(R.kami.payout)}` }
@@ -6340,9 +6378,10 @@ const emblemSVG = id => EMBLEMS[id] ? `<svg class="emb emb-${id.slice(3)}" viewB
 /* Il nome di un giocatore con colore, effetto e stemma scelti. Senza oggetti attivi restituisce il solo testo: l'HTML di prima, identico */
 function nameHTML(pid, text){
   const t = text != null ? text : pname(pid), c = cosOf(pid), j = jerseyOf(pid), jn = j ? `<span class="jn" title="Numero di maglia">#${j.num}</span>` : '';
-  if(!c.ncol && !c.nfx && !c.emblem) return esc(t) + jn;
+  const ij = injIcon(pid);
+  if(!c.ncol && !c.nfx && !c.emblem) return esc(t) + ij + jn;
   const cls = ['nmx', c.ncol && 'nc-' + c.ncol.slice(3), c.nfx && 'nf-' + c.nfx.slice(3)].filter(Boolean).join(' ');
-  return `<span class="${cls}">${esc(t)}</span>${c.emblem ? emblemSVG(c.emblem) : ''}${jn}`;
+  return `<span class="${cls}">${esc(t)}</span>${ij}${c.emblem ? emblemSVG(c.emblem) : ''}${jn}`;
 }
 /* Cornice e ologramma alternativo della figurina: sono strati in più sopra la figurina. Livello (Bronzo/Argento/Oro/Diamante) e OVR restano quelli di sempre */
 function cardFx(pid){
@@ -6988,6 +7027,7 @@ function openPlayerForm(pid){
   setRadio('pf-foot', FEET[p?.foot] ? p.foot : 'DX');
   PF.cp = cardPosList(p?.cardPos);
   $$('#pf-cp input').forEach(i => { i.checked = PF.cp.includes(i.value); });
+  $('#pf-inj').checked = !!p?.injured; $('#pf-injd').value = (p?.injured && p.injuredSince) || todayISO(); $('#pf-injd').max = todayISO(); $('#pf-injd-w').hidden = !p?.injured;
   $('#pf-info').textContent = '';
   $('#pf-file').value = '';
   renderPfPreview();
@@ -7008,6 +7048,14 @@ function savePlayer(){
     [base + 'cardPos']: (PF.cp || []).join('/') || null,
     [base + 'updatedAt']: Date.now()
   };
+  /* infermeria: la data di inizio la sceglie l'admin; quando esce, l'infortunio si archivia in injHist */
+  const inj = $('#pf-inj').checked, d0 = $('#pf-injd').value, since = /^\d{4}-\d{2}-\d{2}$/.test(d0) && d0 <= todayISO() ? d0 : todayISO();
+  if(inj){ up[base + 'injured'] = 1; up[base + 'injuredSince'] = since; }
+  else if(PF.id){
+    const old = store.players[PF.id];
+    up[base + 'injured'] = null; up[base + 'injuredSince'] = null;
+    if(old && old.injured && old.injuredSince && old.injuredSince <= todayISO()) up[base + 'injHist'] = [...list(old.injHist).map(h => ({ f:h.f, t:h.t })), { f:old.injuredSince, t:todayISO() }].slice(-30);
+  }
   if(!PF.id) up[base + 'createdAt'] = Date.now();
   if(PF.photo !== undefined) Object.assign(up, photoUpdates(id, PF.photo || null));
   const wasEdit = !!PF.id;
@@ -7036,7 +7084,7 @@ function setEdMode(mode){
   $('#ed-end-w').hidden = mode === 'scheduled';
   $('#ed-save').textContent = mode === 'scheduled' ? 'Salva gara in programma' : 'Salva risultato';
   if(mode === 'scheduled'){
-    [...ED.white, ...ED.black].forEach(e => { e.g = 0; e.a = 0; e.og = 0; delete e.late; }); ED.goals = []; ED.moves = []; goalFormReset(); moveFormReset();
+    [...ED.white, ...ED.black].forEach(e => { e.g = 0; e.a = 0; e.og = 0; delete e.late; delete e.inj; }); ED.goals = []; ED.moves = []; goalFormReset(); moveFormReset();
     /* una gara in programma non ha giocatori "in più": tornano tra i convocati */
     for(const T of ['white', 'black']){ ED.called.push(...ED[T].filter(e => e.bench).map(e => e.pid)); ED[T] = ED[T].filter(e => !e.bench); }
   }
@@ -7045,7 +7093,7 @@ function setEdMode(mode){
 function openMatchEditor(id, mode){
   if(!STATS.list.length){ toast('Aggiungi prima i giocatori alla rosa', 'warn'); return; }
   const m = id ? store.matches[id] : null;
-  const cp = arr => list(arr).map(e => ({ pid:e.pid, n:e.n, g:num(e.g), a:num(e.a), og:num(e.og), ...(e.bench ? { bench:1 } : {}), ...(e.late ? { late:1 } : {}) }));
+  const cp = arr => list(arr).map(e => ({ pid:e.pid, n:e.n, g:num(e.g), a:num(e.a), og:num(e.og), ...(e.bench ? { bench:1 } : {}), ...(e.late ? { late:1 } : {}), ...(e.inj ? { inj:1 } : {}) }));
   const wasSched = m?.status === 'scheduled';
   ED = { id:id || null, day:m ? num(m.day) : nextDay(), date:m?.date || todayISO(), time:m?.time || '', end:m?.end || '', fmW:m?.fmW || DEF_FM, fmB:m?.fmB || DEF_FM, posW:m?.posW || null, posB:m?.posB || null, balW:null, balB:null, capW:m?.capW || null, capB:m?.capB || null,
          white:cp(m?.white), black:cp(m?.black), called:[], status:mode || (wasSched ? 'scheduled' : 'played'),
@@ -7076,6 +7124,7 @@ const edTotal = () => ED.white.length + ED.black.length + ED.called.length;
 const ovrOf = pid => STATS.byId[pid]?.ovr ?? OVR_START;
 function edToggle(pid){
   const cur = edFind(pid), T = edTeam;
+  if(!cur && injOn(pid, $('#ed-date').value || ED.date)){ toast(`${pname(pid)} è infortunato: non si può convocare finché è in infermeria`, 'warn'); return; }
   if(cur && cur !== 'called' && goalsInvolve(pid)){ toast(`${pname(pid)} ha gol o assist registrati: eliminali dalla cronaca prima di toglierlo o spostarlo`, 'warn'); return; }
   if(cur && cur !== 'called' && movesInvolve(pid)){ toast(`${pname(pid)} ha dei cambi registrati: eliminali prima di toglierlo o spostarlo`, 'warn'); return; }
   const pull = from => {
@@ -7235,7 +7284,8 @@ function renderEditorPick(){
   const TAG = { white:'BIA', black:'NER', called:'CONV' }, CLS = { white:'w', black:'b', called:'c' };
   $('#ed-pool').innerHTML = ps.map(s => {
     const t = edFind(s.pid);
-    return `<button type="button" class="pchip ${t ? CLS[t] : ''}" data-pool="${s.pid}" aria-pressed="${!!t}">${avatar(s.p, 'xs')}${esc(s.name)}<span class="co">${roundOvr(s.ovr)}</span>${t ? `<span class="tg">${TAG[t]}</span>` : ''}</button>`;
+    const hurt = !t && injOn(s.pid, $('#ed-date').value || ED.date);
+    return `<button type="button" class="pchip ${t ? CLS[t] : ''}${hurt ? ' hurt' : ''}" data-pool="${s.pid}" aria-pressed="${!!t}"${hurt ? ' aria-disabled="true" title="Infortunato: non si può convocare"' : ''}>${avatar(s.p, 'xs')}${esc(s.name)}${hurt ? ' <span class="hx" aria-hidden="true">🩹</span>' : ''}<span class="co">${roundOvr(s.ovr)}</span>${t ? `<span class="tg">${TAG[t]}</span>` : ''}</button>`;
   }).join('') || '<p class="mu sm" style="margin:4px">Nessun giocatore trovato.</p>';
 }
 function stp(f, ic, label, v){
@@ -7244,7 +7294,7 @@ function stp(f, ic, label, v){
 function edTeamHTML(T){
   const arr = ED[T];
   return `<h4><span><span class="dot ${T === 'white' ? 'w' : 'b'}"></span>Squadra ${T === 'white' ? 'Bianca' : 'Nera'}</span><span class="cnt ${arr.filter(e => !e.bench).length === MAX_START ? 'full' : ''}">${edCount(T)}</span></h4>` +
-    (arr.length ? arr.map(e => `<div class="erow" data-t="${T}" data-pid="${e.pid}">${avatar(store.players[e.pid] || { name:e.n }, 'xs')}<span class="nm">${esc(pname(e.pid, e.n))}${e.bench ? '<em class="bn">in più</em>' : ''}</span>${ED.status === 'scheduled' ? '' : `<button type="button" class="latb" data-late aria-pressed="${!!e.late}" aria-label="⏰ Ritardo, −0,3 OVR: ${esc(pname(e.pid, e.n))}" title="⏰ Ritardo, −0,3 OVR">⏰</button>`}${e.bench ? '<span></span>' : `<button type="button" class="capb" data-cap aria-pressed="${ED[T === 'white' ? 'capW' : 'capB'] === e.pid}" aria-label="Capitano: ${esc(pname(e.pid, e.n))}" title="Scegli come capitano (tocca di nuovo per tornare all’automatico)">C</button>`}<button type="button" class="rm" data-rm aria-label="Togli ${esc(pname(e.pid, e.n))}">×</button>${ED.seq ? roSteps(e) : `<div class="steps">${stp('g', '⚽', 'Gol', e.g)}${stp('a', '👟', 'Assist', e.a)}${stp('og', '🟥', 'Autogol', e.og)}</div>`}</div>`).join('')
+    (arr.length ? arr.map(e => `<div class="erow" data-t="${T}" data-pid="${e.pid}">${avatar(store.players[e.pid] || { name:e.n }, 'xs')}<span class="nm">${esc(pname(e.pid, e.n))}${e.bench ? '<em class="bn">in più</em>' : ''}</span>${ED.status === 'scheduled' ? '' : `<button type="button" class="latb" data-late aria-pressed="${!!e.late}" aria-label="⏰ Ritardo, −0,3 OVR: ${esc(pname(e.pid, e.n))}" title="⏰ Ritardo, −0,3 OVR">⏰</button><button type="button" class="latb injb" data-inj aria-pressed="${!!e.inj}" aria-label="🩹 Infortunato durante la gara: ${esc(pname(e.pid, e.n))}" title="🩹 Infortunato durante la gara: finisce in infermeria">🩹</button>`}${e.bench ? '<span></span>' : `<button type="button" class="capb" data-cap aria-pressed="${ED[T === 'white' ? 'capW' : 'capB'] === e.pid}" aria-label="Capitano: ${esc(pname(e.pid, e.n))}" title="Scegli come capitano (tocca di nuovo per tornare all’automatico)">C</button>`}<button type="button" class="rm" data-rm aria-label="Togli ${esc(pname(e.pid, e.n))}">×</button>${ED.seq ? roSteps(e) : `<div class="steps">${stp('g', '⚽', 'Gol', e.g)}${stp('a', '👟', 'Assist', e.a)}${stp('og', '🟥', 'Autogol', e.og)}</div>`}</div>`).join('')
       : `<p class="mu sm pad">Scegli la squadra qui sopra e tocca i nomi per schierarli.</p>`);
 }
 function renderEditor(){
@@ -7514,7 +7564,7 @@ async function saveMatch(){
     ED.goals = ordered; ED.moves = mvOrd;
     goalsOut = ordered.map(g => ({ s:g.s, ...(g.a && !g.og ? { a:g.a } : {}), ...(g.og ? { og:1 } : {}), ...(g.min != null ? { min:g.min } : {}), ...(g.ts ? { ts:g.ts } : {}) }));
   }
-  const clean = e => ({ pid:e.pid, n:pname(e.pid, e.n), g:sched ? 0 : num(e.g), a:sched ? 0 : num(e.a), og:sched ? 0 : num(e.og), ...(e.bench && !sched ? { bench:1 } : {}), ...(e.late && !sched ? { late:1 } : {}) });
+  const clean = e => ({ pid:e.pid, n:pname(e.pid, e.n), g:sched ? 0 : num(e.g), a:sched ? 0 : num(e.a), og:sched ? 0 : num(e.og), ...(e.bench && !sched ? { bench:1 } : {}), ...(e.late && !sched ? { late:1 } : {}), ...(e.inj && !sched ? { inj:1 } : {}) });
   const movesOut = (!sched && ED.seq) ? matchTimeline({ ...ED, goals:goalsOut }).moves.map(x => ({ pid:x.pid, k:x.k, ...(x.why ? { why:x.why } : {}), ...(x.min != null ? { min:x.min } : {}), ...(x.ts ? { ts:x.ts } : {}), at:x.slot })) : [];
   const oldM = ED.id ? store.matches[ED.id] : null, newPlayed = !sched && (!oldM || oldM.status === 'scheduled');
   const vHrs = oldM && oldM.voteHrs ? oldM.voteHrs : (newPlayed ? VOTE_HRS_NEW : 0);   /* gare nuove: 12 ore; le esistenti restano a 24 */
@@ -7555,6 +7605,8 @@ async function saveMatch(){
   closeModal('#m-match');
   ED = null;
   const up = { [`matches/${id}`]: payload };
+  /* Chi si è infortunato durante la gara entra in infermeria dal giorno della gara (se non c'è già) */
+  if(!sched) for(const e of [...payload.white, ...payload.black]) if(e.inj && store.players[e.pid] && !store.players[e.pid].injured){ up[`players/${e.pid}/injured`] = 1; up[`players/${e.pid}/injuredSince`] = payload.date || todayISO(); }
   /* Gara in programma con scommesse aperte e formazione cambiata: le scommesse si annullano (puntate rimborsate) */
   const mkc = mkOf(id);
   if(sched && mkc && mkc.status === 'open' && lineupKey(payload) !== mkc.lineup){
@@ -8039,6 +8091,7 @@ document.addEventListener('click', async e => {
   if(d.pool){ edToggle(d.pool); return; }
   if(d.st){ edStep(t, +d.st); return; }
   if('rm' in d){ const row = t.closest('.erow'); if(movesInvolve(row.dataset.pid)){ toast(`${pname(row.dataset.pid)} ha dei cambi registrati: eliminali prima di toglierlo`, 'warn'); return; } if(goalsInvolve(row.dataset.pid)){ toast(`${pname(row.dataset.pid)} ha gol o assist registrati: eliminali dalla cronaca prima di toglierlo`, 'warn'); return; } ED[row.dataset.t] = ED[row.dataset.t].filter(x => x.pid !== row.dataset.pid); edCapFix(); renderEditor(); return; }
+  if('inj' in d){ const row = t.closest('.erow'); if(row && ED){ const e = ED[row.dataset.t].find(x => x.pid === row.dataset.pid); if(e){ if(e.inj) delete e.inj; else e.inj = 1; renderEditor(); } } return; }
   if('late' in d){ const row = t.closest('.erow'); if(row && ED){ const e = ED[row.dataset.t].find(x => x.pid === row.dataset.pid); if(e){ if(e.late) delete e.late; else e.late = 1; renderEditor(); } } return; }
   if('cap' in d){ const row = t.closest('.erow'); if(row && ED){ const k = row.dataset.t === 'white' ? 'capW' : 'capB'; ED[k] = ED[k] === row.dataset.pid ? null : row.dataset.pid; renderEditor(); } return; }
   if(d.openPlayer && !d.action){ figPlq = null; openFigurina(d.openPlayer); return; }
@@ -8223,6 +8276,7 @@ document.addEventListener('change', e => {
   if(t.id === 'gf-og' && GF){ GF.og = t.checked; if(GF.og) GF.a = ''; renderGoals(); return; }
   if(t.matches('select[data-fm]') && ui.admin && store.matches[t.dataset.mid]) commit({ [`matches/${t.dataset.mid}/${t.dataset.fm}`]: t.value });
 });
+$('#pf-inj').addEventListener('change', e => { $('#pf-injd-w').hidden = !e.target.checked; });
 $('#pf-name').addEventListener('input', () => { if(!pfPhoto()) renderPfPreview(); });
 $('#pf-cp').addEventListener('change', e => {
   const v = e.target.value; PF.cp = (PF.cp || []).filter(x => x !== v);
@@ -8290,6 +8344,11 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.10.0', date:'2026-10-23', items:[
+    `✚ Nuova Infermeria nei Giocatori: chi è infortunato finisce lì dentro e accanto al nome ha una piccola croce rossa. In infermeria vedi da quanti giorni è fuori. Resta in tutte le classifiche, ma finché è infortunato non si può convocare nelle gare.`,
+    `🩹 Nelle gare l’organizzatore può segnare chi si è infortunato durante la partita: da quel giorno entra in infermeria.`,
+    `🏆 Nei Trofei c’è il nuovo primato “Il Cristallo”, per chi è stato fermo più a lungo.`
+  ] },
   { v:'1.9.8', date:'2026-10-20', items:[
     `⭐ Team of the Week: ora contano tutte le partite della settimana sommate (gol, assist e il resto), quindi chi gioca di più ha più occasioni. Sulla figurina vedi il totale dei gol e degli assist della settimana.`
   ] },
