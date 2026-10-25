@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.11.0
+- Nuovo livello «Leggenda» (👑, classe `t-leg`) a 99: figurina cremisi, nero e oro con corona, gemme rubino e fascia a sfaccettature rosse e oro (overlay SVG statico come gli altri livelli); animazione d'apertura come il Diamante, banner di promozione, barra del livello in «Io».
+- Livelli sull'OVR arrotondato: Bronzo 60-69, Argento 70-79 (prima da 65), Oro 80-89, Diamante 90-98, Leggenda 99. Minimo OVR 60 (prima 50); massimo 99, partenza 75 e tetti per gara (+5/−3) invariati.
+- Moltiplicatori per livello (`ovrBand`): da 90 in su punti positivi ×0,5 e perdite ×2; da 61 a 69 positivi ×2 e perdite ×0,5; al minimo (60) positivi ×3 e perdite ×0,5; tra 70 e 89 nessuno. Aggiornati «Come si calcola» e «Overall spiegato».
+- Effetto: l'OVR si ricalcola da tutte le gare con le regole nuove, quindi cambiano i numeri (e a volte il livello) anche per il passato. Nessun dato salvato cambia.
+
 ## 1.10.0
 - Infermeria: nuovo filtro «✚ Infermeria» (in rosso, con il numero degli infortunati) nella rosa dei Giocatori. Solo lì compare, sulla figurina, «🩹 da N giorni». Gli infortunati restano in tutti gli altri filtri e classifiche, con una piccola croce rossa e bianca accanto al nome (`nameHTML`).
 - Admin: nel form «Modifica giocatore» l'opzione «✚ Infortunato» con la data di inizio a scelta. Togliendolo dall'infermeria l'infortunio si archivia. Campi nuovi e opzionali del giocatore: `injured`, `injuredSince` (AAAA-MM-GG), `injHist` (`[{ f, t }]`, ultimi 30). Nessun campo esistente cambia.
