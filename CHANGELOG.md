@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.10.2
+- Editor delle gare: la ricerca dei giocatori è grande e sta in cima; premendo Invio, se il nome porta a un solo giocatore, lo aggiunge alla squadra scelta (Convoca, Bianchi o Neri) e svuota il campo.
+- «Chi sei?»: mostra solo i giocatori senza codice (mai entrati). In alto «Sono un ospite» e «🔑 Accedi»: Accedi elenca i giocatori con codice, si sceglie il nome e si scrive il codice (stesso controllo e stesso blocco dopo 5 tentativi di prima). Ricerca per nome in entrambe le liste. L'elenco dei codici si legge da `playerKeys` (solo le chiavi); se le regole non lo permettono si controlla giocatore per giocatore. Nessuna scrittura nuova.
+- «Io»: tasto «Non sei … ? Esci» per lasciare il giocatore su questo telefono (il codice resta).
+- Targhe: si assegnano solo a chi ha almeno 3 presenze in stagione (`PLQ_MIN_PRES`), anche nel calcolo del rivale e nella storia dei trofei.
+
 ## 1.10.1
 - Nuovo livello «Leggenda» (👑, classe `t-leg`) a 99: figurina cremisi, nero e oro con corona, gemme rubino e fascia a sfaccettature rosse e oro (overlay SVG statico come gli altri livelli); animazione d'apertura come il Diamante, banner di promozione, barra del livello in «Io».
 - Livelli sull'OVR arrotondato: Bronzo 60-69, Argento 70-79 (prima da 65), Oro 80-89, Diamante 90-98, Leggenda 99. Minimo OVR 60 (prima 50); massimo 99, partenza 75 e tetti per gara (+5/−3) invariati.

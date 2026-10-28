@@ -563,6 +563,7 @@ body.theme-casino .slip{background:rgba(7,76,44,.98)}
 .ed-pick-top .field{flex:1 1 180px;height:40px}
 .tt{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--hair);background:rgba(255,255,255,.03);font-weight:800;font-size:13.5px}
 .tt[aria-pressed=true]{border-color:var(--line-strong);background:var(--or-soft);color:var(--or)}
+.ed-pick-top #ed-filter{flex:1 1 100%;order:-1;height:46px;font-size:16px}
 .pool{display:flex;flex-wrap:wrap;gap:6px;max-height:190px;overflow:auto;padding:2px}
 .pchip{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 11px 0 5px;border-radius:10px;border:1px solid var(--hair);background:rgba(255,255,255,.03);font-weight:700;font-size:13px;transition:background .15s,border-color .15s}
 .pchip.w{background:#eef1f6;color:#0a0d14;border-color:#fff}
@@ -1558,7 +1559,12 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .who-opt{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 10px;border-radius:12px;border:1px solid var(--hair);background:rgba(255,255,255,.04);text-align:left;font-weight:700;font-size:14px;color:var(--tx)}
 .who-opt:active{background:var(--or-soft)}
 .who-opt span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.who-guest{display:grid;gap:10px;padding-top:6px;border-top:1px solid var(--hair)}
+.who-top{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.who-top .btn{flex:1 1 0}
+#who-g{margin:0 0 12px}
+.who-q{width:100%;height:46px;font-size:16px;margin:2px 0 0}
+.who-none{margin:14px 0}
+.me-out{display:flex;justify-content:center;margin:18px 0 4px}
 .key-form{display:grid;gap:10px;margin:12px 0 4px}
 .key-form label{display:grid;gap:5px;font:700 13px var(--body);color:var(--mu)}
 .key-form .field{height:48px;font-size:20px;letter-spacing:.35em;text-align:center}
@@ -1968,7 +1974,7 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
         <button type="button" class="tt" data-edteam="called" aria-pressed="true">✓ Convoca</button>
         <button type="button" class="tt" data-edteam="white" aria-pressed="false"><span class="dot w"></span>Bianchi</button>
         <button type="button" class="tt" data-edteam="black" aria-pressed="false"><span class="dot b"></span>Neri</button>
-        <input id="ed-filter" class="field" type="search" placeholder="Filtra giocatori" aria-label="Filtra giocatori" autocomplete="off">
+        <input id="ed-filter" class="field" type="search" enterkeyhint="done" placeholder="🔎 Cerca un giocatore e premi Invio per aggiungerlo" aria-label="Cerca giocatore" autocomplete="off">
       </div>
       <div class="bal"><span id="ed-called">Convocati 0</span><span class="bal-sz"><label>Bianchi <input id="bal-w" class="field" type="number" min="1" max="11" inputmode="numeric" aria-label="Giocatori dei Bianchi"></label><b>/</b><label>Neri <input id="bal-b" class="field" type="number" min="1" max="11" inputmode="numeric" aria-label="Giocatori dei Neri"></label></span><button type="button" class="btn sm primary" data-action="balance" id="ed-bal">⚖️ Bilancia squadre</button></div>
       <div id="ed-pool" class="pool"></div>
@@ -2082,7 +2088,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.10.1';
+const APP_VERSION = '1.10.2';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -2167,6 +2173,7 @@ PLAQUES.push({ id:'profeta', feat:'casino', icon:'🔮', name:'Il Profeta', desc
 PLAQUES.push({ id:'inarrestabile', icon:'🔥', name:'Inarrestabile', desc:'La serie più lunga di vittorie di fila in stagione (da 2 in su, il pareggio la interrompe). Parità: serie in corso, più vittorie.',
   ok:s => winRun(s).best >= 2, cmp:(a,b) => (winRun(b).best - winRun(a).best) || (winRun(b).cur - winRun(a).cur) || (b.v - a.v), val:s => `${winRun(s).best} vittorie di fila${winRun(s).cur === winRun(s).best ? ' (in corso)' : ''}` });
 const plqOn = P => !P.feat || feat(P.feat);
+const PLQ_MIN_PRES = 3;   /* per tenere una targa servono almeno 3 presenze in stagione */
 /* Moduli per ogni misura di squadra (da 1 a 11 titolari). La prima riga è sempre un solo giocatore "in porta"; massimo 4 righe e 5 per riga.
    Quelli a 8 sono i quattro di sempre. Il menu del modulo mostra solo quelli la cui somma è uguale ai titolari. */
 const FORMATIONS = {
@@ -3067,7 +3074,7 @@ function computeStats(upto){
   const held = {}, plaques = {};
   for(const P of PLAQUES){
     if(!plqOn(P)) continue;
-    const cands = arr.filter(P.ok).sort((a, b) => P.cmp(a, b) || a.name.localeCompare(b.name, 'it'));
+    const cands = arr.filter(s => s.pres >= PLQ_MIN_PRES && P.ok(s)).sort((a, b) => P.cmp(a, b) || a.name.localeCompare(b.name, 'it'));
     const win = cands.find(s => P.free || (held[s.pid] || []).length < 2);
     if(win){ (held[win.pid] = held[win.pid] || []).push(P.id); plaques[P.id] = { pid:win.pid, val:P.val(win) }; }
   }
@@ -4029,14 +4036,37 @@ async function voteCancel(mid, voter){
 const identityKnown = () => { const me = myPid(); let g = ''; try{ g = localStorage.getItem('cmb_guest') || ''; }catch(e){} return (!!me && !!store.players[me]) || !!g; };
 const seenFinal = () => { try{ return JSON.parse(localStorage.getItem('cmb2627_seenFinal') || '{}'); }catch(e){ return {}; } };
 function markFinal(mid){ const x = seenFinal(); x[mid] = 1; try{ localStorage.setItem('cmb2627_seenFinal', JSON.stringify(x)); }catch(e){} }
-function openWho(){
-  const ls = [...STATS.list].sort((a, b) => a.name.localeCompare(b.name, 'it'));
-  $('#who-body').innerHTML = `<h3>Chi sei?</h3><p class="lead-p">Scegli la tua carta: ${feat('mvp') ? 'serve per votare l’MVP e per vedere le tue statistiche' : 'serve per vedere le tue statistiche'}. Resta salvata su questo telefono.</p>
-    <div class="who-grid">${ls.map(x => `<button type="button" class="who-opt" data-who="${x.pid}">${avatar(x.p, 'md')}<span>${esc(x.name)}</span></button>`).join('')}</div>
-    <div class="who-guest"><button type="button" class="btn ghost" data-action="who-guest">Sono un ospite</button>
-      <div id="who-g" hidden><p class="mu sm">Non hai mai giocato ai Comboniani? Scrivi il tuo nome: l’organizzatore lo vedrà negli accessi.</p><div class="row"><input id="who-name" class="field" maxlength="40" placeholder="Nome e cognome" autocomplete="name"><button type="button" class="btn primary" data-action="who-guest-ok">Entra</button></div></div>
-      ${identityKnown() ? '<button type="button" class="btn ghost sm" data-action="who-cancel">Annulla</button>' : ''}</div>`;
+/* Chi sei?: alla prima apertura si vedono solo i giocatori senza codice (mai entrati). Chi ha già un codice usa «Accedi»: sceglie il suo nome e scrive il codice. */
+let whoTab = 'new', whoKeySet = null;
+async function whoKeys(){
+  if(!db) return new Set(Object.keys(store.playerKeys || {}));
+  try{
+    const sn = await Promise.race([db.ref('playerKeys').once('value'), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 9000))]);
+    return new Set(Object.keys(sn.val() || {}));
+  }catch(e){   /* se le regole non permettono di leggere l'elenco intero si chiede giocatore per giocatore */
+    const res = await Promise.all(STATS.list.map(s => keyFetch(s.pid).then(r => r ? s.pid : null).catch(() => null)));
+    return new Set(res.filter(Boolean));
+  }
+}
+async function openWho(tab){
+  whoTab = tab === 'login' ? 'login' : 'new';
+  $('#who-body').innerHTML = '<h3>Chi sei?</h3><p class="lead-p">Un momento…</p>';
   openModal('#m-who');
+  if(!whoKeySet) whoKeySet = await whoKeys().catch(() => new Set());
+  renderWho();
+}
+function renderWho(){
+  const login = whoTab === 'login';
+  const ls = STATS.list.filter(x => login ? whoKeySet.has(x.pid) : !whoKeySet.has(x.pid)).sort((a, b) => a.name.localeCompare(b.name, 'it'));
+  const grid = ls.length ? `<div class="who-grid">${ls.map(x => `<button type="button" class="who-opt" data-who="${x.pid}" data-n="${esc(norm(x.name))}">${avatar(x.p, 'md')}<span>${esc(x.name)}</span></button>`).join('')}</div>`
+    : `<p class="mu who-none">${login ? 'Nessun giocatore ha ancora un codice: torna indietro e scegli il tuo nome.' : 'Tutti i giocatori hanno già un codice: se sei uno di loro tocca «Accedi».'}</p>`;
+  const top = login
+    ? `<div class="who-top"><button type="button" class="btn ghost sm" data-action="who-tab" data-tab="new">‹ Indietro</button></div><h3>Accedi</h3><p class="lead-p">Scegli il tuo nome e poi scrivi il tuo codice.</p>`
+    : `<div class="who-top"><button type="button" class="btn ghost" data-action="who-guest">Sono un ospite</button><button type="button" class="btn primary" data-action="who-tab" data-tab="login">🔑 Accedi</button></div>
+      <div id="who-g" hidden><p class="mu sm">Non hai mai giocato ai Comboniani? Scrivi il tuo nome: l’organizzatore lo vedrà negli accessi.</p><div class="row"><input id="who-name" class="field" maxlength="40" placeholder="Nome e cognome" autocomplete="name"><button type="button" class="btn primary" data-action="who-guest-ok">Entra</button></div></div>
+      <h3>Chi sei?</h3><p class="lead-p">Prima volta qui? Scegli la tua carta e imposta il tuo codice: ${feat('mvp') ? 'serve per votare l’MVP e per vedere le tue statistiche' : 'serve per vedere le tue statistiche'}. Se hai già un codice tocca «Accedi».</p>`;
+  $('#who-body').innerHTML = `${top}${ls.length > 1 ? '<input id="who-q" class="field who-q" type="search" placeholder="🔎 Cerca il tuo nome" aria-label="Cerca il tuo nome" autocomplete="off">' : ''}${grid}
+    ${identityKnown() ? '<div class="row end"><button type="button" class="btn ghost sm" data-action="who-cancel">Annulla</button></div>' : ''}`;
 }
 /* Scelta del giocatore: se non ha un codice lo imposta chi arriva per primo, altrimenti serve il codice giusto */
 let whoBusy = false;
@@ -4867,6 +4897,14 @@ function ovrExplainHTML(s){
   const hs = [...s.hist].reverse(), recent = hs.slice(0, 6).map(one).join(''), older = hs.slice(6).map(one).join('');
   return how + recent + (older ? `<details class="ox-more"><summary>Gare precedenti (${hs.length - 6})</summary>${older}</details>` : '');
 }
+/* Esce dal giocatore su questo telefono (il codice resta: per rientrare si usa «Accedi») */
+async function meLogout(){
+  const me = myPid(); if(!me) return;
+  const ok = await confirmDlg(`Uscire da ${pname(me)}?`, 'Su questo telefono non sarai più questo giocatore. Per rientrare userai «Accedi» con il tuo codice.', 'Esci');
+  if(!ok) return;
+  try{ localStorage.removeItem('cmb_me'); localStorage.removeItem(PK_KEY); }catch(e){}
+  whoKeySet = null; scheduleRender(); openWho();
+}
 function renderMe(){
   const el = $('#me'); if(!el) return;
   const ae = document.activeElement; if(ae && typeof ae.id === 'string' && /^pf2-/.test(ae.id)) return;   /* mentre scrivi la scheda la pagina non si ridisegna */
@@ -4972,7 +5010,8 @@ function renderMe(){
       ${profileSecHTML(s.pid)}
       <section class="glass me-sec wide"><h3>⏱️ Quando segni</h3>${histBox}</section>
       <section class="glass me-sec wide"><h3>🧭 Il tuo percorso</h3>${pathBox}</section>
-    </div>`;
+    </div>
+    <div class="me-out"><button type="button" class="btn ghost sm" data-action="me-logout">Non sei ${esc(s.name)}? Esci</button></div>`;
 }
 
 /* ---------- Testa a testa ---------- */
@@ -5502,7 +5541,7 @@ function renderTrophies(){
     if(!s) return `<div class="plk off ${metal}">${plate}<div class="plk-body"><span class="mu sm">In palio: nessun giocatore la soddisfa ancora</span><small>${esc(P.desc)}</small></div></div>`;
     let reign = 0;
     for(let k = hist.length - 1; k >= 0 && hist[k].plaques[P.id] === s.pid; k--) reign++;
-    const cands = STATS.list.filter(P.ok).sort((a, b) => P.cmp(a, b) || a.name.localeCompare(b.name, 'it'));
+    const cands = STATS.list.filter(x => x.pres >= PLQ_MIN_PRES && P.ok(x)).sort((a, b) => P.cmp(a, b) || a.name.localeCompare(b.name, 'it'));
     const rv = cands.find(x => x.pid !== s.pid), G = PLQ_GAP[P.id];
     let rival = '', danger = false;
     if(rv && G){
@@ -5536,7 +5575,7 @@ function renderTrophies(){
   }).join('');
   const tt = ui.tTab === 'rec' ? 'rec' : ui.tTab === 'tw' ? 'tw' : ui.tTab === 'tm' ? 'tm' : 'plq';
   const ttabs = `<div class="sub-tabs" role="tablist" aria-label="Trofei">${[['plq', 'Targhe'], ['rec', 'Trofei storici'], ['tw', 'TOTW'], ['tm', 'TOTM']].map(([k, l]) => `<button type="button" role="tab" class="sub-tab ${k === tt ? 'on' : ''}" aria-selected="${k === tt}" data-ttab="${k}">${l}</button>`).join('')}</div>`;
-  el.innerHTML = `${ttabs}${tt === 'tw' || tt === 'tm' ? '' : `<div class="glass th-hero"><h2>🏆 Trofei & Primati</h2><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa davvero meglio: a pari merito non cambiano mano.</p></div>`}
+  el.innerHTML = `${ttabs}${tt === 'tw' || tt === 'tm' ? '' : `<div class="glass th-hero"><h2>🏆 Trofei & Primati</h2><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa, servono almeno ${PLQ_MIN_PRES} presenze). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa davvero meglio: a pari merito non cambiano mano.</p></div>`}
     ${tt === 'tw' ? `<div class="th-sec"><h3>Team of the Week</h3><span>2-4-2 · da lunedì a domenica</span></div>${twView('w')}` : tt === 'tm' ? `<div class="th-sec"><h3>Team of the Month</h3><span>2-4-2 · dal primo all’ultimo del mese</span></div>${twView('m')}` : tt === 'plq' ? `<div class="th-sec"><h3>Le ${PL.length} targhe stagionali</h3><span>Leader in tempo reale · Stagione 26/27</span></div>
     <div class="plk-grid">${plk}</div>` : `<div class="th-sec"><h3>Bacheca dei primati storici</h3><span>${nM} ${nM === 1 ? 'gara analizzata' : 'gare analizzate'}</span></div>
     <div class="rec-grid">${recs}</div>`}`;
@@ -8138,9 +8177,11 @@ document.addEventListener('click', async e => {
     case 'prof-no': profReject(d.pid); break;
     case 'bday-close': try{ localStorage.setItem('cmb_bday_' + isoOf(new Date()), '1'); }catch(e){} renderDashboard(); break;
     case 'duel': openDuel(d.pid); break;
-    case 'who-open': openWho(); break;
+    case 'who-open': whoKeySet = null; openWho(); break;
     case 'who-cancel': closeModal('#m-who', true); break;
-    case 'who-back': openWho(); break;
+    case 'who-back': openWho(whoTab); break;
+    case 'who-tab': whoTab = d.tab === 'login' ? 'login' : 'new'; renderWho(); break;
+    case 'me-logout': meLogout(); break;
     case 'acct-open': openAcct(); break;
     case 'acct-exit': keyLogout(); closeModal('#m-acct'); render(); toast('Sei uscito: su questo telefono non c’è più nessun giocatore'); break;
     case 'keys-open': openKeys(); break;
@@ -8269,6 +8310,16 @@ document.addEventListener('input', e => { const t = e.target; if(t && typeof t.i
 document.addEventListener('submit', e => { if(e.target && e.target.id === 'prof-form'){ e.preventDefault(); profSend(); } });
 $('#fig-body').addEventListener('animationend', e => { if(e.target.classList && e.target.classList.contains('flip')) e.target.classList.remove('reveal-gold', 'reveal-dia', 'promo', 'peek'); });
 $('#ed-filter').addEventListener('input', renderEditorPick);
+document.addEventListener('input', e => { if(e.target && e.target.id === 'who-q'){ const q = norm(e.target.value); $$('#who-body .who-opt').forEach(b => { b.hidden = !!q && !b.dataset.n.includes(q); }); } });
+/* Invio: se il nome scritto porta a un solo giocatore lo aggiunge alla squadra scelta e svuota la ricerca */
+$('#ed-filter').addEventListener('keydown', e => {
+  if(e.key !== 'Enter' || !ED) return;
+  e.preventDefault();
+  const q = norm(e.target.value); if(!q) return;
+  const hit = STATS.list.filter(s => norm(s.name).includes(q) && edFind(s.pid) !== edTeam);
+  if(hit.length === 1){ edToggle(hit[0].pid); e.target.value = ''; renderEditorPick(); }
+  else toast(hit.length ? `${hit.length} giocatori corrispondono: scrivi qualche lettera in più` : 'Nessun giocatore da aggiungere con questo nome', 'warn');
+});
 $('#bal-w').addEventListener('input', e => balInput('w', e.target.value));
 $('#bal-b').addEventListener('input', e => balInput('b', e.target.value));
 $('#ed-day').addEventListener('input', e => { if(ED) ED.day = num(e.target.value); });
@@ -8364,6 +8415,11 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.10.2', date:'2026-10-28', items:[
+    `🔑 Entrare è più semplice: la prima volta scegli il tuo nome tra chi non ha ancora un codice; se il codice ce l’hai già tocca «Accedi», cerca il tuo nome e scrivilo. In alto trovi anche «Sono un ospite».`,
+    `🚪 In «Io» c’è il tasto per uscire dal tuo giocatore su questo telefono.`,
+    `🏅 Per vincere una targa ora servono almeno 3 presenze in stagione.`
+  ] },
   { v:'1.10.1', date:'2026-10-25', items:[
     `👑 Nuovo livello Leggenda per chi arriva a 99: la carta diventa cremisi e oro, con la corona. Lassù le sconfitte costano il doppio: per restarci bisogna vincere.`,
     `📊 Cambiano i livelli: Bronzo da 60 a 69 (60 è il nuovo minimo), Argento da 70 a 79, Oro da 80 a 89, Diamante da 90 a 98.`,
