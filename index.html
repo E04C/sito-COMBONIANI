@@ -805,7 +805,10 @@ button.pcard:active .pc-fr{transform:scale(.96)}
 .m-tabs{margin:0 0 4px}
 .scorers{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 16px;margin:0 0 12px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.08)}
 .sc-col.r{text-align:right}
-.sc-li{margin:0 0 7px;font:700 14px/1.25 var(--body);overflow-wrap:anywhere}
+.sc-li{display:flex;align-items:flex-start;gap:6px;margin:0 0 7px;font:700 14px/1.25 var(--body);overflow-wrap:anywhere}
+.sc-col.r .sc-li{flex-direction:row-reverse}
+.sc-li .av{width:22px;height:22px;border-radius:50%;font-size:9.5px;margin-top:-2px}
+.sc-tx{min-width:0}
 .sc-li .mn{color:var(--or);font-weight:800;margin-right:5px;font-variant-numeric:tabular-nums}
 .sc-li .aut{color:#fda4af;font-weight:600}
 .sc-li small{display:block;margin-top:1px;color:var(--mu2);font:600 11.5px/1.2 var(--body)}
@@ -3982,6 +3985,8 @@ function cambiHTML(m){
   return `<section class="chron"><h3>🔁 Cambi</h3><ol>${mv.map(r => `<li class="cr mv"><span class="mn">${r.min != null ? r.min + '’' : '·'}</span><span class="ci">${moveIcon(r.k, r.why)}</span><span class="cw"><b>${esc(moveText(r, m))}</b></span><span class="cs">0–0</span></li>`).join('')}</ol></section>`;
 }
 /* Marcatori sotto ogni squadra: con la sequenza dei gol "12' Cognome N." e assist sotto, senza sequenza "Cognome N. x3" */
+/* Faccina di chi segna accanto al nome (solo giocatori in rosa) */
+const scAv = pid => store.players[pid] ? avatar(store.players[pid], 'xs') : '';
 function scorersHTML(m){
   const seq = matchGoals(m);
   const col = (team, cls) => {
@@ -3989,12 +3994,12 @@ function scorersHTML(m){
     if(seq.length){
       seq.filter(x => x.t === team).forEach(x => {
         const mn = x.min != null ? `<span class="mn">${x.est ? '~' : ''}${x.min}’</span>` : '';
-        li.push(`<p class="sc-li">${mn}${esc(pname(x.s))}${x.og ? ' <span class="aut">(aut.)</span>' : ''}${!x.og && x.a ? `<small>assist ${esc(pname(x.a))}</small>` : ''}</p>`);
+        li.push(`<p class="sc-li">${mn}${scAv(x.s)}<span class="sc-tx">${esc(pname(x.s))}${x.og ? ' <span class="aut">(aut.)</span>' : ''}${!x.og && x.a ? `<small>assist ${esc(pname(x.a))}</small>` : ''}</span></p>`);
       });
     }else{
       const ev = teamEvents(m, team), c = e => e.c > 1 ? ` x${e.c}` : '';
-      ev.goals.forEach(e => li.push(`<p class="sc-li">${esc(e.n)}${c(e)}</p>`));
-      ev.ogs.forEach(e => li.push(`<p class="sc-li">${esc(e.n)}${c(e)} <span class="aut">(aut.)</span></p>`));
+      ev.goals.forEach(e => li.push(`<p class="sc-li">${scAv(e.pid)}<span class="sc-tx">${esc(e.n)}${c(e)}</span></p>`));
+      ev.ogs.forEach(e => li.push(`<p class="sc-li">${scAv(e.pid)}<span class="sc-tx">${esc(e.n)}${c(e)} <span class="aut">(aut.)</span></span></p>`));
       ev.assists.forEach(e => li.push(`<p class="sc-li"><small>assist ${esc(e.n)}${c(e)}</small></p>`));
     }
     return { cls, li };
