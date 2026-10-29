@@ -138,8 +138,18 @@ option{background:#0c1018;color:var(--tx)}
 .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:16px}
 .vtitle{margin:0 auto 0 0;font:italic 800 34px/1 var(--disp)}
 #psearch{flex:1 1 200px;max-width:320px}
-#msel{flex:1 1 260px;max-width:480px}
-@media (max-width:640px){.vtitle{width:100%}#psearch,#msel{max-width:none}}
+@media (max-width:640px){.vtitle{width:100%}#psearch{max-width:none}}
+/* Giornate a schede: una fila che scorre di lato, la giornata scelta in arancio */
+.mdays{position:relative;order:3;flex:1 1 100%;min-width:0;display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x proximity;padding:4px 2px 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.mdays::-webkit-scrollbar{display:none}
+.mday{flex:none;scroll-snap-align:center;min-width:66px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 10px;border-radius:14px;border:1.5px solid rgba(249,115,22,.35);background:rgba(249,115,22,.06);color:var(--tx);cursor:pointer;transition:background .2s,box-shadow .2s,transform .15s var(--ease)}
+.mday:active{transform:scale(.96)}
+.mday b{font:italic 800 19px/1 var(--disp)}
+.mday small{font:700 11.5px var(--body);color:var(--mu);white-space:nowrap}
+.mday.sch{border-style:dashed}
+.mday.on{border-color:#fb923c;background:linear-gradient(135deg,#fb923c,#f97316 55%,#ea580c);box-shadow:0 4px 16px rgba(249,115,22,.45)}
+.mday.on b,.mday.on small{color:#1a0b02}
+.mday:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .empty{padding:34px 20px;text-align:center;color:var(--mu)}
 .empty h3{margin:0 0 6px;color:var(--tx);font:italic 800 30px/1.05 var(--disp)}
 .empty p{margin:0 auto 16px;max-width:44ch}
@@ -2039,7 +2049,7 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
   <section id="view-matches" class="view" aria-label="Partite" hidden>
     <div class="toolbar">
       <h2 class="vtitle">Partite</h2>
-      <select id="msel" class="field" aria-label="Scegli la giornata"></select>
+      <div id="mdays" class="mdays" role="tablist" aria-label="Scegli la giornata"></div>
       <button class="btn primary admin-only" data-action="new-match">＋ Registra gara</button>
     </div>
     <div id="mdetail"></div>
@@ -3933,7 +3943,7 @@ function renderFigurina(){
 
 /* ---------- Tabellini ---------- */
 function renderMatches(){
-  const sel = $('#msel');
+  const sel = $('#mdays');
   const sched = STATS.scheduled, played = [...STATS.matches].reverse();
   if(!sched.length && !played.length){
     sel.hidden = true;
@@ -3944,11 +3954,19 @@ function renderMatches(){
   if(!ui.matchId || !store.matches[ui.matchId]) ui.matchId = (sched[0] || played[0]).id;
   /* Durante gli spostamenti si aggiorna solo il campo: il resto della pagina non si tocca */
   if(ui.admin && ui.swapMode && paintedMatch === ui.matchId && $('#mdetail .pp')){ rerenderPitch(); return; }
-  const opt = (m, label) => `<option value="${m.id}" ${m.id === ui.matchId ? 'selected' : ''}>${label}</option>`;
-  sel.innerHTML =
-    (sched.length ? `<optgroup label="In programma">${sched.map(m => opt(m, `Giornata ${num(m.day)}${whenLabel(m) ? ' (' + whenLabel(m) + ')' : ''}: formazioni`)).join('')}</optgroup>` : '') +
-    (played.length ? `<optgroup label="Giocate">${played.map(m => { const s = matchScore(m); return opt(m, `Giornata ${num(m.day)}${m.date ? ' (' + fmtDate(m.date) + ')' : ''}: Bianchi ${s.w}–${s.b} Neri`); }).join('')}</optgroup>` : '');
+  /* Schede in ordine di giornata (le giocate, poi quelle in programma); si centra la scheda scelta solo quando cambia, altrimenti resta dov'era */
+  const chip = (m, pre) => { const on = m.id === ui.matchId, s = pre ? null : matchScore(m), dt = m.date ? fmtDate(m.date).replace(/ \d{4}$/, '') : '';
+    return `<button type="button" role="tab" class="mday${pre ? ' sch' : ''}${on ? ' on' : ''}" aria-selected="${on}" data-mday="${m.id}" aria-label="Giornata ${num(m.day)}${pre ? ', in programma' + (whenLabel(m) ? ', ' + esc(whenLabel(m)) : '') : `${m.date ? ', ' + esc(fmtDate(m.date)) : ''}, Bianchi ${s.w}–${s.b} Neri`}"><b>G${num(m.day)}</b><small>${pre ? '🗓️ ' + esc(dt || 'da definire') : `${s.w}–${s.b}`}</small></button>`; };
+  const keep = sel.scrollLeft;
+  sel.innerHTML = [...played].reverse().map(m => chip(m, false)).join('') + sched.map(m => chip(m, true)).join('');
+  sel.scrollLeft = keep;
+  if(ui.mdayC !== ui.matchId) centerMday();
   paintMatch();
+}
+/* Porta al centro la scheda della giornata scelta (solo con la sezione visibile: da nascosta non ha misure) */
+function centerMday(){
+  const sel = $('#mdays'), on = sel && sel.querySelector('.mday.on'); if(!on || !sel.clientWidth) return;
+  ui.mdayC = ui.matchId; sel.scrollLeft = Math.max(0, on.offsetLeft - (sel.clientWidth - on.offsetWidth) / 2);
 }
 /* Sezione "Cambi" del resoconto: solo se la gara ne ha */
 function cambiHTML(m){
@@ -8675,6 +8693,7 @@ function go(view){
   if(view === 'me'){ const el = $('#me'); el.classList.remove('me-anim'); void el.offsetWidth; el.classList.add('me-anim'); countUp(el); }
   if(view === 'dashboard') rankShift();
   if(view === 'trophies') renderTrophies();
+  if(view === 'matches') centerMday();
   if(view === 'casino'){ ui.cAnim = true; ui.cFrom = null; renderCasino(); }
   if(view === 'ballon') renderBallon();
   if(view === 'admin') setTimeout(profToast, 500);
@@ -8707,6 +8726,7 @@ document.addEventListener('click', async e => {
   if(d.mtab){ ui.mTab = d.mtab === 'form' ? 'form' : 'rep'; ui.swapSel = null; if(ui.mTab === 'rep') ui.swapMode = false; paintMatch(); return; }
   if(d.plv){ openPlq(d.plv); return; }
   if(d.rcv){ openRecCard(d.rcv); return; }
+  if(d.mday){ if(store.matches[d.mday]){ ui.matchId = d.mday; ui.swapSel = null; renderMatches(); } return; }
   if(d.ttab){ ui.tTab = d.ttab === 'rec' ? 'rec' : d.ttab === 'tw' ? 'tw' : d.ttab === 'tm' ? 'tm' : 'plq'; renderTrophies(); return; }
   if(d.ctab){ if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; } ui.cTab = d.ctab; renderCasino(); renderSlip(); return; }
   if(d.mpool){ const [k, a, b] = d.mpool.split('|'); placePool(d.mid, k, k === 'mvp' ? a : b, k === 'duel' ? a : undefined); return; }
@@ -8900,7 +8920,7 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('input', e => { const t = e.target; if(t && t.id === 'msg-text'){ const n = $('#msg-n'); if(n) n.textContent = t.value.length + ' / ' + MSG_MAX; } });
 document.addEventListener('input', e => { const t = e.target; if(t && t.dataset && t.dataset.slipI !== undefined && ui.slip){ ui.slip.stakes[t.dataset.slipI] = Math.floor(Number(t.value) || 0); slipRefreshNums(); } });
-$('#msel').addEventListener('change', e => { ui.matchId = e.target.value; ui.swapSel = null; rerenderMatch(); });
+
 document.addEventListener('input', e => { const t = e.target; if(t && typeof t.id === 'string' && /^pf2-/.test(t.id)) profDraft = profReadForm(); });
 document.addEventListener('submit', e => { if(e.target && e.target.id === 'prof-form'){ e.preventDefault(); profSend(); } });
 document.addEventListener('submit', e => { if(e.target && e.target.id === 'bd-form'){ e.preventDefault(); bdVote(); } });
