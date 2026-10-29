@@ -1349,11 +1349,13 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .plv:hover{border-color:rgba(251,191,36,.45)}
 .plv:active{transform:scale(.97)}
 .plv.mine{border-color:var(--or);box-shadow:0 0 0 1px var(--or),0 0 18px rgba(249,115,22,.22)}
-.plv-med{position:relative;display:grid;place-items:center;width:62px;height:62px;margin-bottom:7px;border-radius:50%;background:var(--metal);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -3px 0 rgba(0,0,0,.3),0 8px 18px -8px #000}
+.plv-med{position:relative;display:grid;place-items:center;width:64px;height:64px;margin-bottom:7px;border-radius:50%;background:var(--metal);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -3px 0 rgba(0,0,0,.3),0 8px 18px -8px #000}
 .plv-med::before{content:"";position:absolute;top:6px;left:6px;right:6px;bottom:6px;border-radius:50%;background:radial-gradient(circle at 50% 32%,#1d2331,#0a0d14);box-shadow:inset 0 2px 5px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.28)}
 .plv-ic{position:relative;font-size:24px;line-height:1}
-.plv-av{position:absolute;right:-7px;bottom:-5px}
-.plv-av .av{border-radius:50%;box-shadow:0 0 0 2px #0a0d14}
+.plv-face{position:relative;z-index:1;display:block;width:54px;height:54px;border-radius:50%;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.28)}
+.plv-face .av{width:100%;height:100%;border:0;border-radius:50%;font-size:20px}
+.plv-sym{position:absolute;right:-7px;bottom:-5px;z-index:2;display:grid;place-items:center;width:28px;height:28px;border:2px solid transparent;border-radius:50%;font-size:14px;line-height:1;
+  background:radial-gradient(circle at 50% 35%,#1d2331,#0a0d14) padding-box,var(--metal) border-box;box-shadow:0 3px 8px rgba(0,0,0,.6)}
 .plv-st{position:absolute;top:8px;right:8px;display:grid;place-items:center;width:21px;height:21px;border-radius:7px;background:rgba(255,255,255,.06);color:#fde68a}
 .plv-st .lk{width:12px;height:12px}
 .plv-st.danger{color:#fb923c;background:rgba(249,115,22,.16);animation:dangerPulse 1.6s ease-in-out infinite}
@@ -6003,7 +6005,7 @@ function renderTrophies(){
       <span class="plk-meta"><span class="reign ${st}" title="Gare consecutive in cui detiene la targa">${lockSVG(st)}<span>${P.feat ? '—' : `${reign} ${reign === 1 ? 'gara' : 'gare'}`}</span>${st === 'danger' ? '<em>In pericolo</em>' : st === 'open' ? '<em>Nuovo detentore</em>' : ''}</span>${mine ? '<span class="tua">Tua</span>' : ''}</span>
       ${rival}<small>${esc(P.desc)}</small></div></div>`;
     const stT = st === 'danger' ? ', in pericolo' : st === 'open' ? ', nuovo detentore' : P.feat ? '' : `, da ${reign} ${reign === 1 ? 'gara' : 'gare'}`;
-    const tile = `<button type="button" class="plv ${metal} ${mine ? 'mine' : ''}" data-plv="${P.id}" aria-label="${P.name}: ${esc(s.name)}, ${esc(h.val)}${stT}"><span class="plv-med"><span class="plv-ic">${P.icon}</span><span class="plv-av">${avatar(s.p, 'xs')}</span></span><span class="plv-st ${st}">${lockSVG(st)}</span>${mine ? '<span class="plv-tua">Tua</span>' : ''}<span class="plv-t">${P.name}</span><span class="plv-h">${esc(s.name)}</span><span class="plv-v">${esc(h.val)}</span></button>`;
+    const tile = `<button type="button" class="plv ${metal} ${mine ? 'mine' : ''}" data-plv="${P.id}" aria-label="${P.name}: ${esc(s.name)}, ${esc(h.val)}${stT}"><span class="plv-med"><span class="plv-face">${avatar(s.p, 'md')}</span><span class="plv-sym">${P.icon}</span></span><span class="plv-st ${st}">${lockSVG(st)}</span>${mine ? '<span class="plv-tua">Tua</span>' : ''}<span class="plv-t">${P.name}</span><span class="plv-h">${esc(s.name)}</span><span class="plv-v">${esc(h.val)}</span></button>`;
     return { id:P.id, tile, card };
   });
   PLK_CARDS = Object.fromEntries(plk.map(x => [x.id, x.card]));
