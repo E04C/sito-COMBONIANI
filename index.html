@@ -5417,7 +5417,9 @@ function computeRecords(){
   const L = STATS.list, alpha = (a, b) => a.name.localeCompare(b.name, 'it');
   const nameOfPair = k => k.split('|').map(id => pname(id)).sort((x, y) => x.localeCompare(y, 'it')).join('');
   const cecchino = recPick('cecchino', L.filter(s => s.pres >= 3).sort((a, b) => (b.avg - a.avg) || (b.g - a.g) || alpha(a, b)), (x, y) => near(x.avg, y.avg) && x.g === y.g, RID.pid);
-  const fortino = recPick('fortino', L.filter(s => isDef(s) && s.pres >= 3).sort((a, b) => (conc[a.pid] - conc[b.pid]) || (b.pres - a.pres) || alpha(a, b)), (x, y) => conc[x.pid] === conc[y.pid] && x.pres === y.pres, RID.pid);
+  /* Il Fortino: la media più bassa di gol subiti a partita (non il totale, che premierebbe chi gioca meno). Parità: più presenze */
+  const cAvg = s => conc[s.pid] / s.pres;
+  const fortino = recPick('fortino', L.filter(s => isDef(s) && s.pres >= 3).sort((a, b) => (cAvg(a) - cAvg(b)) || (b.pres - a.pres) || alpha(a, b)), (x, y) => near(cAvg(x), cAvg(y)) && x.pres === y.pres, RID.pid);
   const inarr = recPick('inarr', L.filter(s => streak[s.pid]?.best > 0).sort((a, b) => (streak[b.pid].best - streak[a.pid].best) || alpha(a, b)), (x, y) => streak[x.pid].best === streak[y.pid].best, RID.pid);
   const mina = recPick('mina', L.filter(s => s.p.role !== 'ATT' && s.g > 0).sort((a, b) => (b.g - a.g) || (a.pres - b.pres) || alpha(a, b)), (x, y) => x.g === y.g && x.pres === y.pres, RID.pid);
   /* Scalata (o caduta) di fila: gare consecutive in cui l'OVR non scende (non sale per la caduta). Una gara che non cambia l'OVR non interrompe la serie; una che lo muove nel verso opposto sì.
@@ -6058,8 +6060,8 @@ function buildRecordCards(R, nM){
       : { icon:'⭐', title:'Uomo Partita', desc:'Miglior prestazione individuale in una gara.', lock:need('Ancora nessuna prestazione a punti') },
     R.cecchino ? { icon:'🎯', title:'Cecchino Infallibile', desc:'Miglior media gol a partita dell’intero torneo.', pid:R.cecchino.pid, sub:`${R.cecchino.g} gol in ${R.cecchino.pres} gare`, value:R.cecchino.avg.toFixed(2), unit:'gol a partita' }
       : { icon:'🎯', title:'Cecchino Infallibile', desc:'Miglior media gol a partita dell’intero torneo.', lock:'In attesa di sblocco (min. 3 presenze)' },
-    R.fortino ? { icon:'🏰', title:'Il Fortino', desc:'Difensore con meno gol subiti in totale.', pid:R.fortino.pid, sub:`${R.fortino.pres} presenze, media ${(R.conc[R.fortino.pid] / R.fortino.pres).toFixed(1)} a gara`, value:R.conc[R.fortino.pid], unit:'gol subiti' }
-      : { icon:'🏰', title:'Il Fortino', desc:'Difensore con meno gol subiti in totale.', lock:'In attesa di sblocco (min. 3 presenze)' },
+    R.fortino ? { icon:'🏰', title:'Il Fortino', desc:'Difensore con la media più bassa di gol subiti a partita (almeno 3 presenze). Parità: più presenze.', pid:R.fortino.pid, sub:`${R.fortino.pres} presenze, ${R.conc[R.fortino.pid]} gol subiti in totale`, value:(R.conc[R.fortino.pid] / R.fortino.pres).toFixed(2).replace('.', ','), unit:'gol subiti a gara' }
+      : { icon:'🏰', title:'Il Fortino', desc:'Difensore con la media più bassa di gol subiti a partita (almeno 3 presenze). Parità: più presenze.', lock:'In attesa di sblocco (min. 3 presenze)' },
     R.inarr ? (() => { const st = R.streak[R.inarr.pid]; return { icon:'🔥', title:'Inarrestabile', desc:'Striscia più lunga di vittorie consecutive.', pid:R.inarr.pid, sub:st.best > 1 ? `dalla G${num(st.bFrom.day)} alla G${num(st.bTo.day)}` : matchWhen(st.bTo), value:st.best, unit:st.best === 1 ? 'vittoria' : 'vittorie di fila' }; })()
       : { icon:'🔥', title:'Inarrestabile', desc:'Striscia più lunga di vittorie consecutive.', lock:need('Ancora nessuna vittoria') },
     R.mina ? { icon:'💣', title:'Mina Vagante', desc:'Il non-attaccante con più gol segnati.', pid:R.mina.pid, sub:`${ROLES[R.mina.p.role] || 'Centrocampista'}, ${R.mina.pres} presenze`, value:R.mina.g, unit:'gol totali' }
@@ -9222,6 +9224,14 @@ try{
   if(!localStorage.getItem('cmb_mig_v162')){
     ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr'].forEach(k => localStorage.removeItem(k));
     localStorage.setItem('cmb_mig_v162', '1');
+  }
+}catch(e){}
+/* Migrazione 1.11.3: Il Fortino si calcola sulla media e arrivano nuovi primati e targhe. Si azzerano i "già visto" di primati e targhe,
+   così il codice li ricrea in silenzio e non compaiono popup finti di record battuti */
+try{
+  if(!localStorage.getItem('cmb_mig_v1113')){
+    ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV'].forEach(k => localStorage.removeItem(k));
+    localStorage.setItem('cmb_mig_v1113', '1');
   }
 }catch(e){}
 /* Migrazione 1.7.3: i codici giocatore sono nuovi, quindi ogni telefono rifà l'accesso (gli ospiti restano ospiti) */
