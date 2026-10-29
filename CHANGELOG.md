@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.12.0
+- Motore OVR v5 (`ovrBand`, `ovrParts`): da 90 in su punti positivi ×0,5 e perdite ×1,5 (sconfitta −1,5, con 3+ gol di scarto −3), −1 senza gol né assist (qualsiasi ruolo), −0,1 per gol subito in sconfitta e pareggio (in vittoria resta 2 − 0,1 per gol subito); tetto di perdita per gara −3 da 90 a 94 e −5 da 95 a 99. Da 85 a 89 punti positivi ×0,8 e perdite ×1,2. Sotto l'85 invariato.
+- «Come si calcola», «Overall spiegato» (righe «Né gol né assist» e «Gol subiti», tetto variabile) e il testo della Leggenda aggiornati.
+- Gli OVR si ricalcolano su tutte le gare; migrazione `cmb_mig_v1120` che azzera una volta i «già visto» (primati, targhe, livelli, OVR, promozione) per non avere popup o animazioni finti.
+
 ## 1.11.4
 - Resoconto: il minuto del gol (`.sc-li .mn`) non si restringe più nella riga flessibile, quindi sul telefono non va a capo cifra per cifra.
 - Podio della Classifica: overall e ruolo sulle figurine ridotti al 55% (`.pod-card .mfig-rt`), come nel TOTW, per non coprire la foto.

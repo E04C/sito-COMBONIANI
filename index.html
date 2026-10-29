@@ -2294,7 +2294,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.11.4';
+const APP_VERSION = '1.12.0';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -9092,6 +9092,11 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.12.0', date:'2026-10-29', items:[
+    `⚖️ Cambia l’overall in alto: da 85 a 89 i punti guadagnati valgono ×0,8 e quelli persi ×1,2.`,
+    `💎 Da 90 in su restare lassù è più dura: le sconfitte valgono una volta e mezza, se non fai né gol né assist perdi 1 punto e ogni gol subito toglie 0,1 anche quando non vinci. In una gara puoi perdere fino a 3 punti (da 95 in su fino a 5).`,
+    `🔄 Gli overall di tutti sono ricalcolati con le regole nuove.`
+  ] },
   { v:'1.11.4', date:'2026-10-29', items:[
     `🛠️ Sistemati due difetti: sul telefono il minuto dei gol non scende più in colonna, e nelle figurine del podio overall e ruolo non coprono più la foto.`
   ] },
