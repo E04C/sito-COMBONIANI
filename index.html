@@ -1367,6 +1367,13 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .plv-v{max-width:100%;color:var(--gold);font-weight:700;font-size:11px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .plv.off .plv-med{filter:grayscale(.75) brightness(.6)}
 .plv.off .plv-t,.plv.off .plv-h{color:var(--mu)}
+.rcv{--metal:linear-gradient(135deg,rgba(255,255,255,.75),rgba(255,255,255,.14) 38%,rgba(249,115,22,.75) 68%,rgba(255,255,255,.45))}
+.rcv .plv-t{color:#fdba74}
+.rcv .plv-v b{font:italic 800 13px var(--disp);color:var(--or)}
+.plv-face.pair{display:flex}
+.plv-face.pair .av{width:50%;border-radius:0;font-size:14px}
+.rcv-new{position:absolute;top:9px;right:8px;padding:1px 6px;border-radius:6px;background:#4ade80;color:#052e16;font:900 10px var(--body);animation:dangerPulse 1.6s ease-in-out infinite}
+.plq-sheet .rec{margin-bottom:14px}
 .plq-sheet{width:min(460px,100%)}
 .plq-sheet .plk{margin-bottom:14px}
 /* --- Teche di vetro --- */
@@ -6033,15 +6040,33 @@ function twAction(act, key, mode){
   else{ const dr = twGet('draft', key, root); if(!dr) return; twRevMark(key, dr.t, mo ? 'm' : 'w'); commit({ [`${root}/pub/${key}`]: dr }, `${mo ? 'Team of the Month' : 'Team of the Week'} mostrato a tutti`); }
 }
 /* Vetrina delle targhe: il riquadro completo (lucchetto, rivale, regola) si apre toccando il medaglione */
-let PLK_CARDS = {}, plqOpen = null;
+/* La stessa finestra mostra anche il riquadro completo di un primato storico (plqOpen = "r:" + chiave), con la storia del primato */
+let PLK_CARDS = {}, REC_CARDS = {}, REC_TITLES = {}, plqOpen = null;
 function openPlq(id){
   if(!PLK_CARDS[id]) return;
   plqOpen = id; paintPlq(); openModal('#m-plq');
 }
+function openRecCard(key){
+  if(!REC_CARDS[key]) return;
+  plqOpen = 'r:' + key; paintPlq(); openModal('#m-plq');
+}
+const plqHTML = () => !plqOpen ? '' : plqOpen.startsWith('r:') ? REC_CARDS[plqOpen.slice(2)] : PLK_CARDS[plqOpen];
 function paintPlq(){
-  const b = $('#plq-body'), P = plaqueById(plqOpen); if(!b || !P) return;
-  b.setAttribute('aria-label', 'Targa ' + P.name);
-  b.innerHTML = `${PLK_CARDS[plqOpen] || ''}<div class="row end"><button type="button" class="btn ghost" data-close>Chiudi</button></div>`;
+  const b = $('#plq-body'), html = plqHTML(); if(!b || !html) return;
+  const isR = plqOpen.startsWith('r:'), P = isR ? null : plaqueById(plqOpen);
+  b.setAttribute('aria-label', isR ? 'Primato ' + (REC_TITLES[plqOpen.slice(2)] || '') : 'Targa ' + (P ? P.name : ''));
+  b.innerHTML = `${html}<div class="row end"><button type="button" class="btn ghost" data-close>Chiudi</button></div>`;
+}
+/* Medaglione di un primato nella bacheca: volto del detentore (o della coppia) in grande, simbolo piccolo; i primati di una partita mostrano il simbolo */
+function recTile(c, x){
+  const who = c.lock ? 'Da sbloccare' : c.pid ? esc(pname(c.pid)) : c.pair ? c.pair.map(p => esc(pname(p))).join(' e ') : esc(c.label || '');
+  const face = c.lock ? `<span class="plv-ic">${c.icon}</span>`
+    : c.pid ? `<span class="plv-face">${avatar(store.players[c.pid], 'md')}</span><span class="plv-sym">${c.icon}</span>`
+    : c.pair ? `<span class="plv-face pair">${avatar(store.players[c.pair[0]], 'md')}${avatar(store.players[c.pair[1]], 'md')}</span><span class="plv-sym">${c.icon}</span>`
+    : `<span class="plv-ic">${c.icon}</span>`;
+  return `<button type="button" class="plv rcv${c.lock ? ' off' : ''}${x.mine ? ' mine' : ''}${x.broken ? ' broken' : ''}" data-rcv="${c.key}" aria-label="${esc(c.title)}: ${c.lock ? 'da sbloccare' : `${who}, ${esc(String(c.value))} ${esc(c.unit)}`}">
+    <span class="plv-med">${face}</span>${x.mine ? '<span class="plv-tua">Tua</span>' : ''}${x.broken ? '<span class="rcv-new">Battuto!</span>' : ''}
+    <span class="plv-t">${c.title}</span><span class="plv-h">${who}</span>${c.lock ? '' : `<span class="plv-v"><b>${c.value}</b> ${c.unit}</span>`}</button>`;
 }
 function renderTrophies(){
   const el = $('#troph'); if(!el) return;
@@ -6094,16 +6119,17 @@ function renderTrophies(){
       if(sg !== ps){ chain.push({ m:stp.m, txt:r.txt }); ps = sg; }
     }
     const mine = !!me && (c.pid === me || (c.pair && c.pair.includes(me)));
-    return recCard(c, { broken, chain, mine });
-  }).join('');
+    return { key:c.key, tile:recTile(c, { broken, mine }), card:recCard(c, { broken, chain, mine }) };
+  });
+  REC_CARDS = Object.fromEntries(recs.map(x => [x.key, x.card])); REC_TITLES = Object.fromEntries(cards.map(c => [c.key, c.title]));
   const tt = ui.tTab === 'rec' ? 'rec' : ui.tTab === 'tw' ? 'tw' : ui.tTab === 'tm' ? 'tm' : 'plq';
   const ttabs = `<div class="sub-tabs" role="tablist" aria-label="Trofei">${[['plq', 'Targhe'], ['rec', 'Trofei storici'], ['tw', 'TOTW'], ['tm', 'TOTM']].map(([k, l]) => `<button type="button" role="tab" class="sub-tab ${k === tt ? 'on' : ''}" aria-selected="${k === tt}" data-ttab="${k}">${l}</button>`).join('')}</div>`;
   el.innerHTML = `${ttabs}${tt === 'tw' || tt === 'tm' ? '' : `<details class="glass th-how"${ui.thHow ? ' open' : ''}><summary>ℹ️ Come funzionano targhe e primati</summary><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa, servono almeno ${PLQ_MIN_PRES} presenze). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa davvero meglio: a pari merito non cambiano mano.</p></details>`}
     ${tt === 'tw' ? `<div class="th-sec"><h3>Team of the Week</h3><span>2-4-2 · da lunedì a domenica</span></div>${twView('w')}` : tt === 'tm' ? `<div class="th-sec"><h3>Team of the Month</h3><span>2-4-2 · dal primo all’ultimo del mese</span></div>${twView('m')}` : tt === 'plq' ? `<div class="th-sec"><h3>Le ${PL.length} targhe stagionali</h3><span>Leader in tempo reale · tocca una targa per i dettagli</span></div>
-    <div class="plv-grid">${plk.map(x => x.tile).join('')}</div>` : `<div class="th-sec"><h3>Bacheca dei primati storici</h3><span>${nM} ${nM === 1 ? 'gara analizzata' : 'gare analizzate'}</span></div>
-    <div class="rec-grid">${recs}</div>`}`;
+    <div class="plv-grid">${plk.map(x => x.tile).join('')}</div>` : `<div class="th-sec"><h3>Bacheca dei primati storici</h3><span>${nM} ${nM === 1 ? 'gara analizzata' : 'gare analizzate'} · tocca un primato per i dettagli</span></div>
+    <div class="plv-grid">${recs.map(x => x.tile).join('')}</div>`}`;
   twFit();
-  if(plqOpen && $('#m-plq').classList.contains('open')){ if(PLK_CARDS[plqOpen]) paintPlq(); else closeModal('#m-plq', true); }
+  if(plqOpen && $('#m-plq').classList.contains('open')){ if(plqHTML()) paintPlq(); else closeModal('#m-plq', true); }
   try{ localStorage.setItem('cmb2627_seenPlq', JSON.stringify(curP)); localStorage.setItem('cmb2627_seenRecV', JSON.stringify(curR)); }catch(e){}
 }
 const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk','rit','inf','colp','kami',
@@ -8677,6 +8703,7 @@ document.addEventListener('click', async e => {
   }
   if(d.mtab){ ui.mTab = d.mtab === 'form' ? 'form' : 'rep'; ui.swapSel = null; if(ui.mTab === 'rep') ui.swapMode = false; paintMatch(); return; }
   if(d.plv){ openPlq(d.plv); return; }
+  if(d.rcv){ openRecCard(d.rcv); return; }
   if(d.ttab){ ui.tTab = d.ttab === 'rec' ? 'rec' : d.ttab === 'tw' ? 'tw' : d.ttab === 'tm' ? 'tm' : 'plq'; renderTrophies(); return; }
   if(d.ctab){ if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; } ui.cTab = d.ctab; renderCasino(); renderSlip(); return; }
   if(d.mpool){ const [k, a, b] = d.mpool.split('|'); placePool(d.mid, k, k === 'mvp' ? a : b, k === 'duel' ? a : undefined); return; }
