@@ -809,17 +809,16 @@ button.pcard:active .pc-fr{transform:scale(.96)}
 .next b{font:italic 800 24px/1 var(--disp)}
 .next .mu{font-weight:700;font-size:13.5px}
 .next .go{margin-left:auto;font:800 13.5px var(--body);color:var(--or)}
+.next.big{display:block;padding:16px 16px 14px}
+.nx-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px}
+.next.big .vsx{margin:12px 0 6px}
+.next.big .vsx-card{width:min(150px,100%)}
+.next.big .vsx .side-n{font-size:clamp(22px,6.4vw,30px)}
+.next.big .ovbar{font-size:19px;margin-top:4px}
+.nx-bot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:2px}
 @media (min-width:1100px){.next{grid-column:1/-1}}
 .vs{display:flex;align-items:center;justify-content:center;gap:18px;margin:14px 0 6px}
 .vs .side-n{font-size:28px}
-.capsrow{display:flex;flex-basis:100%;flex-wrap:wrap;justify-content:center;gap:8px 22px}
-.capside{display:inline-flex;align-items:center;gap:8px;min-width:0}
-.capside .kit{width:30px}
-.capinfo{display:inline-flex;align-items:center;gap:7px;min-width:0;text-align:left}
-.capinfo>span{display:flex;flex-direction:column;gap:2px;min-width:0;line-height:1.1}
-.capinfo .cn{font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
-.capinfo small{font:700 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--mu)}
-.vs .capinfo{margin-top:2px}
 .vs .vv{font:italic 800 42px/1 var(--disp);color:var(--or)}
 .vsx{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:6px;margin:14px 0 10px}
 .vsx-t{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
@@ -3452,9 +3451,13 @@ function renderDashboardInner(){
       : 'Ancora nessun giocatore e nessuna gara. Si parte dalla rosa: aggiungi i giocatori, poi registra la prima gara.'}</p>${cta}</div></div>`;
   }
   const nx = STATS.scheduled[0];
-  const next = nx ? `<div class="glass next" role="button" tabindex="0" data-open-match="${nx.id}" aria-label="Apri la gara in programma">
-      <span class="tag">🗓️ Prossima gara</span><b>Giornata ${num(nx.day)}</b><span class="mu">${esc(whenLabel(nx) || 'Data da definire')}</span>
-      <span class="mu">OVR medio ${teamMean(nx.white).toFixed(1)} contro ${teamMean(nx.black).toFixed(1)}</span>${cdSpan(nx)}<span class="go">Scopri dove giochi</span>${list(nx.white).length || list(nx.black).length ? `<span class="capsrow"><span class="capside">${kit('white')}${capInfoHTML(nx, 'white')}</span><span class="capside">${kit('black')}${capInfoHTML(nx, 'black')}</span></span>` : ''}</div>` : '';
+  /* Prossima gara: i due capitani carta contro carta (come in Partite) e la barra degli OVR medi; tocco sulla carta = figurina, altrove = gara */
+  const nxW = nx ? teamMean(nx.white) : 0, nxB = nx ? teamMean(nx.black) : 0, nxSh = nxW + nxB ? nxW / (nxW + nxB) * 100 : 50, nxCaps = !!nx && (list(nx.white).length || list(nx.black).length);
+  const next = nx ? `<div class="glass next big" role="button" tabindex="0" data-open-match="${nx.id}" aria-label="Apri la gara in programma">
+      <div class="nx-top"><span class="tag">🗓️ Prossima gara</span><b>Giornata ${num(nx.day)}</b><span class="mu">${esc(whenLabel(nx) || 'Data da definire')}</span>${cdSpan(nx)}</div>
+      ${nxCaps ? capsVsHTML(nx) : ''}
+      <div class="ovbar" aria-label="OVR medio Bianchi ${nxW.toFixed(1)}, Neri ${nxB.toFixed(1)}"><span>${nxW.toFixed(1)}</span><span class="bar"><i style="width:${nxSh}%"></i><em></em></span><span>${nxB.toFixed(1)}</span></div>
+      <div class="nx-bot"><span class="mu sm">OVR medio delle due squadre</span><span class="go">Scopri dove giochi ›</span></div></div>` : '';
   const cv = CVIEWS[ui.cView] || CVIEWS.gen, cf = ui.cf;
   const nF = (cf.q ? 1 : 0) + (cf.played ? 1 : 0) + (cf.min > 0 ? 1 : 0);
   $('#dash').innerHTML = `<div class="dash">${bdayHTML()}${next}${hero}
@@ -4609,11 +4612,6 @@ function captainFor(m, team){
   const pid = m[team === 'white' ? 'capW' : 'capB'];
   if(pid && starters(m, team).some(e => e.pid === pid)) return pid;
   return captainOf(starters(m, team));
-}
-function capInfoHTML(m, team){
-  const pid = captainFor(m, team); if(!pid) return '';
-  const e = starters(m, team).find(x => x.pid === pid);
-  return `<span class="capinfo">${avatar(store.players[pid] || { name:e?.n }, 'xs')}<span><span class="cn">${esc(pname(pid, e?.n))}</span><small>Capitano</small></span></span>`;
 }
 function autoOrder(entries){
   return [...list(entries)].sort((a, b) =>
