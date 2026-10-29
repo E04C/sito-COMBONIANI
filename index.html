@@ -2294,7 +2294,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.11.3';
+const APP_VERSION = '1.11.4';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -9086,6 +9086,9 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.11.4', date:'2026-10-29', items:[
+    `🛠️ Sistemati due difetti: sul telefono il minuto dei gol non scende più in colonna, e nelle figurine del podio overall e ruolo non coprono più la foto.`
+  ] },
   { v:'1.11.3', date:'2026-10-29', items:[
     `🏅 Nuove targhe: Il Fantasista (gol e assist nella stessa partita), Il Regista (il centrocampista con più assist) e L’Altruista (chi serve assist a più compagni diversi).`,
     `🏆 Nuovi trofei storici: Re dell’Attacco, Re del Centrocampo e Re della Difesa per chi colleziona più premi di reparto, e poi Capocannoniere, Malato di calcio, Uomo del Momento, Sempre a Segno, La Rimonta, Il Digiuno, Il Sovrano e Compagni fedeli.`,

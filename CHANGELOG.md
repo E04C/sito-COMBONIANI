@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.11.4
+- Resoconto: il minuto del gol (`.sc-li .mn`) non si restringe più nella riga flessibile, quindi sul telefono non va a capo cifra per cifra.
+- Podio della Classifica: overall e ruolo sulle figurine ridotti al 55% (`.pod-card .mfig-rt`), come nel TOTW, per non coprire la foto.
+
 ## 1.11.3
 - Il Fortino: vince il difensore con la media più bassa di gol subiti a partita (prima il totale), almeno 3 presenze; parità: più presenze.
 - Nuove targhe (in fondo alla gerarchia, quindi non tolgono targhe già assegnate): Il Fantasista (più gare con almeno un gol e un assist), Il Regista (centrocampista con più assist), L'Altruista (assist a più compagni diversi, dalla sequenza dei gol). Campi solo in memoria in `computeStats` (`fant`, `aTo`, `alt`).
