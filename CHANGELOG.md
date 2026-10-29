@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.11.1
+- Targhe in vetrina: nel medaglione grande il volto (foto o iniziali) del detentore, il simbolo della targa nel cerchio piccolo con il bordo nel metallo della targa; le targhe in palio mostrano il simbolo in grande.
+- TOTM: stessa rivelazione a pacchetto del TOTW per il team del mese pubblicato più recente, con grafica bianca e oro (pacchetto, dorso delle carte, insegna «Migliore del mese») e avviso «Sei nel Team of the Month!». Già visto separato per TOTW (`cmb_twSeen`) e TOTM (`cmb_tmSeen`); chi pubblica lo segna come visto.
+
 ## 1.11.0
 - Trofei: targhe in vetrina a griglia (`.plv`, 3 colonne su telefono, 5 da 700 px) con medaglione in metallo, faccia e valore del detentore, lucchetto colorato per stato (sicura, in pericolo, nuovo detentore) e «Tua»; il riquadro completo si apre toccando il medaglione (`#m-plq`). La spiegazione di targhe e primati è in un «Come funzionano» chiuso, che resta aperto ai ridisegni.
 - «La mia scheda» spostata da «Io» alla finestra «Gestisci account», insieme al cambio codice; il tasto della scheda sul retro della propria figurina apre quella finestra. Stessi dati e stessa richiesta all'admin.
