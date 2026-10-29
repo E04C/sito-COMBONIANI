@@ -489,6 +489,16 @@ button.affr:hover{border-color:var(--line)}
 .cs-bt{display:flex;flex-direction:column;gap:2px;padding:8px 0;border-top:1px solid var(--hair);font-size:13.5px}
 .slip{position:fixed;left:8px;right:8px;bottom:calc(74px + env(safe-area-inset-bottom,0px));z-index:46;max-height:58dvh;overflow:auto;padding:12px 14px;border-radius:18px;background:rgba(11,14,21,.97);box-shadow:0 -8px 30px rgba(0,0,0,.4)}
 @media (min-width:900px){.slip{left:auto;right:24px;bottom:24px;width:420px}}
+/* La tua riga a portata: in Classifica, quando la tua riga esce dallo schermo */
+.mebar{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:44;transform:translateX(-50%);display:flex;align-items:center;gap:10px;width:min(440px,calc(100vw - 24px));padding:8px 14px;border-radius:16px;border:1.5px solid var(--or);background:rgba(43,23,9,.96);color:var(--tx);box-shadow:0 8px 26px rgba(0,0,0,.5),0 0 18px rgba(249,115,22,.25);cursor:pointer;text-align:left;animation:promoIn .3s var(--ease) both}
+.mebar[hidden]{display:none}
+@media (min-width:900px){.mebar{bottom:24px}}
+.mebar .pos{min-width:34px;font:italic 800 22px/1 var(--disp);color:var(--or)}
+.mebar .nm{flex:1;min-width:0;font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mebar .nm small{display:block;font:700 11.5px var(--body);color:var(--mu)}
+.mebar .dir{font-size:18px;font-weight:800;color:var(--or)}
+.cls tbody tr.me.flash td{animation:meFlash 1.4s ease-out}
+@keyframes meFlash{0%,35%{background:rgba(249,115,22,.5)}}
 .sl-h{display:flex;align-items:center;gap:8px;justify-content:space-between}
 .sl-h b{flex:1;min-width:0}
 .sl-m{display:flex;gap:8px;margin:8px 0}
@@ -2266,6 +2276,7 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 <input type="file" id="xlsxInput" accept=".xlsx,.xls" hidden>
 <div id="exportStage" aria-hidden="true"></div>
 <div class="slip glass" id="slip" role="region" aria-label="Schedina" hidden></div>
+<button type="button" class="mebar" id="mebar" data-action="me-row" hidden></button>
 <div id="toasts" aria-live="polite"></div>
 <script>
 'use strict';
@@ -3445,6 +3456,9 @@ function render(){
 }
 
 function renderDashboard(){
+  try{ renderDashboardRows(); }finally{ watchMeRow(); }
+}
+function renderDashboardRows(){
   const before = {};
   $$('#dash .cls tbody tr').forEach(tr => { const r = tr.getBoundingClientRect(); if(r.height) before[tr.dataset.openPlayer] = r.top; });
   renderDashboardInner();
@@ -3503,6 +3517,32 @@ function renderBoardPart(){
   const cv = CVIEWS[ui.cView] || CVIEWS.gen;
   const p = $('#cls-podium'), w = $('#cls-wrap'), l = $('#cls-legend'); if(!p || !w){ renderDashboard(); return; }
   p.innerHTML = podiumHTML(); w.innerHTML = tableHTML(); if(l) l.textContent = cv.legend;
+  watchMeRow();
+}
+/* La tua riga a portata: si osserva la propria riga della classifica; quando esce dallo schermo (sotto l'intestazione e sopra la barra) compare la barretta */
+let meObs = null, meRowVis = true, meRowUp = false;
+function watchMeRow(){
+  if(meObs){ meObs.disconnect(); meObs = null; }
+  const tr = $('#dash .cls tbody tr.me');
+  meRowVis = true;
+  if(tr && 'IntersectionObserver' in window){
+    meObs = new IntersectionObserver(es => { for(const e of es){ meRowVis = e.isIntersecting; meRowUp = e.boundingClientRect.top < 0; } paintMeBar(); }, { rootMargin:'-70px 0px -90px 0px' });
+    meObs.observe(tr);
+  }
+  paintMeBar();
+}
+function paintMeBar(){
+  const bar = $('#mebar'); if(!bar) return;
+  const me = myPid(), s = me && STATS.byId[me], tr = $('#dash .cls tbody tr.me');
+  const show = ui.view === 'dashboard' && !!s && !!tr && !meRowVis;
+  bar.hidden = !show; if(!show) return;
+  bar.setAttribute('aria-label', `Sei ${s.rank}° in classifica: vai alla tua riga`);
+  bar.innerHTML = `<span class="pos">${s.rank}°</span>${avatar(s.p, 'sm')}<span class="nm">${esc(s.name)}<small>${s.v} ${s.v === 1 ? 'vittoria' : 'vittorie'} · ${s.pct.toFixed(0)}% · ${s.pres} ${s.pres === 1 ? 'presenza' : 'presenze'}</small></span>${ovrPlate(s.ovr, 'pill')}<span class="dir" aria-hidden="true">${meRowUp ? '↑' : '↓'}</span>`;
+}
+function goMeRow(){
+  const tr = $('#dash .cls tbody tr.me'); if(!tr) return;
+  tr.scrollIntoView({ block:'center', behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  tr.classList.remove('flash'); void tr.offsetWidth; tr.classList.add('flash');
 }
 function clsList(){
   const cf = ui.cf, q = norm(cf.q || '');
@@ -8706,6 +8746,7 @@ function go(view){
   if(view === 'dashboard') rankShift();
   if(view === 'trophies') renderTrophies();
   if(view === 'matches') centerMday();
+  paintMeBar();
   if(view === 'casino'){ ui.cAnim = true; ui.cFrom = null; renderCasino(); }
   if(view === 'ballon') renderBallon();
   if(view === 'admin') setTimeout(profToast, 500);
@@ -8800,6 +8841,7 @@ document.addEventListener('click', async e => {
     case 'who-tab': whoTab = d.tab === 'login' ? 'login' : 'new'; renderWho(); break;
     case 'me-logout': meLogout(); break;
     case 'acct-open': openAcct(); break;
+    case 'me-row': goMeRow(); break;
     case 'walk-fig': { const me = myPid(); closeModal('#m-walk'); if(me && STATS.byId[me]) openFigurina(me); break; }
     case 'walk-close': closeModal('#m-walk'); break;
     case 'acct-exit': keyLogout(); closeModal('#m-acct'); render(); toast('Sei uscito: su questo telefono non c’è più nessun giocatore'); break;
