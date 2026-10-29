@@ -1595,6 +1595,8 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .key-form label{display:grid;gap:5px;font:700 13px var(--body);color:var(--mu)}
 .key-form .field{height:48px;font-size:20px;letter-spacing:.35em;text-align:center}
 .key-who{display:flex;align-items:center;gap:12px;margin:2px 0 10px}
+.acct-sec{margin-top:14px;padding-top:14px;border-top:1px dashed rgba(255,255,255,.1)}
+.acct-sec h4{margin:0 0 10px;font:italic 800 20px/1 var(--disp)}
 .key-who b{display:block;font:italic 800 24px/1.1 var(--disp)}
 .key-who small{color:var(--mu);font-weight:700}
 .key-note{margin:6px 0 0;color:var(--mu2);font-size:12.5px;line-height:1.45}
@@ -3256,7 +3258,7 @@ function render(){
   if(ui.view === 'casino' && !cOn) go('dashboard'); else applyTheme();
   /* ogni sezione si disegna per conto suo: un dato sbagliato in una non deve fermare le altre (né voti e finestre obbligatorie) */
   const sx = fn => { try{ fn(); }catch(e){ console.error('render', e); } };
-  sx(renderDashboard); sx(renderPlayers); sx(renderMatches); sx(renderMe); if(ui.view === 'trophies') sx(renderTrophies); if(ui.view === 'casino') sx(renderCasino); sx(renderAdmin);
+  sx(renderDashboard); sx(renderPlayers); sx(renderMatches); sx(renderMe); sx(refreshAcctProf); if(ui.view === 'trophies') sx(renderTrophies); if(ui.view === 'casino') sx(renderCasino); sx(renderAdmin);
   if(ui.duel && $('#m-duel').classList.contains('open')) renderDuel();
   if(openFigPid && Date.now() > figAnimUntil) renderFigurina();   // non interrompe il flip se arrivano dati durante l'animazione
   if(ED && $('#m-match').classList.contains('open')) renderEditor();
@@ -3558,7 +3560,7 @@ function flipHint(){
   st.insertAdjacentHTML('beforeend', '<div class="flip-hint">↻ Gira la carta</div>');
   setTimeout(() => { const h = $('#fig-body .flip-hint'); if(h) h.remove(); }, 2700);
 }
-/* "La mia scheda" nella sezione Io */
+/* "La mia scheda" dentro Gestisci account (sezione Io) */
 let profDraft = null;   /* quello che si sta scrivendo: sopravvive ai ridisegni della pagina */
 function profileSecHTML(pid){
   const req = store.profileReq && store.profileReq[pid], cur = (store.players[pid] && store.players[pid].profile) || {};
@@ -3583,8 +3585,8 @@ function profileSecHTML(pid){
         <label>Descrizione (max ${PROF_MAX.bio} caratteri)<textarea class="field" id="pf2-bio" maxlength="${PROF_MAX.bio}">${esc(base.bio || '')}</textarea></label>
         <button type="submit" class="btn primary">Invia richiesta all’admin</button>
       </form>`;
-  return `<section class="glass me-sec wide" id="prof-sec"><h3>🪪 La mia scheda</h3>${st}<div class="prof-form" style="margin-top:10px">${form}</div>
-    <p class="mu sm" style="margin:8px 0 0">L’admin approva ogni modifica. Sul retro della figurina gli altri vedono solo la tua età, mai la data di nascita: la vedi solo tu e l’admin.</p></section>`;
+  return `<div class="acct-sec" id="prof-sec"><h4>🪪 La mia scheda</h4>${st}<div class="prof-form" style="margin-top:10px">${form}</div>
+    <p class="mu sm" style="margin:8px 0 0">L’admin approva ogni modifica. Sul retro della figurina gli altri vedono solo la tua età, mai la data di nascita: la vedi solo tu e l’admin.</p></div>`;
 }
 function profReadForm(){
   const v = id => { const el = $('#' + id); return el && typeof el.value === 'string' ? el.value : ''; };
@@ -4154,19 +4156,28 @@ async function whoCodeSubmit(form){
     toast(e && e.message === 'nocrypto' ? 'Questo browser non supporta il codice: apri il sito da https.' : isPermErr(e) ? 'Il database rifiuta il salvataggio del codice: avvisa l’organizzatore.' : 'Non è andata a buon fine: riprova tra poco.', 'err');
   }finally{ whoBusy = false; }
 }
-/* Gestisci account: cambio codice ed uscita */
+/* Gestisci account: la mia scheda, cambio codice ed uscita */
 function openAcct(){
   const me = myPid(), p = me && store.players[me]; if(!p){ openWho(); return; }
   $('#acct-body').innerHTML = `<h3>Gestisci account</h3>
     <div class="key-who">${avatar(p, 'md')}<div><small>Giocatore selezionato</small><b>${esc(p.name)}</b></div></div>
+    ${profileSecHTML(me)}
+    <div class="acct-sec"><h4>🔑 Cambia codice</h4>
     <form id="acct-form" class="key-form" autocomplete="off">
       <label>Codice attuale<input id="ac-old" class="field" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></label>
       <label>Nuovo codice<input id="ac-new" class="field" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></label>
       <button type="submit" class="btn primary">Salva</button>
-    </form>
+    </form></div>
     <div class="row end" style="margin-top:6px"><button type="button" class="btn ghost" data-close>Chiudi</button><button type="button" class="btn danger" data-action="acct-exit">Esci</button></div>
     <p class="key-note">“Esci” toglie il giocatore da questo telefono: per rientrare serve il codice. Il codice serve a evitare gli scherzi tra amici, non è una cassaforte: non usarne uno che usi anche altrove.</p>`;
   openModal('#m-acct');
+}
+/* Se la richiesta della scheda cambia (approvata, rifiutata) mentre la finestra è aperta si aggiorna solo quella parte, mai mentre scrivi */
+function refreshAcctProf(){
+  const m = $('#m-acct'), el = $('#prof-sec'), me = myPid();
+  if(!m || !m.classList.contains('open') || !el || !me || !store.players[me]) return;
+  const ae = document.activeElement; if(ae && typeof ae.id === 'string' && /^(pf2-|ac-)/.test(ae.id)) return;
+  el.outerHTML = profileSecHTML(me);
 }
 async function acctSave(){
   const me = myPid(); if(!me || whoBusy) return;
@@ -5038,7 +5049,6 @@ function renderMe(){
       <section class="glass me-sec"><h3>🥊 Vittima e incubo</h3>${rivBox}</section>
       <section class="glass me-sec"><h3>📍 Il tuo posto in campo</h3>${posBox}</section>
       ${rateSec}
-      ${profileSecHTML(s.pid)}
       <section class="glass me-sec wide"><h3>⏱️ Quando segni</h3>${histBox}</section>
       <section class="glass me-sec wide"><h3>🧭 Il tuo percorso</h3>${pathBox}</section>
     </div>
@@ -8223,7 +8233,7 @@ document.addEventListener('click', async e => {
     case 'share-fig': exportFigurina(d.pid, t); break;
     case 'fig-turn': figTurn(); break;
     case 'fig-back': openFigurina(d.pid, true); break;
-    case 'prof-open': closeModal('#m-fig'); go('me'); setTimeout(() => { const f = $('#prof-sec'); if(f && f.scrollIntoView) f.scrollIntoView({ block:'start' }); }, 80); break;
+    case 'prof-open': closeModal('#m-fig'); openAcct(); break;
     case 'prof-list': openProfList(); break;
     case 'prof-ok': profApprove(d.pid); break;
     case 'prof-no': profReject(d.pid); break;
