@@ -3104,10 +3104,12 @@ function matchMvpLegacy(m){
 function rankCmp(a, b){
   return (b.v - a.v) || (b.pct - a.pct) || (b.g - a.g) || (b.a - a.a) || (a.og - b.og) || a.name.localeCompare(b.name, 'it');
 }
-/* Motore OVR v4. Delta senza arrotondamenti; tetti +5 / -3. Moltiplicatori per livello (sull'OVR arrotondato):
-   da 90 in su (Diamante e Leggenda) positivi ×0,5 e perdite ×2; da 61 a 69 positivi ×2 e perdite ×0,5; al minimo (60) positivi ×3 e perdite ×0,5. */
+/* Motore OVR v5. Delta senza arrotondamenti; tetti +5 / −3 (da 95 in su −5). Moltiplicatori per livello (sull'OVR arrotondato):
+   da 90 in su (Diamante e Leggenda) positivi ×0,5 e perdite ×1,5, più −1 senza gol né assist e −0,1 per gol subito quando non vinci;
+   da 85 a 89 positivi ×0,8 e perdite ×1,2; da 61 a 69 positivi ×2 e perdite ×0,5; al minimo (60) positivi ×3 e perdite ×0,5. */
 function ovrBand(shown){
-  if(shown >= 90) return { fp:0.5, fl:2, txt:shown >= 99 ? 'Leggenda (99): punti positivi dimezzati, perdite raddoppiate' : 'OVR da 90 a 98: punti positivi dimezzati, perdite raddoppiate' };
+  if(shown >= 90) return { fp:0.5, fl:1.5, top:true, lcap:shown >= 95 ? 5 : 3, txt:shown >= 99 ? 'Leggenda (99): punti positivi dimezzati, perdite ×1,5, fino a −5' : `OVR da 90 a 98: punti positivi dimezzati, perdite ×1,5, fino a −${shown >= 95 ? 5 : 3}` };
+  if(shown >= 85) return { fp:0.8, fl:1.2, txt:'OVR da 85 a 89: punti positivi ×0,8, perdite ×1,2' };
   if(shown <= OVR_MIN) return { fp:3, fl:0.5, txt:`OVR al minimo (${OVR_MIN}): punti positivi tripli, perdite dimezzate` };
   if(shown < 70) return { fp:2, fl:0.5, txt:`OVR da ${OVR_MIN + 1} a 69: punti positivi doppi, perdite dimezzate` };
   return { fp:1, fl:1, txt:'' };
@@ -3123,10 +3125,12 @@ function ovrParts(role, ovr, c){
   if(c.award) pos += 0.2;
   const B = ovrBand(shown), fp = B.fp, fl = B.fl;
   pos *= fp; loss *= fl;
-  const raw = pos - loss - c.og * OG_PEN;
-  const d = Math.max(-OVR_LOSS_CAP, Math.min(OVR_GAIN_CAP, raw));
+  /* da 90 in su: −1 se non fai né gol né assist (qualsiasi ruolo) e −0,1 per gol subito anche quando non vinci; si può perdere fino a 3 (da 95 fino a 5) */
+  const dry = B.top && !c.g && !c.a ? 1 : 0, cpen = B.top && c.res !== 'v' ? 0.1 * c.conceded : 0, lcap = B.lcap || OVR_LOSS_CAP;
+  const raw = pos - loss - c.og * OG_PEN - dry - cpen;
+  const d = Math.max(-lcap, Math.min(OVR_GAIN_CAP, raw));
   return { d, fp, fl, band:B.txt, mult:ROLE_MULT[R],
-    v:vPts * fp, l:lPts * fl, g:c.g * ROLE_MULT[R] * fp, a:c.a * 0.5 * ROLE_MULT[R] * fp, aw:c.award ? 0.2 * fp : 0, og:c.og * OG_PEN, cap:d - raw };
+    v:vPts * fp, l:lPts * fl, g:c.g * ROLE_MULT[R] * fp, a:c.a * 0.5 * ROLE_MULT[R] * fp, aw:c.award ? 0.2 * fp : 0, og:c.og * OG_PEN, dry, cpen, lcap, cap:d - raw };
 }
 function ovrDelta(role, ovr, c){ return ovrParts(role, ovr, c).d; }
 /* Premi di reparto: solo punti individuali (gol + assist pesati dal ruolo - autogol), niente esito. Parità: gol, assist, alfabeto. */
@@ -5189,7 +5193,7 @@ document.addEventListener('pointerup', e => { const t = e.target.closest && e.ta
 function ovrExplainHTML(s){
   const sg = v => (v < 0 ? '−' : '+') + String(Math.round(Math.abs(v) * 100) / 100).replace('.', ',');
   const o1 = v => v.toFixed(1).replace('.', ',');
-  const how = `<details class="ox-how"><summary>Come si calcola</summary><p>Parti da ${OVR_START}. Dopo ogni gara: vittoria +2 (meno 0,1 per ogni gol subito), sconfitta −1 (−2 se perdi con 3 gol di scarto o più), pareggio 0. Ogni gol vale 1 e ogni assist 0,5, moltiplicati per il tuo ruolo (difensore ×${String(ROLE_MULT.DIF).replace('.', ',')}, centrocampista ×${String(ROLE_MULT.CEN).replace('.', ',')}, attaccante ×${String(ROLE_MULT.ATT).replace('.', ',')}). Il premio di reparto dà +0,2, ogni autogol −${OG_PEN}. Da 90 in su (Diamante e Leggenda) i punti positivi si dimezzano e le perdite raddoppiano; da 61 a 69 i punti positivi valgono doppio e le perdite metà; al minimo (60) i punti positivi valgono triplo. In una gara non puoi salire più di ${OVR_GAIN_CAP} né scendere più di ${OVR_LOSS_CAP}. Poi si aggiungono i voti dei compagni (da −0,2 a +0,2) e −${String(LATE_PEN).replace('.', ',')} se arrivi in ritardo. L'OVR resta sempre tra ${OVR_MIN} e ${OVR_MAX}.</p></details>`;
+  const how = `<details class="ox-how"><summary>Come si calcola</summary><p>Parti da ${OVR_START}. Dopo ogni gara: vittoria +2 (meno 0,1 per ogni gol subito), sconfitta −1 (−2 se perdi con 3 gol di scarto o più), pareggio 0. Ogni gol vale 1 e ogni assist 0,5, moltiplicati per il tuo ruolo (difensore ×${String(ROLE_MULT.DIF).replace('.', ',')}, centrocampista ×${String(ROLE_MULT.CEN).replace('.', ',')}, attaccante ×${String(ROLE_MULT.ATT).replace('.', ',')}). Il premio di reparto dà +0,2, ogni autogol −${OG_PEN}. Da 85 a 89 i punti positivi valgono ×0,8 e le perdite ×1,2. Da 90 in su (Diamante e Leggenda) i punti positivi si dimezzano e le perdite valgono ×1,5; in più perdi 1 punto se non fai né gol né assist e 0,1 per ogni gol subito anche quando non vinci, e in una gara puoi scendere fino a 3 punti (da 95 in su fino a 5). Da 61 a 69 i punti positivi valgono doppio e le perdite metà; al minimo (60) i punti positivi valgono triplo. Sotto il 90 in una gara non puoi salire più di ${OVR_GAIN_CAP} né scendere più di ${OVR_LOSS_CAP}. Poi si aggiungono i voti dei compagni (da −0,2 a +0,2) e −${String(LATE_PEN).replace('.', ',')} se arrivi in ritardo. L'OVR resta sempre tra ${OVR_MIN} e ${OVR_MAX}.</p></details>`;
   if(!s.hist.length) return how + '<p class="mu sm" style="margin:8px 0 0">Dopo la tua prima gara vedrai qui come si forma ogni variazione.</p>';
   const one = h => {
     const P = h.parts; if(!P) return '';
@@ -5202,8 +5206,10 @@ function ovrExplainHTML(s){
     add(`Assist${h.a > 1 ? ' ×' + h.a : ''}`, P.a);
     add('Premio di reparto', P.aw);
     add(`Autogol${h.og > 1 ? ' ×' + h.og : ''}`, -P.og);
+    add('Né gol né assist', -(P.dry || 0), 'da 90 in su');
+    add('Gol subiti', -(P.cpen || 0), `${P.conceded} × 0,1, da 90 in su`);
     if(P.band || P.fp !== 1 || P.fl !== 1) rows.push(`<div class="nt"><span>${esc(P.band || 'Moltiplicatore del livello')}</span><b></b></div>`);
-    add(P.cap > 0 ? 'Tetto: massimo −' + OVR_LOSS_CAP + ' a gara' : 'Tetto: massimo +' + OVR_GAIN_CAP + ' a gara', P.cap);
+    add(P.cap > 0 ? 'Tetto: massimo −' + (P.lcap || OVR_LOSS_CAP) + ' a gara' : 'Tetto: massimo +' + OVR_GAIN_CAP + ' a gara', P.cap);
     add('Voti dei compagni', P.bonus);
     add('Ritardo', -P.late);
     add('Limite tra ' + OVR_MIN + ' e ' + OVR_MAX, P.clamp);
@@ -5239,7 +5245,7 @@ function renderMe(){
   const tierBox = nx ? (() => {
     const need = Math.max(0, nx[0] - 0.5 - ov), pr = Math.max(0, Math.min(1, (ov - lowT) / (nx[0] - lowT)));
     return `<div class="me-tier"><div class="me-tl"><span>${TIERS[t].i} ${TIERS[t].l}</span><span>${TIERS[nx[1]].i} ${TIERS[nx[1]].l}</span></div><div class="me-bar t-${nx[1]}"><i style="width:${(pr * 100).toFixed(1)}%"></i></div><p>Ti mancano ${cu(+need.toFixed(1), 1)} punti OVR per il livello ${TIERS[nx[1]].l}.</p></div>`;
-  })() : `<div class="me-tier"><div class="me-bar t-leg"><i style="width:100%"></i></div><p>👑 Sei una Leggenda: 99, il massimo. Qui le sconfitte costano il doppio: per restarci bisogna vincere.</p></div>`;
+  })() : `<div class="me-tier"><div class="me-bar t-leg"><i style="width:100%"></i></div><p>👑 Sei una Leggenda: 99, il massimo. Qui ogni sconfitta pesa una volta e mezza, puoi perdere fino a 5 punti in una gara e senza gol né assist perdi 1 punto: per restarci bisogna vincere e lasciare il segno.</p></div>`;
   const last5 = h.slice(-5), sk = streakOf(s);
   const form = last5.length
     ? `<div class="me-form">${last5.map(x => `<span class="fp ${x.r}" title="Giornata ${num(x.m.day)}">${x.r === 'v' ? 'V' : x.r === 's' ? 'S' : 'P'}</span>`).join('')}</div><p class="mu sm">${sk ? (sk.kind === 'fire' ? `🔥 ${sk.n} vittorie di fila` : `❄️ ${sk.n} sconfitte di fila`) : 'Nessuna striscia aperta'}. Dalla più vecchia alla più recente.</p>`
@@ -9425,6 +9431,13 @@ try{
   if(!localStorage.getItem('cmb_mig_v162')){
     ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr'].forEach(k => localStorage.removeItem(k));
     localStorage.setItem('cmb_mig_v162', '1');
+  }
+}catch(e){}
+/* Migrazione 1.12.0: cambiano le regole dell'OVR da 85 in su e gli OVR si ricalcolano. Si azzerano i "già visto": il codice li ricrea in silenzio */
+try{
+  if(!localStorage.getItem('cmb_mig_v1120')){
+    ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr','cmb_walkTier'].forEach(k => localStorage.removeItem(k));
+    localStorage.setItem('cmb_mig_v1120', '1');
   }
 }catch(e){}
 /* Migrazione 1.11.3: Il Fortino si calcola sulla media e arrivano nuovi primati e targhe. Si azzerano i "già visto" di primati e targhe,
