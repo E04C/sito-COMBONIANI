@@ -217,6 +217,10 @@ table.cls{width:100%;border-collapse:separate;border-spacing:0;font-variant-nume
 .season-btn b{display:block;font:italic 800 22px/1.1 var(--disp)}
 .season-btn small{display:block;margin-top:2px;color:rgba(26,18,5,.72);font:800 13px var(--body)}
 .season-btn .go{margin-left:auto;font-size:30px;font-weight:800;line-height:1}
+.bd-btn{color:#fde68a;background:radial-gradient(120% 160% at 0% 0%,rgba(251,191,36,.3),rgba(0,0,0,0) 60%),linear-gradient(135deg,#1f1605,#0c0a05);box-shadow:0 0 0 1.5px rgba(251,191,36,.6),0 8px 26px rgba(245,158,11,.18)}
+.bd-btn:hover{box-shadow:0 0 0 1.5px rgba(251,191,36,.85),0 10px 30px rgba(245,158,11,.28)}
+.bd-btn small{color:rgba(253,230,138,.78)}
+.bd-ico .bdball{display:block;width:34px;height:34px;filter:drop-shadow(0 0 10px rgba(251,191,36,.55))}
 @media (prefers-reduced-motion:reduce){.season-btn{transition:none}}
 @media (max-width:520px){.cls td{padding:9px 6px}.cls th button{padding:10px 6px}.cls .pl-cell{min-width:0;gap:6px}.cls .pl-name{max-width:104px}.cls .pl-sub .foot{display:none}.cls .mv{display:none}}
 .pos{width:24px;flex:none;font:italic 800 19px/1 var(--disp);color:var(--mu2);text-align:center}
@@ -1854,6 +1858,59 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 .twc.sel .twc-s{outline:3px solid #fde047;outline-offset:3px;border-radius:calc(var(--twk) * 18px);animation:none}
 .tw-pool{margin-top:10px;font-size:13px}.tw-pool summary{cursor:pointer;font-weight:700;color:var(--mu)}.tw-pool ul{margin:6px 0 0;padding-left:18px}.tw-pool li{margin:2px 0}
 .tw-note{margin:10px 2px 0;text-align:center}
+/* --- Pallone d'Oro --- */
+.bd-top{margin:0 0 10px}
+.bd-hero{position:relative;overflow:hidden;display:flex;align-items:center;gap:14px;padding:18px;border-radius:24px;margin-bottom:14px;background:radial-gradient(90% 140% at 0% 0%,rgba(251,191,36,.22),rgba(0,0,0,0) 60%),rgba(10,13,20,.85)}
+.bd-hero h2{margin:0;font:italic 800 36px/1 var(--disp);background:linear-gradient(135deg,#fff7cc,#fbbf24 45%,#d97706);-webkit-background-clip:text;background-clip:text;color:transparent}
+.bd-hero p{margin:6px 0 0}
+.bd-hb .bdball{display:block;width:62px;height:62px;filter:drop-shadow(0 0 16px rgba(251,191,36,.55));animation:bdFloat 3.2s ease-in-out infinite}
+@keyframes bdFloat{50%{transform:translateY(-4px) rotate(8deg)}}
+.bd-adm{border-color:rgba(251,191,36,.45);background:rgba(251,191,36,.07)}
+.bd-new{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.bd-new .field{flex:1;min-width:160px}
+.bd-sec{padding:16px 18px;border-radius:20px;margin-bottom:14px}
+.bd-sec h3{margin:0 0 6px;font:italic 800 24px/1.1 var(--disp)}
+.bd-cnt{margin:10px 0 12px;font-weight:700;color:var(--mu)}
+.bd-cnt b{color:#fde68a;font-size:18px}
+.bd-form{display:grid;gap:9px}
+.bd-row{display:grid;grid-template-columns:58px minmax(0,1fr);align-items:center;gap:10px}
+.bd-pos{display:flex;flex-direction:column;font:italic 800 24px/1 var(--disp);color:#fde68a}
+.bd-pos small{font:700 11px var(--body);color:var(--mu);margin-top:2px}
+.bd-mine h4{margin:0 0 8px;font:800 14px var(--body);color:var(--mu)}
+.bd-mine ol,.bd-list,.bd-albo{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:7px}
+.bd-mine li,.bd-list li,.bd-albo li{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:12px;background:rgba(255,255,255,.04)}
+.bd-mine li small{margin-left:auto;color:var(--mu);font-weight:700}
+.bd-n{min-width:30px;font:italic 800 18px var(--disp);color:#fde68a}
+.bd-list li.me{box-shadow:0 0 0 1px var(--or);background:var(--or-soft)}
+.bd-ln{display:flex;flex-direction:column;min-width:0}
+.bd-ln small,.bd-albo small{color:var(--mu);font-size:12px;font-weight:600}
+.bd-albo li span{display:flex;flex-direction:column;min-width:0}
+.bd-pts{margin-left:auto;text-align:right;font:italic 800 22px/1 var(--disp);color:#fde68a}
+.bd-pts small{display:block;font:700 10.5px var(--body);color:var(--mu)}
+.bd-gate{display:flex;flex-direction:column;align-items:center;gap:12px;padding:26px 16px 22px;border-radius:20px;margin-bottom:14px;text-align:center}
+.bd-gate h3{margin:0;font:italic 800 26px/1.1 var(--disp)}
+.bd-big .bdball{display:block;width:120px;height:120px;filter:drop-shadow(0 0 26px rgba(251,191,36,.6));animation:bdFloat 3.2s ease-in-out infinite}
+.bd-win{margin:12px 0 4px;text-align:center;font:800 15px var(--body);color:#fde68a}
+.bd-win b{font:italic 800 22px var(--disp);color:var(--tx)}
+.bd-pod{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) minmax(0,1fr);align-items:end;gap:8px;margin:14px 0 16px}
+.bd-p{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;text-align:center}
+.bd-fig{display:block;width:100%;padding:0;border:0;background:none;cursor:pointer}
+.bd-p.p2 .bd-fig,.bd-p.p3 .bd-fig{width:88%}
+.bd-crown{position:absolute;top:-14px;left:50%;transform:translateX(-50%);z-index:3}
+.bd-crown .bdball{display:block;width:40px;height:40px;filter:drop-shadow(0 0 12px rgba(251,191,36,.8))}
+.bd-nm{max-width:100%;margin-top:4px;font-weight:800;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bd-pt{color:var(--gold);font-weight:700;font-size:12px}
+.bd-pl{display:grid;place-items:center;width:100%;margin-top:6px;border-radius:12px 12px 4px 4px;font:italic 800 26px var(--disp);color:#1a1205;background:linear-gradient(180deg,#e2e8f0,#94a3b8);height:44px}
+.bd-p.p1 .bd-pl{height:64px;background:linear-gradient(180deg,#fde68a,#f59e0b)}
+.bd-p.p3 .bd-pl{height:32px;background:linear-gradient(180deg,#f0b47c,#b45309)}
+.bd-p .burst{top:40%}
+.bd-rev .bd-p{opacity:0;animation:bdIn .7s cubic-bezier(.2,1.3,.4,1) var(--rd) both}
+.bd-rev .bd-p.p1{animation:bdWin 1.1s cubic-bezier(.2,1.3,.4,1) var(--rd) both}
+.bd-rev .bd-win,.bd-rev .bd-list{opacity:0;animation:wkFade .5s ease-out var(--rd) forwards}
+.bd-res:not(.bd-rev) .burst{display:none}
+@keyframes bdIn{from{opacity:0;transform:translateY(40px) scale(.85)}to{opacity:1;transform:none}}
+@keyframes bdWin{0%{opacity:0;transform:scale(1.6);filter:brightness(2)}45%{opacity:1}100%{opacity:1;transform:none;filter:none}}
+.fig-rank .bdchip{padding:2px 8px;border-radius:8px;background:linear-gradient(135deg,#fde68a,#f59e0b);color:#1a1205;opacity:1;font-weight:900;text-shadow:none}
 /* --- Rivelazione del TOTW --- */
 .tw-gate{display:flex;flex-direction:column;align-items:center;gap:16px;padding:28px 16px 22px;text-align:center}
 .tw-pack{position:relative;width:min(46vw,190px);aspect-ratio:160/238;filter:drop-shadow(0 0 22px rgba(244,63,94,.45)) drop-shadow(0 14px 22px rgba(0,0,0,.6));animation:twPack 2.6s ease-in-out infinite}
@@ -1979,6 +2036,8 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
   <section id="view-trophies" class="view" aria-label="Trofei e primati" hidden><div id="troph"></div></section>
 
   <section id="view-casino" class="view" aria-label="CASiNO" hidden><div id="casino"></div></section>
+
+  <section id="view-ballon" class="view" aria-label="Pallone d’Oro" hidden><div id="ballon"></div></section>
 
   <section id="view-admin" class="view" aria-label="Area admin" hidden><div id="admin"></div></section>
   <button type="button" class="appver" id="appver" data-action="open-news"></button>
@@ -2209,12 +2268,13 @@ function cparam(key){
 }
 /* Interruttori delle funzioni: li accende e spegne l'admin (settings/features/{chiave}), valgono per tutti i dispositivi.
    Il codice legge sempre e solo feat(chiave). Spenta = nascosta e disattivata; codice e dati restano, riaccesa torna tutto com'era. */
-const FEATURE_DEFAULTS = { casino:true, mvp:true, ratings:true, messages:false };
+const FEATURE_DEFAULTS = { casino:true, mvp:true, ratings:true, messages:false, ballon:false };
 const FEATURES = [
   { k:'casino',  name:'CASiNO',                       desc:'La sezione con portafoglio, scommesse e premi.' },
   { k:'mvp',     name:'Voto MVP',                     desc:'La votazione dei giocatori per scegliere l’MVP di ogni gara.' },
   { k:'ratings', name:'Voti a stelle ai compagni',    desc:'Le stelle anonime ai compagni di squadra e il bonus/malus nell’OVR.' },
-  { k:'messages', name:'Messaggi',                    desc:'La finestra per scrivere all’organizzatore e la zona Richieste nel pannello admin.' }
+  { k:'messages', name:'Messaggi',                    desc:'La finestra per scrivere all’organizzatore e la zona Richieste nel pannello admin.' },
+  { k:'ballon',  name:'Pallone d’Oro',                desc:'La sezione dove ognuno vota i suoi 5 migliori e si elegge il Pallone d’Oro.' }
 ];
 const CACHE_KEY = 'cmb2627_cache_v1';
 const ROLES = { ATT:'Attaccante', CEN:'Centrocampista', DIF:'Difensore' };
@@ -2336,7 +2396,7 @@ const CVIEW_ORDER = ['gen', 'g', 'a', 'pct', 's', 'og'];
 /* =========================================================
    STATE
    ========================================================= */
-const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{}, casino:{}, messages:{}, playerKeys:{}, totw:{}, totm:{} };
+const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{}, casino:{}, messages:{}, playerKeys:{}, totw:{}, totm:{}, ballon:{} };
 const loaded = { players:false, matches:false, settings:false };
 let localMode = false;
 /* Accesso admin ricordato su questo dispositivo per 30 giorni (finché non si esce o non cambia il PIN) */
@@ -2493,7 +2553,8 @@ async function toggleFeature(k){
     casino:  next ? 'La sezione CASiNO ricompare per tutti, con saldi e dati com’erano.' : 'La sezione sparisce per tutti. I dati e i saldi restano e tornano se la riaccendi.',
     mvp:     next ? 'Torna la votazione dell’MVP: l’MVP si decide di nuovo anche con i voti già dati.' : 'L’MVP sarà deciso solo dai punti. I voti già dati non contano finché è spento.',
     ratings: next ? 'Ricompare la schermata dei voti a stelle e il bonus/malus torna nell’OVR.' : 'Spariscono i voti a stelle e il bonus/malus esce dall’OVR. I voti già dati restano salvati.',
-    messages: next ? 'Compare per tutti il pulsante ✉️ per scrivere all’organizzatore, e nel pannello admin la zona Richieste.' : 'Sparisce il pulsante ✉️ per tutti e la zona Richieste. I messaggi già inviati restano salvati.'
+    messages: next ? 'Compare per tutti il pulsante ✉️ per scrivere all’organizzatore, e nel pannello admin la zona Richieste.' : 'Sparisce il pulsante ✉️ per tutti e la zona Richieste. I messaggi già inviati restano salvati.',
+    ballon:  next ? 'Compare in Classifica il pulsante del Pallone d’Oro: da lì apri le votazioni e tutti votano.' : 'La sezione Pallone d’Oro sparisce per tutti, con il bollino dei vincitori. Voti e risultati restano salvati.'
   }[k];
   const ok = await confirmDlg(`${next ? 'Accendere' : 'Spegnere'} «${F.name}»?`, `${effect} Vale per tutti i dispositivi.`, next ? 'Accendi' : 'Spegni', !next);
   if(!ok) return;
@@ -2515,7 +2576,7 @@ function featuresHTML(){
 function loadCache(){
   try{
     const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    if(c){ store.players = cleanPlayers(c.players); store.matches = cleanMatches(c.matches); store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; store.playerKeys = c.playerKeys || {}; store.casino = c.casino || {}; store.totw = c.totw || {}; store.totm = c.totm || {}; }
+    if(c){ store.players = cleanPlayers(c.players); store.matches = cleanMatches(c.matches); store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; store.playerKeys = c.playerKeys || {}; store.casino = c.casino || {}; store.totw = c.totw || {}; store.totm = c.totm || {}; store.ballon = c.ballon || {}; }
   }catch(e){}
 }
 let cacheT;
@@ -2528,7 +2589,7 @@ function saveCache(){
       const { photo, ...rest } = p;
       return [k, (!rest.photoV && photo) ? p : rest];
     }));
-    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, profileReq:store.profileReq, casino:store.casino, totw:store.totw, totm:store.totm, photos:localMode ? store.photos : {}, ...(localMode ? { playerKeys:store.playerKeys } : {}) };
+    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, profileReq:store.profileReq, casino:store.casino, totw:store.totw, totm:store.totm, ballon:store.ballon, photos:localMode ? store.photos : {}, ...(localMode ? { playerKeys:store.playerKeys } : {}) };
     try{ localStorage.setItem(CACHE_KEY, JSON.stringify(data)); }
     catch(e){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, players:Object.fromEntries(Object.entries(players).map(([k, p]) => { const { photo, ...r } = p || {}; return [k, r]; })) })); }catch(e2){} }
   }, 400);
@@ -2602,6 +2663,8 @@ function initFirebase(){
   db.ref('totw').on('value', s => { store.totw = s.val() || {}; totwIssue = false; afterData(); }, () => { totwIssue = true; scheduleRender(); });
   db.ref('totm').on('value', s => { store.totm = s.val() || {}; totwIssue = false; afterData(); }, () => { totwIssue = true; scheduleRender(); });
   db.ref('casino').on('value', s => { store.casino = s.val() || {}; casinoIssue = false; afterData(); }, () => { casinoIssue = true; scheduleRender(); });
+  /* Pallone d'Oro: se le regole non permettono questo percorso l'app continua a funzionare e l'admin vede il motivo nella sezione */
+  db.ref('ballon').on('value', s => { store.ballon = s.val() || {}; ballonIssue = false; afterData(); }, () => { ballonIssue = true; scheduleRender(); });
   /* Voto ai compagni: se le regole non permettono questi percorsi l'app continua a funzionare e l'admin vede il motivo nel pannello */
   db.ref('ratingsDone').on('value', s => { store.ratingsDone = s.val() || {}; loaded.ratingsDone = true; afterData(); }, () => { loaded.ratingsDone = true; ratingsProblem('read', 'ratingsDone'); });
   db.ref('.info/connected').on('value', s => {
@@ -2615,6 +2678,7 @@ const dataReady = () => localMode || (loaded.players && loaded.matches && rating
 /* ---------- Voto anonimo ai compagni: percorsi ratings/{gara}/{rid} e ratingsDone/{gara}/{pid} ---------- */
 let messagesIssue = false;        /* true se il database rifiuta la lettura di «messages» */
 let totwIssue = false;            /* true se il database rifiuta la lettura di «totw» o «totm» */
+let ballonIssue = false;          /* true se il database rifiuta la lettura di «ballon» (Pallone d'Oro) */
 let casinoIssue = false;          /* true se il database rifiuta la lettura di «casino» */
 let ratingsIssue = null;           /* { kind:'read'|'write', path } se il database rifiuta questi percorsi: lo vede l'admin */
 const ratingsLoaded = {}, ratingsWatch = {};
@@ -3326,10 +3390,10 @@ function render(){
   $('#nav-casino').hidden = !cOn;
   $('#msgBtn').hidden = !feat('messages');
   $('#lock-dot').hidden = !(ui.admin && feat('messages') && msgNew() > 0);
-  if(ui.view === 'casino' && !cOn) go('dashboard'); else applyTheme();
+  if((ui.view === 'casino' && !cOn) || (ui.view === 'ballon' && !feat('ballon'))) go('dashboard'); else applyTheme();
   /* ogni sezione si disegna per conto suo: un dato sbagliato in una non deve fermare le altre (né voti e finestre obbligatorie) */
   const sx = fn => { try{ fn(); }catch(e){ console.error('render', e); } };
-  sx(renderDashboard); sx(renderPlayers); sx(renderMatches); sx(renderMe); sx(refreshAcctProf); if(ui.view === 'trophies') sx(renderTrophies); if(ui.view === 'casino') sx(renderCasino); sx(renderAdmin);
+  sx(renderDashboard); sx(renderPlayers); sx(renderMatches); sx(renderMe); sx(refreshAcctProf); if(ui.view === 'trophies') sx(renderTrophies); if(ui.view === 'casino') sx(renderCasino); if(ui.view === 'ballon') sx(renderBallon); sx(renderAdmin);
   if(ui.duel && $('#m-duel').classList.contains('open')) renderDuel();
   if(openFigPid && Date.now() > figAnimUntil) renderFigurina();   // non interrompe il flip se arrivano dati durante l'animazione
   if(ED && $('#m-match').classList.contains('open')) renderEditor();
@@ -3370,7 +3434,7 @@ function renderDashboardInner(){
   const cv = CVIEWS[ui.cView] || CVIEWS.gen, cf = ui.cf;
   const nF = (cf.q ? 1 : 0) + (cf.played ? 1 : 0) + (cf.min > 0 ? 1 : 0);
   $('#dash').innerHTML = `<div class="dash">${bdayHTML()}${next}${hero}
-    <button type="button" class="season-btn" data-action="season-awards" aria-label="Premi stagionali, stagione 26/27"><span class="ico" aria-hidden="true">🏆</span><span><b>Premi stagionali</b><small>Stagione 26/27</small></span><span class="go" aria-hidden="true">›</span></button>
+    <button type="button" class="season-btn" data-action="season-awards" aria-label="Premi stagionali, stagione 26/27"><span class="ico" aria-hidden="true">🏆</span><span><b>Premi stagionali</b><small>Stagione 26/27</small></span><span class="go" aria-hidden="true">›</span></button>${ballonBtnHTML()}
     <section class="glass">
       <div class="panel-h"><h2>Classifica</h2><span class="mu sm">Tocca un giocatore per aprire la figurina</span></div>
       <div class="cls-bar">
@@ -3813,7 +3877,7 @@ function renderFigurina(){
     <div class="fig-top">${photoBlock(p)}
       <div class="fig-badges">
         <div class="fig-role">${ovrPlate(s.ovr, 'xl')}<span class="rf">${roleTag(pid, p)}<span>${esc(FEET[p.foot] || '')}</span></span></div>
-        <div class="fig-rank"><span class="tierlbl">${TIERS[t].i} ${TIERS[t].l}</span><b>${s.rank}°</b><span>in classifica</span>${dl}${streakChip(s)}${twChip(pid)}</div>
+        <div class="fig-rank"><span class="tierlbl">${TIERS[t].i} ${TIERS[t].l}</span><b>${s.rank}°</b><span>in classifica</span>${dl}${streakChip(s)}${twChip(pid)}${ballonChip(pid)}</div>
       </div>
       <h3 class="fig-name" id="fig-t">${nameHTML(pid, p.name)}</h3>
     </div>
@@ -5563,6 +5627,173 @@ function twView(mode){
       <p class="mu sm tw-note">${dr ? 'BOZZA · ' : ''}${t.n} ${t.n === 1 ? 'gara' : 'gare'} ${mo ? 'nel mese' : 'nella settimana'}. ${mo ? 'Punteggio = media di tutte le gare del mese (gol, assist, MVP e voti dei compagni, meno autogol e ritardi), qualunque sia il numero di presenze; servono almeno 3 presenze. A parità: esito delle gare.' : 'Punteggio = somma di tutte le gare della settimana (gol e assist pesati dal ruolo, MVP e voti dei compagni, meno autogol e ritardi), qualunque sia il numero di presenze. A parità: più gol, poi più vittorie.'}</p>`;
   }
   return `${nav}${admin}${body}`;
+}
+/* =========================================================
+   PALLONE D'ORO
+   Funzione spegnibile (settings/features/ballon, spenta di default). Percorso nuovo e facoltativo «ballon»:
+   ballon/{eid} = { title, open, at, closedAt?, res? } e ballon/{eid}/v/{pid} = { r:'p1,p2,p3,p4,p5', at }.
+   Ognuno vota i suoi 5 migliori in ordine (non se stesso): 6, 4, 3, 2 e 1 punto. Vota chi ha almeno una presenza ed è entrato con il codice,
+   e può cambiare il voto finché la votazione è aperta. Alla chiusura la classifica si congela in res ("pid:punti:primi posti|...").
+   Parità: più primi posti, poi più secondi, terzi e quarti, poi più citazioni, poi il nome.
+   ========================================================= */
+const BD_PTS = [6, 4, 3, 2, 1], BD_SEEN = 'cmb_bdSeen';
+let bdRevT = null;
+/* ogni copia ha il suo id della sfumatura: se la prima sta in una sezione nascosta, le altre non perdono l'oro */
+let bdN = 0;
+const bdBall = () => { const g = 'bdg' + (++bdN); return `<svg class="bdball" viewBox="0 0 48 48" aria-hidden="true"><defs><radialGradient id="${g}" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff7cc"/><stop offset=".35" stop-color="#fcd34d"/><stop offset=".75" stop-color="#d97706"/><stop offset="1" stop-color="#92400e"/></radialGradient></defs><circle cx="24" cy="24" r="21" fill="url(#${g})" stroke="#78350f" stroke-width="1.2"/><path d="M24 14.5l7.6 5.6-2.9 8.9h-9.4l-2.9-8.9z" fill="#92400e" fill-opacity=".55"/><path d="M24 3v11.5M44 18.6l-12.4 1.5M36.5 41.6l-7.8-12.6M11.5 41.6l7.8-12.6M4 18.6l12.4 1.5" stroke="#78350f" stroke-width="1.4" stroke-linecap="round" fill="none" stroke-opacity=".7"/></svg>`; };
+function bdEds(){
+  return Object.entries(store.ballon || {}).filter(([k, e]) => idOk(k) && e && typeof e === 'object' && typeof e.title === 'string')
+    .map(([eid, e]) => ({ ...e, eid, title:e.title.slice(0, 40), open:e.open === true })).sort((a, b) => (num(a.at) - num(b.at)) || a.eid.localeCompare(b.eid));
+}
+const bdCur = () => { const l = bdEds(); return l[l.length - 1] || null; };
+const bdCands = () => STATS.list.filter(s => s.pres > 0);
+function bdBallot(e, voter){
+  const v = e.v && e.v[voter];
+  const r = String((v && typeof v === 'object' && v.r) || '').split(',').filter(x => x && idOk(x) && store.players[x] && x !== voter);
+  return [...new Set(r)].slice(0, 5);
+}
+const bdVoters = e => Object.keys(e.v || {}).filter(v => idOk(v) && store.players[v] && bdBallot(e, v).length);
+function bdTally(e){
+  const T = {};
+  for(const voter of bdVoters(e)) bdBallot(e, voter).forEach((pid, i) => {
+    const x = T[pid] || (T[pid] = { pid, pts:0, f:[0, 0, 0, 0, 0], n:0 });
+    x.pts += BD_PTS[i]; x.f[i]++; x.n++;
+  });
+  return Object.values(T).sort((a, b) => (b.pts - a.pts) || (b.f[0] - a.f[0]) || (b.f[1] - a.f[1]) || (b.f[2] - a.f[2]) || (b.f[3] - a.f[3]) || (b.n - a.n) || pname(a.pid).localeCompare(pname(b.pid), 'it'));
+}
+const bdResEnc = T => T.map(x => `${x.pid}:${x.pts}:${x.f[0]}`).join('|');
+/* Classifica: congelata alla chiusura; se manca (o la votazione è aperta) si ricalcola dai voti */
+function bdRes(e){
+  if(!e.open && typeof e.res === 'string' && e.res){
+    const out = e.res.split('|').map(t => { const [pid, pts, f1] = t.split(':'); return { pid, pts:num(pts), f1:num(f1) }; }).filter(x => idOk(x.pid) && store.players[x.pid]);
+    if(out.length) return out;
+  }
+  return bdTally(e).map(x => ({ pid:x.pid, pts:x.pts, f1:x.f[0] }));
+}
+const bdWins = pid => bdEds().filter(e => !e.open && e.res && (bdRes(e)[0] || {}).pid === pid);
+const ballonChip = pid => { if(!feat('ballon')) return ''; const w = bdWins(pid); return w.length ? `<span class="bdchip" title="${esc(w.map(e => e.title).join(', '))}">🏆 ${w.length > 1 ? w.length + '× ' : ''}Pallone d’Oro</span>` : ''; };
+const bdSeenGet = () => { try{ return JSON.parse(localStorage.getItem(BD_SEEN) || '{}') || {}; }catch(e){ return {}; } };
+function bdSeenMark(e){ const m = bdSeenGet(); m[e.eid] = num(e.closedAt) || 1; try{ localStorage.setItem(BD_SEEN, JSON.stringify(m)); }catch(err){} }
+const bdSeen = e => bdSeenGet()[e.eid] === (num(e.closedAt) || 1);
+/* Pulsante in Classifica: c'è solo se esiste una votazione (l'admin lo vede sempre, per aprire la prima) */
+function ballonBtnHTML(){
+  if(!feat('ballon')) return '';
+  const e = bdCur(), me = myPid();
+  if(!e && !ui.admin) return '';
+  let sub = 'Apri la prima votazione';
+  if(e && e.open) sub = me && bdBallot(e, me).length ? 'Votazione aperta: hai già votato' : 'Votazione aperta: scegli i tuoi 5 migliori';
+  else if(e){ const w = bdRes(e)[0]; sub = !bdSeen(e) ? 'Scopri chi ha vinto' : w ? `${esc(e.title)}: ${esc(pname(w.pid))}` : esc(e.title); }
+  return `<button type="button" class="season-btn bd-btn" data-go="ballon" aria-label="Pallone d’Oro"><span class="ico bd-ico" aria-hidden="true">${bdBall()}</span><span><b>Pallone d’Oro</b><small>${sub}</small></span><span class="go" aria-hidden="true">›</span></button>`;
+}
+function renderBallon(){
+  const el = $('#ballon'); if(!el) return;
+  if(!feat('ballon')){ el.innerHTML = ''; return; }
+  const ae = document.activeElement; if(ae && ae.closest && ae.closest('#bd-form')) return;   /* mentre scegli i 5 la pagina non si ridisegna */
+  const me = myPid(), e = bdCur(), eds = bdEds();
+  const issue = ballonIssue ? `<div class="glass cs-note">${ui.admin ? '<b class="neg">Il database rifiuta il percorso «ballon»: aggiungilo alle regole di Firebase.</b>' : 'Il Pallone d’Oro per ora non è disponibile.'}</div>` : '';
+  const body = !e ? '<div class="glass tw-empty">Nessuna votazione per ora: la apre l’organizzatore.</div>' : e.open ? bdOpenHTML(e, me) : bdClosedHTML(e, me);
+  const albo = eds.filter(x => !x.open && !(e && !e.open && x.eid === e.eid)).reverse().map(x => { const w = bdRes(x)[0];
+    return `<li>${w ? avatar(store.players[w.pid], 'xs') : ''}<span><b>${esc(x.title)}</b><small>${w ? `${esc(pname(w.pid))}, ${w.pts} punti` : 'Nessun voto'}</small></span></li>`; }).join('');
+  el.innerHTML = `<div class="bd-top"><button type="button" class="btn ghost sm" data-go="dashboard">‹ Classifica</button></div>
+    <div class="glass bd-hero"><span class="bd-hb">${bdBall()}</span><div><h2>Pallone d’Oro</h2><p class="mu sm">Ognuno vota i suoi 5 migliori della stagione: chi prende più punti vince il Pallone d’Oro.</p></div></div>
+    ${issue}${ui.admin ? bdAdminHTML(e) : ''}${body}${albo ? `<section class="glass bd-sec"><h3>Albo d’oro</h3><ul class="bd-albo">${albo}</ul></section>` : ''}`;
+}
+function bdAdminHTML(e){
+  if(e && e.open){
+    const C = bdCands(), done = new Set(bdVoters(e)), miss = C.filter(s => !done.has(s.pid)).map(s => esc(s.name));
+    return `<div class="tw-adm bd-adm"><b>Per l’organizzatore</b><div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px"><button type="button" class="btn primary" data-action="bd-close" data-eid="${e.eid}">🏆 Chiudi e proclama</button><button type="button" class="btn danger" data-action="bd-del" data-eid="${e.eid}">Annulla votazione</button></div>
+      <small>${done.size ? `Hanno votato in ${done.size}.` : 'Non ha ancora votato nessuno.'}${miss.length ? ` Mancano: ${miss.join(', ')}.` : ' Hanno votato tutti.'}</small></div>`;
+  }
+  const y = new Date().getFullYear();
+  return `<div class="tw-adm bd-adm"><b>Per l’organizzatore</b><div class="bd-new"><input class="field" id="bd-title" maxlength="40" placeholder="Pallone d’Oro ${y}" aria-label="Nome della votazione"><button type="button" class="btn primary" data-action="bd-open">🗳️ Apri la votazione</button></div>
+    ${e ? `<div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px"><button type="button" class="btn sm" data-action="bd-reopen" data-eid="${e.eid}">↩️ Riapri «${esc(e.title)}»</button><button type="button" class="btn sm danger" data-action="bd-del" data-eid="${e.eid}">Elimina «${esc(e.title)}»</button></div>` : ''}
+    <small>Apri una votazione quando vuoi, per esempio a Natale o a fine stagione: si vota finché non la chiudi tu.${ballonIssue ? ' <b class="neg">Il database rifiuta il percorso «ballon»: aggiungilo alle regole di Firebase.</b>' : ''}</small></div>`;
+}
+function bdOpenHTML(e, me){
+  const C = bdCands(), voted = bdVoters(e).filter(v => C.some(s => s.pid === v));
+  const mine = me ? bdBallot(e, me) : [], canVote = !!me && C.some(s => s.pid === me);
+  const opts = C.filter(s => s.pid !== me).sort((a, b) => a.name.localeCompare(b.name, 'it')), need = Math.min(5, opts.length);
+  let act;
+  if(!me) act = '<p class="mu sm">Per votare entra con il tuo codice nella sezione Io.</p><button type="button" class="btn sm" data-go="me">Vai a Io</button>';
+  else if(!canVote) act = '<p class="mu sm">Vota chi ha giocato almeno una gara in stagione.</p>';
+  else if(!need) act = '<p class="mu sm">Servono altri giocatori con almeno una presenza.</p>';
+  else if(mine.length && !ui.bdEdit) act = `<div class="bd-mine"><h4>Il tuo voto</h4><ol>${mine.map((pid, i) => `<li><span class="bd-n">${i + 1}°</span>${avatar(store.players[pid], 'xs')}<b>${esc(pname(pid))}</b><small>${BD_PTS[i]} ${BD_PTS[i] === 1 ? 'punto' : 'punti'}</small></li>`).join('')}</ol><button type="button" class="btn sm" data-action="bd-edit">✏️ Cambia voto</button></div>`;
+  else{
+    const dr = ui.bdDraft && ui.bdDraft.eid === e.eid ? ui.bdDraft.r : mine;
+    act = `<form id="bd-form" class="bd-form" autocomplete="off">${BD_PTS.slice(0, need).map((p, i) => `<label class="bd-row"><span class="bd-pos">${i + 1}°<small>${p} ${p === 1 ? 'punto' : 'punti'}</small></span><select class="field" data-bdpos="${i}" aria-label="${i + 1}° posto, ${p} ${p === 1 ? 'punto' : 'punti'}"><option value="">Scegli…</option>${opts.map(s => `<option value="${s.pid}"${dr[i] === s.pid ? ' selected' : ''}${dr.includes(s.pid) && dr[i] !== s.pid ? ' disabled' : ''}>${esc(s.name)}</option>`).join('')}</select></label>`).join('')}
+      <div class="row end">${mine.length ? '<button type="button" class="btn ghost" data-action="bd-edit-x">Annulla</button>' : ''}<button type="submit" class="btn primary">Invia il mio voto</button></div></form>`;
+  }
+  return `<section class="glass bd-sec"><h3>${esc(e.title)}</h3><p class="mu sm">Scegli i tuoi 5 migliori in ordine: al 1° vanno 6 punti, al 2° 4, al 3° 3, al 4° 2 e al 5° 1. Non puoi votare te stesso e puoi cambiare il voto finché la votazione è aperta. Chi vince lo scoprite quando l’organizzatore la chiude.</p>
+    <p class="bd-cnt"><b>${voted.length}</b> su ${C.length} hanno votato</p>${act}</section>`;
+}
+function bdClosedHTML(e, me){
+  const R = bdRes(e), nv = bdVoters(e).length;
+  if(!R.length) return `<section class="glass bd-sec"><h3>${esc(e.title)}</h3><p class="mu sm">Votazione chiusa senza voti.</p></section>`;
+  if(!bdSeen(e) && ui.bdRev !== e.eid) return `<section class="glass bd-gate"><span class="bd-big">${bdBall()}</span><h3>${esc(e.title)}</h3><p class="mu sm" style="margin:0">La votazione è chiusa. Pronto a scoprire chi ha vinto?</p><button type="button" class="btn primary tw-go" data-action="bd-reveal" data-eid="${e.eid}">🏆 Scopri il Pallone d’Oro</button></section>`;
+  const rev = ui.bdRev === e.eid, RD = { 3:0.5, 2:1.8, 1:3.3 };
+  const col = (x, pl) => { if(!x) return '<div class="bd-p empty"></div>'; const st = STATS.byId[x.pid];
+    return `<div class="bd-p p${pl}" style="--rd:${RD[pl]}s">${pl === 1 ? `<div class="burst b-gold" style="--bd:${RD[1] + 0.2}s">${Array.from({ length:12 }, (_, k) => `<i style="--a:${k * 30}deg"></i>`).join('')}</div>` : ''}<button type="button" class="bd-fig" data-open-player="${x.pid}" aria-label="${pl}° ${esc(pname(x.pid))}, ${x.pts} punti">${st ? miniFigHTML(st) : avatar(store.players[x.pid], 'md')}</button>${pl === 1 ? `<span class="bd-crown">${bdBall()}</span>` : ''}<b class="bd-nm">${esc(pname(x.pid))}</b><span class="bd-pt">${x.pts} punti</span><span class="bd-pl">${pl}°</span></div>`; };
+  const when = e.closedAt ? new Date(num(e.closedAt)).toLocaleDateString('it-IT', { day:'numeric', month:'long', year:'numeric' }) : '';
+  return `<section class="glass bd-sec bd-res${rev ? ' bd-rev' : ''}"><h3>${esc(e.title)}</h3><p class="mu sm">${when ? `Votazione chiusa il ${when} · ` : ''}${nv} ${nv === 1 ? 'votante' : 'votanti'}</p>
+    <div class="bd-win" style="--rd:4.1s">🏆 Il Pallone d’Oro va a <b>${esc(pname(R[0].pid))}</b></div>
+    <div class="bd-pod">${col(R[1], 2)}${col(R[0], 1)}${col(R[2], 3)}</div>
+    <ol class="bd-list" style="--rd:4.6s">${R.map((x, i) => `<li class="${me === x.pid ? 'me' : ''}"><span class="bd-n">${i + 1}°</span>${avatar(store.players[x.pid], 'xs')}<span class="bd-ln"><b>${esc(pname(x.pid))}</b>${x.f1 ? `<small>${x.f1} ${x.f1 === 1 ? 'primo posto' : 'primi posti'}</small>` : ''}</span><span class="bd-pts">${x.pts}<small>${x.pts === 1 ? 'punto' : 'punti'}</small></span></li>`).join('')}</ol></section>`;
+}
+function bdPaint(){ const a = document.activeElement; if(a && a.closest && a.closest('#ballon') && a.blur) a.blur(); renderBallon(); }
+function bdSync(){
+  const e = bdCur(); if(!e) return;
+  const sel = $$('#bd-form [data-bdpos]'), r = sel.map(x => x.value);
+  ui.bdDraft = { eid:e.eid, r };
+  sel.forEach((x, i) => { for(const o of x.options) if(o.value) o.disabled = r.includes(o.value) && r[i] !== o.value; });
+}
+async function bdVote(){
+  const e = bdCur(), me = myPid();
+  if(!feat('ballon') || !e || !e.open){ toast('La votazione è chiusa', 'warn'); return; }
+  if(!me || !bdCands().some(s => s.pid === me)){ toast('Vota chi ha giocato almeno una gara in stagione', 'warn'); return; }
+  const ok = new Set(bdCands().filter(s => s.pid !== me).map(s => s.pid)), r = $$('#bd-form [data-bdpos]').map(x => x.value);
+  if(!r.length || r.some(x => !x)){ toast(`Scegli tutti e ${r.length} i posti`, 'warn'); return; }
+  if(new Set(r).size !== r.length || r.some(x => !ok.has(x))){ toast('Ogni giocatore si può scegliere una volta sola', 'warn'); return; }
+  if(db && syncState !== 'live'){ toast('Per votare serve la connessione', 'warn'); return; }
+  const a = document.activeElement; if(a && a.blur) a.blur();
+  if(!(await confirmDlg('Confermi il voto?', r.map((p, i) => `${i + 1}° ${pname(p)}`).join(', ') + '. Puoi cambiarlo finché la votazione è aperta.', 'Invia il voto'))) return;
+  const cur = bdCur(); if(!cur || cur.eid !== e.eid || !cur.open){ toast('La votazione è appena stata chiusa', 'warn'); return; }
+  ui.bdEdit = false; ui.bdDraft = null;
+  await commit({ [`ballon/${e.eid}/v/${me}`]:{ r:r.join(','), at:Date.now() } }, 'Voto registrato: grazie!');
+  bdPaint();
+}
+async function bdAdmin(act, eid){
+  if(!ui.admin || !feat('ballon')) return;
+  if(db && syncState !== 'live'){ toast('Serve la connessione', 'warn'); return; }
+  if(act === 'open'){
+    if(bdEds().some(x => x.open)){ toast('C’è già una votazione aperta', 'warn'); return; }
+    const title = String(($('#bd-title') && $('#bd-title').value) || '').replace(/\s+/g, ' ').trim().slice(0, 40) || `Pallone d’Oro ${new Date().getFullYear()}`;
+    if(!(await confirmDlg(`Aprire «${title}»?`, 'Tutti potranno votare i loro 5 migliori finché non chiudi la votazione.', 'Apri'))) return;
+    commit({ [`ballon/${newId()}`]:{ title, open:true, at:Date.now() } }, 'Votazione aperta');
+    return;
+  }
+  const e = bdEds().find(x => x.eid === eid); if(!e) return;
+  if(act === 'close'){
+    const T = bdTally(e); if(!T.length){ toast('Nessun voto ancora: non c’è nessuno da proclamare', 'warn'); return; }
+    if(!(await confirmDlg(`Chiudere «${e.title}»?`, 'Dopo la chiusura non si vota più e la classifica resta quella. Il vincitore lo scoprite tutti con «Scopri il Pallone d’Oro».', 'Chiudi e proclama'))) return;
+    commit({ [`ballon/${eid}/open`]:false, [`ballon/${eid}/closedAt`]:Date.now(), [`ballon/${eid}/res`]:bdResEnc(T) }, 'Pallone d’Oro proclamato');
+  }else if(act === 'reopen'){
+    if(bdEds().some(x => x.open)){ toast('C’è già una votazione aperta', 'warn'); return; }
+    if(!(await confirmDlg(`Riaprire «${e.title}»?`, 'Si torna a votare e i voti già dati restano. Il vincitore si proclama di nuovo alla chiusura.', 'Riapri'))) return;
+    commit({ [`ballon/${eid}/open`]:true, [`ballon/${eid}/closedAt`]:null, [`ballon/${eid}/res`]:null }, 'Votazione riaperta');
+  }else if(act === 'del'){
+    if(!(await confirmDlg(`Eliminare «${e.title}»?`, 'Si cancellano la votazione e tutti i voti. Non si può annullare.', 'Elimina', true))) return;
+    commit({ [`ballon/${eid}`]:null }, 'Votazione eliminata');
+  }
+}
+/* Proclamazione: la prima volta che vedi una votazione chiusa la scopri con il tasto; escono il 3°, il 2° e poi il vincitore */
+function bdReveal(eid){
+  const e = bdEds().find(x => x.eid === eid); if(!e || e.open) return;
+  bdSeenMark(e); clearTimeout(bdRevT);
+  try{ renderDashboard(); }catch(err){}   /* il pulsante in Classifica non dice più «Scopri chi ha vinto» */
+  const mine = () => { const me = myPid(), w = bdRes(e)[0]; if(me && w && w.pid === me) toast('🏆 Hai vinto il Pallone d’Oro!'); };
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){ ui.bdRev = null; bdPaint(); mine(); return; }
+  ui.bdRev = eid; bdPaint();
+  bdRevT = setTimeout(() => { ui.bdRev = null; mine(); }, 5600);   /* a fine proclamazione non si ridisegna: resta tutto com'è */
 }
 /* ---------- Rivelazione del Team of the Week ----------
    Il TOTW pubblicato più recente, la prima volta che lo apri su questo telefono, resta coperto: con «Mostra Team of the Week» le carte si girano
@@ -8308,6 +8539,7 @@ function applyTheme(){
 }
 function go(view){
   if(view === 'casino' && !feat('casino')){ toast('CASiNO sospeso', 'warn'); view = 'dashboard'; }
+  if(view === 'ballon' && !feat('ballon')) view = 'dashboard';
   ui.view = view;
   applyTheme(); renderSlip();
   $$('.view').forEach(v => v.hidden = v.id !== 'view-' + view);
@@ -8317,6 +8549,7 @@ function go(view){
   if(view === 'dashboard') rankShift();
   if(view === 'trophies') renderTrophies();
   if(view === 'casino'){ ui.cAnim = true; ui.cFrom = null; renderCasino(); }
+  if(view === 'ballon') renderBallon();
   if(view === 'admin') setTimeout(profToast, 500);
   anBump('v/' + view);
   if(view === 'admin' && ui.admin) anLoad();
@@ -8420,6 +8653,13 @@ document.addEventListener('click', async e => {
     case 'tw-calc': twAction('calc', t.dataset.wk, t.dataset.k); break;
     case 'tw-pub': twAction('pub', t.dataset.wk, t.dataset.k); break;
     case 'tw-reveal': if(isoOk(t.dataset.wk)) twReveal(t.dataset.wk); break;
+    case 'bd-open': bdAdmin('open'); break;
+    case 'bd-close': bdAdmin('close', t.dataset.eid); break;
+    case 'bd-reopen': bdAdmin('reopen', t.dataset.eid); break;
+    case 'bd-del': bdAdmin('del', t.dataset.eid); break;
+    case 'bd-edit': { const e = bdCur(), me = myPid(); ui.bdEdit = true; ui.bdDraft = e && me ? { eid:e.eid, r:bdBallot(e, me) } : null; bdPaint(); break; }
+    case 'bd-edit-x': ui.bdEdit = false; ui.bdDraft = null; bdPaint(); break;
+    case 'bd-reveal': bdReveal(t.dataset.eid); break;
     case 'rec-next': if(recIdx < recList.length - 1){ recIdx++; drawRec(); } break;
     case 'rec-close': recQueue = []; recList = []; recShown = 0; closeModal('#m-rec'); break;
     case 'rec-board':   /* si apre sui trofei storici (non sulle targhe) e si scende al primo primato cambiato */
@@ -8535,6 +8775,8 @@ document.addEventListener('input', e => { const t = e.target; if(t && t.dataset 
 $('#msel').addEventListener('change', e => { ui.matchId = e.target.value; ui.swapSel = null; rerenderMatch(); });
 document.addEventListener('input', e => { const t = e.target; if(t && typeof t.id === 'string' && /^pf2-/.test(t.id)) profDraft = profReadForm(); });
 document.addEventListener('submit', e => { if(e.target && e.target.id === 'prof-form'){ e.preventDefault(); profSend(); } });
+document.addEventListener('submit', e => { if(e.target && e.target.id === 'bd-form'){ e.preventDefault(); bdVote(); } });
+document.addEventListener('change', e => { const t = e.target; if(t && t.matches && t.matches('#bd-form [data-bdpos]')) bdSync(); });
 $('#fig-body').addEventListener('animationend', e => { if(e.target.classList && e.target.classList.contains('flip')) e.target.classList.remove('reveal-gold', 'reveal-dia', 'promo', 'peek'); });
 $('#ed-filter').addEventListener('input', renderEditorPick);
 document.addEventListener('input', e => { if(e.target && e.target.id === 'who-q'){ const q = norm(e.target.value); $$('#who-body .who-opt').forEach(b => { b.hidden = !!q && !b.dataset.n.includes(q); }); } });
