@@ -1854,6 +1854,35 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 .twc.sel .twc-s{outline:3px solid #fde047;outline-offset:3px;border-radius:calc(var(--twk) * 18px);animation:none}
 .tw-pool{margin-top:10px;font-size:13px}.tw-pool summary{cursor:pointer;font-weight:700;color:var(--mu)}.tw-pool ul{margin:6px 0 0;padding-left:18px}.tw-pool li{margin:2px 0}
 .tw-note{margin:10px 2px 0;text-align:center}
+/* --- Rivelazione del TOTW --- */
+.tw-gate{display:flex;flex-direction:column;align-items:center;gap:16px;padding:28px 16px 22px;text-align:center}
+.tw-pack{position:relative;width:min(46vw,190px);aspect-ratio:160/238;filter:drop-shadow(0 0 22px rgba(244,63,94,.45)) drop-shadow(0 14px 22px rgba(0,0,0,.6));animation:twPack 2.6s ease-in-out infinite}
+.tw-pk{position:absolute;top:0;left:0;right:0;bottom:0;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#fff;
+  clip-path:polygon(8% 0,92% 0,100% 5.5%,100% 94.5%,92% 100%,8% 100%,0 94.5%,0 5.5%);
+  background:radial-gradient(circle at 50% 38%,rgba(255,255,255,.35),rgba(255,255,255,0) 45%),repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 6px,rgba(255,255,255,0) 6px 14px),linear-gradient(160deg,#fb923c,#f43f5e 45%,#8b5cf6)}
+.tw-pk::after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;transform:translateX(-130%);background:linear-gradient(105deg,rgba(255,255,255,0) 35%,rgba(255,255,255,.6) 50%,rgba(255,255,255,0) 65%);animation:sweep 1.4s ease-in-out .6s infinite}
+.tw-pk small{font:800 10.5px var(--body);letter-spacing:.22em;text-transform:uppercase;opacity:.9}
+.tw-pk b{font:italic 900 48px/1 var(--disp);text-shadow:0 3px 14px rgba(0,0,0,.35)}
+.tw-pk i{font:italic 800 18px var(--disp);opacity:.9}
+@keyframes twPack{50%{transform:translateY(-7px) rotate(-1.5deg)}}
+.tw-go{min-height:48px;padding:0 22px;font-size:15px}
+.twc-cov{display:none}
+.tw-rev .twc-cov{position:absolute;top:0;left:0;right:0;bottom:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;
+  clip-path:polygon(8% 0,92% 0,100% 5.5%,100% 94.5%,92% 100%,8% 100%,0 94.5%,0 5.5%);
+  background:radial-gradient(circle at 50% 40%,rgba(255,255,255,.3),rgba(255,255,255,0) 50%),repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 4px,rgba(255,255,255,0) 4px 10px),linear-gradient(160deg,#fb923c,#f43f5e 45%,#8b5cf6);
+  animation:twcCov .26s ease-in var(--rd) forwards}
+.twc-cov b{font:italic 900 calc(var(--twk) * 36px)/1 var(--disp)}
+.twc-cov i{font-style:normal;font-size:calc(var(--twk) * 26px);opacity:.85}
+.tw-rev .twc-s{animation:twcPop .5s cubic-bezier(.2,1.4,.4,1) calc(var(--rd) + .2s) both}
+.tw-rev .twc-pl{opacity:0;animation:wkFade .3s ease-out calc(var(--rd) + .35s) forwards}
+.tw-rev .twc.best .twc-cov{animation-duration:.4s}
+.tw-rev .twc.best .twc-s{animation:twcBest .9s cubic-bezier(.2,1.3,.4,1) calc(var(--rd) + .3s) both}
+.tw-bestb{position:absolute;left:50%;top:1.6cqw;z-index:7;max-width:94%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:1cqw 3cqw;border-radius:999px;background:linear-gradient(90deg,#fb923c,#f43f5e 50%,#8b5cf6);color:#fff;font:900 3.4cqw var(--body);
+  box-shadow:0 4px 14px rgba(0,0,0,.45);opacity:0;transform:translateX(-50%);animation:twcStar 3s ease-out calc(var(--rd) + .45s) both}
+@keyframes twcCov{to{transform:scaleX(0);opacity:.4}}
+@keyframes twcPop{0%{transform:scale(.92)}55%{transform:scale(1.1)}100%{transform:none}}
+@keyframes twcBest{0%{transform:scale(.9);filter:brightness(1)}40%{transform:scale(1.28);filter:brightness(1.6) drop-shadow(0 0 14px #fde047)}100%{transform:none;filter:none}}
+@keyframes twcStar{0%{opacity:0;transform:translate(-50%,8px)}12%,82%{opacity:1;transform:translateX(-50%)}100%{opacity:0;transform:translate(-50%,-6px)}}
 </style>
 </head>
 <body>
@@ -5492,7 +5521,8 @@ function twSlot(pid, info, mode, o = {}){   /* la stessa figurina della griglia 
   const md = info.sc != null ? String(info.sc).replace('.', ',') : '–';
   const ph = o.ph && o.ph[pid] ? `<span class="ph"><canvas data-cv="${pid}" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:${o.ph[pid].w}px;height:${o.ph[pid].h}px"></canvas></span>` : photoBlock(s.p);
   const act = o.swap ? `data-action="tw-swap" data-pid="${pid}"` : `data-open-player="${pid}"`;
-  return `<span class="twc${o.sel === pid ? ' sel' : ''}"><span class="twc-s"><button type="button" class="mfig t-${tierOf(s.ovr)} ${mode === 'm' ? 'totm' : 'totw'}" ${act} aria-label="${esc(s.name)}, overall ${roundOvr(s.ovr)}"><span class="mfig-fr chamf"><span class="mfig-in chamf">${ph}<span class="mfig-rt">${ovrPlate(s.ovr, 'sm')}${roleTag(pid, s.p)}</span><span class="mfig-b"><span class="mfig-n">${nameHTML(pid)}</span>${mode === 'm' ? `<span class="mfig-s"><span><b>${md}</b><i>media</i></span><span><b>${info.np != null ? info.np : '–'}</b><i>${info.np === 1 ? 'presenza' : 'presenze'}</i></span></span>` : `<span class="mfig-s"><span><b>${info.tt ? info.tt.g : '–'}</b><i>gol</i></span><span><b>${info.tt ? info.tt.a : '–'}</b><i>assist</i></span></span>`}</span></span></span></button></span><span class="twc-pl">${pl}</span></span>`;
+  const rv = o.rd != null ? { cls:o.best ? ' best' : '', st:` style="--rd:${o.rd}s"`, cov:'<span class="twc-cov" aria-hidden="true"><b>TOTW</b><i>★</i></span>' } : { cls:'', st:'', cov:'' };
+  return `<span class="twc${o.sel === pid ? ' sel' : ''}${rv.cls}"${rv.st}><span class="twc-s">${rv.cov}<button type="button" class="mfig t-${tierOf(s.ovr)} ${mode === 'm' ? 'totm' : 'totw'}" ${act} aria-label="${esc(s.name)}, overall ${roundOvr(s.ovr)}"><span class="mfig-fr chamf"><span class="mfig-in chamf">${ph}<span class="mfig-rt">${ovrPlate(s.ovr, 'sm')}${roleTag(pid, s.p)}</span><span class="mfig-b"><span class="mfig-n">${nameHTML(pid)}</span>${mode === 'm' ? `<span class="mfig-s"><span><b>${md}</b><i>media</i></span><span><b>${info.np != null ? info.np : '–'}</b><i>${info.np === 1 ? 'presenza' : 'presenze'}</i></span></span>` : `<span class="mfig-s"><span><b>${info.tt ? info.tt.g : '–'}</b><i>gol</i></span><span><b>${info.tt ? info.tt.a : '–'}</b><i>assist</i></span></span>`}</span></span></span></button></span><span class="twc-pl">${pl}</span></span>`;
 }
 const TW_LINES = `<svg class="tw-lines" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="rgba(255,255,255,.55)" stroke-width=".45"><rect x="2" y="2" width="96" height="136"/><path d="M2 70H98"/><circle cx="50" cy="70" r="13"/><rect x="26" y="2" width="48" height="16"/><rect x="38" y="2" width="24" height="6"/><path d="M40 18a10 10 0 0 0 20 0"/><rect x="26" y="122" width="48" height="16"/><rect x="38" y="132" width="24" height="6"/><path d="M40 122a10 10 0 0 1 20 0"/></g><circle cx="50" cy="70" r=".9" fill="rgba(255,255,255,.7)"/></svg>`;
 function twView(mode){
@@ -5515,17 +5545,55 @@ function twView(mode){
     admin = `<div class="tw-adm"><div class="row" style="gap:8px;flex-wrap:wrap"><button type="button" class="btn" data-action="tw-calc" data-k="${mode || 'w'}" data-wk="${key}">🔄 Ricalcola</button><button type="button" class="btn primary" data-action="tw-pub" data-k="${mode || 'w'}" data-wk="${key}" ${dr && !(pub && pub.t === dr.t) ? '' : 'disabled'}>📣 Mostra a tutti</button>${t ? `<button type="button" class="btn sm ${ui.twSwap ? 'primary' : ''}" data-action="tw-swapmode">${ui.twSwap ? '✓ Fine spostamenti' : '🔀 Sposta giocatori'}</button>` : ''}</div>${ui.twSwap && t ? `<div class="swap-hint">${ui.twSel ? `Selezionato <b>${esc(pname(ui.twSel))}</b>: tocca il giocatore con cui scambiarlo.` : 'Tocca due giocatori per scambiarli di posto. Lo spostamento modifica la bozza: poi premi «Mostra a tutti».'}</div>` : ''}<small>${state}${prov}${totwIssue ? ` <b class="neg">Il database rifiuta il percorso «${root}»: aggiungilo alle regole di Firebase.</b>` : ''}</small>${twPoolHTML(key, mode, t)}</div>`;
   }
   ui.twCtx = { mode:mode || 'w', key };
+  /* Rivelazione: solo per il TOTW pubblicato più recente, la prima volta su questo telefono */
+  const shownPub = !!pub && (!dr || dr.t === pub.t), revOn = !mo && shownPub && pubKs[pubKs.length - 1] === key && !(adm && ui.twSwap);
+  const gate = revOn && twRevGet()[key] !== pub.t && ui.twRev !== key, revealing = revOn && ui.twRev === key;
   const per = mo ? 'questo mese' : 'questa settimana', nome = mo ? 'Team of the Month' : 'Team of the Week';
   let body;
   if(!t) body = `<div class="glass tw-empty">${adm ? `Per ${per} non è ancora stato calcolato.` : `Nessun ${nome} pubblicato per ${per}.`}</div>`;
+  else if(gate) body = `<div class="glass tw-gate"><div class="tw-pack" aria-hidden="true"><span class="tw-pk"><small>Team of the Week</small><b>TOTW</b><i>S${twSeasonNum(key)}</i></span></div>
+      <button type="button" class="btn primary tw-go" data-action="tw-reveal" data-wk="${key}">⭐ Mostra Team of the Week</button>
+      <p class="mu sm" style="margin:0">Le carte escono una alla volta: l’ultima è il migliore della settimana.</p></div>`;
   else{
     const rows = ['d', 'm', 'f'].map(k => twRow(t, k)), aggMap = Object.fromEntries(twAgg(key, mode).all.map(c => [c.pid, c]));
+    const RD = revealing ? twRevOrder(t, rows, aggMap) : null;
     if(!rows[0].length && !rows[1].length && !rows[2].length) body = `<div class="glass tw-empty">${mo ? 'Nessun giocatore con almeno 3 presenze in questo mese: il team è vuoto.' : 'Nessuna partita giocata in questa settimana: il team è vuoto.'}</div>`;
-    else body = `<div class="tw-x"><div class="tw-field${mo ? ' mo' : ''}">${TW_LINES}${[2, 1, 0].map(i => `<div class="tw-row r${rows[i].length}">${rows[i].map(pid => twSlot(pid, twInfo(t, pid, aggMap), mode, { swap:adm && ui.twSwap, sel:ui.twSel })).join('')}</div>`).join('')}</div></div>
+    else body = `<div class="tw-x"><div class="tw-field${mo ? ' mo' : ''}${RD ? ' tw-rev' : ''}">${TW_LINES}${RD && RD.best ? `<span class="tw-bestb" style="--rd:${RD.d[RD.best]}s">⭐ Migliore della settimana: ${esc(pname(RD.best))}</span>` : ''}${[2, 1, 0].map(i => `<div class="tw-row r${rows[i].length}">${rows[i].map(pid => twSlot(pid, twInfo(t, pid, aggMap), mode, { swap:adm && ui.twSwap, sel:ui.twSel, rd:RD ? RD.d[pid] : null, best:!!RD && RD.best === pid })).join('')}</div>`).join('')}</div></div>
       <div class="row" style="justify-content:center;margin-top:10px"><button type="button" class="btn sm" data-action="tw-export" data-k="${mode || 'w'}" data-wk="${key}">📸 Esporta la grafica</button></div>
       <p class="mu sm tw-note">${dr ? 'BOZZA · ' : ''}${t.n} ${t.n === 1 ? 'gara' : 'gare'} ${mo ? 'nel mese' : 'nella settimana'}. ${mo ? 'Punteggio = media di tutte le gare del mese (gol, assist, MVP e voti dei compagni, meno autogol e ritardi), qualunque sia il numero di presenze; servono almeno 3 presenze. A parità: esito delle gare.' : 'Punteggio = somma di tutte le gare della settimana (gol e assist pesati dal ruolo, MVP e voti dei compagni, meno autogol e ritardi), qualunque sia il numero di presenze. A parità: più gol, poi più vittorie.'}</p>`;
   }
   return `${nav}${admin}${body}`;
+}
+/* ---------- Rivelazione del Team of the Week ----------
+   Il TOTW pubblicato più recente, la prima volta che lo apri su questo telefono, resta coperto: con «Mostra Team of the Week» le carte si girano
+   una alla volta (difensori, centrocampisti, attaccanti) e per ultima quella del migliore della settimana. Il "già visto" (settimana → orario
+   di pubblicazione) sta in localStorage: se l'organizzatore ripubblica un team diverso, la rivelazione torna. */
+const TWR_KEY = 'cmb_twSeen';
+let twRevT = null;
+const twRevGet = () => { try{ return JSON.parse(localStorage.getItem(TWR_KEY) || '{}') || {}; }catch(e){ return {}; } };
+function twRevMark(key, t){ const m = twRevGet(); m[key] = t; try{ localStorage.setItem(TWR_KEY, JSON.stringify(m)); }catch(e){} }
+/* Ordine e ritardi: dal basso (difesa) all'alto, il migliore (punteggio, poi gol, poi nome) per ultimo */
+function twRevOrder(t, rows, agg){
+  const order = [...rows[0], ...rows[1], ...rows[2]];
+  const inf = pid => twInfo(t, pid, agg), sc = pid => { const v = inf(pid).sc; return v == null ? -Infinity : v; }, gl = pid => (inf(pid).tt && inf(pid).tt.g) || 0;
+  const best = [...order].sort((a, b) => (sc(b) - sc(a)) || (gl(b) - gl(a)) || pname(a).localeCompare(pname(b), 'it'))[0] || null;
+  const d = {}; let k = 0;
+  for(const pid of order) if(pid !== best) d[pid] = +(0.6 + 0.42 * k++).toFixed(2);
+  if(best) d[best] = +(0.6 + 0.42 * k + 0.75).toFixed(2);
+  return { d, best, end:best ? d[best] + 1.4 : 0.6 + 0.42 * k };
+}
+function twReveal(key){
+  const pub = twGet('pub', key); if(!pub) return;
+  twRevMark(key, pub.t);
+  clearTimeout(twRevT);
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){ ui.twRev = null; renderTrophies(); twRevMine(pub); return; }
+  ui.twRev = key; renderTrophies();
+  const rows = ['d', 'm', 'f'].map(k => twRow(pub, k)), end = twRevOrder(pub, rows, Object.fromEntries(twAgg(key, 'w').all.map(c => [c.pid, c]))).end;
+  twRevT = setTimeout(() => { ui.twRev = null; twRevMine(pub); }, end * 1000 + 300);   /* a fine rivelazione non si ridisegna: le carte restano come sono */
+}
+function twRevMine(pub){
+  const me = myPid(); if(!me) return;
+  if([...twRow(pub, 'd'), ...twRow(pub, 'm'), ...twRow(pub, 'f')].includes(me)) toast('⭐ Sei nel Team of the Week!');
 }
 function twFit(){ document.querySelectorAll('.tw-x').forEach(x => { const w = x.clientWidth; if(w) x.style.setProperty('--twk', (w * 0.236 / 160).toFixed(4)); }); }
 window.addEventListener('resize', twFit);
@@ -5656,7 +5724,7 @@ function twAction(act, key, mode){
   const mo = mode === 'm', root = mo ? 'totm' : 'totw';
   if(!ui.admin || !(mo ? monthOk(key) : isoOk(key))) return;
   if(act === 'calc'){ commit({ [`${root}/draft/${key}`]: twCalc(key, mode) }, 'Team calcolato: lo vedi solo tu finché non lo mostri a tutti'); }
-  else{ const dr = twGet('draft', key, root); if(!dr) return; commit({ [`${root}/pub/${key}`]: dr }, `${mo ? 'Team of the Month' : 'Team of the Week'} mostrato a tutti`); }
+  else{ const dr = twGet('draft', key, root); if(!dr) return; if(!mo) twRevMark(key, dr.t); commit({ [`${root}/pub/${key}`]: dr }, `${mo ? 'Team of the Month' : 'Team of the Week'} mostrato a tutti`); }
 }
 /* Vetrina delle targhe: il riquadro completo (lucchetto, rivale, regola) si apre toccando il medaglione */
 let PLK_CARDS = {}, plqOpen = null;
@@ -8351,6 +8419,7 @@ document.addEventListener('click', async e => {
     case 'tw-week': ui.twSel = null; if(t.dataset.wk){ if(t.dataset.k === 'm') ui.twMonth = t.dataset.wk; else ui.twWeek = t.dataset.wk; renderTrophies(); } break;
     case 'tw-calc': twAction('calc', t.dataset.wk, t.dataset.k); break;
     case 'tw-pub': twAction('pub', t.dataset.wk, t.dataset.k); break;
+    case 'tw-reveal': if(isoOk(t.dataset.wk)) twReveal(t.dataset.wk); break;
     case 'rec-next': if(recIdx < recList.length - 1){ recIdx++; drawRec(); } break;
     case 'rec-close': recQueue = []; recList = []; recShown = 0; closeModal('#m-rec'); break;
     case 'rec-board':   /* si apre sui trofei storici (non sulle targhe) e si scende al primo primato cambiato */
