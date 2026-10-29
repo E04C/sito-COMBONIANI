@@ -933,14 +933,15 @@ button.awd:hover{border-color:var(--line)}
 @media (max-width:560px){.dcard .dn{font-size:19px}.dvs{font-size:28px}.drow{grid-template-columns:minmax(0,1fr) 70px minmax(0,1fr)}.dside b{min-width:40px;font-size:19px}}
 
 /* ---------- Trofei & Primati ---------- */
-.th-hero{position:relative;overflow:hidden;padding:22px 20px;border-radius:26px;margin-bottom:18px}
-.th-hero::before{content:"";position:absolute;right:-12%;top:-80%;width:60%;height:260%;background:radial-gradient(closest-side,rgba(251,191,36,.18),transparent);pointer-events:none}
-.th-hero h2{position:relative;margin:0;font:italic 800 40px/1 var(--disp)}
-.th-hero p{position:relative;margin:8px 0 0;color:var(--mu);max-width:60ch}
+.th-how{padding:0;border-radius:18px;margin-bottom:4px}
+.th-how summary{list-style:none;display:flex;align-items:center;gap:8px;min-height:46px;padding:0 16px;cursor:pointer;font:800 14px var(--body);color:#fde68a}
+.th-how summary::-webkit-details-marker{display:none}
+.th-how summary::after{content:"▾";margin-left:auto;color:var(--mu);transition:transform .2s}
+.th-how[open] summary::after{transform:rotate(180deg)}
+.th-how p{margin:0;padding:0 16px 15px;color:var(--mu);font-size:13.5px;line-height:1.5}
 .th-sec{margin:26px 0 12px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .th-sec h3{margin:0;font:italic 800 28px/1 var(--disp)}
 .th-sec span{color:var(--mu);font-size:13px;font-weight:600}
-.plk-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
 .plk{position:relative;display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:20px;text-align:left;border:1px solid rgba(251,191,36,.3);background:linear-gradient(160deg,rgba(251,191,36,.1),rgba(12,16,24,.7) 45%);width:100%;transition:transform .15s var(--ease),border-color .2s}
 button.plk:hover{border-color:rgba(251,191,36,.6)}
 button.plk:active{transform:scale(.98)}
@@ -1298,6 +1299,31 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .rival{font-size:12.5px;color:var(--mu);font-weight:600}
 .rival button{padding:0;border:0;background:none;color:var(--tx);font-weight:800;cursor:pointer}
 .plk-body small{color:var(--mu2);font-size:11.5px;line-height:1.4}
+/* --- Vetrina delle targhe: medaglioni in griglia --- */
+.plv-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (min-width:700px){.plv-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.plv{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;padding:16px 6px 13px;border-radius:18px;border:1px solid rgba(255,255,255,.09);background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(10,13,20,.9) 58%);color:inherit;text-align:center;cursor:pointer;transition:transform .15s var(--ease),border-color .2s}
+.plv:hover{border-color:rgba(251,191,36,.45)}
+.plv:active{transform:scale(.97)}
+.plv.mine{border-color:var(--or);box-shadow:0 0 0 1px var(--or),0 0 18px rgba(249,115,22,.22)}
+.plv-med{position:relative;display:grid;place-items:center;width:62px;height:62px;margin-bottom:7px;border-radius:50%;background:var(--metal);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -3px 0 rgba(0,0,0,.3),0 8px 18px -8px #000}
+.plv-med::before{content:"";position:absolute;top:6px;left:6px;right:6px;bottom:6px;border-radius:50%;background:radial-gradient(circle at 50% 32%,#1d2331,#0a0d14);box-shadow:inset 0 2px 5px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.28)}
+.plv-ic{position:relative;font-size:24px;line-height:1}
+.plv-av{position:absolute;right:-7px;bottom:-5px}
+.plv-av .av{border-radius:50%;box-shadow:0 0 0 2px #0a0d14}
+.plv-st{position:absolute;top:8px;right:8px;display:grid;place-items:center;width:21px;height:21px;border-radius:7px;background:rgba(255,255,255,.06);color:#fde68a}
+.plv-st .lk{width:12px;height:12px}
+.plv-st.danger{color:#fb923c;background:rgba(249,115,22,.16);animation:dangerPulse 1.6s ease-in-out infinite}
+.plv-st.open{color:#4ade80;background:rgba(74,222,128,.14)}
+.plv-st.open .sh{transform-box:fill-box;transform-origin:100% 100%;animation:unlock 1.8s ease-in-out .1s both}
+.plv-tua{position:absolute;top:9px;left:8px;padding:1px 6px;border-radius:6px;background:var(--or);color:#1a0a00;font:800 10px var(--body)}
+.plv-t{font:italic 800 13.5px/1.1 var(--disp);color:#fde68a;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.plv-h{max-width:100%;font-weight:800;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plv-v{max-width:100%;color:var(--gold);font-weight:700;font-size:11px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.plv.off .plv-med{filter:grayscale(.75) brightness(.6)}
+.plv.off .plv-t,.plv.off .plv-h{color:var(--mu)}
+.plq-sheet{width:min(460px,100%)}
+.plq-sheet .plk{margin-bottom:14px}
 /* --- Teche di vetro --- */
 .rec.glass{background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.015) 38%,rgba(10,13,20,.86)),rgba(10,13,20,.8);border:1px solid rgba(255,255,255,.15);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.2),inset 0 0 30px rgba(255,255,255,.03),0 18px 40px -24px #000}
@@ -2059,6 +2085,11 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 <!-- Risultato finale -->
 <div class="modal" id="m-final" aria-hidden="true">
   <div class="finwin" role="alertdialog" aria-modal="true" aria-label="Risultato finale" id="fin-body"></div>
+</div>
+
+<!-- Dettaglio di una targa -->
+<div class="modal" id="m-plq" aria-hidden="true">
+  <div class="sheet glass plq-sheet" role="dialog" aria-modal="true" aria-label="Targa" id="plq-body"></div>
 </div>
 
 <!-- Nuovo record -->
@@ -5525,6 +5556,17 @@ function twAction(act, key, mode){
   if(act === 'calc'){ commit({ [`${root}/draft/${key}`]: twCalc(key, mode) }, 'Team calcolato: lo vedi solo tu finché non lo mostri a tutti'); }
   else{ const dr = twGet('draft', key, root); if(!dr) return; commit({ [`${root}/pub/${key}`]: dr }, `${mo ? 'Team of the Month' : 'Team of the Week'} mostrato a tutti`); }
 }
+/* Vetrina delle targhe: il riquadro completo (lucchetto, rivale, regola) si apre toccando il medaglione */
+let PLK_CARDS = {}, plqOpen = null;
+function openPlq(id){
+  if(!PLK_CARDS[id]) return;
+  plqOpen = id; paintPlq(); openModal('#m-plq');
+}
+function paintPlq(){
+  const b = $('#plq-body'), P = plaqueById(plqOpen); if(!b || !P) return;
+  b.setAttribute('aria-label', 'Targa ' + P.name);
+  b.innerHTML = `${PLK_CARDS[plqOpen] || ''}<div class="row end"><button type="button" class="btn ghost" data-close>Chiudi</button></div>`;
+}
 function renderTrophies(){
   const el = $('#troph'); if(!el) return;
   const nM = STATS.matches.length, me = myPid();
@@ -5538,7 +5580,8 @@ function renderTrophies(){
     curP[P.id] = h ? h.pid : null;
     const plate = `<span class="plate"><span class="plk-ic">${P.icon}</span><span class="plk-t">${P.name}</span><span class="plk-n">${String(i + 1).padStart(2, '0')}</span></span>`;
     const metal = 'm-' + (METALS[P.id] || 'steel');
-    if(!s) return `<div class="plk off ${metal}">${plate}<div class="plk-body"><span class="mu sm">In palio: nessun giocatore la soddisfa ancora</span><small>${esc(P.desc)}</small></div></div>`;
+    if(!s) return { id:P.id, tile:`<button type="button" class="plv off ${metal}" data-plv="${P.id}" aria-label="${P.name}: in palio"><span class="plv-med"><span class="plv-ic">${P.icon}</span></span><span class="plv-t">${P.name}</span><span class="plv-h">In palio</span></button>`,
+      card:`<div class="plk off ${metal}">${plate}<div class="plk-body"><span class="mu sm">In palio: nessun giocatore la soddisfa ancora</span><small>${esc(P.desc)}</small></div></div>` };
     let reign = 0;
     for(let k = hist.length - 1; k >= 0 && hist[k].plaques[P.id] === s.pid; k--) reign++;
     const cands = STATS.list.filter(x => x.pres >= PLQ_MIN_PRES && P.ok(x)).sort((a, b) => P.cmp(a, b) || a.name.localeCompare(b.name, 'it'));
@@ -5554,11 +5597,15 @@ function renderTrophies(){
     const changed = !!old && old !== s.pid;
     const st = changed ? 'open' : danger ? 'danger' : 'safe';
     const mine = me === s.pid;
-    return `<div class="plk ${metal} ${mine ? 'mine' : ''}">${plate}<div class="plk-body">
+    const card = `<div class="plk ${metal} ${mine ? 'mine' : ''}">${plate}<div class="plk-body">
       <button class="plk-hold ${changed ? 'swap' : ''}" data-open-player="${s.pid}"><span class="hos">${changed && store.players[old] ? `<span class="ho old">${avatar(store.players[old], 'md')}</span>` : ''}<span class="ho new">${avatar(s.p, 'md')}</span></span><span class="hn"><span class="nm">${esc(s.name)}</span><span class="vl">${esc(h.val)}</span></span>${ovrPlate(s.ovr, 'pill')}</button>
       <span class="plk-meta"><span class="reign ${st}" title="Gare consecutive in cui detiene la targa">${lockSVG(st)}<span>${P.feat ? '—' : `${reign} ${reign === 1 ? 'gara' : 'gare'}`}</span>${st === 'danger' ? '<em>In pericolo</em>' : st === 'open' ? '<em>Nuovo detentore</em>' : ''}</span>${mine ? '<span class="tua">Tua</span>' : ''}</span>
       ${rival}<small>${esc(P.desc)}</small></div></div>`;
-  }).join('');
+    const stT = st === 'danger' ? ', in pericolo' : st === 'open' ? ', nuovo detentore' : P.feat ? '' : `, da ${reign} ${reign === 1 ? 'gara' : 'gare'}`;
+    const tile = `<button type="button" class="plv ${metal} ${mine ? 'mine' : ''}" data-plv="${P.id}" aria-label="${P.name}: ${esc(s.name)}, ${esc(h.val)}${stT}"><span class="plv-med"><span class="plv-ic">${P.icon}</span><span class="plv-av">${avatar(s.p, 'xs')}</span></span><span class="plv-st ${st}">${lockSVG(st)}</span>${mine ? '<span class="plv-tua">Tua</span>' : ''}<span class="plv-t">${P.name}</span><span class="plv-h">${esc(s.name)}</span><span class="plv-v">${esc(h.val)}</span></button>`;
+    return { id:P.id, tile, card };
+  });
+  PLK_CARDS = Object.fromEntries(plk.map(x => [x.id, x.card]));
   const cards = buildRecordCards(computeRecords(), nM);
   const recs = cards.filter(c => !c.off).map(c => {
     const sig = c.lock ? 'lock' : (REC_KIND[c.key] === 'event' ? recHolder(c) + '|' + c.value : recHolder(c));
@@ -5575,11 +5622,12 @@ function renderTrophies(){
   }).join('');
   const tt = ui.tTab === 'rec' ? 'rec' : ui.tTab === 'tw' ? 'tw' : ui.tTab === 'tm' ? 'tm' : 'plq';
   const ttabs = `<div class="sub-tabs" role="tablist" aria-label="Trofei">${[['plq', 'Targhe'], ['rec', 'Trofei storici'], ['tw', 'TOTW'], ['tm', 'TOTM']].map(([k, l]) => `<button type="button" role="tab" class="sub-tab ${k === tt ? 'on' : ''}" aria-selected="${k === tt}" data-ttab="${k}">${l}</button>`).join('')}</div>`;
-  el.innerHTML = `${ttabs}${tt === 'tw' || tt === 'tm' ? '' : `<div class="glass th-hero"><h2>🏆 Trofei & Primati</h2><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa, servono almeno ${PLQ_MIN_PRES} presenze). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa davvero meglio: a pari merito non cambiano mano.</p></div>`}
-    ${tt === 'tw' ? `<div class="th-sec"><h3>Team of the Week</h3><span>2-4-2 · da lunedì a domenica</span></div>${twView('w')}` : tt === 'tm' ? `<div class="th-sec"><h3>Team of the Month</h3><span>2-4-2 · dal primo all’ultimo del mese</span></div>${twView('m')}` : tt === 'plq' ? `<div class="th-sec"><h3>Le ${PL.length} targhe stagionali</h3><span>Leader in tempo reale · Stagione 26/27</span></div>
-    <div class="plk-grid">${plk}</div>` : `<div class="th-sec"><h3>Bacheca dei primati storici</h3><span>${nM} ${nM === 1 ? 'gara analizzata' : 'gare analizzate'}</span></div>
+  el.innerHTML = `${ttabs}${tt === 'tw' || tt === 'tm' ? '' : `<details class="glass th-how"${ui.thHow ? ' open' : ''}><summary>ℹ️ Come funzionano targhe e primati</summary><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa, servono almeno ${PLQ_MIN_PRES} presenze). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa davvero meglio: a pari merito non cambiano mano.</p></details>`}
+    ${tt === 'tw' ? `<div class="th-sec"><h3>Team of the Week</h3><span>2-4-2 · da lunedì a domenica</span></div>${twView('w')}` : tt === 'tm' ? `<div class="th-sec"><h3>Team of the Month</h3><span>2-4-2 · dal primo all’ultimo del mese</span></div>${twView('m')}` : tt === 'plq' ? `<div class="th-sec"><h3>Le ${PL.length} targhe stagionali</h3><span>Leader in tempo reale · tocca una targa per i dettagli</span></div>
+    <div class="plv-grid">${plk.map(x => x.tile).join('')}</div>` : `<div class="th-sec"><h3>Bacheca dei primati storici</h3><span>${nM} ${nM === 1 ? 'gara analizzata' : 'gare analizzate'}</span></div>
     <div class="rec-grid">${recs}</div>`}`;
   twFit();
+  if(plqOpen && $('#m-plq').classList.contains('open')){ if(PLK_CARDS[plqOpen]) paintPlq(); else closeModal('#m-plq', true); }
   try{ localStorage.setItem('cmb2627_seenPlq', JSON.stringify(curP)); localStorage.setItem('cmb2627_seenRecV', JSON.stringify(curR)); }catch(e){}
 }
 const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk','rit','inf','colp','kami'];
@@ -7970,6 +8018,7 @@ function closeModal(sel, force){
   m.classList.remove('open'); m.setAttribute('aria-hidden', 'true');
   if(sel === '#m-fig'){ openFigPid = null; figPlq = null; figTurned = false; }
   if(sel === '#m-match') ED = null;
+  if(sel === '#m-plq') plqOpen = null;
   if(sel === '#m-replay'){ rpStop(); if(document.fullscreenElement) document.exitFullscreen().catch(() => {}); setTimeout(() => { if(!RP) m.innerHTML = ''; }, 320); }
   if(sel === '#m-confirm' && confirmResolve){ const r = confirmResolve; confirmResolve = null; r(false); }
   if(!$('.modal.open')) document.body.classList.remove('noscroll');
@@ -8107,6 +8156,8 @@ const currentPin = () => String(store.settings?.pin || DEFAULT_PIN);
 /* =========================================================
    EVENTS
    ========================================================= */
+/* La spiegazione dei trofei resta aperta o chiusa anche quando la pagina si ridisegna */
+document.addEventListener('toggle', e => { if(e.target.classList && e.target.classList.contains('th-how')) ui.thHow = e.target.open; }, true);
 document.addEventListener('click', async e => {
   if(e.target.classList && e.target.classList.contains('modal')){ closeModal('#' + e.target.id); return; }
   const t = e.target.closest('button,[data-open-player],[data-open-match]');
@@ -8122,6 +8173,7 @@ document.addEventListener('click', async e => {
     renderBoardPart(); return;
   }
   if(d.mtab){ ui.mTab = d.mtab === 'form' ? 'form' : 'rep'; ui.swapSel = null; if(ui.mTab === 'rep') ui.swapMode = false; paintMatch(); return; }
+  if(d.plv){ openPlq(d.plv); return; }
   if(d.ttab){ ui.tTab = d.ttab === 'rec' ? 'rec' : d.ttab === 'tw' ? 'tw' : d.ttab === 'tm' ? 'tm' : 'plq'; renderTrophies(); return; }
   if(d.ctab){ if(!feat('casino')){ toast('CASiNO sospeso', 'warn'); return; } ui.cTab = d.ctab; renderCasino(); renderSlip(); return; }
   if(d.mpool){ const [k, a, b] = d.mpool.split('|'); placePool(d.mid, k, k === 'mvp' ? a : b, k === 'duel' ? a : undefined); return; }
@@ -8153,7 +8205,7 @@ document.addEventListener('click', async e => {
   if('inj' in d){ const row = t.closest('.erow'); if(row && ED){ const e = ED[row.dataset.t].find(x => x.pid === row.dataset.pid); if(e){ if(e.inj) delete e.inj; else e.inj = 1; renderEditor(); } } return; }
   if('late' in d){ const row = t.closest('.erow'); if(row && ED){ const e = ED[row.dataset.t].find(x => x.pid === row.dataset.pid); if(e){ if(e.late) delete e.late; else e.late = 1; renderEditor(); } } return; }
   if('cap' in d){ const row = t.closest('.erow'); if(row && ED){ const k = row.dataset.t === 'white' ? 'capW' : 'capB'; ED[k] = ED[k] === row.dataset.pid ? null : row.dataset.pid; renderEditor(); } return; }
-  if(d.openPlayer && !d.action){ figPlq = null; openFigurina(d.openPlayer); return; }
+  if(d.openPlayer && !d.action){ if(t.closest('#m-plq')) closeModal('#m-plq', true); figPlq = null; openFigurina(d.openPlayer); return; }
   if(d.openMatch){ ui.matchId = d.openMatch; renderMatches(); go('matches'); return; }
 
   switch(d.action){
