@@ -5362,6 +5362,7 @@ function computeRecords(){
   const dept = pid => store.players[pid]?.role;
   let manita = null, mida = null, uomo = null, goleada = null, cappotto = null, mitra = null, lampo = null, scadere = null;
   const conc = {}, streak = {}, pairs = {}, opp = {}, bunker = {}, combo = {};
+  const pres = {}, cum = {}, top1 = {}, rims = [];   /* Malato di calcio, Il Sovrano, La Rimonta */
   const pk = (a, b) => a < b ? a + '|' + b : b + '|' + a;
   for(const m of STATS.matches){
     const sc = matchScore(m), total = sc.w + sc.b, margin = Math.abs(sc.w - sc.b);
@@ -5423,6 +5424,39 @@ function computeRecords(){
       const winner = sc.w > sc.b ? w.pid : sc.b > sc.w ? b.pid : null;
       if(winner) o.wins[winner] = (o.wins[winner] || 0) + 1; else o.dr++;
     }
+    /* Malato di calcio: presenze di fila sulle gare in ordine (saltarne una interrompe la serie) */
+    const here = new Set([...EE.white, ...EE.black].filter(e => known(e.pid)).map(e => e.pid));
+    for(const s of STATS.list){
+      const p = pres[s.pid] || (pres[s.pid] = { cur:0, from:null, best:0, bFrom:null, bTo:null });
+      if(here.has(s.pid)){ if(!p.cur) p.from = m; p.cur++; if(p.cur > p.best){ p.best = p.cur; p.bFrom = p.from; p.bTo = m; } }
+      else p.cur = 0;
+    }
+    /* Il Sovrano: chi è primo dopo questa giornata, con lo stesso ordine della Classifica (rankCmp) */
+    for(const team of ['white', 'black']) for(const e of EE[team]){
+      if(!known(e.pid)) continue;
+      const c = cum[e.pid] || (cum[e.pid] = { v:0, n:0, g:0, a:0, og:0 });
+      c.n++; if(res[team] === 'v') c.v++; c.g += num(e.g); c.a += num(e.a); c.og += num(e.og);
+    }
+    const lead = STATS.list.map(s => { const c = cum[s.pid] || { v:0, n:0, g:0, a:0, og:0 }; return { pid:s.pid, name:s.name, v:c.v, pct:c.n ? c.v / c.n * 100 : 0, g:c.g, a:c.a, og:c.og }; }).sort(rankCmp)[0];
+    if(lead) top1[lead.pid] = (top1[lead.pid] || 0) + 1;
+    /* La Rimonta: lo svantaggio più grande recuperato da chi vince (serve la sequenza completa dei gol). Va a chi segna il gol decisivo,
+       cioè l'ultimo che porta in vantaggio; se è un autogol, al miglior marcatore della squadra che vince */
+    if(sc.w !== sc.b && tlg.length){
+      const W = sc.w > sc.b ? 'white' : 'black', cnt = { white:0, black:0 };
+      let worst = 0, at = null, dec = null, bad = false;
+      for(const x of tlg){
+        if(!x.t){ bad = true; break; }
+        cnt[x.t]++;
+        const own = cnt[W], oth = cnt[otherTeam(W)];
+        if(oth - own > worst){ worst = oth - own; at = [own, oth]; }
+        if(x.t === W && own - oth === 1) dec = x;
+      }
+      if(!bad && cnt.white === sc.w && cnt.black === sc.b && worst >= 1 && dec){
+        let pid = !dec.og && known(dec.s) ? dec.s : null;
+        if(!pid){ const bs = EE[W].filter(e => known(e.pid) && num(e.g) > 0).sort((a, b) => num(b.g) - num(a.g))[0]; pid = bs ? bs.pid : null; }
+        if(pid) rims.push({ pid, def:worst, at, fin:[Math.max(sc.w, sc.b), Math.min(sc.w, sc.b)], m, W });
+      }
+    }
   }
   const L = STATS.list, alpha = (a, b) => a.name.localeCompare(b.name, 'it');
   const nameOfPair = k => k.split('|').map(id => pname(id)).sort((x, y) => x.localeCompare(y, 'it')).join('');
@@ -5464,8 +5498,29 @@ function computeRecords(){
     let b = null; for(const x of st){ const d = daysBetween(x.f, x.t); if(!b || d > b.d) b = { ...x, d }; }
     return b && b.d >= 1 ? { pid:s.pid, s, ...b } : null;
   }).filter(Boolean).sort((a, b) => (b.d - a.d) || a.f.localeCompare(b.f) || alpha(a.s, b.s)), (x, y) => x.d === y.d, RID.pid);
+  /* Re dell'Attacco, del Centrocampo e della Difesa: più premi di reparto (Top Attaccante, Top Centrocampista, Top Difensore).
+     Il premio va solo nel reparto del proprio ruolo, quindi i premi di un giocatore sono tutti del suo reparto. Parità: meno gare per prenderli */
+  const aw = s => num(s.awards), awR = s => s.pres ? num(s.awards) / s.pres : 0;
+  const repOf = (role, key) => recPick(key, L.filter(s => (ROLES[s.p.role] ? s.p.role : 'CEN') === role && aw(s) > 0).sort((a, b) => (aw(b) - aw(a)) || (awR(b) - awR(a)) || alpha(a, b)), (x, y) => aw(x) === aw(y) && near(awR(x), awR(y)), RID.pid);
+  const repatt = repOf('ATT', 'repatt'), repcen = repOf('CEN', 'repcen'), repdif = repOf('DIF', 'repdif');
+  const capo = recPick('capo', L.filter(s => s.g > 0).sort((a, b) => (b.g - a.g) || (a.pres - b.pres) || alpha(a, b)), (x, y) => x.g === y.g && x.pres === y.pres, RID.pid);
+  const malato = recPick('malato', L.filter(s => pres[s.pid] && pres[s.pid].best >= 2).sort((a, b) => (pres[b.pid].best - pres[a.pid].best) || alpha(a, b)), (x, y) => pres[x.pid].best === pres[y.pid].best, RID.pid);
+  /* Serie sulle gare giocate da ognuno (le assenze non contano): Sempre a Segno (almeno un gol) e Il Digiuno (attaccanti senza gol) */
+  const runOf = (h, ok) => { let cur = 0, from = null, best = 0, bFrom = null, bTo = null; for(const x of h){ if(ok(x)){ if(!cur) from = x.m; cur++; if(cur > best){ best = cur; bFrom = from; bTo = x.m; } } else cur = 0; } return { best, bFrom, bTo, live:cur > 0 && cur === best }; };
+  const segR = {}, digR = {};
+  for(const s of L){ segR[s.pid] = runOf(s.hist, x => x.g >= 1); if(s.p.role === 'ATT') digR[s.pid] = runOf(s.hist, x => !x.g); }
+  const segno = recPick('segno', L.filter(s => segR[s.pid].best >= 2).sort((a, b) => (segR[b.pid].best - segR[a.pid].best) || alpha(a, b)), (x, y) => segR[x.pid].best === segR[y.pid].best, RID.pid);
+  const digiuno = recPick('digiuno', L.filter(s => digR[s.pid] && digR[s.pid].best >= 2).sort((a, b) => (digR[b.pid].best - digR[a.pid].best) || alpha(a, b)), (x, y) => digR[x.pid].best === digR[y.pid].best, RID.pid);
+  /* Uomo del Momento: il guadagno di OVR più alto in 5 gare giocate di fila */
+  const mom = s => { const h = s.hist; let b = null;
+    for(let i = 0; i + 4 < h.length; i++){ const d = h[i + 4].ovr - h[i].pre; if(!b || d > b.d + 1e-9) b = { d, from:h[i].pre, to:h[i + 4].ovr, d1:num(h[i].m.day), d2:num(h[i + 4].m.day) }; }
+    return b ? { pid:s.pid, s, ...b, dr:roundOvr(b.to) - roundOvr(b.from) } : null; };
+  const momento = recPick('momento', L.map(mom).filter(x => x && x.dr >= 1).sort((a, b) => (b.dr - a.dr) || (b.d - a.d) || alpha(a.s, b.s)), (x, y) => x.dr === y.dr && near(x.d, y.d), RID.pid);
+  const rimonta = recPick('rimonta', rims.sort((a, b) => (b.def - a.def) || (num(a.m.day) - num(b.m.day))), (x, y) => x.def === y.def, RID.pid);
+  const sovrano = recPick('sovrano', L.filter(s => top1[s.pid] > 0).sort((a, b) => (top1[b.pid] - top1[a.pid]) || alpha(a, b)), (x, y) => top1[x.pid] === top1[y.pid], RID.pid);
+  const fedeli = recPick('fedeli', Object.entries(pairs).sort(([ka, a], [kb, b]) => (b.n - a.n) || (b.v - a.v) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([, a], [, b]) => a.n === b.n, RID.pair);
   const { colp, kami } = casinoRecords();
-  return { inf, colp, kami, manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, ritard, bunkerAny:Object.keys(bunker).length };
+  return { repatt, repcen, repdif, capo, malato, pres, momento, segno, segR, rimonta, digiuno, digR, sovrano, top1, fedeli, inf, colp, kami, manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, ritard, bunkerAny:Object.keys(bunker).length };
 }
 const matchWhen = m => `Giornata ${num(m.day)}${m.date ? ', ' + fmtDateCap(m.date) : ''}`;
 function recCard(o, x = {}){
@@ -6051,13 +6106,15 @@ function renderTrophies(){
   if(plqOpen && $('#m-plq').classList.contains('open')){ if(PLK_CARDS[plqOpen]) paintPlq(); else closeModal('#m-plq', true); }
   try{ localStorage.setItem('cmb2627_seenPlq', JSON.stringify(curP)); localStorage.setItem('cmb2627_seenRecV', JSON.stringify(curR)); }catch(e){}
 }
-const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk','rit','inf','colp','kami'];
+const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk','rit','inf','colp','kami',
+  'repatt','repcen','repdif','capo','malato','momento','segno','rimonta','digiuno','sovrano','fedeli'];
 /* event = record di una singola impresa (festeggiato anche se lo stesso giocatore si migliora); lead = primato di classifica (festeggiato solo al cambio di detentore) */
-const REC_KIND = { manita:'event', mitra:'event', lampo:'event', scadere:'event', mida:'event', uomo:'event', inarr:'event', goleada:'event', cappotto:'event', cecchino:'lead', fortino:'lead', mina:'lead', come:'lead', down:'lead', eroe:'lead', oro:'lead', intesa:'lead', derby:'lead', bunk:'lead', rit:'lead', inf:'lead', colp:'event', kami:'event' };
+const REC_KIND = { manita:'event', mitra:'event', lampo:'event', scadere:'event', mida:'event', uomo:'event', inarr:'event', goleada:'event', cappotto:'event', cecchino:'lead', fortino:'lead', mina:'lead', come:'lead', down:'lead', eroe:'lead', oro:'lead', intesa:'lead', derby:'lead', bunk:'lead', rit:'lead', inf:'lead', colp:'event', kami:'event',
+  repatt:'lead', repcen:'lead', repdif:'lead', capo:'lead', malato:'event', momento:'event', segno:'event', rimonta:'event', digiuno:'event', sovrano:'lead', fedeli:'lead' };
 /* Primati legati a una funzione: con la funzione spenta la scheda non si mostra e non fa popup */
 const REC_FEAT = { eroe:'mvp', colp:'casino', kami:'casino' };
 function buildRecordCards(R, nM){
-  const none = 'Nessuna gara registrata';
+  const none = 'Nessuna gara registrata', aw1 = x => num(x.awards);
   const need = lbl => nM ? lbl : none;
   const cards = [
     R.manita ? { icon:'🎩', title:'Re della Manita', desc:'Più gol di un giocatore in una sola partita.', pid:R.manita.pid, sub:matchWhen(R.manita.m), value:R.manita.v, unit:R.manita.v === 1 ? 'gol' : 'gol in una gara' }
@@ -6106,6 +6163,27 @@ function buildRecordCards(R, nM){
       : { icon:'🎯', title:'Il Colpaccio', desc:'La vincita netta più grande in una singola scommessa.', lock:'Ancora nessuna scommessa vinta' }
     ,R.kami ? { icon:'💣', title:'Il Kamikaze', desc:'L’all-in vinto con il moltiplicatore più alto. Parità: puntata più alta.', pid:R.kami.pid, sub:matchWhen(R.kami.m), value:'×' + (Math.round(R.kami.mult * 100) / 100).toFixed(2).replace('.', ','), unit:'la puntata', foot:`${fmtPat(R.kami.stake)} ${CURRENCY} diventate ${fmtPat(R.kami.payout)}` }
       : { icon:'💣', title:'Il Kamikaze', desc:'L’all-in vinto con il moltiplicatore più alto. Parità: puntata più alta.', lock:'Ancora nessun all-in vinto' }
+    ,...[['repatt', '🎯', 'Re dell’Attacco', 'Attaccante'], ['repcen', '🧠', 'Re del Centrocampo', 'Centrocampista'], ['repdif', '🛡️', 'Re della Difesa', 'Difensore']].map(([k, ic, title, r]) => {
+      const x = R[k], desc = `Più premi «Top ${r}» vinti nelle gare. Parità: chi li ha presi in meno gare.`;
+      return x ? { icon:ic, title, desc, pid:x.pid, sub:`${aw1(x)} ${aw1(x) === 1 ? 'premio' : 'premi'} in ${x.pres} ${x.pres === 1 ? 'gara' : 'gare'}`, value:aw1(x), unit:aw1(x) === 1 ? 'premio di reparto' : 'premi di reparto' }
+        : { icon:ic, title, desc, lock:need(`Ancora nessun premio «Top ${r}»`) };
+    })
+    ,R.capo ? { icon:'⚽', title:'Capocannoniere', desc:'Più gol segnati in tutto il torneo. Parità: meno presenze.', pid:R.capo.pid, sub:`${R.capo.pres} ${R.capo.pres === 1 ? 'presenza' : 'presenze'}, ${(R.capo.g / R.capo.pres).toFixed(2).replace('.', ',')} gol a gara`, value:R.capo.g, unit:'gol' }
+      : { icon:'⚽', title:'Capocannoniere', desc:'Più gol segnati in tutto il torneo. Parità: meno presenze.', lock:need('Ancora nessun gol segnato') }
+    ,R.malato ? (() => { const p = R.pres[R.malato.pid]; return { icon:'🤒', title:'Malato di calcio', desc:'La serie più lunga di presenze di fila, senza saltare una gara.', pid:R.malato.pid, sub:`dalla G${num(p.bFrom.day)} alla G${num(p.bTo.day)}${p.cur === p.best ? ', in corso' : ''}`, value:p.best, unit:'gare di fila' }; })()
+      : { icon:'🤒', title:'Malato di calcio', desc:'La serie più lunga di presenze di fila, senza saltare una gara.', lock:need('Serve qualcuno presente in 2 gare di fila') }
+    ,R.momento ? { icon:'📈', title:'Uomo del Momento', desc:'Il guadagno di OVR più alto in 5 gare giocate di fila.', pid:R.momento.pid, sub:`da ${roundOvr(R.momento.from)} a ${roundOvr(R.momento.to)}, dalla G${R.momento.d1} alla G${R.momento.d2}`, value:'+' + R.momento.dr, unit:'OVR in 5 gare' }
+      : { icon:'📈', title:'Uomo del Momento', desc:'Il guadagno di OVR più alto in 5 gare giocate di fila.', lock:need('Servono 5 presenze con l’OVR in salita') }
+    ,R.segno ? (() => { const r = R.segR[R.segno.pid]; return { icon:'🥅', title:'Sempre a Segno', desc:'Più partite giocate di fila con almeno un gol.', pid:R.segno.pid, sub:`dalla G${num(r.bFrom.day)} alla G${num(r.bTo.day)}${r.live ? ', in corso' : ''}`, value:r.best, unit:'gare di fila a segno' }; })()
+      : { icon:'🥅', title:'Sempre a Segno', desc:'Più partite giocate di fila con almeno un gol.', lock:need('Serve un giocatore a segno in 2 gare di fila') }
+    ,R.rimonta ? { icon:'↩️', title:'La Rimonta', desc:'La vittoria con la rimonta più grande (serve la sequenza dei gol). Il primato va a chi ha segnato il gol decisivo.', pid:R.rimonta.pid, sub:`${matchWhen(R.rimonta.m)}, ${R.rimonta.W === 'white' ? 'Bianchi' : 'Neri'} da ${R.rimonta.at[0]}–${R.rimonta.at[1]} a ${R.rimonta.fin[0]}–${R.rimonta.fin[1]}`, value:R.rimonta.def, unit:R.rimonta.def === 1 ? 'gol di svantaggio rimontato' : 'gol di svantaggio rimontati' }
+      : { icon:'↩️', title:'La Rimonta', desc:'La vittoria con la rimonta più grande (serve la sequenza dei gol). Il primato va a chi ha segnato il gol decisivo.', lock:need('Ancora nessuna vittoria in rimonta con la sequenza dei gol') }
+    ,R.digiuno ? (() => { const r = R.digR[R.digiuno.pid]; return { icon:'🥶', title:'Il Digiuno', desc:'L’attaccante con più partite giocate di fila senza segnare.', pid:R.digiuno.pid, sub:`dalla G${num(r.bFrom.day)} alla G${num(r.bTo.day)}${r.live ? ', in corso' : ''}`, value:r.best, unit:'gare senza gol' }; })()
+      : { icon:'🥶', title:'Il Digiuno', desc:'L’attaccante con più partite giocate di fila senza segnare.', lock:need('Nessun attaccante a secco per 2 gare di fila') }
+    ,R.sovrano ? { icon:'👑', title:'Il Sovrano', desc:'Più giornate chiuse al primo posto della classifica.', pid:R.sovrano.pid, sub:`su ${nM} ${nM === 1 ? 'giornata' : 'giornate'} giocate`, value:R.top1[R.sovrano.pid], unit:R.top1[R.sovrano.pid] === 1 ? 'giornata in testa' : 'giornate in testa' }
+      : { icon:'👑', title:'Il Sovrano', desc:'Più giornate chiuse al primo posto della classifica.', lock:none }
+    ,R.fedeli ? (() => { const [k, p] = R.fedeli; return { icon:'👯', title:'Compagni fedeli', desc:'La coppia che ha giocato più partite nella stessa squadra.', pair:k.split('|'), value:p.n, unit:p.n === 1 ? 'gara insieme' : 'gare insieme', foot:`Record insieme ${p.v}-${p.pa}-${p.s}` }; })()
+      : { icon:'👯', title:'Compagni fedeli', desc:'La coppia che ha giocato più partite nella stessa squadra.', lock:need('Ancora nessuna gara insieme') }
   ];
   cards.forEach((c, i) => { c.key = REC_KEYS[i]; if(REC_FEAT[c.key] && !feat(REC_FEAT[c.key])) c.off = true; });   /* le chiavi restano per posizione: una funzione spenta nasconde la scheda, non la toglie */
   return cards;
