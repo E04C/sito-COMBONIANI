@@ -2342,6 +2342,12 @@ PLAQUES.push({ id:'profeta', feat:'casino', icon:'🔮', name:'Il Profeta', desc
   ok:s => s.betN >= CASINO.PROFETA_MIN, cmp:(a,b) => (b.betPct - a.betPct) || (b.betWon - a.betWon), val:s => `${Math.round(s.betPct)}% vinte (${s.betWon} su ${s.betN})` });
 PLAQUES.push({ id:'inarrestabile', icon:'🔥', name:'Inarrestabile', desc:'La serie più lunga di vittorie di fila in stagione (da 2 in su, il pareggio la interrompe). Parità: serie in corso, più vittorie.',
   ok:s => winRun(s).best >= 2, cmp:(a,b) => (winRun(b).best - winRun(a).best) || (winRun(b).cur - winRun(a).cur) || (b.v - a.v), val:s => `${winRun(s).best} vittorie di fila${winRun(s).cur === winRun(s).best ? ' (in corso)' : ''}` });
+PLAQUES.push({ id:'fantasista', icon:'🎩', name:'Il Fantasista', desc:'Più partite con almeno un gol e un assist nella stessa gara. Parità: più gol + assist.',
+  ok:s => s.fant >= 1, cmp:(a,b) => (b.fant - a.fant) || ((b.g + b.a) - (a.g + a.a)), val:s => `${s.fant} ${s.fant === 1 ? 'gara' : 'gare'} con gol e assist` });
+PLAQUES.push({ id:'regista', icon:'🧠', name:'Il Regista', desc:'Il centrocampista con più assist. Parità: miglior media assist, più vittorie.',
+  ok:s => s.p.role === 'CEN' && s.a >= 1, cmp:(a,b) => (b.a - a.a) || (b.apg - a.apg) || (b.v - a.v), val:s => `${s.a} assist` });
+PLAQUES.push({ id:'altruista', icon:'🤝', name:'L’Altruista', desc:'Assist serviti al maggior numero di compagni diversi (serve la sequenza dei gol). Parità: più assist.',
+  ok:s => s.alt >= 1, cmp:(a,b) => (b.alt - a.alt) || (b.a - a.a), val:s => `assist a ${s.alt} ${s.alt === 1 ? 'compagno' : 'compagni diversi'}` });
 const plqOn = P => !P.feat || feat(P.feat);
 const PLQ_MIN_PRES = 3;   /* per tenere una targa servono almeno 3 presenze in stagione */
 /* Moduli per ogni misura di squadra (da 1 a 11 titolari). La prima riga è sempre un solo giocatore "in porta"; massimo 4 righe e 5 per riga.
@@ -2372,9 +2378,10 @@ const PLQ_GAP = {
   gladiatore:[s => s.mvp, 'MVP', 'MVP', 1, 0], amuleto:[s => s.v - s.s, 'di saldo', 'di saldo', 1, 0],
   roccia:[s => s.ovr, 'OVR', 'OVR', 1, 1], re:[s => s.hat, 'gara da 3+ gol', 'gare da 3+ gol', 1, 0],
   profeta:[s => s.betPct, 'punto %', 'punti %', 5, 0], muro:[s => s.minConcW, 'gol subito', 'gol subiti', 1, 0], banco:[s => s.balB, CURRENCY1, CURRENCY, 20, 0], treno:[s => s.g + s.a, 'bonus', 'bonus', 1, 0],
-  apriscatole:[s => s.firstG, 'primo gol', 'primi gol', 1, 0], ultimo:[s => s.lateG, 'gol', 'gol', 1, 0], inarrestabile:[s => winRun(s).best, 'vittoria', 'vittorie', 1, 0]
+  apriscatole:[s => s.firstG, 'primo gol', 'primi gol', 1, 0], ultimo:[s => s.lateG, 'gol', 'gol', 1, 0], inarrestabile:[s => winRun(s).best, 'vittoria', 'vittorie', 1, 0],
+  fantasista:[s => s.fant, 'gara', 'gare', 1, 0], regista:[s => s.a, 'assist', 'assist', 1, 0], altruista:[s => s.alt, 'compagno', 'compagni', 1, 0]
 };
-const METALS = { noexcuses:'steel', cecchino:'gold', assist:'rose', vittoria:'gold', gladiatore:'bronze', amuleto:'emerald', roccia:'titanium', re:'gold', muro:'steel', treno:'copper', apriscatole:'silver', ultimo:'rose', inarrestabile:'copper', banco:'gold', profeta:'emerald' };
+const METALS = { noexcuses:'steel', cecchino:'gold', assist:'rose', vittoria:'gold', gladiatore:'bronze', amuleto:'emerald', roccia:'titanium', re:'gold', muro:'steel', treno:'copper', apriscatole:'silver', ultimo:'rose', inarrestabile:'copper', banco:'gold', profeta:'emerald', fantasista:'rose', regista:'silver', altruista:'emerald' };
 const COLS = [
   { k:'ovr',  l:'OVR', t:'Overall dinamico (60-99)' },
   { k:'pres', l:'Pr',  t:'Presenze' },
@@ -3162,7 +3169,7 @@ function computeStats(upto){
   if(wal) WCTX = { mv:{} };
   for(const [pid, p] of Object.entries(store.players || {})){
     if(!p || typeof p !== 'object') continue;
-    S[pid] = { pid, p, name:p.name || '', pres:0, v:0, pa:0, s:0, g:0, a:0, og:0, mvp:0, mvpPts:0, votesRx:0, earn:0, cmov:[], ritardi:0, firstG:0, lateG:0, hat:0, maxG:0, minConcW:Infinity, bigW:0,
+    S[pid] = { pid, p, name:p.name || '', pres:0, v:0, pa:0, s:0, g:0, a:0, og:0, mvp:0, mvpPts:0, votesRx:0, earn:0, cmov:[], ritardi:0, firstG:0, lateG:0, hat:0, maxG:0, minConcW:Infinity, bigW:0, fant:0, aTo:{},
                ovr:OVR_START, last:null, mates:{}, hist:[], prevRank:null };
   }
   const all = sortedMatches();
@@ -3187,6 +3194,7 @@ function computeStats(upto){
     };
     const gtl = matchGoals(m), mlen = matchLen(m), firstS = gtl.length && !gtl[0].og ? gtl[0].s : '', lateBy = {};
     if(mlen) for(const x of gtl) if(!x.og && !x.est && x.min != null && x.min >= mlen * 0.8) lateBy[x.s] = (lateBy[x.s] || 0) + 1;
+    for(const x of gtl) if(!x.og && x.a && x.a !== x.s && S[x.a] && S[x.s]) S[x.a].aTo[x.s] = 1;   /* L'Altruista: a quali compagni hai servito un assist (cronaca) */
     for(const team of ['white','black']){
       const r = res[team], conceded = team === 'white' ? sc.b : sc.w;
       const es = effEntries(m)[team].filter(e => S[e.pid]);
@@ -3202,6 +3210,7 @@ function computeStats(upto){
         st.pres++; st[r]++; st.g += g; st.a += a; st.og += og;
         if(st.pres === 1) st.first = m.id;
         if(g >= 3) st.hat++;
+        if(g >= 1 && a >= 1) st.fant++;
         if(firstS === e.pid) st.firstG++;
         if(lateBy[e.pid]) st.lateG += lateBy[e.pid];
         st.maxG = Math.max(st.maxG, g);
@@ -3232,6 +3241,7 @@ function computeStats(upto){
     st.pct = st.pres ? st.v / st.pres * 100 : 0;
     st.avg = st.pres ? st.g / st.pres : 0;
     st.apg = st.pres ? st.a / st.pres : 0;
+    st.alt = Object.keys(st.aTo).length;
     let ideal = null, nem = null;
     for(const [oid, mt] of Object.entries(st.mates)){
       if(!store.players[oid]) continue;
