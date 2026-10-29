@@ -4988,6 +4988,11 @@ function renderMe(){
     ? `<button class="affr ${cls}" data-open-player="${e[0]}">${avatar(store.players[e[0]], 'xs')}<span><span class="k">${k}</span><span class="n">${esc(pname(e[0]))}</span></span><span class="x">${e[1]}<small>${unit}</small></span></button>`
     : `<div class="affr"><span><span class="k">${k}</span><span class="n mu">${emptyTxt}</span></span></div>`;
   const rivBox = `<div class="me-riv">${riv(vit, 'good', 'Vittima preferita', 'vinte contro', 'Nessuna vittoria da avversario')}${riv(inc, 'bad', 'Il tuo incubo', 'perse contro', 'Nessuna sconfitta, per ora')}</div>`;
+  /* Il tuo uomo: chi ti ha servito più assist (solo i gol con l'assist segnato nella cronaca) */
+  const Asg = {}; let aTot = 0;
+  for(const m of STATS.matches) for(const g of list(m.goals)) if(g && g.s === s.pid && !num(g.og) && g.a && g.a !== s.pid && store.players[g.a]){ Asg[g.a] = (Asg[g.a] || 0) + 1; aTot++; }
+  const man = topOf(Asg);
+  const manBox = `<div class="me-riv">${riv(man, 'good', 'Ti ha servito più assist', 'assist', 'Nessun tuo gol con assist, per ora')}</div>${aTot ? `<p class="mu sm">Su ${aTot} ${aTot === 1 ? 'tuo gol' : 'tuoi gol'} con l’assist segnato nella cronaca.</p>` : ''}`;
   const zc = {};
   for(const x of h){
     const pl = placeTeam(x.m, startTeam(x.m, s.pid) || x.team).find(q => q.e && q.e.pid === s.pid); if(!pl) continue;
@@ -5047,6 +5052,7 @@ function renderMe(){
       <section class="glass me-sec"><h3>⭐ La tua miglior partita</h3>${bestBox}</section>
       <section class="glass me-sec"><h3>🎖️ Corsa alle targhe</h3>${raceBox}</section>
       <section class="glass me-sec"><h3>🥊 Vittima e incubo</h3>${rivBox}</section>
+      <section class="glass me-sec"><h3>🤝 Il tuo uomo</h3>${manBox}</section>
       <section class="glass me-sec"><h3>📍 Il tuo posto in campo</h3>${posBox}</section>
       ${rateSec}
       <section class="glass me-sec wide"><h3>⏱️ Quando segni</h3>${histBox}</section>
