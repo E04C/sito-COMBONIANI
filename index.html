@@ -361,6 +361,11 @@ button.affr:hover{border-color:var(--line)}
 .affr.good .x{color:var(--gold)} .affr.bad .x{color:var(--bad)}
 .fig-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 @media (max-width:520px){.fig{height:min(720px,calc(100dvh - 200px))}.fig-actions{gap:6px;padding-bottom:12px}.fig-actions .btn{min-height:40px;padding:0 12px;font-size:13.5px}}
+/* Tasti della figurina su una sola riga: icona sopra, scritta sotto */
+.fig-row{flex-wrap:nowrap;width:min(440px,100%);margin:0 auto}
+.fig-row .fa{flex:1 1 0;min-width:0;flex-direction:column;gap:3px;min-height:54px;padding:6px 4px;font-size:12px;line-height:1.1;white-space:nowrap}
+.fig-row .fa span{font-size:18px;line-height:1}
+.fig-actions+.fig-actions{margin-top:6px}
 
 /* ---------- Tabellino ---------- */
 .tab{padding:18px;border-radius:26px}
@@ -3931,13 +3936,15 @@ function renderFigurina(){
       </div>
     </div>
   </div></div></div>${back}</div></div></div>
-  <div class="fig-actions">
-    <button class="btn ghost" data-close>Chiudi</button>
-    <button class="btn" data-action="fig-turn">↻ Gira</button>
-    <button class="btn primary" data-action="share-fig" data-pid="${pid}">📸 Condividi figurina</button>
-    <button class="btn" data-action="duel" data-pid="${pid}">⚔️ Confronta</button>
-    <button class="btn admin-only" data-action="edit-player" data-pid="${pid}">✏️ Modifica</button>
-    <button class="btn danger admin-only" data-action="del-player" data-pid="${pid}">Elimina</button>
+  <div class="fig-actions fig-row">
+    <button class="btn ghost fa" data-close><span aria-hidden="true">✕</span>Chiudi</button>
+    <button class="btn fa" data-action="fig-turn"><span aria-hidden="true">↻</span>Gira</button>
+    <button class="btn primary fa" data-action="share-fig" data-pid="${pid}" aria-label="Condividi figurina"><span aria-hidden="true">📸</span>Condividi</button>
+    <button class="btn fa" data-action="duel" data-pid="${pid}"><span aria-hidden="true">⚔️</span>Confronta</button>
+  </div>
+  <div class="fig-actions admin-only">
+    <button class="btn" data-action="edit-player" data-pid="${pid}">✏️ Modifica</button>
+    <button class="btn danger" data-action="del-player" data-pid="${pid}">Elimina</button>
   </div>`;
 }
 
