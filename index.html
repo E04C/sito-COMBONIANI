@@ -1071,6 +1071,45 @@ button.rec-who{cursor:pointer}
 .sweep{position:absolute;top:0;left:0;right:0;bottom:0;z-index:5;pointer-events:none;transform:translateX(-130%);
   background:linear-gradient(105deg,rgba(255,255,255,0) 35%,rgba(255,255,255,.6) 50%,rgba(255,255,255,0) 65%);animation:sweep .9s ease-in-out forwards;animation-delay:var(--sd,.8s)}
 @keyframes sweep{to{transform:translateX(130%)}}
+/* --- Promozione stile FIFA (walkout) --- */
+.walk-modal{z-index:120}
+.walk{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:calc(48px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px));overflow:hidden;cursor:pointer;
+  background:radial-gradient(120% 80% at 50% 42%,#141a26 0%,#05070b 72%);-webkit-user-select:none;user-select:none}
+.walk.t-silver{--wk:226,232,240}.walk.t-gold{--wk:251,191,36}.walk.t-dia{--wk:56,189,248}.walk.t-leg{--wk:225,29,72}
+.wk-glow,.wk-beams{position:absolute;left:50%;top:42%;pointer-events:none;opacity:0}
+.wk-glow{width:150vmax;height:150vmax;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(var(--wk),.38) 0%,rgba(var(--wk),0) 42%);animation:wkFade .8s ease-out .2s forwards}
+.wk-beams{width:190vmax;height:190vmax;transform:translate(-50%,-50%);background:repeating-conic-gradient(from 0deg,rgba(var(--wk),0) 0deg 8deg,rgba(var(--wk),.2) 8deg 11deg);
+  -webkit-mask-image:radial-gradient(circle,#000 0%,rgba(0,0,0,0) 52%);mask-image:radial-gradient(circle,#000 0%,rgba(0,0,0,0) 52%);animation:wkFade .9s ease-out .3s forwards,wkSpin 26s linear infinite}
+.wk-flash{position:absolute;top:0;left:0;right:0;bottom:0;background:#fff;opacity:0;pointer-events:none;animation:wkFlash .75s ease-out 4s forwards}
+.wk-step{position:absolute;left:0;right:0;top:38%;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;opacity:0;pointer-events:none}
+.wk-s1{animation:wkStep 1.3s var(--ease) .45s both}
+.wk-s2{animation:wkStep 1.3s var(--ease) 1.8s both}
+.wk-k{font:800 12px var(--body);letter-spacing:.3em;text-transform:uppercase;color:rgb(var(--wk))}
+.wk-s1 b{font:italic 800 72px/1 var(--disp);color:var(--tx);text-shadow:0 0 30px rgba(var(--wk),.55)}
+.wk-s1 small{font:700 14px var(--body);color:var(--mu);letter-spacing:.12em;text-transform:uppercase}
+.wk-ic{font-size:68px;line-height:1;filter:drop-shadow(0 0 26px rgba(var(--wk),.85))}
+.wk-s2 b{font:italic 800 52px/1.05 var(--disp);background:var(--tier);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 18px rgba(var(--wk),.6))}
+.wk-card{position:relative;width:min(58vw,240px,calc((100dvh - 250px) / 1.5));opacity:0;animation:wkCardIn .6s cubic-bezier(.2,1.2,.4,1) 3.05s forwards}
+.wk-old{animation:wkShake .55s ease-in-out 3.45s,wkOut .2s ease-in 4.02s forwards}
+.wk-new{position:absolute;top:0;left:0;right:0;opacity:0;animation:wkNew .7s cubic-bezier(.2,1.3,.4,1) 4.05s forwards}
+.wk-new .mfig{filter:drop-shadow(0 0 22px rgba(var(--wk),.6))}
+.wk-end{display:flex;flex-direction:column;align-items:center;gap:14px;opacity:0;cursor:auto;animation:wkFade .5s ease-out 4.75s forwards}
+.wk-msg{margin:0;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;font:italic 800 30px/1.05 var(--disp)}
+.wk-msg small{font:700 13.5px var(--body);color:var(--mu)}
+.wk-skip{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:16px;font:700 12px var(--body);color:var(--mu);animation:wkHide .3s ease 4.6s forwards}
+@keyframes wkFade{to{opacity:1}}
+@keyframes wkHide{to{opacity:0;visibility:hidden}}
+@keyframes wkSpin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes wkFlash{0%{opacity:0}15%{opacity:.85}100%{opacity:0}}
+@keyframes wkStep{0%{opacity:0;transform:scale(1.5);filter:blur(6px)}18%{opacity:1;transform:none;filter:none}80%{opacity:1;transform:scale(.97)}100%{opacity:0;transform:scale(.9)}}
+@keyframes wkCardIn{from{opacity:0;transform:translateY(60px) scale(.8)}to{opacity:1;transform:none}}
+@keyframes wkShake{20%,60%{transform:translateX(-6px) rotate(-2deg)}40%,80%{transform:translateX(6px) rotate(2deg)}}
+@keyframes wkOut{to{opacity:0;transform:scale(1.15)}}
+@keyframes wkNew{from{opacity:0;transform:scale(1.3)}to{opacity:1;transform:none}}
+.walk.done *{animation:none!important}
+.walk.done .wk-step,.walk.done .wk-flash,.walk.done .burst,.walk.done .wk-skip{display:none}
+.walk.done .wk-old{visibility:hidden}
+.walk.done .wk-glow,.walk.done .wk-beams,.walk.done .wk-card,.walk.done .wk-new,.walk.done .wk-end{opacity:1}
 .promo-banner{display:flex;flex-direction:column;align-items:center;gap:3px;margin-bottom:-2px;animation:promoIn .6s var(--ease) both}
 .promo-banner span{font:800 12px var(--body);letter-spacing:.24em;text-transform:uppercase;color:var(--tier-ink)}
 .promo-banner b{font:italic 800 30px/1 var(--disp);background:var(--tier);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px var(--glow))}
@@ -2089,6 +2128,9 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
   <div class="finwin" role="alertdialog" aria-modal="true" aria-label="Risultato finale" id="fin-body"></div>
 </div>
 
+<!-- Promozione di livello (solo il proprietario della carta) -->
+<div class="modal walk-modal" id="m-walk" aria-hidden="true"><div id="walk-body"></div></div>
+
 <!-- Dettaglio di una targa -->
 <div class="modal" id="m-plq" aria-hidden="true">
   <div class="sheet glass plq-sheet" role="dialog" aria-modal="true" aria-label="Targa" id="plq-body"></div>
@@ -2405,7 +2447,7 @@ function featSync(){
   let old = null; try{ old = localStorage.getItem('cmb_featSig'); }catch(e){}
   if(old === sig) return;
   try{
-    ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr'].forEach(k => localStorage.removeItem(k));
+    ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr','cmb_walkTier'].forEach(k => localStorage.removeItem(k));
     localStorage.setItem('cmb_featSig', sig);
   }catch(e){}
   if(!old || Date.now() - featLocalAt < 6000) return;
@@ -3433,6 +3475,49 @@ function syncSeenTiers(){
   for(const s of STATS.list) if(!m[s.pid]){ m[s.pid] = tierOf(s.ovr); changed = true; }
   if(changed) saveSeenTiers(m);
 }
+/* ---------- Promozione stile FIFA ----------
+   Quando il TUO overall sale di livello, alla prima apertura dopo la gara parte l'animazione a schermo intero: ruolo, livello, poi la carta
+   che passa dalla cornice vecchia a quella nuova. La vede solo il proprietario della carta. Il livello già festeggiato sta in localStorage
+   per giocatore: la prima volta su un telefono (o dopo una discesa) si memorizza in silenzio, così non ci sono festeggiamenti retroattivi. */
+const WALK_KEY = 'cmb_walkTier';
+let walkT = null;
+function walkCheck(){
+  const me = myPid(), s = me && STATS.byId[me]; if(!s || !s.pres) return false;
+  let m = {}; try{ m = JSON.parse(localStorage.getItem(WALK_KEY) || '{}') || {}; }catch(e){}
+  const t = tierOf(s.ovr), prev = m[me];
+  if(prev === t) return false;
+  m[me] = t; try{ localStorage.setItem(WALK_KEY, JSON.stringify(m)); }catch(e){}
+  if(!TIERS[prev] || TIER_RANK[t] <= TIER_RANK[prev]) return false;
+  showWalk(s, prev, t); return true;
+}
+function walkCardHTML(s, t, ovr, cuFrom){
+  const fx = cardFx(s.pid), ov = roundOvr(ovr);
+  return `<div class="mfig static t-${t}"><span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}<span class="mfig-rt"><span class="ovr t-${t} sm"><b${cuFrom != null ? ` data-cu="${ov}" data-from="${cuFrom}" data-dur="900"` : ''}>${ov}</b><i>OVR</i></span>${roleTag(s.pid, s.p)}</span>${fx.hx}${fx.frm}<span class="mfig-b"><span class="mfig-n">${nameHTML(s.pid)}</span><span class="mfig-s">${[['gol', s.g], ['ass', s.a], ['pres', s.pres], ['vit', s.v], ['sco', s.s]].map(([l, v]) => `<span><b>${v}</b><i>${l}</i></span>`).join('')}</span><span class="mfig-orn" aria-hidden="true"></span></span></span></span></div>`;
+}
+function showWalk(s, from, t){
+  const x = [...(s.hist || [])].reverse().find(y => TIER_RANK[tierOf(y.pre)] < TIER_RANK[t]);
+  const old = x ? x.pre : s.ovr, role = ROLES[s.p.role] ? s.p.role : 'CEN';
+  const st = seenTiers() || {}; st[s.pid] = t; saveSeenTiers(st);   /* la figurina non ripete la promozione */
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  $('#walk-body').innerHTML = `<div class="walk t-${t}${reduce ? ' done' : ''}" role="dialog" aria-modal="true" aria-label="Promozione: da ${TIERS[from].l} a ${TIERS[t].l}">
+    <span class="wk-glow"></span><span class="wk-beams"></span><span class="wk-flash"></span>
+    <div class="wk-step wk-s1"><span class="wk-k">⬆ Promozione</span><b>${role}</b><small>${ROLES[role]}</small></div>
+    <div class="wk-step wk-s2"><span class="wk-ic">${TIERS[t].i}</span><b>${TIERS[t].l}</b></div>
+    <div class="wk-card"><div class="burst b-${t}" style="--bd:4.05s">${Array.from({ length:12 }, (_, k) => `<i style="--a:${k * 30}deg"></i>`).join('')}</div>
+      <div class="wk-old">${walkCardHTML(s, from, old)}</div><div class="wk-new">${walkCardHTML(s, t, s.ovr, reduce ? null : roundOvr(old))}</div></div>
+    <div class="wk-end"><p class="wk-msg">${t === 'leg' ? 'Sei una Leggenda!' : `Sei ${TIERS[t].l}!`}<small>Da ${TIERS[from].l} a ${TIERS[t].l}, overall ${roundOvr(s.ovr)}</small></p>
+      <div class="row"><button type="button" class="btn primary" data-action="walk-fig">Apri la figurina</button><button type="button" class="btn ghost" data-action="walk-close">Chiudi</button></div></div>
+    <span class="wk-skip">Tocca per saltare</span>
+  </div>`;
+  openModal('#m-walk');
+  clearTimeout(walkT);
+  if(!reduce) walkT = setTimeout(() => { try{ navigator.vibrate && navigator.vibrate([24, 50, 36]); }catch(e){} countUp($('#walk-body .wk-new')); }, 4050);
+}
+function walkSkip(){
+  const w = $('#walk-body .walk'); if(!w || w.classList.contains('done')) return;
+  clearTimeout(walkT); w.classList.add('done');
+  const b = w.querySelector('.wk-new [data-cu]'); if(b) b.textContent = b.dataset.cu;
+}
 const SEEN_OVR = 'cmb2627_seenOvr';
 /* All'apertura: statistiche che salgono; se l'OVR è cambiato dall'ultima volta, scorre dal vecchio al nuovo */
 function figCounters(pid){
@@ -4227,6 +4312,7 @@ function flow(){
       unseen.forEach(x => markFinal(x.id));
       if(!firstRun || Date.now() - num(fin.createdAt) < 36 * 36e5){ showFinal(fin); return; }
     }
+    if(me && walkCheck()) return;
     if(me){
       const pend = !feat('mvp') ? null : rev.find(x => {
         if(!x.vote2 || (ui.voteLater && ui.voteLater[x.id]) || pvHas(x.id)) return false;
@@ -8035,6 +8121,7 @@ function closeModal(sel, force){
   if(sel === '#m-fig'){ openFigPid = null; figPlq = null; figTurned = false; }
   if(sel === '#m-match') ED = null;
   if(sel === '#m-plq') plqOpen = null;
+  if(sel === '#m-walk') clearTimeout(walkT);
   if(sel === '#m-replay'){ rpStop(); if(document.fullscreenElement) document.exitFullscreen().catch(() => {}); setTimeout(() => { if(!RP) m.innerHTML = ''; }, 320); }
   if(sel === '#m-confirm' && confirmResolve){ const r = confirmResolve; confirmResolve = null; r(false); }
   if(!$('.modal.open')) document.body.classList.remove('noscroll');
@@ -8176,6 +8263,7 @@ const currentPin = () => String(store.settings?.pin || DEFAULT_PIN);
 document.addEventListener('toggle', e => { if(e.target.classList && e.target.classList.contains('th-how')) ui.thHow = e.target.open; }, true);
 document.addEventListener('click', async e => {
   if(e.target.classList && e.target.classList.contains('modal')){ closeModal('#' + e.target.id); return; }
+  if(e.target.closest && e.target.closest('#m-walk .walk') && !e.target.closest('button')){ walkSkip(); return; }
   const t = e.target.closest('button,[data-open-player],[data-open-match]');
   if(!t || t.disabled) return;
   if(t.tagName === 'BUTTON' || t.getAttribute('role') === 'button') haptic();
@@ -8251,6 +8339,8 @@ document.addEventListener('click', async e => {
     case 'who-tab': whoTab = d.tab === 'login' ? 'login' : 'new'; renderWho(); break;
     case 'me-logout': meLogout(); break;
     case 'acct-open': openAcct(); break;
+    case 'walk-fig': { const me = myPid(); closeModal('#m-walk'); if(me && STATS.byId[me]) openFigurina(me); break; }
+    case 'walk-close': closeModal('#m-walk'); break;
     case 'acct-exit': keyLogout(); closeModal('#m-acct'); render(); toast('Sei uscito: su questo telefono non c’è più nessun giocatore'); break;
     case 'keys-open': openKeys(); break;
     case 'key-reset': resetKey(d.pid); break;
