@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.11.3
+- Il Fortino: vince il difensore con la media più bassa di gol subiti a partita (prima il totale), almeno 3 presenze; parità: più presenze.
+- Nuove targhe (in fondo alla gerarchia, quindi non tolgono targhe già assegnate): Il Fantasista (più gare con almeno un gol e un assist), Il Regista (centrocampista con più assist), L'Altruista (assist a più compagni diversi, dalla sequenza dei gol). Campi solo in memoria in `computeStats` (`fant`, `aTo`, `alt`).
+- Nuovi trofei storici (chiavi aggiunte in fondo a `REC_KEYS`): Re dell'Attacco / del Centrocampo / della Difesa (più premi di reparto «Top …»; parità: percentuale premi/gare, poi chi c'è arrivato prima), Capocannoniere, Malato di calcio (presenze di fila sulle gare in ordine), Uomo del Momento (miglior guadagno di OVR in 5 gare giocate di fila), Sempre a Segno, La Rimonta (svantaggio più grande recuperato, a chi segna il gol decisivo; serve la sequenza completa), Il Digiuno (attaccanti, gare giocate di fila senza gol), Il Sovrano (giornate chiuse al primo posto con l'ordine della Classifica), Compagni fedeli (coppia con più gare nella stessa squadra).
+- Migrazione `cmb_mig_v1113`: una volta si azzerano i «già visto» di primati e targhe, così le regole nuove non fanno popup finti.
+- Trofei storici in vetrina a medaglioni come le targhe (volto del detentore o della coppia, simbolo piccolo, anello di vetro arancio); il riquadro completo con la storia del primato si apre nella stessa finestra delle targhe.
+- Classifica: podio con le figurine (cornice del livello) al posto degli avatar; prossima gara più grande con i capitani carta contro carta, VS e barra degli OVR medi; barretta in basso con la propria riga quando esce dallo schermo (IntersectionObserver), toccandola si torna alla riga.
+- Partite: giornate a schede orizzontali (`#mdays`) al posto del menu a tendina, con la scheda scelta centrata solo quando cambia; nel campo delle Formazioni carte ×1,3 e campo più alto (100×264, linee del campo ridisegnate per la nuova altezza), esportazione invariata; faccina del marcatore nella lista dei gol del Resoconto.
+- Figurina: Chiudi, Gira, Condividi e Confronta su una sola riga con le icone; Modifica ed Elimina in una riga a parte solo per l'admin.
+
 ## 1.11.1
 - Targhe in vetrina: nel medaglione grande il volto (foto o iniziali) del detentore, il simbolo della targa nel cerchio piccolo con il bordo nel metallo della targa; le targhe in palio mostrano il simbolo in grande.
 - TOTM: stessa rivelazione a pacchetto del TOTW per il team del mese pubblicato più recente, con grafica bianca e oro (pacchetto, dorso delle carte, insegna «Migliore del mese») e avviso «Sei nel Team of the Month!». Già visto separato per TOTW (`cmb_twSeen`) e TOTM (`cmb_tmSeen`); chi pubblica lo segna come visto.
