@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.12.1
+- Motore OVR v6 (`ovrBand`, `ovrParts`): da 90 a 94 punti positivi ×0,65, sconfitta −1,5 (−2,5 con 3+ gol di scarto), tetto −3; da 95 a 99 punti positivi ×0,5, sconfitta −2 (−3 larga), tetto −4. Da 90 in su −1 senza gol né assist per attaccanti e centrocampisti; difensori −0,1 (90-94) o −0,2 (95-99) per gol subito, solo in sconfitta. Da 85 a 89 invariato più −0,5 all'attaccante senza gol né assist. A 99 una vittoria con meno di 2 gol (difensore: senza gol) costa −2. Il pareggio vale 0 a ogni livello, senza penalità. Tolto il −0,1 per gol subito quando non si vince. Migrazione `cmb_mig_v1121` azzera i «già visto».
+
 ## 1.12.0
 - Motore OVR v5 (`ovrBand`, `ovrParts`): da 90 in su punti positivi ×0,5 e perdite ×1,5 (sconfitta −1,5, con 3+ gol di scarto −3), −1 senza gol né assist (qualsiasi ruolo), −0,1 per gol subito in sconfitta e pareggio (in vittoria resta 2 − 0,1 per gol subito); tetto di perdita per gara −3 da 90 a 94 e −5 da 95 a 99. Da 85 a 89 punti positivi ×0,8 e perdite ×1,2. Sotto l'85 invariato.
 - «Come si calcola», «Overall spiegato» (righe «Né gol né assist» e «Gol subiti», tetto variabile) e il testo della Leggenda aggiornati.
