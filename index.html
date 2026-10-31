@@ -1214,7 +1214,7 @@ button.rec-who{cursor:pointer}
 .sp2-word>span{display:block;padding:.1em .12em;margin:-.1em -.12em;color:#f97316;-webkit-text-stroke:.07em #050505;paint-order:stroke fill;text-shadow:.045em .055em 0 #050505;opacity:0;will-change:transform,opacity}
 .sp2-word .sh{position:absolute;margin:0;backface-visibility:visible;will-change:transform,opacity}
 .sp2-sp{position:absolute;left:50%;top:50%;width:3px;height:16px;margin:-8px 0 0 -1.5px;border-radius:2px;background:linear-gradient(#fff7ed,#fdba74 40%,#f97316);box-shadow:0 0 8px rgba(249,115,22,.9);opacity:0;pointer-events:none;will-change:transform,opacity}
-.sp2-ghost{filter:blur(2.5px) drop-shadow(0 0 10px rgba(249,115,22,.6))}
+.sp2-ghost{filter:none}
 .sp2-ball{position:absolute;left:50%;top:50%;width:clamp(84px,24vw,150px);height:clamp(84px,24vw,150px);margin:calc(clamp(84px,24vw,150px) / -2) 0 0 calc(clamp(84px,24vw,150px) / -2);opacity:0;filter:drop-shadow(0 10px 18px rgba(0,0,0,.7));will-change:transform,opacity}
 .sp2-ring{position:absolute;left:50%;top:50%;width:40vmin;height:40vmin;margin:-20vmin 0 0 -20vmin;border-radius:50%;border:.35vmin solid rgba(253,230,138,.85);box-shadow:0 0 5vmin rgba(249,115,22,.55);opacity:0;pointer-events:none}
 .sp2-flash{position:absolute;left:50%;top:50%;width:70vmin;height:70vmin;margin:-35vmin 0 0 -35vmin;border-radius:50%;background:radial-gradient(circle,#fff 0%,rgba(253,230,138,.85) 22%,rgba(249,115,22,0) 62%);opacity:0;pointer-events:none}
@@ -3472,13 +3472,18 @@ function boardHTML(sc){
    RENDER
    ========================================================= */
 let rq = false;
-function scheduleRender(){ if(rq) return; rq = true; requestAnimationFrame(() => { rq = false; render(); }); }
+/* Durante l'animazione iniziale i ridisegni aspettano la fine: così non le rubano fotogrammi */
+let spHold = false, spPend = false;
+function scheduleRender(){ if(spHold){ spPend = true; return; } if(rq) return; rq = true; requestAnimationFrame(() => { rq = false; render(); }); }
+function spRelease(){ spHold = false; if(spPend){ spPend = false; scheduleRender(); } }
 /* Se il PIN è cambiato da un altro dispositivo, l'accesso admin ricordato qui non vale più */
 function adminCheck(){
   if(!ui.admin || !loaded.settings || localMode) return;
   let sig = ''; try{ sig = localStorage.getItem('cmb_admin_sig') || ''; }catch(e){}
   if(sig && sig !== pinSig(currentPin())){ adminForget(); ui.admin = false; toast('Il PIN è cambiato: rifai l’accesso admin', 'warn'); }
 }
+const LAZY_V = { matches:() => renderMatches(), me:() => renderMe() }, lazyDirty = {};
+function lazyView(v, sx){ if(ui.view === v){ lazyDirty[v] = false; sx(LAZY_V[v]); } else lazyDirty[v] = true; }
 function render(){
   featSync(); adminCheck();
   watchRatings(); watchProfileReq(); watchMyKey();
@@ -3496,7 +3501,8 @@ function render(){
   if((ui.view === 'casino' && !cOn) || (ui.view === 'ballon' && !feat('ballon'))) go('dashboard'); else applyTheme();
   /* ogni sezione si disegna per conto suo: un dato sbagliato in una non deve fermare le altre (né voti e finestre obbligatorie) */
   const sx = fn => { try{ fn(); }catch(e){ console.error('render', e); } };
-  sx(renderDashboard); sx(renderPlayers); sx(renderMatches); sx(renderMe); sx(refreshAcctProf); if(ui.view === 'trophies') sx(renderTrophies); if(ui.view === 'casino') sx(renderCasino); if(ui.view === 'ballon') sx(renderBallon); sx(renderAdmin);
+  /* Partite e Io si disegnano solo se sono a schermo, altrimenti quando ci entri (avvio più leggero) */
+  sx(renderDashboard); sx(renderPlayers); lazyView('matches', sx); lazyView('me', sx); sx(refreshAcctProf); if(ui.view === 'trophies') sx(renderTrophies); if(ui.view === 'casino') sx(renderCasino); if(ui.view === 'ballon') sx(renderBallon); sx(renderAdmin);
   if(ui.duel && $('#m-duel').classList.contains('open')) renderDuel();
   if(openFigPid && Date.now() > figAnimUntil) renderFigurina();   // non interrompe il flip se arrivano dati durante l'animazione
   if(ED && $('#m-match').classList.contains('open')) renderEditor();
@@ -8860,6 +8866,7 @@ function go(view){
   $$('.view').forEach(v => v.hidden = v.id !== 'view-' + view);
   $$('.nav [data-go]').forEach(b => b.setAttribute('aria-current', b.dataset.go === view ? 'page' : 'false'));
   window.scrollTo(0, 0);
+  if(lazyDirty[view]){ lazyDirty[view] = false; try{ LAZY_V[view](); }catch(e){ console.error('render', e); } }
   if(view === 'me'){ const el = $('#me'); el.classList.remove('me-anim'); void el.offsetWidth; el.classList.add('me-anim'); countUp(el);
     const dl = el.querySelector('.me-dlt[data-sig]'); if(dl) try{ localStorage.setItem('cmb_meOvrSeen', dl.dataset.sig); }catch(e){} }
   if(view === 'dashboard') rankShift();
@@ -8933,7 +8940,7 @@ document.addEventListener('click', async e => {
   if('late' in d){ const row = t.closest('.erow'); if(row && ED){ const e = ED[row.dataset.t].find(x => x.pid === row.dataset.pid); if(e){ if(e.late) delete e.late; else e.late = 1; renderEditor(); } } return; }
   if('cap' in d){ const row = t.closest('.erow'); if(row && ED){ const k = row.dataset.t === 'white' ? 'capW' : 'capB'; ED[k] = ED[k] === row.dataset.pid ? null : row.dataset.pid; renderEditor(); } return; }
   if(d.openPlayer && !d.action){ if(t.closest('#m-plq')) closeModal('#m-plq', true); figPlq = null; openFigurina(d.openPlayer); return; }
-  if(d.openMatch){ ui.matchId = d.openMatch; renderMatches(); go('matches'); return; }
+  if(d.openMatch){ ui.matchId = d.openMatch; lazyDirty.matches = true; go('matches'); return; }
 
   switch(d.action){
     case 'season-awards': ui.tTab = 'plq'; go('trophies'); break;
@@ -9446,7 +9453,7 @@ function openNews(){
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let seen = false; try{ seen = sessionStorage.getItem('cmb_splash') === '1'; sessionStorage.setItem('cmb_splash', '1'); }catch(e){}
   let ended = false;
-  const end = () => { if(ended || !el.isConnected) return; ended = true; el.classList.add('out'); setTimeout(() => el.remove(), 520); };
+  const end = () => { if(ended || !el.isConnected) return; ended = true; el.classList.add('out'); setTimeout(() => { el.remove(); spRelease(); }, 520); };
   if(seen){ el.remove(); return; }
   el.addEventListener('click', end);
   if(reduce || !el.animate){ [...el.querySelectorAll('#sp2-word>span')].forEach(x => { x.style.opacity = '1'; }); setTimeout(end, 600); setTimeout(() => { try{ flow(); }catch(e){} }, 1300); return; }
@@ -9456,6 +9463,11 @@ function openNews(){
   fit(); if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if(!ended && !word.querySelector('.sh')) fit(); });
   const rnd = (a, b) => a + Math.random() * (b - a), sign = () => Math.random() < .5 ? -1 : 1;
   const T_LAUNCH = 520, T_FLY = 540, T_HIT = T_LAUNCH + T_FLY;
+  /* Si parte dopo il primo disegno dell'app (il lavoro pesante dell'avvio non ruba fotogrammi); i ridisegni che arrivano nel frattempo aspettano la fine */
+  spHold = true;
+  let started = false;
+  setTimeout(() => { if(!started) end(); }, 5000);
+  const start = () => { if(ended || started) return; started = true;
   /* Lettere: salgono una dopo l'altra con un piccolo rimbalzo */
   [...word.children].forEach((ch, i) => ch.animate([
     { opacity:0, transform:'translateY(.4em) scale(.7) rotate(-7deg)' },
@@ -9467,28 +9479,35 @@ function openNews(){
     const t = i / (n - 1) * T, d = (1 - Math.exp(-k * t)) / k;
     return { t:i / (n - 1), x:vx * d, y:vy * d + .5 * G * t * t };
   });
-  const shatter = () => {
-    if(ended) return;
-    const wr = word.getBoundingClientRect(), sr = stage.getBoundingClientRect(), cx = wr.left + wr.width / 2, cy = wr.top + wr.height / 2, shards = [];
+  /* Le schegge si preparano durante il volo del pallone (invisibili), così all'impatto non c'è lavoro da fare: partono e basta */
+  let shards = null;
+  const buildShards = () => {
+    if(shards || ended) return;
+    shards = [];
+    const cx = word.offsetWidth / 2, cy = word.offsetHeight / 2;
     [...word.children].forEach(ch => {
       if(ch.classList.contains('sh')) return;
-      const r = ch.getBoundingClientRect(), box = { l:r.left - wr.left, t:r.top - wr.top, w:r.width, h:r.height };
+      const box = { l:ch.offsetLeft, t:ch.offsetTop, w:ch.offsetWidth, h:ch.offsetHeight }, r = { left:box.l, top:box.t, width:box.w, height:box.h };
       /* schegge irregolari: punti sul perimetro (angoli più uno o due per lato, spostati a caso) uniti a un centro spostato */
       const px = rnd(32, 68), py = rnd(32, 68), pts = [];
       [[0, 0, 100, 0], [100, 0, 100, 100], [100, 100, 0, 100], [0, 100, 0, 0]].forEach(([x0, y0, x1, y1]) => {
         pts.push([x0, y0]);
-        const m = Math.random() < .55 ? 2 : 1;
+        const m = Math.random() < .3 ? 1 : 0;
         for(let j = 1; j <= m; j++){ const t = (j + rnd(-.25, .25)) / (m + 1); pts.push([x0 + (x1 - x0) * t, y0 + (y1 - y0) * t]); }
       });
       for(let i = 0; i < pts.length; i++){
         const A = pts[i], B = pts[(i + 1) % pts.length], sh = ch.cloneNode(true);
         sh.className = 'sh'; sh.style.opacity = 1;
-        sh.style.cssText = `left:${box.l}px;top:${box.t}px;width:${box.w}px;height:${box.h}px;opacity:1;clip-path:polygon(${px}% ${py}%,${A[0]}% ${A[1]}%,${B[0]}% ${B[1]}%)`;
+        sh.style.cssText = `left:${box.l}px;top:${box.t}px;width:${box.w}px;height:${box.h}px;opacity:.002;clip-path:polygon(${px}% ${py}%,${A[0]}% ${A[1]}%,${B[0]}% ${B[1]}%)`;
         word.appendChild(sh);
         shards.push({ sh, vx:(r.left + r.width * (A[0] + B[0] + px) / 300) - cx, vy:(r.top + r.height * (A[1] + B[1] + py) / 300) - cy });
       }
-      ch.style.visibility = 'hidden';
     });
+  };
+  const shatter = () => {
+    if(ended) return;
+    buildShards();
+    [...word.children].forEach(ch => { if(!ch.classList.contains('sh')) ch.style.visibility = 'hidden'; });
     const far = Math.max(1, ...shards.map(o => Math.hypot(o.vx, o.vy)));
     shards.forEach(({ sh, vx, vy }) => {
       const L = Math.max(1, Math.hypot(vx, vy)), sp = rnd(700, 1500) * (1.15 - .45 * L / far), T = rnd(1.0, 1.55);
@@ -9500,7 +9519,7 @@ function openNews(){
       })), { duration:T * 1000, easing:'linear', fill:'forwards' });
     });
     /* scintille veloci */
-    for(let i = 0; i < 34; i++){
+    for(let i = 0; i < 26; i++){
       const e = document.createElement('i'); e.className = 'sp2-sp'; stage.appendChild(e);
       const a = rnd(0, Math.PI * 2), sp = rnd(900, 2100), T = rnd(.45, .85), fr = flightFrames(Math.cos(a) * sp, Math.sin(a) * sp, T, 1400, 3.2, 10), rot = a * 180 / Math.PI + 90;
       e.animate(fr.map(p => ({ transform:`translate(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px) rotate(${rot.toFixed(0)}deg) scaleY(${(1 - .7 * p.t).toFixed(2)})`, opacity:p.t < .15 ? p.t / .15 : Math.max(0, 1 - (p.t - .15) / .85), offset:p.t })), { duration:T * 1000, easing:'linear', fill:'forwards' });
@@ -9524,10 +9543,13 @@ function openNews(){
       ], { duration:460, easing:'cubic-bezier(.25,.5,.45,1)', fill:'forwards' });
     };
   };
-  [.34, .2, .1].forEach((al, i) => { const g = ball.cloneNode(true); g.classList.add('sp2-ghost'); g.removeAttribute('id'); ball.parentNode.insertBefore(g, ball); fly(g, T_LAUNCH + 26 * (i + 1), al, false); });
+  [.24, .12].forEach((al, i) => { const g = ball.cloneNode(true); g.classList.add('sp2-ghost'); g.removeAttribute('id'); ball.parentNode.insertBefore(g, ball); fly(g, T_LAUNCH + 26 * (i + 1), al, false); });
   fly(ball, T_LAUNCH, 1, true);
+  setTimeout(buildShards, T_LAUNCH + 120);
   setTimeout(end, T_HIT + 1500);
   setTimeout(() => { try{ flow(); }catch(e){} }, T_HIT + 2300);
+  };
+  requestAnimationFrame(() => requestAnimationFrame(start));
 })();
 
 /* PWA: service worker, pulsante Installa (Android/Chrome), suggerimento per iPhone */
