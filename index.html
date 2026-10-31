@@ -150,6 +150,10 @@ option{background:#0c1018;color:var(--tx)}
 .mday.on{border-color:#fb923c;background:linear-gradient(135deg,#fb923c,#f97316 55%,#ea580c);box-shadow:0 4px 16px rgba(249,115,22,.45)}
 .mday.on b,.mday.on small{color:#1a0b02}
 .mday:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.mday small .wdot{display:inline-block;width:9px;height:9px;margin-right:4px;border-radius:50%;vertical-align:0}
+.wdot.w{background:#f8fafc;box-shadow:0 0 0 1px rgba(0,0,0,.35)}.wdot.b{background:#0b0d12;box-shadow:0 0 0 1.5px #cbd5e1}.wdot.p{background:#8a93a6}
+.mdays.has-me .mday:not(.me):not(.on){border-color:rgba(255,255,255,.14)}
+.mdays.has-me .mday.me:not(.on){border-color:#fb923c;border-width:2px}
 .empty{padding:34px 20px;text-align:center;color:var(--mu)}
 .empty h3{margin:0 0 6px;color:var(--tx);font:italic 800 30px/1.05 var(--disp)}
 .empty p{margin:0 auto 16px;max-width:44ch}
@@ -4056,8 +4060,11 @@ function renderMatches(){
   /* Durante gli spostamenti si aggiorna solo il campo: il resto della pagina non si tocca */
   if(ui.admin && ui.swapMode && paintedMatch === ui.matchId && $('#mdetail .pp')){ rerenderPitch(); return; }
   /* Schede in ordine di giornata (le giocate, poi quelle in programma); si centra la scheda scelta solo quando cambia, altrimenti resta dov'era */
-  const chip = (m, pre) => { const on = m.id === ui.matchId, s = pre ? null : matchScore(m), dt = m.date ? fmtDate(m.date).replace(/ \d{4}$/, '') : '';
-    return `<button type="button" role="tab" class="mday${pre ? ' sch' : ''}${on ? ' on' : ''}" aria-selected="${on}" data-mday="${m.id}" aria-label="Giornata ${num(m.day)}${pre ? ', in programma' + (whenLabel(m) ? ', ' + esc(whenLabel(m)) : '') : `${m.date ? ', ' + esc(fmtDate(m.date)) : ''}, Bianchi ${s.w}–${s.b} Neri`}"><b>G${num(m.day)}</b><small>${pre ? '🗓️ ' + esc(dt || 'da definire') : `${s.w}–${s.b}`}</small></button>`; };
+  /* Pallino di chi ha vinto (bianco, nero, grigio per il pari) e bordo arancione nelle giornate in cui c'eri */
+  const meId = myPid(), inM = m => !!meId && [...list(m.white), ...list(m.black)].some(e => e.pid === meId);
+  sel.classList.toggle('has-me', !!meId && !!store.players[meId]);
+  const chip = (m, pre) => { const on = m.id === ui.matchId, s = pre ? null : matchScore(m), dt = m.date ? fmtDate(m.date).replace(/ \d{4}$/, '') : '', mine = inM(m), win = pre ? '' : s.w > s.b ? 'w' : s.b > s.w ? 'b' : 'p';
+    return `<button type="button" role="tab" class="mday${pre ? ' sch' : ''}${on ? ' on' : ''}${mine ? ' me' : ''}" aria-selected="${on}" data-mday="${m.id}" aria-label="Giornata ${num(m.day)}${pre ? ', in programma' + (whenLabel(m) ? ', ' + esc(whenLabel(m)) : '') : `${m.date ? ', ' + esc(fmtDate(m.date)) : ''}, Bianchi ${s.w}–${s.b} Neri`}${mine ? ', c’eri anche tu' : ''}"><b>G${num(m.day)}</b><small>${pre ? '🗓️ ' + esc(dt || 'da definire') : `<i class="wdot ${win}" aria-hidden="true"></i>${s.w}–${s.b}`}</small></button>`; };
   const keep = sel.scrollLeft;
   sel.innerHTML = [...played].reverse().map(m => chip(m, false)).join('') + sched.map(m => chip(m, true)).join('');
   sel.scrollLeft = keep;
