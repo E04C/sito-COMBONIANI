@@ -1279,6 +1279,9 @@ button.rec-who{cursor:pointer}
 .me-big{display:flex;gap:20px}
 .me-big b{display:block;font:italic 800 38px/1 var(--disp);color:var(--or);font-variant-numeric:tabular-nums}
 .me-big span{font:700 11px var(--body);color:var(--mu)}
+.me-info .me-dlt{display:flex;align-items:baseline;gap:6px;margin:8px 0 0;max-width:none;font:700 13px var(--body);color:var(--mu);white-space:nowrap}
+.me-big .me-dlt b,.me-dlt b{display:inline;font:800 20px/1 var(--disp);font-variant-numeric:tabular-nums}
+.me-dlt.up b{color:#22c55e}.me-dlt.dn b{color:#fb7185}.me-dlt.eq b{color:var(--mu)}
 .me-grid{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
 @media (min-width:900px){.me-grid{grid-template-columns:1fr 1fr}.me-sec.wide{grid-column:1/-1}}
 .me-sec{padding:16px 18px;border-radius:20px}
@@ -1784,7 +1787,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .lx-i{font-style:normal;font-size:13px;line-height:1}.lx-i.og{background:#fb7185;border-radius:50%;padding:1px}
 .lx-x{font:800 12px var(--body);color:var(--mu);margin-left:1px}
 .lx-v{font:800 15px var(--disp);min-width:40px;text-align:center;padding:5px 4px;border-radius:9px}
-.lx-v.pos{color:#22c55e;background:rgba(34,197,94,.12)}.lx-v.neg{color:#fb7185;background:rgba(251,113,133,.12)}.lx-v.neu{color:var(--mu);background:rgba(255,255,255,.06)}
+.lx-v.up{color:#22c55e;background:rgba(34,197,94,.12)}.lx-v.dn{color:#fb7185;background:rgba(251,113,133,.12)}.lx-v.eq{color:var(--mu);background:rgba(255,255,255,.06)}
 .lx-v.ovr{color:var(--gold);background:rgba(251,191,36,.1);font-size:17px}
 @media (max-width:360px){.lx-2{gap:4px}.lx-r{gap:5px;padding:5px}.lx-n b{font-size:13px}}
 @media (max-width:480px){.sub-tabs{gap:6px}.sub-tab{min-width:0;min-height:48px;padding:0 4px;font-size:12.5px;border-radius:14px}}
@@ -3396,9 +3399,11 @@ function countUp(root){
   root.querySelectorAll('[data-cu]').forEach(el => {
     const to = parseFloat(el.dataset.cu), from = parseFloat(el.dataset.from || 0), dec = +(el.dataset.dec || 0), suf = el.dataset.suf || '', dur = +(el.dataset.dur || 800);
     if(!Number.isFinite(to)) return;
-    const t0 = performance.now();
-    const step = now => { const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = (from + (to - from) * e).toFixed(dec) + suf; if(k < 1) requestAnimationFrame(step); };
-    el.textContent = from.toFixed(dec) + suf;
+    const t0 = performance.now(), io = el.dataset.ease === 'io', it = 'it' in el.dataset;
+    /* data-it: segno e virgola all'italiana (+1,02 / −0,80); data-ease="io": parte e arriva piano, per vedere bene quanto cambia */
+    const fmt = v => it ? (v > 0.004 ? '+' : v < -0.004 ? '−' : '') + Math.abs(v).toFixed(dec).replace('.', ',') + suf : v.toFixed(dec) + suf;
+    const step = now => { const k = Math.min(1, (now - t0) / dur), e = io ? (k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2) : 1 - Math.pow(1 - k, 3); el.textContent = fmt(from + (to - from) * e); if(k < 1) requestAnimationFrame(step); };
+    el.textContent = fmt(from);
     requestAnimationFrame(step);
   });
 }
@@ -4124,7 +4129,7 @@ function lineupListHTML(m){
     const lab = [num(e.g) && `${num(e.g)} gol`, num(e.a) && `${num(e.a)} assist`, num(e.og) && `${num(e.og)} autogol`].filter(Boolean).join(', ');
     let val, cls;
     if(pre){ val = s ? roundOvr(s.ovr) : '–'; cls = 'ovr'; }
-    else { const d = L[e.pid]?.d; val = d == null ? '–' : (d > 0.05 ? '+' : d < -0.05 ? '−' : '') + Math.abs(d).toFixed(1).replace('.', ','); cls = d == null ? 'neu' : d > 0.05 ? 'pos' : d < -0.05 ? 'neg' : 'neu'; }
+    else { const d = L[e.pid]?.d; val = d == null ? '–' : (d > 0.05 ? '+' : d < -0.05 ? '−' : '') + Math.abs(d).toFixed(1).replace('.', ','); cls = d == null ? 'eq' : d > 0.05 ? 'up' : d < -0.05 ? 'dn' : 'eq'; }
     return `<button type="button" class="lx-r ${side}" data-open-player="${e.pid}" ${p ? '' : 'disabled'} aria-label="${esc(pname(e.pid, e.n))}, ${ROLES[role]}${lab ? ', ' + lab : ''}, ${pre ? 'OVR ' + val : 'variazione ' + val}"><span class="lx-c"><span class="lx-dot ${rc}" aria-hidden="true">${rl}</span>${card}</span><span class="lx-n"><b>${esc(lxName(pname(e.pid, e.n)))}</b><span class="lx-b">${bon}</span></span><span class="lx-v ${cls}">${val}</span></button>`;
   };
   const col = (team, side) => {
@@ -5304,6 +5309,11 @@ async function meLogout(){
   try{ localStorage.removeItem('cmb_me'); localStorage.removeItem(PK_KEY); }catch(e){}
   whoKeySet = null; scheduleRender(); openWho();
 }
+/* Io diviso in tre schede: Profilo, Statistiche, Traguardi */
+const ME_TABS = [['pro', 'Profilo'], ['stat', 'Statistiche'], ['goal', 'Traguardi']];
+function meTabsHTML(t){
+  return `<div class="sub-tabs me-tabs" role="tablist" aria-label="Io">${ME_TABS.map(([k, l]) => `<button type="button" role="tab" class="sub-tab ${k === t ? 'on' : ''}" aria-selected="${k === t}" data-metab="${k}">${l}</button>`).join('')}</div>`;
+}
 function renderMe(){
   const el = $('#me'); if(!el) return;
   const ae = document.activeElement; if(ae && typeof ae.id === 'string' && /^pf2-/.test(ae.id)) return;   /* mentre scrivi la scheda la pagina non si ridisegna */
@@ -5397,23 +5407,34 @@ function renderMe(){
       : `<div><span>Giornata ${num(x.m.day)}</span><small>voti insufficienti: servono almeno ${RATE_MIN_N} votanti</small></div>`;
   });
   const rateSec = rrows.length ? `<section class="glass me-sec wide"><h3>⭐ Voti dei compagni</h3><div class="me-rt">${rrows.join('')}</div><p class="mu sm" style="margin:8px 0 0">Solo tu vedi questi numeri. I voti sono anonimi: media e bonus sono tutto ciò che si sa.</p></section>` : '';
-  el.innerHTML = `${voteNote}${rateNote}<div class="me-head glass"><div class="me-card">${miniFigHTML(s)}</div><div class="me-info"><span class="mu sm">Il mio giocatore</span><h2>${nameHTML(s.pid)}</h2>
+  const tab = ME_TABS.some(x => x[0] === ui.meTab) ? ui.meTab : 'pro';
+  /* Dopo una gara nuova l'OVR scorre piano dal valore di prima a quello di adesso, con i punti presi o persi accanto */
+  const lastH = h.length ? h[h.length - 1] : null, newSig = lastH ? `${s.pid}|${lastH.m.id}|${lastH.ovr.toFixed(2)}` : '';
+  let seenSig = ''; try{ seenSig = localStorage.getItem('cmb_meOvrSeen') || ''; }catch(e){}
+  const fresh = !!lastH && newSig !== seenSig && lastH.d != null;
+  const dv = fresh ? lastH.d : 0, dcls = dv > 0.004 ? 'up' : dv < -0.004 ? 'dn' : 'eq';
+  const ovrBig = fresh
+    ? `<b data-cu="${rov}" data-from="${roundOvr(lastH.pre)}" data-dur="2400" data-ease="io">${rov}</b>`
+    : cu(rov);
+  const dltHTML = fresh ? `<p class="me-dlt ${dcls}" data-sig="${esc(newSig)}"><b data-cu="${dv}" data-from="0" data-dec="2" data-dur="2400" data-ease="io" data-it>${(dv > 0.004 ? '+' : dv < -0.004 ? '−' : '') + Math.abs(dv).toFixed(2).replace('.', ',')}</b> OVR nell’ultima gara</p>` : '';
+  el.innerHTML = `${voteNote}${rateNote}${meTabsHTML(tab)}${tab !== 'pro' ? '' : `<div class="me-head glass"><div class="me-card">${miniFigHTML(s)}</div><div class="me-info"><span class="mu sm">Il mio giocatore</span><h2>${nameHTML(s.pid)}</h2>
       <div class="me-chips">${roleChip(s.p.role)}<span class="tierlbl t-${t}">${TIERS[t].i} ${TIERS[t].l}</span>${streakChip(s)}</div>
-      <div class="me-big"><div>${cu(rov)}<span>OVR</span></div><div>${cu(s.rank, 0, '°')}<span>in classifica</span></div><div>${cu(s.pres)}<span>presenze</span></div></div>
-      <div class="row"><button class="btn sm" data-open-player="${s.pid}">Apri figurina</button><button class="btn sm ghost" data-action="acct-open">Gestisci account</button></div></div></div>
-    <div class="me-grid">
-      <section class="glass me-sec wide"><h3>📈 Andamento OVR</h3>${ovrChartHTML(s)}</section>
+      <div class="me-big"><div>${ovrBig}<span>OVR</span></div><div>${cu(s.rank, 0, '°')}<span>in classifica</span></div><div>${cu(s.pres)}<span>presenze</span></div></div>${dltHTML}
+      <div class="row"><button class="btn sm" data-open-player="${s.pid}">Apri figurina</button><button class="btn sm ghost" data-action="acct-open">Gestisci account</button></div></div></div>`}
+    <div class="me-grid">${{
+      pro:`<section class="glass me-sec"><h3>⬆️ Prossimo livello</h3>${tierBox}</section>
+      <section class="glass me-sec"><h3>📊 Forma recente</h3>${form}</section>`,
+      stat:`<section class="glass me-sec wide"><h3>📈 Andamento OVR</h3>${ovrChartHTML(s)}</section>
       <section class="glass me-sec wide"><h3>🔍 Overall spiegato</h3>${ovrExplainHTML(s)}</section>
-      <section class="glass me-sec"><h3>⬆️ Prossimo livello</h3>${tierBox}</section>
-      <section class="glass me-sec"><h3>📊 Forma recente</h3>${form}</section>
       <section class="glass me-sec"><h3>⭐ La tua miglior partita</h3>${bestBox}</section>
-      <section class="glass me-sec"><h3>🎖️ Corsa alle targhe</h3>${raceBox}</section>
-      <section class="glass me-sec"><h3>🥊 Vittima e incubo</h3>${rivBox}</section>
-      <section class="glass me-sec"><h3>🤝 Il tuo uomo</h3>${manBox}</section>
       <section class="glass me-sec"><h3>📍 Il tuo posto in campo</h3>${posBox}</section>
       ${rateSec}
-      <section class="glass me-sec wide"><h3>⏱️ Quando segni</h3>${histBox}</section>
-      <section class="glass me-sec wide"><h3>🧭 Il tuo percorso</h3>${pathBox}</section>
+      <section class="glass me-sec wide"><h3>⏱️ Quando segni</h3>${histBox}</section>`,
+      goal:`<section class="glass me-sec"><h3>🎖️ Corsa alle targhe</h3>${raceBox}</section>
+      <section class="glass me-sec"><h3>🥊 Vittima e incubo</h3>${rivBox}</section>
+      <section class="glass me-sec"><h3>🤝 Il tuo uomo</h3>${manBox}</section>
+      <section class="glass me-sec wide"><h3>🧭 Il tuo percorso</h3>${pathBox}</section>`
+    }[tab]}
     </div>
     <div class="me-out"><button type="button" class="btn ghost sm" data-action="me-logout">Non sei ${esc(s.name)}? Esci</button></div>`;
 }
@@ -8832,7 +8853,8 @@ function go(view){
   $$('.view').forEach(v => v.hidden = v.id !== 'view-' + view);
   $$('.nav [data-go]').forEach(b => b.setAttribute('aria-current', b.dataset.go === view ? 'page' : 'false'));
   window.scrollTo(0, 0);
-  if(view === 'me'){ const el = $('#me'); el.classList.remove('me-anim'); void el.offsetWidth; el.classList.add('me-anim'); countUp(el); }
+  if(view === 'me'){ const el = $('#me'); el.classList.remove('me-anim'); void el.offsetWidth; el.classList.add('me-anim'); countUp(el);
+    const dl = el.querySelector('.me-dlt[data-sig]'); if(dl) try{ localStorage.setItem('cmb_meOvrSeen', dl.dataset.sig); }catch(e){} }
   if(view === 'dashboard') rankShift();
   if(view === 'trophies') renderTrophies();
   if(view === 'matches') centerMday();
@@ -8866,6 +8888,7 @@ document.addEventListener('click', async e => {
     else ui.sort = { key:d.sort, dir:d.sort === 'rank' ? 1 : -1 };
     renderBoardPart(); return;
   }
+  if(d.metab){ ui.meTab = ME_TABS.some(x => x[0] === d.metab) ? d.metab : 'pro'; renderMe(); const el = $('#me'); if(el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ block:'start', behavior:'instant' }); return; }
   if(d.fview){ ui.fView = d.fview === 'list' ? 'list' : 'pitch'; try{ localStorage.setItem('cmb_fView', ui.fView); }catch(e){} ui.swapSel = null; ui.swapMode = false; paintMatch(); return; }
   if(d.mtab){ ui.mTab = d.mtab === 'form' ? 'form' : 'rep'; ui.swapSel = null; if(ui.mTab === 'rep') ui.swapMode = false; paintMatch(); return; }
   if(d.plv){ openPlq(d.plv); return; }
