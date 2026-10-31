@@ -917,7 +917,7 @@ button.awd:hover{border-color:var(--line)}
 .inj-days{position:absolute;left:9%;top:6.5%;z-index:7;pointer-events:none;width:max-content;max-width:58%;padding:3px 8px;border-radius:999px;border:1px solid rgba(248,113,113,.8);background:rgba(127,29,29,.88);color:#fee2e2;font:800 11px/1.2 var(--body);white-space:nowrap}
 .inj-chk{display:flex;align-items:center;gap:8px;min-height:38px;font-weight:700}
 .inj-chk input{width:20px;height:20px;accent-color:#dc2626}
-.pchip.hurt{opacity:.5}
+.pchip.hurt{opacity:.8}
 .pchip .hx{font-size:12px}
 .latb.injb[aria-pressed=true]{background:rgba(220,38,38,.25);border-color:#ef4444}
 .psort{display:flex;align-items:center;gap:8px;font:700 12.5px var(--body);color:var(--mu)}
@@ -2139,7 +2139,7 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
           <span class="lbl">Infermeria</span>
           <label class="inj-chk"><input type="checkbox" id="pf-inj"> ✚ Infortunato</label>
           <div id="pf-injd-w" hidden><label class="lbl" for="pf-injd">Infortunato dal</label><input id="pf-injd" class="field" type="date"></div>
-          <p class="hint">Un infortunato resta in tutte le classifiche ma non si può convocare nelle gare. Quando lo togli dall’infermeria l’infortunio si archivia (conta per il record «Il Cristallo»).</p>
+          <p class="hint">Un infortunato resta in tutte le classifiche e si può schierare: se gioca, esce dall’infermeria quando registri il risultato. Quando lo togli dall’infermeria l’infortunio si archivia (conta per il record «Il Cristallo»).</p>
         </div>
       </div>
       <div class="row end" style="margin-top:20px">
@@ -7852,7 +7852,7 @@ const edTotal = () => ED.white.length + ED.black.length + ED.called.length;
 const ovrOf = pid => STATS.byId[pid]?.ovr ?? OVR_START;
 function edToggle(pid){
   const cur = edFind(pid), T = edTeam;
-  if(!cur && injOn(pid, $('#ed-date').value || ED.date)){ toast(`${pname(pid)} è infortunato: non si può convocare finché è in infermeria`, 'warn'); return; }
+  if(!cur && injOn(pid, $('#ed-date').value || ED.date)) toast(`${pname(pid)} è in infermeria: se gioca, ne esce quando registri il risultato`);
   if(cur && cur !== 'called' && goalsInvolve(pid)){ toast(`${pname(pid)} ha gol o assist registrati: eliminali dalla cronaca prima di toglierlo o spostarlo`, 'warn'); return; }
   if(cur && cur !== 'called' && movesInvolve(pid)){ toast(`${pname(pid)} ha dei cambi registrati: eliminali prima di toglierlo o spostarlo`, 'warn'); return; }
   const pull = from => {
@@ -8013,7 +8013,7 @@ function renderEditorPick(){
   $('#ed-pool').innerHTML = ps.map(s => {
     const t = edFind(s.pid);
     const hurt = !t && injOn(s.pid, $('#ed-date').value || ED.date);
-    return `<button type="button" class="pchip ${t ? CLS[t] : ''}${hurt ? ' hurt' : ''}" data-pool="${s.pid}" aria-pressed="${!!t}"${hurt ? ' aria-disabled="true" title="Infortunato: non si può convocare"' : ''}>${avatar(s.p, 'xs')}${esc(s.name)}${hurt ? ' <span class="hx" aria-hidden="true">🩹</span>' : ''}<span class="co">${roundOvr(s.ovr)}</span>${t ? `<span class="tg">${TAG[t]}</span>` : ''}</button>`;
+    return `<button type="button" class="pchip ${t ? CLS[t] : ''}${hurt ? ' hurt' : ''}" data-pool="${s.pid}" aria-pressed="${!!t}"${hurt ? ' title="In infermeria: se gioca, ne esce col risultato"' : ''}>${avatar(s.p, 'xs')}${esc(s.name)}${hurt ? ' <span class="hx" aria-hidden="true">🩹</span>' : ''}<span class="co">${roundOvr(s.ovr)}</span>${t ? `<span class="tg">${TAG[t]}</span>` : ''}</button>`;
   }).join('') || '<p class="mu sm" style="margin:4px">Nessun giocatore trovato.</p>';
 }
 function stp(f, ic, label, v){
@@ -8335,6 +8335,13 @@ async function saveMatch(){
   const up = { [`matches/${id}`]: payload };
   /* Chi si è infortunato durante la gara entra in infermeria dal giorno della gara (se non c'è già) */
   if(!sched) for(const e of [...payload.white, ...payload.black]) if(e.inj && store.players[e.pid] && !store.players[e.pid].injured){ up[`players/${e.pid}/injured`] = 1; up[`players/${e.pid}/injuredSince`] = payload.date || todayISO(); }
+  /* Chi era in infermeria e ha giocato questa gara (senza farsi male di nuovo) ne esce: l'infortunio si archivia fino al giorno della gara */
+  if(!sched) for(const e of [...payload.white, ...payload.black]){
+    const p = store.players[e.pid], d = payload.date || todayISO();
+    if(e.inj || !p || !injOn(e.pid, d)) continue;
+    up[`players/${e.pid}/injured`] = null; up[`players/${e.pid}/injuredSince`] = null;
+    if(p.injuredSince && p.injuredSince <= d) up[`players/${e.pid}/injHist`] = [...list(p.injHist).map(h => ({ f:h.f, t:h.t })), { f:p.injuredSince, t:d }].slice(-30);
+  }
   /* Gara in programma con scommesse aperte e formazione cambiata: le scommesse si annullano (puntate rimborsate) */
   const mkc = mkOf(id);
   if(sched && mkc && mkc.status === 'open' && lineupKey(payload) !== mkc.lineup){
