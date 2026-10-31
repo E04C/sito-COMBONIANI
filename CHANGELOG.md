@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.12.2
+- Barra in basso: «Io» diventa l'ultima voce.
+- Classifica: con l'ordine base e senza ricerca i primi 3 stanno solo nel podio (`podTop`), la tabella parte dal 4°.
+- Scheda giocatore: «Modifica» nella riga dei tasti, «Elimina» dentro il modulo Modifica giocatore (`#pf-del`): niente tasti fuori schermo sui telefoni piccoli.
+- Infermeria: gli infortunati si possono convocare; al salvataggio di una gara giocata chi era in infermeria e ha giocato ne esce (`injHist` chiuso alla data della gara).
+- Formazioni: scelta Campo / Elenco (`ui.fView`, `cmb_fView`); elenco a specchio con mini figurina, ruolo, bonus e OVR (in programma) o variazione (giocata).
+- Io: schede Profilo / Statistiche / Traguardi (`ui.meTab`); OVR che scorre piano dopo una gara nuova (`cmb_meOvrSeen`, `countUp` con `data-ease`/`data-it`).
+- Partite: riquadro della giornata bianco/nero/grigio secondo il vincitore, bordo arancione dove hai giocato.
+- Splash: parte dopo il primo disegno, `scheduleRender` in attesa fino alla fine (`spHold`), schegge preparate prima dell'impatto e meno numerose, niente sfocatura sulle scie, vibrazione all'impatto dove permessa. Partite e Io si disegnano solo quando aperti (`lazyView`).
+
 ## 1.12.1
 - Motore OVR v6 (`ovrBand`, `ovrParts`): da 90 a 94 punti positivi ×0,65, sconfitta −1,5 (−2,5 con 3+ gol di scarto), tetto −3; da 95 a 99 punti positivi ×0,5, sconfitta −2 (−3 larga), tetto −4. Da 90 in su −1 senza gol né assist per attaccanti e centrocampisti; difensori −0,1 (90-94) o −0,2 (95-99) per gol subito, solo in sconfitta. Da 85 a 89 invariato più −0,5 all'attaccante senza gol né assist. A 99 una vittoria con meno di 2 gol (difensore: senza gol) costa −2. Il pareggio vale 0 a ogni livello, senza penalità. Tolto il −0,1 per gol subito quando non si vince. Migrazione `cmb_mig_v1121` azzera i «già visto».
 
