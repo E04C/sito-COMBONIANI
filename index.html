@@ -553,6 +553,7 @@ body.theme-casino .slip{background:rgba(7,76,44,.98)}
 .sheet p.lead-p{margin:0 0 16px;color:var(--mu)}
 .row{display:flex;gap:10px;flex-wrap:wrap}
 .row.end{justify-content:flex-end}
+.row.end .pf-del{margin-right:auto}
 .lbl{display:block;font:700 12.5px var(--body);color:var(--mu);margin:14px 0 6px}
 .w100{width:100%}
 .shake{animation:shake .4s}
@@ -2142,6 +2143,7 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
         </div>
       </div>
       <div class="row end" style="margin-top:20px">
+        <button type="button" class="btn danger pf-del" id="pf-del" data-action="del-player" hidden>Elimina</button>
         <button type="button" class="btn ghost" data-close>Annulla</button>
         <button type="submit" class="btn primary" id="pf-save">Salva giocatore</button>
       </div>
@@ -4004,10 +4006,7 @@ function renderFigurina(){
     <button class="btn fa" data-action="fig-turn"><span aria-hidden="true">↻</span>Gira</button>
     <button class="btn primary fa" data-action="share-fig" data-pid="${pid}" aria-label="Condividi figurina"><span aria-hidden="true">📸</span>Condividi</button>
     <button class="btn fa" data-action="duel" data-pid="${pid}"><span aria-hidden="true">⚔️</span>Confronta</button>
-  </div>
-  <div class="fig-actions admin-only">
-    <button class="btn" data-action="edit-player" data-pid="${pid}">✏️ Modifica</button>
-    <button class="btn danger" data-action="del-player" data-pid="${pid}">Elimina</button>
+    <button class="btn fa admin-only" data-action="edit-player" data-pid="${pid}"><span aria-hidden="true">✏️</span>Modifica</button>
   </div>`;
 }
 
@@ -7750,6 +7749,7 @@ function openPlayerForm(pid){
   PF = { id:pid || null, photo:undefined };
   $('#pf-t').textContent = p ? 'Modifica giocatore' : 'Nuovo giocatore';
   $('#pf-save').textContent = p ? 'Salva modifiche' : 'Salva giocatore';
+  $('#pf-del').hidden = !p; $('#pf-del').dataset.pid = p ? pid : '';
   $('#pf-name').value = p?.name || '';
   setRadio('pf-role', ROLES[p?.role] ? p.role : 'CEN');
   setRadio('pf-foot', FEET[p?.foot] ? p.foot : 'DX');
@@ -7797,7 +7797,7 @@ async function deletePlayer(pid){
     st?.pres ? `Ha ${st.pres} ${st.pres === 1 ? 'presenza' : 'presenze'}. Le gare giocate restano nello storico con il suo nome, ma esce da classifica e figurine.` : 'L’operazione non si può annullare.',
     'Elimina giocatore', true);
   if(!ok) return;
-  closeModal('#m-fig');
+  closeModal('#m-player'); closeModal('#m-fig');
   commit({ [`players/${pid}`]: null, [`photos/${pid}`]: null, [`profileReq/${pid}`]: null }, 'Giocatore eliminato');
 }
 
