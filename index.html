@@ -3582,13 +3582,17 @@ function rankShift(){
     });
   }, $('#splash') ? 3100 : 150);
 }
+/* Podio della vista: i primi 3 della classifica scelta (senza filtri); nelle viste a conteggio entra solo chi ha almeno 1 */
+function podTop(){
+  const k = ui.cView || 'gen';
+  if(!STATS.matches.length || STATS.list.length < 2) return [];
+  return k === 'gen' ? STATS.list.slice(0, 3)
+    : [...STATS.list].filter(s => (k === 'pct' ? s.pres > 0 : s[k] > 0)).sort((a, b) => (b[k] - a[k]) || (a.rank - b.rank)).slice(0, 3);
+}
 function podiumHTML(){
   const k = ui.cView || 'gen', gen = k === 'gen';
-  if(!STATS.matches.length || STATS.list.length < 2) return '';
-  /* Podio della vista: i primi 3 della classifica scelta (senza filtri); nelle viste a conteggio entra solo chi ha almeno 1 */
   const sub = { g:s => `${s.g} gol`, a:s => `${s.a} assist`, pct:s => `${s.pct.toFixed(0)}% su ${s.pres} ${s.pres === 1 ? 'gara' : 'gare'}`, s:s => `${s.s} ${s.s === 1 ? 'sconfitta' : 'sconfitte'}`, og:s => `${s.og} autogol` };
-  const top = gen ? STATS.list.slice(0, 3)
-    : [...STATS.list].filter(s => (k === 'pct' ? s.pres > 0 : s[k] > 0)).sort((a, b) => (b[k] - a[k]) || (a.rank - b.rank)).slice(0, 3);
+  const top = podTop();
   if(!top.length) return '';
   return `<div class="podium" aria-label="Podio">${[1, 0, 2].filter(i => top[i]).map(i => {
     const s = top[i], place = i + 1;
@@ -3603,7 +3607,11 @@ function sortCmp(a, b){
 function tableHTML(){
   if(!STATS.list.length) return `<div class="empty"><p>La classifica si popola appena la rosa ha i suoi giocatori.</p></div>`;
   const cv = CVIEWS[ui.cView] || CVIEWS.gen, gen = ui.cView === 'gen';
-  const rows = clsList().sort(sortCmp);
+  /* Con l'ordine base e senza ricerca i primi 3 stanno solo nel podio: la tabella parte dal 4° */
+  const dflt = ui.sort.key === cv.sort && ui.sort.dir === (cv.sort === 'rank' ? 1 : -1) && !norm(ui.cf.q || '');
+  const onPod = dflt ? new Set(podTop().map(s => s.pid)) : null;
+  const all = clsList(), rows = all.filter(s => !onPod || !onPod.has(s.pid)).sort(sortCmp), off = all.length - rows.length;
+  if(!rows.length && onPod && onPod.size) return '';
   if(!rows.length) return `<div class="empty"><p>Nessun giocatore corrisponde ai filtri.</p></div>`;
   const th = (k, l, t, cls='') => {
     const s = ui.sort.key === k ? (ui.sort.dir === 1 ? 'ascending' : 'descending') : 'none';
@@ -3618,8 +3626,8 @@ function tableHTML(){
     return `<td class="${big}${on}">${val}</td>`;
   };
   return `<table class="cls"><thead><tr>${th(cv.sort, '#  Giocatore', gen ? 'Posizione in classifica' : 'Riordina', 'c-pl')}${cols.map(c => th(c.k, c.l, c.t)).join('')}</tr></thead><tbody>${
-    rows.map((s, i) => `<tr class="r${gen ? s.rank : (s[cv.sort] > 0 ? i + 1 : 0)} ${gen && STATS.matches.length && s.rank <= 3 ? 'pod' + s.rank : ''}${rowCls(s.pid) ? ' ' + rowCls(s.pid) : ''}${s.pid === meId ? ' me' : ''}" data-open-player="${s.pid}">
-      <td class="c-pl"><div class="pl-cell"><span class="pos">${gen ? s.rank : i + 1}</span>${mvArrow(s)}${avatar(s.p, 'sm')}<span><span class="pl-name">${nameHTML(s.pid)}</span><span class="pl-sub">${roleChip(s.p.role)}<span class="foot">${esc(FEET[s.p.foot] || '')}</span>${s.pid === meId ? '<span class="me-tag">Tu</span>' : ''}</span></span></div></td>
+    rows.map((s, i) => `<tr class="r${gen ? s.rank : (s[cv.sort] > 0 ? i + 1 + off : 0)} ${gen && STATS.matches.length && s.rank <= 3 ? 'pod' + s.rank : ''}${rowCls(s.pid) ? ' ' + rowCls(s.pid) : ''}${s.pid === meId ? ' me' : ''}" data-open-player="${s.pid}">
+      <td class="c-pl"><div class="pl-cell"><span class="pos">${gen ? s.rank : i + 1 + off}</span>${mvArrow(s)}${avatar(s.p, 'sm')}<span><span class="pl-name">${nameHTML(s.pid)}</span><span class="pl-sub">${roleChip(s.p.role)}<span class="foot">${esc(FEET[s.p.foot] || '')}</span>${s.pid === meId ? '<span class="me-tag">Tu</span>' : ''}</span></span></div></td>
       ${cols.map(c => cell(c, s)).join('')}
     </tr>`).join('')}</tbody></table>`;
 }
