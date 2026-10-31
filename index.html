@@ -1761,6 +1761,32 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .sub-tab:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .sub-tab.on{border-color:#fb923c;background:linear-gradient(135deg,#fb923c,#f97316 55%,#ea580c);color:#1a0b02;box-shadow:0 6px 22px rgba(249,115,22,.5),inset 0 1px 0 rgba(255,255,255,.4)}
 @media (prefers-reduced-motion:reduce){.sub-tab{transition:none}}
+/* Formazioni: scelta Campo / Elenco ed elenco a specchio */
+.fv-seg{display:flex;gap:6px;justify-content:flex-end;margin:0 0 10px}
+.fv-seg button{min-height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--line-strong);background:transparent;color:var(--tx);font:700 13.5px var(--body);cursor:pointer}
+.fv-seg button[aria-pressed="true"]{background:var(--or);border-color:var(--or);color:#1a0b02}
+.lx{padding:12px 10px}
+.lx-2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.lx-col{display:flex;flex-direction:column;gap:5px;min-width:0}
+.lx-t{display:flex;align-items:center;gap:6px;font:800 12.5px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--mu);padding:0 4px 2px}
+.lx-col.R .lx-t{flex-direction:row-reverse}
+.lx-r{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:7px;width:100%;padding:5px 7px;border-radius:12px;background:var(--panel);border:1px solid var(--hair);min-height:60px;color:var(--tx);text-align:left;cursor:pointer;font:inherit}
+.lx-r.R{grid-template-columns:auto minmax(0,1fr) 40px}
+.lx-r.R .lx-c{order:3}.lx-r.R .lx-n{order:2;text-align:right}.lx-r.R .lx-v{order:1}.lx-r.R .lx-b{justify-content:flex-end}
+.lx-c{position:relative;width:40px;height:54px;display:block}
+.lx-c .mfig{width:40px;position:absolute;left:0;top:0;--gr:0px;pointer-events:none}.lx-c .mfig-rt{display:none}
+.lx-c .ph,.lx-c .ph *{font-size:15px!important;letter-spacing:0!important}
+.lx-c>.av{position:absolute;left:2px;top:7px}
+.lx-dot{position:absolute;z-index:6;left:-4px;top:-3px;width:17px;height:17px;border-radius:50%;display:grid;place-items:center;font:800 10px/1 var(--body);color:#fff;box-shadow:0 0 0 2px #0b0f17}
+.lx-dot.d{background:#16a34a}.lx-dot.c{background:#2563eb}.lx-dot.a{background:#dc2626}
+.lx-n{min-width:0}.lx-n b{display:block;font:700 14px var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lx-b{display:flex;flex-wrap:wrap;gap:1px;align-items:center;min-height:16px;margin-top:2px}
+.lx-i{font-style:normal;font-size:13px;line-height:1}.lx-i.og{background:#fb7185;border-radius:50%;padding:1px}
+.lx-x{font:800 12px var(--body);color:var(--mu);margin-left:1px}
+.lx-v{font:800 15px var(--disp);min-width:40px;text-align:center;padding:5px 4px;border-radius:9px}
+.lx-v.pos{color:#22c55e;background:rgba(34,197,94,.12)}.lx-v.neg{color:#fb7185;background:rgba(251,113,133,.12)}.lx-v.neu{color:var(--mu);background:rgba(255,255,255,.06)}
+.lx-v.ovr{color:var(--gold);background:rgba(251,191,36,.1);font-size:17px}
+@media (max-width:360px){.lx-2{gap:4px}.lx-r{gap:5px;padding:5px}.lx-n b{font-size:13px}}
 @media (max-width:480px){.sub-tabs{gap:6px}.sub-tab{min-width:0;min-height:48px;padding:0 4px;font-size:12.5px;border-radius:14px}}
 @media (min-width:1100px){.sub-tabs,.mone:not(.form){max-width:900px;margin-inline:auto}}
 .cs-tab{flex:none;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--hair);background:rgba(255,255,255,.04);color:var(--mu);font:700 14px var(--body);white-space:nowrap;transition:color .2s,background .2s,border-color .2s}
@@ -2458,6 +2484,7 @@ function adminRemember(pin){ try{ sessionStorage.setItem('cmb_admin', '1'); loca
 function adminForget(){ try{ sessionStorage.removeItem('cmb_admin'); localStorage.removeItem('cmb_admin_until'); localStorage.removeItem('cmb_admin_sig'); }catch(e){} }
 const ui = {
   view:'dashboard',
+  fView:(() => { try{ return localStorage.getItem('cmb_fView') === 'list' ? 'list' : 'pitch'; }catch(e){ return 'pitch'; } })(),
   sort:{ key:'rank', dir:1 },
   matchId:null,
   admin: sessionStorage.getItem('cmb_admin') === '1' || adminRemembered(),
@@ -4082,11 +4109,44 @@ function lineupsHTML(m, withFlags){
     <div class="lineup" style="margin-top:0;padding-top:0;border:0">${list(m[team]).map(e => `<button class="lu" data-open-player="${e.pid}" ${store.players[e.pid] ? '' : 'disabled'}>${avatar(store.players[e.pid] || { name:e.n }, 'xs')}${esc(pname(e.pid, e.n))}${withFlags && e.late ? '<em class="lt-ic" title="In ritardo">⏰</em>' : ''}${withFlags && e.inj ? '<em class="lt-ic" title="Infortunato durante la gara">🩹</em>' : ''}${withFlags && e.bench ? '<em class="bn">in più</em>' : ''}</button>`).join('') || '<span class="mu sm">Nessun convocato</span>'}</div></div>`;
   return `<section class="glass tab"><div class="tab-cols" style="margin-top:0">${col('white')}${col('black')}</div></section>`;
 }
+/* Formazioni a elenco: Bianchi a sinistra, Neri a destra, a specchio. Prima della gara l'OVR attuale, dopo i punti presi o persi */
+const LX_ROLE = { DIF:['D', 'd'], CEN:['C', 'c'], ATT:['A', 'a'] };
+function lxName(n){ const w = String(n || '').trim().split(/\s+/); return w.length > 1 ? w[0] + ' ' + w.slice(1).map(x => x[0] + '.').join(' ') : w[0] || ''; }
+function lxIcons(n, ic, cls){ n = num(n); if(n <= 0) return ''; const one = `<i class="lx-i${cls ? ' ' + cls : ''}" aria-hidden="true">${ic}</i>`; return n <= 3 ? one.repeat(n) : `${one}<b class="lx-x" aria-hidden="true">×${n}</b>`; }
+function lineupListHTML(m){
+  const pre = m.status === 'scheduled', L = (!pre && STATS.log[m.id]) || {};
+  const mvp = pre ? null : matchMvp(m), aw = pre ? {} : matchAwards(m), awSet = new Set(Object.values(aw).filter(Boolean).map(c => c.pid));
+  const ord = { DIF:0, CEN:1, ATT:2 };
+  const row = (e, side) => {
+    const p = store.players[e.pid], s = STATS.byId[e.pid], role = ROLES[p?.role] ? p.role : 'CEN', [rl, rc] = LX_ROLE[role];
+    const card = s ? miniFigHTML(s) : avatar(p || { name:e.n }, 'sm');
+    const bon = pre ? '' : lxIcons(e.g, '⚽') + lxIcons(e.a, '👟') + lxIcons(e.og, '⚽', 'og') + (mvp && mvp.pid === e.pid && !mvp.provisional ? '<i class="lx-i" aria-hidden="true">⭐</i>' : '') + (awSet.has(e.pid) ? '<i class="lx-i" aria-hidden="true">🏅</i>' : '');
+    const lab = [num(e.g) && `${num(e.g)} gol`, num(e.a) && `${num(e.a)} assist`, num(e.og) && `${num(e.og)} autogol`].filter(Boolean).join(', ');
+    let val, cls;
+    if(pre){ val = s ? roundOvr(s.ovr) : '–'; cls = 'ovr'; }
+    else { const d = L[e.pid]?.d; val = d == null ? '–' : (d > 0.05 ? '+' : d < -0.05 ? '−' : '') + Math.abs(d).toFixed(1).replace('.', ','); cls = d == null ? 'neu' : d > 0.05 ? 'pos' : d < -0.05 ? 'neg' : 'neu'; }
+    return `<button type="button" class="lx-r ${side}" data-open-player="${e.pid}" ${p ? '' : 'disabled'} aria-label="${esc(pname(e.pid, e.n))}, ${ROLES[role]}${lab ? ', ' + lab : ''}, ${pre ? 'OVR ' + val : 'variazione ' + val}"><span class="lx-c"><span class="lx-dot ${rc}" aria-hidden="true">${rl}</span>${card}</span><span class="lx-n"><b>${esc(lxName(pname(e.pid, e.n)))}</b><span class="lx-b">${bon}</span></span><span class="lx-v ${cls}">${val}</span></button>`;
+  };
+  const col = (team, side) => {
+    const arr = list(m[team]).slice().sort((a, b) => {
+      const ra = ord[store.players[a.pid]?.role] ?? 1, rb = ord[store.players[b.pid]?.role] ?? 1;
+      return (ra - rb) || ((STATS.byId[b.pid]?.ovr || 0) - (STATS.byId[a.pid]?.ovr || 0));
+    });
+    return `<div class="lx-col ${side}"><div class="lx-t"><span class="dot ${team === 'white' ? 'w' : 'b'}"></span>${team === 'white' ? 'Bianchi' : 'Neri'}</div>${arr.map(e => row(e, side)).join('') || '<p class="mu sm">Nessun giocatore</p>'}</div>`;
+  };
+  return `<section class="glass lx"><div class="lx-2">${col('white', 'L')}${col('black', 'R')}</div></section>`;
+}
+function fViewHTML(){
+  return `<div class="fv-seg" role="group" aria-label="Vista delle formazioni">${[['pitch', '🏟️ Campo'], ['list', '☰ Elenco']].map(([k, l]) => `<button type="button" data-fview="${k}" aria-pressed="${ui.fView === k}">${l}</button>`).join('')}</div>`;
+}
+function formViewHTML(m, flags){
+  return `<div class="mone form">${fViewHTML()}${ui.fView === 'list' ? lineupListHTML(m) : pitchPanelHTML(m) + lineupsHTML(m, flags)}</div>`;
+}
 function matchDetailHTML(id){
   const m = { id, ...store.matches[id] };
   const tabs = mTabsHTML(), form = ui.mTab === 'form';
   if(m.status === 'scheduled') return tabs + scheduledDetailHTML(m);
-  if(form) return `${tabs}<div class="mone form">${pitchPanelHTML(m)}${lineupsHTML(m, true)}</div>`;
+  if(form) return tabs + formViewHTML(m, true);
   const sc = matchScore(m), mv = matchMvp(m);
   const mvp = mv
     ? `<div class="mvpbox">${avatar(store.players[mv.pid] || { name:mv.n }, 'md')}<div><div class="t">★ ${mv.provisional ? 'MVP provvisorio' : 'MVP della gara'}</div><div class="n">${esc(pname(mv.pid, mv.n))}</div><div class="d">${evDesc(mv)}${mv.vts ? `, ${mv.vts} ${mv.vts === 1 ? 'voto' : 'voti'}` : ''}, squadra ${mv.team === 'white' ? 'Bianca' : 'Nera'}</div></div><div class="pts">${fmtPts(mv.score)}<small>pt</small></div></div>`
@@ -4676,7 +4736,7 @@ function capsVsHTML(m){
 function scheduledDetailHTML(m){
   const mW = teamMean(m.white), mB = teamMean(m.black);
   const share = mW + mB ? mW / (mW + mB) * 100 : 50;
-  if(ui.mTab === 'form') return `<div class="mone form">${pitchPanelHTML(m)}${lineupsHTML(m, false)}</div>`;
+  if(ui.mTab === 'form') return formViewHTML(m, false);
   return `<div class="mone"><article class="glass tab">
     <div class="hero-meta"><span class="tag">🗓️ In programma</span><span>Giornata ${num(m.day)}</span><span>${esc(whenLabel(m) || 'Data da definire')}</span>${cdSpan(m)}<span class="sum">${list(m.white).length} contro ${list(m.black).length}</span></div>
     ${capsVsHTML(m)}
@@ -8806,6 +8866,7 @@ document.addEventListener('click', async e => {
     else ui.sort = { key:d.sort, dir:d.sort === 'rank' ? 1 : -1 };
     renderBoardPart(); return;
   }
+  if(d.fview){ ui.fView = d.fview === 'list' ? 'list' : 'pitch'; try{ localStorage.setItem('cmb_fView', ui.fView); }catch(e){} ui.swapSel = null; ui.swapMode = false; paintMatch(); return; }
   if(d.mtab){ ui.mTab = d.mtab === 'form' ? 'form' : 'rep'; ui.swapSel = null; if(ui.mTab === 'rep') ui.swapMode = false; paintMatch(); return; }
   if(d.plv){ openPlq(d.plv); return; }
   if(d.rcv){ openRecCard(d.rcv); return; }
