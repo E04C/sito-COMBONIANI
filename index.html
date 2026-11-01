@@ -2090,6 +2090,7 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
           <option value="ovr">💎 Overall</option>
           <option value="g">⚽ Gol segnati</option>
           <option value="a">👟 Assist forniti</option>
+          <option value="ga">🎯 Gol + assist</option>
           <option value="pres">⏱️ Presenze</option>
           <option value="az">🔤 Alfabetico (A-Z)</option>
         </select>
@@ -3681,6 +3682,7 @@ const PSORT = {
   ovr:(a, b) => (b.ovr - a.ovr),
   g:(a, b) => (b.g - a.g) || (a.pres - b.pres),
   a:(a, b) => (b.a - a.a) || (a.pres - b.pres),
+  ga:(a, b) => ((b.g + b.a) - (a.g + a.a)) || (b.g - a.g) || (a.pres - b.pres),
   pres:(a, b) => (b.pres - a.pres) || (b.v - a.v),
   az:() => 0
 };
@@ -3701,9 +3703,9 @@ function renderPlayers(){
     .sort((a, b) => cmp(a, b) || a.name.localeCompare(b.name, 'it'));
   $('#pcount').textContent = `${ps.length} ${ps.length === 1 ? 'giocatore' : 'giocatori'}`;
   const nInj = STATS.list.filter(s => isInj(s.pid)).length, ib = $('[data-prole="INF"]'); if(ib) ib.textContent = '✚ Infermeria' + (nInj ? ` (${nInj})` : '');
-  const key = { ovr:null, g:'g', a:'a', pres:'pres', az:null }[ui.pSort];
+  const key = { ovr:null, g:'g', a:'a', ga:'ga', pres:'pres', az:null }[ui.pSort];
   const meId = myPid();
-  grid.innerHTML = ps.map(s => `<div class="mfig-w${s.pid === meId ? ' me' : ''}"><button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}${twHas(s.pid) ? ' totw' : ''}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}<span class="mfig-rt">${ovrPlate(s.ovr, 'sm')}${roleTag(s.pid, s.p)}</span>${cardFx(s.pid).hx}${cardFx(s.pid).frm}${twTag(s.pid)}<span class="mfig-b"><span class="mfig-n">${nameHTML(s.pid)}</span><span class="mfig-s">${[['gol', s.g, 'g'], ['ass', s.a, 'a'], ['pres', s.pres, 'pres'], ['vit', s.v, 'v'], ['sco', s.s, 's']].map(([l, v, k]) => `<span${key === k ? ' style="color:var(--or)"' : ''}><b>${v}</b><i>${l}</i></span>`).join('')}</span><span class="mfig-orn" aria-hidden="true"></span></span></span></span></button><button type="button" class="mfig-turn" data-action="fig-back" data-pid="${s.pid}" aria-label="Retro della figurina di ${esc(s.name)}" title="Retro della figurina">↻</button>${ui.pRole === 'INF' ? `<span class="inj-days"${store.players[s.pid].injuredSince ? ` title="Infortunato dal ${shortDay(store.players[s.pid].injuredSince)}"` : ''}>🩹 ${injLabel(injDays(s.pid))}</span>` : ''}</div>`).join('')
+  grid.innerHTML = ps.map(s => `<div class="mfig-w${s.pid === meId ? ' me' : ''}"><button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}${twHas(s.pid) ? ' totw' : ''}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}<span class="mfig-rt">${ovrPlate(s.ovr, 'sm')}${roleTag(s.pid, s.p)}</span>${cardFx(s.pid).hx}${cardFx(s.pid).frm}${twTag(s.pid)}<span class="mfig-b"><span class="mfig-n">${nameHTML(s.pid)}</span><span class="mfig-s">${[['gol', s.g, 'g'], ['ass', s.a, 'a'], ['pres', s.pres, 'pres'], ['vit', s.v, 'v'], ['sco', s.s, 's']].map(([l, v, k]) => `<span${key === k || (key === 'ga' && (k === 'g' || k === 'a')) ? ' style="color:var(--or)"' : ''}><b>${v}</b><i>${l}</i></span>`).join('')}</span><span class="mfig-orn" aria-hidden="true"></span></span></span></span></button><button type="button" class="mfig-turn" data-action="fig-back" data-pid="${s.pid}" aria-label="Retro della figurina di ${esc(s.name)}" title="Retro della figurina">↻</button>${ui.pRole === 'INF' ? `<span class="inj-days"${store.players[s.pid].injuredSince ? ` title="Infortunato dal ${shortDay(store.players[s.pid].injuredSince)}"` : ''}>🩹 ${injLabel(injDays(s.pid))}</span>` : ''}</div>`).join('')
     || `<p class="mu" style="grid-column:1/-1">${ui.pRole === 'INF' && !raw ? 'Infermeria vuota: sono tutti in forma 💪' : `Nessun giocatore${ui.pRole !== 'ALL' && ui.pRole !== 'INF' ? ' ' + ui.pRole : ''}${raw ? ` corrisponde a “${esc(raw)}”` : ' in questo ruolo'}.`}</p>`;
 }
 
