@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.12.3
+- Giocatori: ordinamento «Gol + assist» (`PSORT.ga`).
+- OVR: tolta la sconfitta di misura, ogni sconfitta vale come quella larga; migrazione `cmb_mig_v1123` azzera i «già visto».
+- TOTM: sulle figurine (e nella grafica esportata) gol, assist e presenze al posto della media.
+- Grafica: numeri all'italiana (`itn`, `itv`, `fmtD`, `countUp`); icone a linea nei titoli (`ICO`, `ico`); meno riquadri annidati in Io e nei premi di reparto; grafico OVR a fasce di livello e puntini per risultato (corretta la soglia Argento a 70); faccine con pallino del ruolo nei premi di reparto; pagine vuote disegnate (`TW_EMPTY`, «Quando segni»); sfondo visibile (tolto lo sfondo di `html`) con metà campo e luce in alto (`.bg-top`), motivi vecchi spenti, CASiNO invariato; evidenziatore che scivola nella barra e nelle schede (`slPlace`, `paintInds`).
+- Motore OVR v7 configurabile: parametri per fascia (60-69, 70-79, 80-84, 85-89, 90-94, 95-99) e generali in `settings/ovr` (facoltativo, sanificato da `ovrCfg`; senza valgono i valori di `OVR_DEF`, identici alle regole precedenti), `settings/ovrPrev` per tornare indietro. Pannello admin «Calcolo overall» con anteprima (`ovrPreview`); «Come si calcola» generato dai parametri (`ovrHowHTML`); cambio dei parametri = azzeramento dei «già visto» (`ovrSigCheck`).
+- Formazioni: «Componi sul campo» per le gare in programma (admin, `ui.cmp`): posti pieni e liberi, scelta del giocatore, numero di titolari e modulo per squadra, «Sposta» tra squadre; salvataggio unico di squadre, `posW`/`posB`, `fmW`/`fmB` con rimborso delle scommesse aperte se la formazione cambia.
+
 ## 1.12.2
 - Barra in basso: «Io» diventa l'ultima voce.
 - Classifica: con l'ordine base e senza ricerca i primi 3 stanno solo nel podio (`podTop`), la tabella parte dal 4°.

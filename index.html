@@ -2412,7 +2412,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.12.2';
+const APP_VERSION = '1.12.3';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -9583,6 +9583,16 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.12.3', date:'2026-11-02', items:[
+    `🎯 In Giocatori puoi mettere in ordine i giocatori per gol più assist.`,
+    `⚖️ Cambia l’overall: ogni sconfitta pesa come una sconfitta larga, anche se perdi di un gol solo. Gli overall di tutti sono ricalcolati.`,
+    `🌟 Nel Team of the Month sulle figurine vedi gol, assist e presenze.`,
+    `✏️ L’organizzatore compone le squadre delle prossime partite direttamente sul campo: tocca un posto, anche libero, e sceglie chi ci gioca, oppure sposta i giocatori da una squadra all’altra.`,
+    `⚙️ L’organizzatore può decidere quanto valgono vittorie, sconfitte, gol e assist in ogni fascia di overall. In «Io» la spiegazione del calcolo si aggiorna da sola.`,
+    `🎨 Grafica più pulita: numeri con la virgola, icone nuove nei titoli, meno riquadri uno dentro l’altro e le faccine nei premi di reparto.`,
+    `📈 Il grafico del tuo overall ha i colori dei livelli e i puntini verdi, rossi o grigi per vittorie, sconfitte e pareggi.`,
+    `✨ In cima alla pagina c’è un campo appena visibile, e quando cambi sezione l’evidenziatore scorre fino alla nuova voce. Le pagine ancora vuote ora hanno un disegno.`
+  ] },
   { v:'1.12.2', date:'2026-10-31', items:[
     `🏆 In Classifica i primi tre li vedi nel podio con le figurine, la tabella parte dal quarto.`,
     `📋 Nelle Formazioni puoi scegliere tra Campo ed Elenco: Bianchi contro Neri con ruoli, gol, assist e, dopo la partita, quanti punti ha preso o perso ognuno.`,
