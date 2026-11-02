@@ -888,6 +888,7 @@ button.pcard:active .pc-fr{transform:scale(.96)}
 .awd{display:flex;align-items:center;gap:8px;min-width:0;padding:10px 2px;border:0;border-top:1px solid var(--hair);border-radius:0;background:none;color:inherit;text-align:left}
 button.awd:hover{border-color:var(--line)}
 .awd .ai{font-size:18px;flex:none}
+.awd .aw-f{position:relative;display:block;margin-right:2px}.awd .aw-f .av{display:grid}.awd .aw-f .lx-dot{left:auto;right:-6px;top:-5px;width:16px;height:16px;font-size:9.5px;font-style:normal}
 .awd span:not(.ai){display:block;min-width:0}
 .awd small{display:block;font:700 10.5px var(--body);color:var(--mu)}
 .awd b{display:block;font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -4213,8 +4214,8 @@ function matchDetailHTML(id){
     : `<div class="mvpbox none"><div><div class="t">MVP della gara</div><div class="d">Non assegnato: nessun gol o assist registrato.</div></div></div>`;
   const aw = matchAwards(m);
   const awards = `<div class="awards">${AWARDS.map(A => { const c = aw[A.k]; return c
-    ? `<button class="awd" data-open-player="${c.pid}" ${store.players[c.pid] ? '' : 'disabled'}><span class="ai">${A.icon}</span><span><small>${A.l}</small><b>${esc(pname(c.pid, c.n))}</b></span><em>${fmtD(c.pts)}</em></button>`
-    : `<div class="awd off"><span class="ai">${A.icon}</span><span><small>${A.l}</small><b>Non assegnato</b></span></div>`; }).join('')}</div>`;
+    ? `<button class="awd" data-open-player="${c.pid}" ${store.players[c.pid] ? '' : 'disabled'}><span class="ai aw-f">${avatar(store.players[c.pid] || { name:c.n }, 'sm')}<i class="lx-dot ${LX_ROLE[A.k][1]}" aria-hidden="true">${LX_ROLE[A.k][0]}</i></span><span><small>${A.l}</small><b>${esc(pname(c.pid, c.n))}</b></span><em>${fmtD(c.pts)}</em></button>`
+    : `<div class="awd off"><span class="ai aw-f"><span class="av av-sm" aria-hidden="true">–</span><i class="lx-dot ${LX_ROLE[A.k][1]}" aria-hidden="true">${LX_ROLE[A.k][0]}</i></span><span><small>${A.l}</small><b>Non assegnato</b></span></div>`; }).join('')}</div>`;
   return `${tabs}<div class="mone"><article class="glass tab">
     <div class="hero-meta"><span class="tag">Giornata ${num(m.day)}</span>${m.date ? `<span>${fmtDate(m.date)}</span>` : ''}${matchLen(m) ? `<span>Durata ${matchLen(m)}’</span>` : ''}<span class="sum">${starters(m, 'white').length} contro ${starters(m, 'black').length}</span></div>
     ${boardHTML(sc)}
