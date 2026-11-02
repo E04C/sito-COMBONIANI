@@ -38,7 +38,7 @@
   color-scheme:dark;
 }
 *,*::before,*::after{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;background:var(--bg0)}
+html{-webkit-text-size-adjust:100%}
 body{margin:0;min-height:100vh;min-height:100dvh;color:var(--tx);font:500 15px/1.5 var(--body);background:var(--bg0);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 body.noscroll{overflow:hidden}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -63,6 +63,15 @@ body:not(.is-admin) .admin-only{display:none!important}
           mask-image:radial-gradient(ellipse 85% 70% at 50% 30%,#000 15%,transparent 80%)}
 .bg .pitch{position:absolute;left:50%;top:52%;width:min(1500px,170vw);height:auto;transform:translate(-50%,-50%)}
 .bg .pitch *{fill:none;stroke:rgba(255,255,255,.035);stroke-width:1.5}
+/* Lo sfondo ora si vede (prima il fondo della pagina lo copriva): restano solo le luci tenui e la metà campo in alto; motivo a ottagoni, campo intero e panno del CASiNO restano spenti com'erano */
+.bg::before,.bg .pitch,.bg::after{display:none}
+/* In cima alla pagina: metà campo appena visibile e una luce arancione, che sfumano verso il basso e scorrono via con la pagina */
+.bg-top{position:absolute;left:0;right:0;top:0;height:min(460px,62vh);z-index:-1;pointer-events:none;overflow:hidden;
+  background:radial-gradient(70% 85% at 50% 0,rgba(249,115,22,.2),rgba(249,115,22,.06) 55%,transparent 80%);
+  -webkit-mask-image:linear-gradient(180deg,#000 35%,transparent);mask-image:linear-gradient(180deg,#000 35%,transparent)}
+.bg-top svg{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 58px);width:min(760px,150vw);height:auto;transform:translateX(-50%)}
+.bg-top svg *{fill:none;stroke:rgba(255,255,255,.12);stroke-width:1.6}
+.bg-top svg circle{fill:rgba(255,255,255,.12);stroke:none}
 
 /* ---------- Top bar ---------- */
 .topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;
@@ -1860,7 +1869,7 @@ body.theme-casino{
   --tx:#ffffff; --mu:#d3ead9; --mu2:#a9d3b8;
   --bad:#ffc4cc; --pos:#c8f7d6;
   background-color:#0a5c36}
-body.theme-casino .bg .pitch{opacity:0}
+body.theme-casino .bg .pitch,body.theme-casino .bg-top{opacity:0}
 body.theme-casino .topbar{background:linear-gradient(180deg,rgba(7,76,44,.96),rgba(8,84,49,.84))}
 body.theme-casino .nav{background:rgba(7,76,44,.95)}
 body.theme-casino .crest{filter:drop-shadow(0 0 12px rgba(245,197,66,.45))}
@@ -2055,6 +2064,17 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
     <rect x="10" y="248.5" width="55" height="183"/>
     <rect x="985" y="248.5" width="55" height="183"/>
     <path d="M175 267a91.5 91.5 0 0 1 0 146M875 267a91.5 91.5 0 0 0 0 146"/>
+  </svg>
+</div>
+<div class="bg-top" aria-hidden="true">
+  <svg viewBox="0 0 600 300" preserveAspectRatio="xMidYMin slice">
+    <path d="M10 -2V300M590 -2V300M10 10H590"/>
+    <rect x="135" y="10" width="330" height="100"/>
+    <rect x="225" y="10" width="150" height="36"/>
+    <path d="M245 110a62 62 0 0 0 110 0"/>
+    <circle cx="300" cy="80" r="2.2"/>
+    <path d="M10 22a12 12 0 0 0 12-12M578 10a12 12 0 0 0 12 12"/>
+    <path d="M200 300a100 100 0 0 1 200 0"/>
   </svg>
 </div>
 
