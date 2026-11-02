@@ -837,6 +837,21 @@ button.pcard:active .pc-fr{transform:scale(.96)}
 .mid-c .td.w{background:#eef1f6}
 .mid-c .td.b{background:#0a0d14;border:.35cqw solid #f97316}
 .mid-c.post b span{color:#f97316;margin:0 1cqw}
+.pc-empty .pc-fr{background:rgba(249,115,22,.12);box-shadow:none;outline:.45cqw dashed rgba(249,115,22,.8);outline-offset:-.45cqw}
+.pc-empty .pc-ph{display:grid;place-items:center;background:rgba(10,13,20,.55)}
+.pc-plus{font:800 8cqw/1 var(--body);color:#fb923c}
+.pc-empty .pc-name{color:#fdba74}
+.cmp .pp-ctrl{gap:10px}
+.cmp-t{display:inline-flex;align-items:center;gap:6px;font:700 13px var(--body)}
+.cmp-t .stp button{width:32px;height:32px}.cmp-t .stp output{min-width:22px;font-size:17px}
+.cmp-act{padding:12px 18px 16px;gap:8px}
+.cmp-cur{display:flex;align-items:center;gap:10px;margin:8px 0 12px;padding:10px 0;border-bottom:1px solid var(--hair)}
+.cmp-cur span{flex:1;min-width:0}
+.cmp-list{display:grid;max-height:min(52vh,420px);overflow:auto}
+.cmp-o{display:flex;align-items:center;gap:10px;width:100%;padding:8px 2px;border:0;border-bottom:1px solid var(--hair);background:none;color:inherit;text-align:left;font:inherit;cursor:pointer}
+.cmp-o .nm{flex:1;min-width:0}.cmp-o .nm b{display:block;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cmp-o .nm small{color:var(--mu);font-size:12px}
+.cmp-o em{font-style:normal}.cmp-o .tg{font:700 11.5px var(--body);color:var(--mu);white-space:nowrap}.cmp-o .tg.free{color:#4ade80}
+.cmp-o.busy{opacity:.85}
 .swap-hint{margin:0 18px 10px;padding:9px 12px;border-radius:12px;border:1px dashed var(--line-strong);background:var(--or-soft);font:700 13px var(--body);color:#fed7aa}
 .mone{display:grid;gap:16px}
 @media (min-width:1100px){.mone.form{grid-template-columns:minmax(0,480px) minmax(0,1fr);align-items:start}}
@@ -2299,6 +2314,9 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 <div class="modal" id="m-dl" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Crea sfida"><div id="dl-body"></div></div></div>
 <div class="modal" id="m-mk" aria-hidden="true"><div class="sheet glass mk" role="dialog" aria-modal="true" aria-label="Apri scommesse" style="width:min(680px,100%)"><div id="mk-body"></div></div></div>
 <div class="modal" id="m-vinfo" aria-hidden="true"><div class="sheet glass vi" role="dialog" aria-modal="true" aria-label="Chi ha votato chi" style="width:min(560px,100%)"><div id="vi-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
+
+<!-- Componi sul campo: scelta del giocatore per un posto (admin) -->
+<div class="modal" id="m-cmp" aria-hidden="true"><div class="sheet glass cmp-sheet" role="dialog" aria-modal="true" aria-label="Scegli il giocatore" style="width:min(520px,100%)"><div id="cmp-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 
 <!-- Calcolo overall (admin) -->
 <div class="modal" id="m-ovrc" aria-hidden="true"><div class="sheet glass oc" role="dialog" aria-modal="true" aria-label="Calcolo overall" style="width:min(620px,100%)"><div id="oc-body"></div></div></div>
@@ -4315,8 +4333,120 @@ function fViewHTML(){
   return `<div class="fv-seg" role="group" aria-label="Vista delle formazioni">${[['pitch', '🏟️ Campo'], ['list', '☰ Elenco']].map(([k, l]) => `<button type="button" data-fview="${k}" aria-pressed="${ui.fView === k}">${l}</button>`).join('')}</div>`;
 }
 function formViewHTML(m, flags){
+  if(cmpFor(m.id)){ const mm = cmpMatch(m); return `<div class="mone form">${pitchPanelHTML(mm)}${lineupsHTML(mm, false)}</div>`; }
   return `<div class="mone form">${fViewHTML()}${ui.fView === 'list' ? lineupListHTML(m) : pitchPanelHTML(m) + lineupsHTML(m, flags)}</div>`;
 }
+/* ---------- Componi sul campo (admin, gare in programma) ----------
+   Bozza: posti per squadra (id o vuoto) nell'ordine del modulo, giocatori "in più" a parte, modulo per squadra.
+   Si salva solo con «Salva formazioni»: squadre, ordine (posW/posB) e moduli della gara, come fanno già gli scambi. */
+const cmpFor = mid => !!(ui.admin && ui.cmp && ui.cmp.mid === mid);
+function cmpStart(mid){
+  const m = store.matches[mid]; if(!m || m.status !== 'scheduled') return;
+  const c = { mid, slots:{}, bench:{}, ent:{}, fm:{}, move:false, sel:null, pick:null, q:'' };
+  const size = t => orderFor(m, t).length;
+  for(const t of ['white', 'black']){
+    for(const e of list(m[t])) if(e && e.pid) c.ent[e.pid] = { ...e };
+    c.bench[t] = list(m[t]).filter(e => e && e.bench).map(e => e.pid);
+    const ord = orderFor(m, t), n = Math.min(MAX_START, Math.max(ord.length, size(t === 'white' ? 'black' : 'white')) || 8);   /* squadre pari: alla più corta compaiono i posti liberi */
+    c.slots[t] = [...ord, ...Array(Math.max(0, n - ord.length)).fill(null)];
+    const saved = m[t === 'white' ? 'fmW' : 'fmB'];
+    c.fm[t] = saved && FORMATIONS[saved] && fmSize(saved) === n ? saved : fmOptions(n)[0];
+  }
+  ui.cmp = c; ui.swapMode = false; ui.swapSel = null; ui.mTab = 'form'; ui.fView = 'pitch';
+  paintMatch();
+}
+function cmpEntries(t){
+  const c = ui.cmp, mk = pid => { const { bench, ...e } = c.ent[pid] || { pid, n:pname(pid), g:0, a:0, og:0 }; return { ...e, n:pname(pid, e.n) }; };
+  return [...c.slots[t].filter(Boolean).map(mk), ...c.bench[t].map(pid => ({ ...mk(pid), bench:1 }))];
+}
+function cmpMatch(m){ const c = ui.cmp; return { ...m, white:cmpEntries('white'), black:cmpEntries('black'), posW:c.slots.white.filter(Boolean), posB:c.slots.black.filter(Boolean), fmW:c.fm.white, fmB:c.fm.black }; }
+function cmpPlace(t){
+  const c = ui.cmp, lines = FORMATIONS[c.fm[t]] || FORMATIONS[DEF_FM], out = []; let k = 0;
+  lines.forEach((cnt, li) => { for(let j = 0; j < cnt && k < c.slots[t].length; j++, k++){ const pid = c.slots[t][k]; out.push({ e:pid ? cmpEntries(t).find(x => x.pid === pid) : null, li, j, cnt, n:lines.length, k }); } });
+  return out;
+}
+function cmpEmptyHTML(team, k, x, y){
+  const sel = ui.cmp.sel === team + '|' + k;
+  return `<button type="button" class="pcard pc-empty ${team === 'white' ? 'lt' : ''} ${sel ? 'sel' : ''}" style="left:${x}%;top:${y}%" data-cmp="${team}|${k}" aria-label="Posto libero nei ${team === 'white' ? 'Bianchi' : 'Neri'}: scegli chi ci gioca"><span class="pc-fr"><span class="pc-ph"><span class="pc-plus" aria-hidden="true">+</span></span></span><span class="pc-name">Libero</span></button>`;
+}
+function cmpPanelHTML(m){
+  const c = ui.cmp, sel = c.sel && c.sel.split('|'), selPid = sel && c.slots[sel[0]][+sel[1]];
+  const ctl = t => { const n = c.slots[t].length, opts = fmOptions(n);
+    return `<span class="cmp-t"><span class="dot ${t === 'white' ? 'w' : 'b'}"></span>${t === 'white' ? 'Bianchi' : 'Neri'} <span class="stp"><button type="button" data-cmpn="${t}|-1" aria-label="Un posto in meno ai ${t === 'white' ? 'Bianchi' : 'Neri'}">−</button><output>${n}</output><button type="button" data-cmpn="${t}|1" aria-label="Un posto in più ai ${t === 'white' ? 'Bianchi' : 'Neri'}">+</button></span><select class="field" data-cmpfm="${t}" aria-label="Modulo ${t === 'white' ? 'Bianchi' : 'Neri'}">${opts.map(f => `<option ${f === c.fm[t] ? 'selected' : ''}>${f}</option>`).join('')}</select></span>`; };
+  const hint = c.move
+    ? (selPid ? `Selezionato <b>${esc(pname(selPid))}</b>: tocca un altro giocatore per scambiarli o un posto libero per spostarlo, anche nell'altra squadra.` : 'Tocca il giocatore da spostare, poi il posto dove metterlo.')
+    : 'Tocca un posto, pieno o libero, per scegliere chi ci gioca. Con «Sposta» cambi posto o squadra con due tocchi.';
+  const filled = t => c.slots[t].filter(Boolean).length;
+  return `<section class="glass pp cmp">
+    <div class="panel-h"><h2>✏️ Componi le squadre</h2><span class="mu sm">Bianchi ${filled('white')}/${c.slots.white.length} · Neri ${filled('black')}/${c.slots.black.length}</span></div>
+    <div class="pp-ctrl">${ctl('white')}${ctl('black')}<button type="button" class="btn sm ${c.move ? 'primary' : ''}" data-action="cmp-move">${c.move ? '✓ Fine spostamenti' : '🔀 Sposta'}</button></div>
+    <div class="swap-hint">${hint}</div>
+    <div class="pp-wrap">${pitchHTML(m)}</div>
+    <div class="row end cmp-act"><button type="button" class="btn ghost" data-action="cmp-cancel">Annulla</button><button type="button" class="btn primary" data-action="cmp-save">✓ Salva formazioni</button></div>
+  </section>`;
+}
+function cmpTap(team, k){
+  const c = ui.cmp; if(!c) return;
+  const key = team + '|' + k, pid = c.slots[team][k];
+  if(c.move){
+    if(!c.sel){ if(pid) c.sel = key; paintMatch(); return; }
+    const [t1, k1] = c.sel.split('|'); c.sel = null;
+    if(key !== t1 + '|' + k1){ const a = c.slots[t1][+k1]; c.slots[t1][+k1] = pid; c.slots[team][k] = a; }
+    paintMatch(); return;
+  }
+  c.pick = { team, k }; c.q = '';
+  paintCmpPick(true); openModal('#m-cmp');
+}
+function paintCmpPick(full){
+  const c = ui.cmp; if(!c || !c.pick) return;
+  const { team, k } = c.pick, cur = c.slots[team][k], q = norm(c.q || '');
+  const where = pid => { for(const t of ['white', 'black']){ if(c.slots[t].includes(pid)) return t; if(c.bench[t].includes(pid)) return t + 'b'; } return ''; };
+  const TAG = { white:'Bianchi', black:'Neri', whiteb:'In più (Bianchi)', blackb:'In più (Neri)' };
+  const ps = STATS.list.filter(s => s.pid !== cur && (!q || norm(s.name).includes(q)))
+    .map(s => ({ s, w:where(s.pid) })).sort((a, b) => (!!a.w - !!b.w) || (b.s.ovr - a.s.ovr));
+  const rows = ps.map(({ s, w }) => `<button type="button" class="cmp-o${w ? ' busy' : ''}" data-cmppick="${s.pid}">${avatar(s.p, 'sm')}<span class="nm"><b>${esc(s.name)}</b><small>${ROLES[s.p.role] || ROLES.CEN} · OVR ${roundOvr(s.ovr)}</small></span>${isInj(s.pid) ? '<em class="inj" title="In infermeria">🩹</em>' : ''}${w ? `<em class="tg">${TAG[w]}</em>` : '<em class="tg free">Libero</em>'}</button>`).join('') || '<p class="mu sm">Nessun giocatore trovato.</p>';
+  const list_ = $('#cmp-list');
+  if(!full && list_){ list_.innerHTML = rows; return; }
+  $('#cmp-body').innerHTML = `<h3>${team === 'white' ? 'Bianchi' : 'Neri'} · posto ${k + 1}</h3>
+    ${cur ? `<div class="cmp-cur">${avatar(store.players[cur] || { name:pname(cur) }, 'sm')}<span>Adesso: <b>${esc(pname(cur))}</b></span><button type="button" class="btn sm ghost" data-action="cmp-remove">Togli dal campo</button></div>` : '<p class="lead-p">Posto libero: scegli chi ci gioca.</p>'}
+    <input id="cmp-q" class="field w100" type="search" placeholder="Cerca giocatore" aria-label="Cerca giocatore" autocomplete="off">
+    <p class="mu sm" style="margin:8px 0 6px">Chi è già in una squadra si sposta qui.</p>
+    <div class="cmp-list" id="cmp-list">${rows}</div>`;
+}
+function cmpPick(pid){
+  const c = ui.cmp; if(!c || !c.pick) return;
+  const { team, k } = c.pick;
+  for(const t of ['white', 'black']){ const i = c.slots[t].indexOf(pid); if(i >= 0) c.slots[t][i] = null; c.bench[t] = c.bench[t].filter(x => x !== pid); }
+  c.slots[team][k] = pid;
+  if(!c.ent[pid]) c.ent[pid] = { pid, n:pname(pid), g:0, a:0, og:0 };
+  c.pick = null; closeModal('#m-cmp'); paintMatch();
+}
+function cmpSize(team, dir){
+  const c = ui.cmp, L = c.slots[team];
+  if(dir > 0){ if(L.length >= MAX_START){ toast(`Al massimo ${MAX_START} titolari per squadra`, 'warn'); return; } L.push(null); }
+  else{
+    if(L.length <= 1) return;
+    const i = L.lastIndexOf(null);
+    if(i >= 0) L.splice(i, 1); else { const out = L.pop(); toast(`${pname(out)} torna tra i disponibili`); }
+  }
+  c.sel = null;
+  if(fmSize(c.fm[team]) !== L.length) c.fm[team] = fmOptions(L.length)[0];
+  paintMatch();
+}
+async function cmpSave(){
+  const c = ui.cmp, m = c && store.matches[c.mid]; if(!m){ ui.cmp = null; paintMatch(); return; }
+  if(m.status !== 'scheduled'){ toast('La gara è già stata registrata: la formazione non si cambia più da qui', 'warn'); ui.cmp = null; paintMatch(); return; }
+  const id = c.mid, W = cmpEntries('white'), B = cmpEntries('black'), pW = c.slots.white.filter(Boolean), pB = c.slots.black.filter(Boolean);
+  const fmOk = (t, n) => fmSize(c.fm[t]) === n ? c.fm[t] : (fmOptions(n)[0] || null);
+  const up = { [`matches/${id}/white`]:W, [`matches/${id}/black`]:B, [`matches/${id}/posW`]:pW, [`matches/${id}/posB`]:pB, [`matches/${id}/fmW`]:fmOk('white', pW.length), [`matches/${id}/fmB`]:fmOk('black', pB.length), [`matches/${id}/updatedAt`]:Date.now() };
+  /* come nel registro gara: formazione cambiata con scommesse aperte = scommesse rimborsate */
+  const mkc = mkOf(id);
+  if(mkc && mkc.status === 'open' && lineupKey({ white:W, black:B }) !== mkc.lineup && feat('casino')){ up[`casino/markets/${id}/status`] = 'void'; toast('Formazione cambiata: scommesse rimborsate, riaprile', 'warn'); }
+  ui.cmp = null;
+  await commit(up, 'Formazioni salvate');
+  paintMatch();
+}
+
 function matchDetailHTML(id){
   const m = { id, ...store.matches[id] };
   const tabs = mTabsHTML(), form = ui.mTab === 'form';
@@ -4980,7 +5110,7 @@ function shortName(n){
   const parts = n.split(/\s+/);
   return parts.length > 1 ? parts[0][0] + '. ' + parts.slice(1).join(' ') : n;
 }
-function pitchCardHTML(e, m, team, cap, pre, mv, awards){
+function pitchCardHTML(e, m, team, cap, pre, mv, awards, slot){
   const known = !!store.players[e.pid];
   const p = store.players[e.pid] || { name:e.n };
   const st = STATS.byId[e.pid];
@@ -5005,10 +5135,10 @@ function pitchCardHTML(e, m, team, cap, pre, mv, awards){
   const img = p.photo ? `<span class="pc-img" style="background-image:url('${p.photo}')"></span>` : kitSilhouette(team, p.name);
   const nm = shortName(p.name);
   const fs = Math.min(2.5, 19.5 / Math.max(1, nm.length * 0.56)).toFixed(2);
-  const swap = ui.admin && ui.swapMode;
-  const sel = swap && ui.swapSel && ui.swapSel.pid === e.pid;
-  const act = swap ? `data-swap="${team}|${e.pid}" data-mid="${m.id}"` : known ? `data-open-player="${e.pid}"` : '';
-  const tag = (swap || known) ? 'button' : 'div';
+  const cmp = slot != null, swap = !cmp && ui.admin && ui.swapMode;
+  const sel = cmp ? ui.cmp.sel === team + '|' + slot : swap && ui.swapSel && ui.swapSel.pid === e.pid;
+  const act = cmp ? `data-cmp="${team}|${slot}"` : swap ? `data-swap="${team}|${e.pid}" data-mid="${m.id}"` : known ? `data-open-player="${e.pid}"` : '';
+  const tag = (cmp || swap || known) ? 'button' : 'div';
   return (x, y) => `<${tag} class="pcard t-${tierOf(ovr)} ${team === 'white' ? 'lt' : ''} ${sel ? 'sel' : ''}" style="left:${x}%;top:${y}%" ${act} data-pid="${e.pid}" aria-label="${esc(p.name)}, OVR ${roundOvr(ovr)}${cap === e.pid ? ', capitano' : ''}">
     ${rib}
     <span class="pc-fr"><span class="pc-ph">${img}${ev.length ? `<span class="pc-ev ${ev.length > 3 ? 'many' : ''}">${ev.map(x => `<i>${x}</i>`).join('')}</span>` : ''}</span>
@@ -5022,13 +5152,15 @@ function pitchHTML(m){
   const awards = pre ? {} : matchAwards(m);
   const topT = ui.flip ? 'white' : 'black', botT = ui.flip ? 'black' : 'white';
   /* card ingrandite ×1,3 (alte ~32cqw) su un campo di 264cqw: porta al 6,4%, linea d'attacco al 41,7%, così le righe quasi si toccano */
+  const cmpOn = cmpFor(m.id);
   const half = (team, pos) => {
     const cap = captainFor(m, team);
-    return placeTeam(m, team).map(({ e, li, j, cnt, n }) => {
+    return (cmpOn ? cmpPlace(team) : placeTeam(m, team)).map(({ e, li, j, cnt, n, k }) => {
       const yTop = 6.4 + (n > 1 ? li * (35.3 / (n - 1)) : 0);
       const y = pos === 'top' ? yTop : 100 - yTop;
       const x = cnt === 1 ? 50 : 14 + j * (72 / (cnt - 1));
-      const h = pitchCardHTML(e, m, team, cap, pre, mv, awards)(x.toFixed(2), y.toFixed(2));
+      if(cmpOn && !e) return cmpEmptyHTML(team, k, x.toFixed(2), y.toFixed(2));
+      const h = pitchCardHTML(e, m, team, cap, pre, mv, awards, cmpOn ? k : undefined)(x.toFixed(2), y.toFixed(2));
       return cnt >= 5 ? h.replace('class="pcard ', 'class="pcard r5 ') : h;   /* 5 per riga: il nome non deve sovrapporsi ai vicini */
     }).join('');
   };
@@ -5043,7 +5175,7 @@ function pitchHTML(m){
     const sc = matchScore(m);
     center = `<div class="mid-c post"><span class="tn">Bianchi</span><b>${sc.w}<span>–</span>${sc.b}</b><span class="tn">Neri</span></div>`;
   }
-  return `<div class="pitch-x"><div class="pitch ${ui.admin && ui.swapMode ? 'swapping' : ''}">
+  return `<div class="pitch-x"><div class="pitch ${cmpOn ? 'composing' : ui.admin && ui.swapMode ? 'swapping' : ''}">
     <div class="ph-half top ${topT}">${stripes}${HALF_SVG_TALL}</div>
     <div class="ph-half bot ${botT}">${stripes}${HALF_SVG_TALL_BOT}</div>
     ${half(topT, 'top')}${half(botT, 'bot')}${left}${center}${right}
@@ -5051,6 +5183,7 @@ function pitchHTML(m){
 }
 function pitchPanelHTML(m){
   const pre = m.status === 'scheduled';
+  if(cmpFor(m.id)) return cmpPanelHTML(m);
   const fmCtl = (team, key) => {
     const team_ = key === 'fmW' ? 'white' : 'black', cur = fmFor(m, team_), opts = fmOptions(starters(m, team_).length);
     const lbl = `<span class="dot ${team === 'white' ? 'w' : 'b'}"></span>${team === 'white' ? 'Bianchi' : 'Neri'}`;
@@ -5061,6 +5194,7 @@ function pitchPanelHTML(m){
   return `<section class="glass pp">
     <div class="panel-h"><h2>${pre ? '📍 Dove gioco?' : 'Formazioni in campo'}</h2><span class="mu sm">${pre ? 'Tocca una card per la figurina' : 'OVR dopo la gara e variazione'}</span></div>
     <div class="pp-ctrl">${fmCtl('white', 'fmW')}${fmCtl('black', 'fmB')}
+      ${pre ? `<button class="btn sm primary admin-only" data-action="cmp-start" data-mid="${m.id}">✏️ Componi sul campo</button>` : ''}
       <button class="btn sm ${ui.swapMode ? 'primary' : ''} admin-only" data-action="swap-mode">${ui.swapMode ? '✓ Fine spostamenti' : '🔀 Sposta giocatori'}</button>
       <button class="btn sm ghost" data-action="flip">⇅ Inverti metà campo</button>
       ${mediaBtns(m)}
@@ -5352,6 +5486,7 @@ function exportPitchHTML(mm, ph){
 let paintedMatch = null;   /* gara mostrata nell'ultimo disegno di #mdetail */
 function restoreScroll(y){ requestAnimationFrame(() => { if(Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y); }); }
 function paintMatch(){
+  if(ui.cmp && ui.cmp.mid !== ui.matchId) ui.cmp = null;
   const same = ui.view === 'matches' && paintedMatch === ui.matchId, y = window.scrollY;
   $('#mdetail').innerHTML = matchDetailHTML(ui.matchId);
   paintedMatch = ui.matchId;
@@ -9142,6 +9277,9 @@ document.addEventListener('click', async e => {
   if(d.who){ whoPick(d.who); return; }
   if(d.vote){ castVote(d.mid, d.vote); return; }
   if(d.prole){ ui.pRole = d.prole; renderPlayers(); return; }
+  if(d.cmp && ui.cmp){ const [team, k] = d.cmp.split('|'); cmpTap(team, +k); return; }
+  if(d.cmppick && ui.cmp){ cmpPick(d.cmppick); return; }
+  if(d.cmpn && ui.cmp){ const [team, dir] = d.cmpn.split('|'); cmpSize(team, +dir); return; }
   if(d.swap){ const [team, pid] = d.swap.split('|'); handleSwap(d.mid, team, pid); return; }
   if(d.plq){ figPlq = figPlq === d.plq ? null : d.plq; renderFigurina(); return; }
   if(d.gs !== undefined){ if(GF){ GF.s = GF.s === d.gs ? '' : d.gs; if(GF.s && GF.a && (GF.a === GF.s || (!ED.moves.length && edTeamOf(GF.a) !== edTeamOf(GF.s)))) GF.a = ''; renderGoals(); } return; }
@@ -9220,6 +9358,11 @@ document.addEventListener('click', async e => {
     case 'duel-swap': if(ui.duel){ ui.duel = { a:ui.duel.b, b:ui.duel.a }; renderDuel(); } break;
     case 'balance': balanceTeams(); break;
     case 'flip': ui.flip = !ui.flip; rerenderPitch(); break;
+    case 'cmp-start': if(requireAdmin()) cmpStart(d.mid); break;
+    case 'cmp-cancel': ui.cmp = null; paintMatch(); break;
+    case 'cmp-save': if(requireAdmin()) cmpSave(); break;
+    case 'cmp-move': if(ui.cmp){ ui.cmp.move = !ui.cmp.move; ui.cmp.sel = null; paintMatch(); } break;
+    case 'cmp-remove': if(ui.cmp && ui.cmp.pick){ ui.cmp.slots[ui.cmp.pick.team][ui.cmp.pick.k] = null; ui.cmp.pick = null; closeModal('#m-cmp'); paintMatch(); } break;
     case 'swap-mode': ui.swapMode = !ui.swapMode; ui.swapSel = null; if(ui.swapMode) rerenderPitch(); else rerenderMatch(); break;
     case 'export-pitch': exportPitch(d.mid, t); break;
     case 'record-result': if(requireAdmin()) openMatchEditor(d.mid, 'played'); break;
@@ -9333,6 +9476,7 @@ document.addEventListener('submit', e => { if(e.target && e.target.id === 'bd-fo
 document.addEventListener('change', e => { const t = e.target; if(t && t.matches && t.matches('#bd-form [data-bdpos]')) bdSync(); });
 $('#fig-body').addEventListener('animationend', e => { if(e.target.classList && e.target.classList.contains('flip')) e.target.classList.remove('reveal-gold', 'reveal-dia', 'promo', 'peek'); });
 $('#ed-filter').addEventListener('input', renderEditorPick);
+document.addEventListener('input', e => { if(e.target && e.target.id === 'cmp-q' && ui.cmp){ ui.cmp.q = e.target.value; paintCmpPick(); } });
 document.addEventListener('input', e => { if(e.target && e.target.id === 'who-q'){ const q = norm(e.target.value); $$('#who-body .who-opt').forEach(b => { b.hidden = !!q && !b.dataset.n.includes(q); }); } });
 /* Invio: se il nome scritto porta a un solo giocatore lo aggiunge alla squadra scelta e svuota la ricerca */
 $('#ed-filter').addEventListener('keydown', e => {
@@ -9368,6 +9512,7 @@ document.addEventListener('change', e => {
   if(t.id === 'duel-b' && ui.duel){ ui.duel.b = t.value; renderDuel(); return; }
   if(t.id === 'psort'){ ui.pSort = t.value; renderPlayers(); return; }
   if(t.id === 'gf-og' && GF){ GF.og = t.checked; if(GF.og) GF.a = ''; renderGoals(); return; }
+  if(t.matches('select[data-cmpfm]') && ui.cmp){ ui.cmp.fm[t.dataset.cmpfm] = t.value; paintMatch(); return; }
   if(t.matches('select[data-fm]') && ui.admin && store.matches[t.dataset.mid]) commit({ [`matches/${t.dataset.mid}/${t.dataset.fm}`]: t.value });
 });
 $('#pf-inj').addEventListener('change', e => { $('#pf-injd-w').hidden = !e.target.checked; });
