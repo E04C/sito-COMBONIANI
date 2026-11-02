@@ -1302,6 +1302,7 @@ h4 .hico{width:1.1em;height:1.1em;vertical-align:-.18em}
 .me-sec .affr+.affr{border-top:1px solid var(--hair)}
 .me-sec p{margin:8px 0 0}
 .ovrchart{display:block;width:100%;height:auto;max-height:260px}
+.oc-leg{display:flex;gap:14px;justify-content:center;margin:6px 0 0;font:700 11.5px var(--body);color:var(--mu)}.oc-leg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:0}
 .me-anim .ocl{animation:draw 1.3s ease-out}
 @keyframes draw{from{stroke-dashoffset:1}}
 .ocl{stroke-dasharray:1;stroke-dashoffset:0}
@@ -3465,13 +3466,19 @@ function ovrChartHTML(s){
   const X = i => L + i * (W - L - R) / (pts.length - 1), Y = v => T + (hi - v) / (hi - lo) * (H - T - B);
   const line = pts.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(' ');
   const area = `${line} L${X(pts.length - 1).toFixed(1)} ${H - B} L${X(0).toFixed(1)} ${H - B} Z`;
-  const th = [[65, '#94a3b8', 'Argento'], [80, '#fbbf24', 'Oro'], [90, '#38bdf8', 'Diamante']].filter(([v]) => v > lo && v < hi)
-    .map(([v, c, l]) => `<line x1="${L}" x2="${W - R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="${c}" stroke-dasharray="3 4" opacity=".55"/><text x="${W - R}" y="${(Y(v) - 3).toFixed(1)}" text-anchor="end" fill="${c}" font-size="9" font-weight="700">${l}</text>`).join('');
+  /* Sfondo a fasce di livello (stesse soglie delle figurine): si vede in che livello eri a ogni giornata */
+  const th = [[0, 70, '#c2773a', 'Bronzo'], [70, 80, '#94a3b8', 'Argento'], [80, 90, '#fbbf24', 'Oro'], [90, 99, '#38bdf8', 'Diamante'], [99, 100, '#c084fc', 'Leggenda']]
+    .map(([a, z, c, l]) => [Math.max(a, lo), Math.min(z, hi), c, l]).filter(([a, z]) => z > a)
+    .map(([a, z, c, l]) => { const y1 = Y(z), y2 = Y(a), hh = y2 - y1;
+      return `<rect x="${L}" y="${y1.toFixed(1)}" width="${W - L - R}" height="${hh.toFixed(1)}" fill="${c}" opacity=".09"/><line x1="${L}" x2="${W - R}" y1="${y2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${c}" opacity=".25"/>${hh >= 12 ? `<text x="${L + 4}" y="${(y1 + 10).toFixed(1)}" text-anchor="start" fill="${c}" font-size="8.5" font-weight="800" opacity=".85">${l}</text>` : ''}`; }).join('');
   const yl = [lo, hi].map(v => `<text x="${L - 5}" y="${(Y(v) + 3).toFixed(1)}" text-anchor="end" fill="#586074" font-size="9">${v}</text>`).join('');
   const stp = Math.max(1, Math.ceil(pts.length / 7));
   const xl = pts.map((_, i) => (i % stp === 0 || i === pts.length - 1) ? `<text x="${X(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" fill="#586074" font-size="9">${i ? 'G' + num(h[i - 1].m.day) : 'Inizio'}</text>` : '').join('');
-  const dots = pts.map((v, i) => `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${i === pts.length - 1 ? 4.5 : 2.5}" fill="${i === pts.length - 1 ? '#f97316' : '#0a0d14'}" stroke="#f97316" stroke-width="1.5"/>`).join('');
-  return `<svg class="ovrchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Andamento OVR da ${OVR_START} a ${roundOvr(s.ovr)}"><defs><linearGradient id="oca" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f97316" stop-opacity=".35"/><stop offset="1" stop-color="#f97316" stop-opacity="0"/></linearGradient></defs>${th}${yl}${xl}<path d="${area}" fill="url(#oca)"/><path class="ocl" d="${line}" fill="none" stroke="#f97316" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" pathLength="1"/>${dots}</svg>`;
+  /* Puntini del colore del risultato: verde vittoria, rosso sconfitta, grigio pareggio (il punto di partenza resta vuoto) */
+  const rc = r => r === 'v' ? '#22c55e' : r === 's' ? '#fb7185' : '#8a93a6';
+  const dots = pts.map((v, i) => { const last = i === pts.length - 1;
+    return `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${last ? 4.8 : 3}" fill="${i ? rc(h[i - 1].r) : '#0a0d14'}" stroke="${last ? '#f97316' : i ? '#0a0d14' : '#f97316'}" stroke-width="${last ? 2 : 1.3}"/>`; }).join('');
+  return `<svg class="ovrchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Andamento OVR da ${OVR_START} a ${roundOvr(s.ovr)}"><defs><linearGradient id="oca" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f97316" stop-opacity=".24"/><stop offset="1" stop-color="#f97316" stop-opacity="0"/></linearGradient></defs>${th}${yl}${xl}<path d="${area}" fill="url(#oca)"/><path class="ocl" d="${line}" fill="none" stroke="#f97316" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" pathLength="1"/>${dots}</svg><p class="oc-leg"><span><i style="background:#22c55e"></i>vittoria</span><span><i style="background:#fb7185"></i>sconfitta</span><span><i style="background:#8a93a6"></i>pareggio</span></p>`;
 }
 const holoSpan = () => '';   /* riflesso olografico tolto dalle carte Oro e Diamante */
 const teamMean = entries => { const l = list(entries); return l.length ? l.reduce((t, e) => t + ovrOf(e.pid), 0) / l.length : 0; };
