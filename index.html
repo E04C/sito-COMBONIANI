@@ -1789,6 +1789,17 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .sub-tab:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .sub-tab.on{border-color:#fb923c;background:linear-gradient(135deg,#fb923c,#f97316 55%,#ea580c);color:#1a0b02;box-shadow:0 6px 22px rgba(249,115,22,.5),inset 0 1px 0 rgba(255,255,255,.4)}
 @media (prefers-reduced-motion:reduce){.sub-tab{transition:none}}
+/* Evidenziatore che scivola sotto la voce scelta (barra in basso e schede): stesso aspetto di prima, solo che si sposta */
+.sl-ind{position:absolute;left:0;top:0;z-index:0;pointer-events:none;transition:transform .38s var(--ease),width .38s var(--ease),height .38s var(--ease)}
+.sub-tabs.has-ind{position:relative}
+.sub-tabs.has-ind .sub-tab{position:relative;z-index:1}
+.sub-tabs .sl-ind{border-radius:16px;border:2px solid #fb923c;background:linear-gradient(135deg,#fb923c,#f97316 55%,#ea580c);box-shadow:0 6px 22px rgba(249,115,22,.5),inset 0 1px 0 rgba(255,255,255,.4)}
+.sub-tabs.has-ind .sub-tab.on{background:transparent;border-color:transparent;box-shadow:none}
+.nav .sl-ind{border-radius:12px;background:var(--or-soft)}
+.nav.has-ind button{position:relative;z-index:1}
+.nav.has-ind button[aria-current=page]{background:none}
+.sl-ind.now{transition:none}
+@media (prefers-reduced-motion:reduce){.sl-ind{transition:none}}
 /* Formazioni: scelta Campo / Elenco ed elenco a specchio */
 .fv-seg{display:flex;gap:6px;justify-content:flex-end;margin:0 0 10px}
 .fv-seg button{min-height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--line-strong);background:transparent;color:var(--tx);font:700 13.5px var(--body);cursor:pointer}
@@ -3470,6 +3481,27 @@ function countUp(root){
     requestAnimationFrame(step);
   });
 }
+/* Evidenziatore che scivola: si mette sotto la voce attiva; se prima era su un'altra voce dello stesso gruppo, ci arriva scorrendo */
+const slMem = new Map();
+function slPlace(box, on, key, still){
+  if(!box || !on || !on.offsetWidth) return;
+  let ind = box.querySelector(':scope > .sl-ind');
+  if(!ind){ ind = document.createElement('i'); ind.className = 'sl-ind'; ind.setAttribute('aria-hidden', 'true'); box.prepend(ind); box.classList.add('has-ind'); }
+  const to = { x:on.offsetLeft, y:on.offsetTop, w:on.offsetWidth, h:on.offsetHeight, id:on.dataset.go || on.dataset.metab || on.dataset.mtab || on.dataset.ttab || on.textContent };
+  const was = slMem.get(key), set = r => { ind.style.transform = `translate(${r.x}px,${r.y}px)`; ind.style.width = r.w + 'px'; ind.style.height = r.h + 'px'; };
+  const fresh = !ind.style.width;
+  if(fresh && was && was.id !== to.id && !still){ ind.classList.add('now'); set(was); void ind.offsetWidth; ind.classList.remove('now'); }
+  else if(fresh || still) ind.classList.add('now');
+  set(to); if(fresh || still) requestAnimationFrame(() => ind.classList.remove('now'));
+  slMem.set(key, to);
+}
+let slRq = false;
+function paintInds(still){
+  slRq = false;
+  slPlace($('.nav'), $('.nav [aria-current=page]'), 'nav', still);
+  $$('.sub-tabs').forEach(t => { if(t.offsetParent) slPlace(t, t.querySelector('.sub-tab.on'), 'tabs:' + (t.getAttribute('aria-label') || ''), still); });
+}
+const slSoon = () => { if(!slRq){ slRq = true; requestAnimationFrame(() => paintInds()); } };
 const cu = (v, dec=0, suf='') => `<b data-cu="${v}" data-dec="${dec}" data-suf="${suf}">${itn(v, dec)}${suf}</b>`;
 function kickDate(m){ if(!m.date) return null; const d = new Date(`${m.date}T${m.time || '00:00'}:00`); return isNaN(d) ? null : d; }
 function cdText(ts, hasTime){
@@ -8934,6 +8966,7 @@ function go(view){
   $$('.nav [data-go]').forEach(b => b.setAttribute('aria-current', b.dataset.go === view ? 'page' : 'false'));
   window.scrollTo(0, 0);
   if(lazyDirty[view]){ lazyDirty[view] = false; try{ LAZY_V[view](); }catch(e){ console.error('render', e); } }
+  slSoon();
   if(view === 'me'){ const el = $('#me'); el.classList.remove('me-anim'); void el.offsetWidth; el.classList.add('me-anim'); countUp(el);
     const dl = el.querySelector('.me-dlt[data-sig]'); if(dl) try{ localStorage.setItem('cmb_meOvrSeen', dl.dataset.sig); }catch(e){} }
   if(view === 'dashboard') rankShift();
@@ -9696,6 +9729,8 @@ try{
   }
 }catch(e){}
 loadCache();
+try{ new MutationObserver(slSoon).observe($('main'), { childList:true, subtree:true }); }catch(e){}
+window.addEventListener('resize', () => paintInds(true));
 try{ render(); }catch(e){ console.error('avvio', e); try{ localStorage.removeItem(CACHE_KEY); }catch(_){} }   // cache rovinata: si riparte dal database
 initFirebase();
 </script>
