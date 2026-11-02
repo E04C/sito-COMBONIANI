@@ -1924,6 +1924,7 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 .tw-x .mfig-n{font-size:20px}
 .tw-x .mfig-s{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:4px}
 .tw-x .mfig-s b{font-size:24px} .tw-x .mfig-s i{font-size:11px;margin-top:3px}
+.tw-x .totm .mfig-s{grid-template-columns:repeat(3,minmax(0,1fr))}.tw-x .totm .mfig-s b{font-size:21px}.tw-x .totm .mfig-s i{font-size:9.5px}
 .tw-x .mfig-rt{transform:scale(.55);transform-origin:100% 0}   /* overall e ruolo a metà: visibili ma senza coprire la foto */
 .twc-pl{display:flex;justify-content:center;gap:2px;font-size:calc(var(--twk) * 26px);line-height:1;min-height:calc(var(--twk) * 26px)}
 .twc-pl i{font-style:normal;filter:drop-shadow(0 1px 2px rgba(0,0,0,.8))}
@@ -5852,14 +5853,13 @@ const twChip = pid => { const a = twHas(pid); return a ? `<span class="twchip" t
 const twTag = pid => { const a = twHas(pid); return a ? `<span class="mfig-tw">TOTW <i>${a.label}</i></span>` : ''; };
 /* Dati mostrati per un giocatore: salvati nel team, o ricalcolati per i team vecchi */
 const twInfo = (t, pid, agg) => ({ sc:t.sc && t.sc[pid] != null ? t.sc[pid] : (agg[pid] ? Math.round(agg[pid].avg * 10) / 10 : null), tt:(t.tt && t.tt[pid]) || (agg[pid] && { g:agg[pid].tg, a:agg[pid].ta }), np:t.np && t.np[pid] != null ? t.np[pid] : (agg[pid] ? agg[pid].n : null) });
-function twSlot(pid, info, mode, o = {}){   /* la stessa figurina della griglia Giocatori (arancio e viola nel TOTW, bianca e oro nel TOTM), con media e presenze al posto delle cinque statistiche */
+function twSlot(pid, info, mode, o = {}){   /* la stessa figurina della griglia Giocatori (arancio e viola nel TOTW, bianca e oro nel TOTM), con gol e assist (nel TOTM anche le presenze) al posto delle cinque statistiche */
   const s = STATS.byId[pid]; if(!s) return '';
   const pl = (s.plaques || []).map(id => plaqueById(id)).filter(Boolean).slice(0, 3).map(P => `<i title="${esc(P.name)}">${P.icon}</i>`).join('');
-  const md = info.sc != null ? String(info.sc).replace('.', ',') : '–';
   const ph = o.ph && o.ph[pid] ? `<span class="ph"><canvas data-cv="${pid}" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:${o.ph[pid].w}px;height:${o.ph[pid].h}px"></canvas></span>` : photoBlock(s.p);
   const act = o.swap ? `data-action="tw-swap" data-pid="${pid}"` : `data-open-player="${pid}"`;
   const rv = o.rd != null ? { cls:o.best ? ' best' : '', st:` style="--rd:${o.rd}s"`, cov:`<span class="twc-cov" aria-hidden="true"><b>${mode === 'm' ? 'TOTM' : 'TOTW'}</b><i>★</i></span>` } : { cls:'', st:'', cov:'' };
-  return `<span class="twc${o.sel === pid ? ' sel' : ''}${rv.cls}"${rv.st}><span class="twc-s">${rv.cov}<button type="button" class="mfig t-${tierOf(s.ovr)} ${mode === 'm' ? 'totm' : 'totw'}" ${act} aria-label="${esc(s.name)}, overall ${roundOvr(s.ovr)}"><span class="mfig-fr chamf"><span class="mfig-in chamf">${ph}<span class="mfig-rt">${ovrPlate(s.ovr, 'sm')}${roleTag(pid, s.p)}</span><span class="mfig-b"><span class="mfig-n">${nameHTML(pid)}</span>${mode === 'm' ? `<span class="mfig-s"><span><b>${md}</b><i>media</i></span><span><b>${info.np != null ? info.np : '–'}</b><i>${info.np === 1 ? 'presenza' : 'presenze'}</i></span></span>` : `<span class="mfig-s"><span><b>${info.tt ? info.tt.g : '–'}</b><i>gol</i></span><span><b>${info.tt ? info.tt.a : '–'}</b><i>assist</i></span></span>`}</span></span></span></button></span><span class="twc-pl">${pl}</span></span>`;
+  return `<span class="twc${o.sel === pid ? ' sel' : ''}${rv.cls}"${rv.st}><span class="twc-s">${rv.cov}<button type="button" class="mfig t-${tierOf(s.ovr)} ${mode === 'm' ? 'totm' : 'totw'}" ${act} aria-label="${esc(s.name)}, overall ${roundOvr(s.ovr)}"><span class="mfig-fr chamf"><span class="mfig-in chamf">${ph}<span class="mfig-rt">${ovrPlate(s.ovr, 'sm')}${roleTag(pid, s.p)}</span><span class="mfig-b"><span class="mfig-n">${nameHTML(pid)}</span>${mode === 'm' ? `<span class="mfig-s"><span><b>${info.tt ? info.tt.g : '–'}</b><i>gol</i></span><span><b>${info.tt ? info.tt.a : '–'}</b><i>assist</i></span><span><b>${info.np != null ? info.np : '–'}</b><i>pres</i></span></span>` : `<span class="mfig-s"><span><b>${info.tt ? info.tt.g : '–'}</b><i>gol</i></span><span><b>${info.tt ? info.tt.a : '–'}</b><i>assist</i></span></span>`}</span></span></span></button></span><span class="twc-pl">${pl}</span></span>`;
 }
 const TW_LINES = `<svg class="tw-lines" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="rgba(255,255,255,.55)" stroke-width=".45"><rect x="2" y="2" width="96" height="136"/><path d="M2 70H98"/><circle cx="50" cy="70" r="13"/><rect x="26" y="2" width="48" height="16"/><rect x="38" y="2" width="24" height="6"/><path d="M40 18a10 10 0 0 0 20 0"/><rect x="26" y="122" width="48" height="16"/><rect x="38" y="132" width="24" height="6"/><path d="M40 122a10 10 0 0 1 20 0"/></g><circle cx="50" cy="70" r=".9" fill="rgba(255,255,255,.7)"/></svg>`;
 function twView(mode){
@@ -6151,13 +6151,13 @@ async function twDrawCard(c, x, y, w, pid, info, mode, art, fonts){
   c.font = `800 ${w * .045}px ${fonts.body}`; const rw = Math.max(pw2, c.measureText(role).width + w * .05), rx = tx + pw2 - rw, ry = ty + ph2 + w * .02;
   c.fillStyle = 'rgba(10,13,20,.85)'; twRound(c, rx, ry, rw, w * .075, w * .02); c.fill(); c.strokeStyle = 'rgba(249,115,22,.6)'; c.lineWidth = Math.max(1, w * .006); c.stroke();
   c.fillStyle = '#f97316'; c.fillText(role, rx + rw / 2, ry + w * .053);
-  // nome, media e presenze
+  // nome e statistiche: gol e assist (nel TOTM anche le presenze)
   c.fillStyle = '#fff'; c.textAlign = 'center'; c.font = `italic 800 ${w * .125}px ${fonts.disp}`; c.shadowColor = 'rgba(0,0,0,.8)'; c.shadowBlur = w * .02;
   let nm = s.name; while(nm.length > 3 && c.measureText(nm).width > w * .8) nm = nm.slice(0, -2);
   c.fillText(nm === s.name ? nm : nm + '…', w / 2, h * .715); c.shadowBlur = 0;
   if(mo){
-    const md = info.sc != null ? String(info.sc).replace('.', ',') : '–', np = info.np;
-    for(const [v, l, fx] of [[md, 'MEDIA', .3], [np != null ? String(np) : '–', np === 1 ? 'PRESENZA' : 'PRESENZE', .7]]){ c.fillStyle = '#fff'; c.font = `italic 800 ${w * .15}px ${fonts.disp}`; c.fillText(v, w * fx, h * .835); c.fillStyle = '#9aa3b5'; c.font = `800 ${w * .068}px ${fonts.body}`; c.fillText(l, w * fx, h * .91); }
+    const tt = info.tt || {}, np = info.np;
+    for(const [v, l, fx] of [[tt.g != null ? String(tt.g) : '–', 'GOL', .2], [tt.a != null ? String(tt.a) : '–', 'ASSIST', .5], [np != null ? String(np) : '–', 'PRES', .8]]){ c.fillStyle = '#fff'; c.font = `italic 800 ${w * .13}px ${fonts.disp}`; c.fillText(v, w * fx, h * .835); c.fillStyle = '#9aa3b5'; c.font = `800 ${w * .06}px ${fonts.body}`; c.fillText(l, w * fx, h * .91); }
   }else{
     const tt = info.tt || {};
     for(const [v, l, fx] of [[tt.g != null ? String(tt.g) : '–', 'GOL', .3], [tt.a != null ? String(tt.a) : '–', 'ASSIST', .7]]){ c.fillStyle = '#fff'; c.font = `italic 800 ${w * .15}px ${fonts.disp}`; c.fillText(v, w * fx, h * .835); c.fillStyle = '#9aa3b5'; c.font = `800 ${w * .068}px ${fonts.body}`; c.fillText(l, w * fx, h * .91); }
