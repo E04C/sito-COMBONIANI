@@ -2365,7 +2365,10 @@ const OVR_START = 75, OVR_MIN = 60, OVR_MAX = 99, OVR_GAIN_CAP = 5, OVR_LOSS_CAP
 const ROLE_MULT = { ATT:0.8, CEN:1, DIF:1.2 };
 /* Half-up solo sull'OVR finale: .00-.49 per difetto, .50-.99 per eccesso (epsilon contro gli errori float) */
 const roundOvr = x => Math.floor(Math.round(x * 1e6) / 1e6 + 0.5);
-const fmtD = d => { const v = Math.round(d * 100) / 100; const t = Number.isInteger(v) ? v.toFixed(1) : String(v); return (v > 0 ? '+' : '') + t; };
+/* Numeri all'italiana: virgola per i decimali e segno meno tipografico */
+const itn = (v, dec = 1) => Number(v).toFixed(dec).replace('.', ',');
+const itv = v => typeof v === 'string' && /^-?\d+\.\d+$/.test(v) ? v.replace('.', ',') : v;
+const fmtD = d => { const v = Math.round(d * 100) / 100; const t = Number.isInteger(v) ? Math.abs(v).toFixed(1) : String(Math.abs(v)); return (v > 0 ? '+' : v < 0 ? '−' : '') + t.replace('.', ','); };
 const AWARDS = [
   { k:'ATT', icon:'🎯', l:'Top Attaccante', s:'Top ATT' },
   { k:'CEN', icon:'👟', l:'Top Centrocampista', s:'Top CEN' },
@@ -2387,7 +2390,7 @@ const PLAQUES = [
   { id:'noexcuses', icon:'⏱️', name:'NO EXCUSES', desc:'Più presenze in stagione. Parità: più vittorie.',
     ok:s => s.pres >= 1, cmp:(a,b) => (b.pres - a.pres) || (b.v - a.v), val:s => `${s.pres} presenze` },
   { id:'cecchino', icon:'🎯', name:'Il Cecchino', desc:'Miglior media gol a partita. Parità: più gol, meno presenze, più assist.',
-    ok:s => s.pres >= 1 && s.g >= 1, cmp:(a,b) => (b.avg - a.avg) || (b.g - a.g) || (a.pres - b.pres) || (b.a - a.a), val:s => `${s.avg.toFixed(2)} gol a gara` },
+    ok:s => s.pres >= 1 && s.g >= 1, cmp:(a,b) => (b.avg - a.avg) || (b.g - a.g) || (a.pres - b.pres) || (b.a - a.a), val:s => `${itn(s.avg, 2)} gol a gara` },
   { id:'assist', icon:'👑', name:'Re degli Assist', desc:'Più assist totali. Parità: miglior media assist, più vittorie.',
     ok:s => s.a >= 1, cmp:(a,b) => (b.a - a.a) || (b.apg - a.apg) || (b.v - a.v), val:s => `${s.a} assist` },
   { id:'vittoria', icon:'🏆', name:'Mister Vittoria', desc:'Percentuale vittorie più alta. Parità: più vittorie, OVR più alto.',
@@ -3409,13 +3412,13 @@ function countUp(root){
     if(!Number.isFinite(to)) return;
     const t0 = performance.now(), io = el.dataset.ease === 'io', it = 'it' in el.dataset;
     /* data-it: segno e virgola all'italiana (+1,02 / −0,80); data-ease="io": parte e arriva piano, per vedere bene quanto cambia */
-    const fmt = v => it ? (v > 0.004 ? '+' : v < -0.004 ? '−' : '') + Math.abs(v).toFixed(dec).replace('.', ',') + suf : v.toFixed(dec) + suf;
+    const fmt = v => it ? (v > 0.004 ? '+' : v < -0.004 ? '−' : '') + Math.abs(v).toFixed(dec).replace('.', ',') + suf : v.toFixed(dec).replace('.', ',') + suf;
     const step = now => { const k = Math.min(1, (now - t0) / dur), e = io ? (k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2) : 1 - Math.pow(1 - k, 3); el.textContent = fmt(from + (to - from) * e); if(k < 1) requestAnimationFrame(step); };
     el.textContent = fmt(from);
     requestAnimationFrame(step);
   });
 }
-const cu = (v, dec=0, suf='') => `<b data-cu="${v}" data-dec="${dec}" data-suf="${suf}">${Number(v).toFixed(dec)}${suf}</b>`;
+const cu = (v, dec=0, suf='') => `<b data-cu="${v}" data-dec="${dec}" data-suf="${suf}">${itn(v, dec)}${suf}</b>`;
 function kickDate(m){ if(!m.date) return null; const d = new Date(`${m.date}T${m.time || '00:00'}:00`); return isNaN(d) ? null : d; }
 function cdText(ts, hasTime){
   const diff = ts - Date.now();
@@ -3549,7 +3552,7 @@ function renderDashboardInner(){
   const next = nx ? `<div class="glass next big" role="button" tabindex="0" data-open-match="${nx.id}" aria-label="Apri la gara in programma">
       <div class="nx-top"><span class="tag">🗓️ Prossima gara</span><b>Giornata ${num(nx.day)}</b><span class="mu">${esc(whenLabel(nx) || 'Data da definire')}</span>${cdSpan(nx)}</div>
       ${nxCaps ? capsVsHTML(nx) : ''}
-      <div class="ovbar" aria-label="OVR medio Bianchi ${nxW.toFixed(1)}, Neri ${nxB.toFixed(1)}"><span>${nxW.toFixed(1)}</span><span class="bar"><i style="width:${nxSh}%"></i><em></em></span><span>${nxB.toFixed(1)}</span></div>
+      <div class="ovbar" aria-label="OVR medio Bianchi ${itn(nxW)}, Neri ${itn(nxB)}"><span>${itn(nxW)}</span><span class="bar"><i style="width:${nxSh}%"></i><em></em></span><span>${itn(nxB)}</span></div>
       <div class="nx-bot"><span class="mu sm">OVR medio delle due squadre</span><span class="go">Scopri dove giochi ›</span></div></div>` : '';
   const cv = CVIEWS[ui.cView] || CVIEWS.gen, cf = ui.cf;
   const nF = (cf.q ? 1 : 0) + (cf.played ? 1 : 0) + (cf.min > 0 ? 1 : 0);
@@ -3670,7 +3673,7 @@ function tableHTML(){
     const on = k === c.k ? 'on' : '';
     if(c.k === 'ovr') return `<td class="ov">${ovrPlate(s.ovr, 'pill')}</td>`;
     const big = (c.k === 'v' || c.k === 'g') ? 'k ' : '';
-    const val = c.k === 'pct' ? s.pct.toFixed(0) + '%' : c.k === 'avg' ? s.avg.toFixed(2) : s[c.k];
+    const val = c.k === 'pct' ? s.pct.toFixed(0) + '%' : c.k === 'avg' ? itn(s.avg, 2) : s[c.k];
     return `<td class="${big}${on}">${val}</td>`;
   };
   return `<table class="cls"><thead><tr>${th(cv.sort, '#  Giocatore', gen ? 'Posizione in classifica' : 'Riordina', 'c-pl')}${cols.map(c => th(c.k, c.l, c.t)).join('')}</tr></thead><tbody>${
@@ -4763,7 +4766,7 @@ function scheduledDetailHTML(m){
   return `<div class="mone"><article class="glass tab">
     <div class="hero-meta"><span class="tag">🗓️ In programma</span><span>Giornata ${num(m.day)}</span><span>${esc(whenLabel(m) || 'Data da definire')}</span>${cdSpan(m)}<span class="sum">${list(m.white).length} contro ${list(m.black).length}</span></div>
     ${capsVsHTML(m)}
-    <div class="ovbar" aria-label="OVR medio Bianchi ${mW.toFixed(1)}, Neri ${mB.toFixed(1)}"><span>${mW.toFixed(1)}</span><span class="bar"><i style="width:${share}%"></i><em></em></span><span>${mB.toFixed(1)}</span></div>
+    <div class="ovbar" aria-label="OVR medio Bianchi ${itn(mW)}, Neri ${itn(mB)}"><span>${itn(mW)}</span><span class="bar"><i style="width:${share}%"></i><em></em></span><span>${itn(mB)}</span></div>
     <p class="mu sm" style="text-align:center;margin:0 0 12px">OVR medio delle due squadre</p>
     ${mkAdminHTML(m)}
     <div class="tab-actions">
@@ -4885,7 +4888,7 @@ function pitchHTML(m){
   const right = `<div class="mid-r">⏰ ${m.time ? `Ore<b>${esc(m.time)}</b>` : (pre ? 'Ora da definire' : 'Finale')}</div>`;
   let center;
   if(pre){
-    const tm = t => `<b><i class="td ${t === 'white' ? 'w' : 'b'}"></i>${teamMean(m[t]).toFixed(1)}</b>`;
+    const tm = t => `<b><i class="td ${t === 'white' ? 'w' : 'b'}"></i>${itn(teamMean(m[t]))}</b>`;
     center = `<div class="mid-c"><span class="lb">Media</span>${tm(topT)}<span class="vs">vs</span>${tm(botT)}</div>`;
   }else{
     const sc = matchScore(m);
@@ -4962,7 +4965,7 @@ function cPitchHTML(m, o = {}){
     const left = `<div class="mid-l">📅 ${esc(m.date ? fmtDateCap(m.date) : 'Data da definire')}</div>`;
     const right = `<div class="mid-r">⏰ ${m.time ? `Ore<b>${esc(m.time)}</b>` : (pre ? 'Ora da definire' : 'Finale')}</div>`;
     let center;
-    if(pre){ const tm = t => `<b><i class="td ${t === 'white' ? 'w' : 'b'}"></i>${teamMean(m[t]).toFixed(1)}</b>`; center = `<div class="mid-c"><span class="lb">Media</span>${tm(topT)}<span class="vs">vs</span>${tm(botT)}</div>`; }
+    if(pre){ const tm = t => `<b><i class="td ${t === 'white' ? 'w' : 'b'}"></i>${itn(teamMean(m[t]))}</b>`; center = `<div class="mid-c"><span class="lb">Media</span>${tm(topT)}<span class="vs">vs</span>${tm(botT)}</div>`; }
     else { const sc = matchScore(m); center = `<div class="mid-c post"><span class="tn">Bianchi</span><b>${sc.w}<span>–</span>${sc.b}</b><span class="tn">Neri</span></div>`; }
     mid = left + center + right;
   }
@@ -5498,7 +5501,7 @@ function renderDuel(){
     ['Gol', s => s.g, v => v],
     ['Assist', s => s.a, v => v],
     ['% vittorie', s => s.pct, v => v.toFixed(0) + '%'],
-    ['Media gol', s => s.avg, v => v.toFixed(2)],
+    ['Media gol', s => s.avg, v => itn(v, 2)],
     ['MVP', s => s.mvp, v => v]
   ].map(([l, get, fmt]) => {
     const va = get(A), vb = get(B), mx = Math.max(va, vb) || 1;
@@ -5738,7 +5741,7 @@ function recCard(o, x = {}){
   const crack = x.broken ? `<svg class="crack" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M52 0 47 18 60 31 44 50 57 68 49 100M47 18 29 27M60 31 79 24M44 50 22 58M57 68 80 77M44 50 37 38"/></svg>` : '';
   const hist = x.chain && x.chain.length ? `<details class="rec-hist"><summary>📜 Storia del primato (${x.chain.length})</summary><ol>${x.chain.map(h => `<li><span>G${num(h.m.day)}</span>${esc(h.txt)}</li>`).join('')}</ol></details>` : '';
   return `<div class="rec glass ${x.broken ? 'broken' : ''} ${x.mine ? 'mine' : ''}">${crack}<div class="rec-hd"><span class="rec-ic">${o.icon}</span><span class="rec-t">${o.title}</span>${x.mine ? '<span class="tua">Tua</span>' : ''}</div><div class="rec-d">${o.desc}</div>
-    <div class="rec-body">${who}<div class="rec-val"><b>${o.value}</b><span>${o.unit}</span></div></div>
+    <div class="rec-body">${who}<div class="rec-val"><b>${itv(o.value)}</b><span>${o.unit}</span></div></div>
     ${o.foot ? `<div class="rec-foot">${o.foot}</div>` : ''}${hist}</div>`;
 }
 const lockSVG = st => `<svg class="lk" viewBox="0 0 24 24" aria-hidden="true"><path class="sh" d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor"/>${st === 'danger' ? '<path d="M12.6 12.4 10.8 15.2 13.2 16.6 11.6 20.4" fill="none" stroke="#0a0d14" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>' : ''}</svg>`;
@@ -6259,7 +6262,7 @@ function recTile(c, x){
     : `<span class="plv-ic">${c.icon}</span>`;
   return `<button type="button" class="plv rcv${c.lock ? ' off' : ''}${x.mine ? ' mine' : ''}${x.broken ? ' broken' : ''}" data-rcv="${c.key}" aria-label="${esc(c.title)}: ${c.lock ? 'da sbloccare' : `${who}, ${esc(String(c.value))} ${esc(c.unit)}`}">
     <span class="plv-med">${face}</span>${x.mine ? '<span class="plv-tua">Tua</span>' : ''}${x.broken ? '<span class="rcv-new">Battuto!</span>' : ''}
-    <span class="plv-t">${c.title}</span><span class="plv-h">${who}</span>${c.lock ? '' : `<span class="plv-v"><b>${c.value}</b> ${c.unit}</span>`}</button>`;
+    <span class="plv-t">${c.title}</span><span class="plv-h">${who}</span>${c.lock ? '' : `<span class="plv-v"><b>${itv(c.value)}</b> ${c.unit}</span>`}</button>`;
 }
 function renderTrophies(){
   const el = $('#troph'); if(!el) return;
@@ -6411,7 +6414,7 @@ function recHolder(c){ return c.pid || (c.pair ? [...c.pair].sort().join('+') : 
 function recText(c){
   if(c.lock) return '';
   const who = c.pid ? pname(c.pid) : c.pair ? c.pair.map(x => pname(x)).join(' e ') : c.label;
-  return `${who}, ${c.value} ${c.unit}`;
+  return `${who}, ${itv(c.value)} ${c.unit}`;
 }
 const REC_SEEN = 'cmb2627_recSeen';
 let recQueue = [];
@@ -6459,7 +6462,7 @@ function drawRec(){
     <div class="rw-t" id="rw-t">${c.title}</div>
     <div class="rw-d">${c.desc}</div>
     <div class="rw-who">${who}</div>
-    <div class="rw-val"><b>${c.value}</b><span>${c.unit}</span></div>
+    <div class="rw-val"><b>${itv(c.value)}</b><span>${c.unit}</span></div>
     <div class="rw-prev">${prev ? `Precedente: <b>${esc(prev)}</b>` : 'Primo detentore di questo primato'}</div>
     ${recList.length > 1 ? `<div class="rw-cnt">${recIdx + 1} di ${recList.length} primati cambiati</div>` : ''}
     <div class="rw-act">${rest ? `<button class="btn primary" data-action="rec-next">Avanti ›</button>` : ''}<button class="btn ${rest ? '' : 'primary'}" data-action="rec-board">Vedi bacheca</button><button class="btn ghost" data-action="rec-close">Chiudi</button></div>`;
@@ -8061,7 +8064,7 @@ function balanceTeams(){
   edTeam = 'white';
   renderEditor();
   const mean = arr => { const l = arr.filter(e => !e.bench); return l.reduce((t, e) => t + ovrOf(e.pid), 0) / (l.length || 1); };
-  toast(`Squadre bilanciate (${sz.w} contro ${sz.b}): OVR medio ${mean(ED.white).toFixed(1)} contro ${mean(ED.black).toFixed(1)}. Premi di nuovo per un’alternativa.`);
+  toast(`Squadre bilanciate (${sz.w} contro ${sz.b}): OVR medio ${itn(mean(ED.white))} contro ${itn(mean(ED.black))}. Premi di nuovo per un’alternativa.`);
 }
 /* Misure scelte per il bilanciatore (campi "Bianchi n / Neri n"); senza scelta: ceil(n/2) e floor(n/2) */
 function balInput(side, v){
@@ -8081,13 +8084,13 @@ function edSizes(n){
 }
 function renderEditorScore(){
   if(ED.status === 'scheduled'){
-    const mean = arr => { const l = arr.filter(e => !e.bench); return l.length ? (l.reduce((t, e) => t + ovrOf(e.pid), 0) / l.length).toFixed(1) : '–'; };
+    const mean = arr => { const l = arr.filter(e => !e.bench); return l.length ? itn(l.reduce((t, e) => t + ovrOf(e.pid), 0) / l.length) : '–'; };
     $('#ed-score').innerHTML = `<div class="t w">Bianchi<small>${edCount('white')}, OVR medio <b>${mean(ED.white)}</b></small></div><div class="s"><span style="color:var(--or)">VS</span></div><div class="t b">Neri<small>${ED.black.length}/8, OVR medio <b>${mean(ED.black)}</b></small></div><div class="note">Gara in programma: gol e assist si inseriscono dopo il fischio finale con “Registra risultato”</div>`;
     return;
   }
   const sc = matchScore(ED);
   const hasOg = [...ED.white, ...ED.black].some(e => e.og > 0);
-  const mean = arr => { const l = arr.filter(e => !e.bench); return l.length ? (l.reduce((t, e) => t + ovrOf(e.pid), 0) / l.length).toFixed(1) : '–'; };
+  const mean = arr => { const l = arr.filter(e => !e.bench); return l.length ? itn(l.reduce((t, e) => t + ovrOf(e.pid), 0) / l.length) : '–'; };
   $('#ed-score').innerHTML = `<div class="t w">Bianchi<small>${edCount('white')}, OVR medio <b>${mean(ED.white)}</b></small></div>
     <div class="s"><span>${sc.w}</span><i></i><span>${sc.b}</span></div>
     <div class="t b">Neri<small>${edCount('black')}, OVR medio <b>${mean(ED.black)}</b></small></div>
