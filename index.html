@@ -3144,13 +3144,14 @@ function rankCmp(a, b){
 }
 /* Motore OVR v6. Delta senza arrotondamenti; tetti +5 / −3 (da 95 in su −4). Per livello (sull'OVR arrotondato):
    da 61 a 69 positivi ×2 e perdite ×0,5; al minimo (60) positivi ×3 e perdite ×0,5; da 85 a 89 positivi ×0,8 e perdite ×1,2, attaccanti senza gol né assist −0,5;
-   da 90 a 94 positivi ×0,65, sconfitta −1,5 (−2,5 con 3+ gol di scarto), attaccanti e centrocampisti senza gol né assist −1, difensori −0,1 per gol subito nelle sconfitte;
-   da 95 a 98 positivi ×0,5, sconfitta −2 (−3 con 3+ gol di scarto), attaccanti e centrocampisti senza gol né assist −1, difensori −0,2 per gol subito nelle sconfitte;
-   a 99 come da 95 a 98, ma una vittoria con meno di 2 gol vale −2. Le penalità fisse non si moltiplicano. */
+   da 90 a 94 positivi ×0,65, sconfitta −2,5, attaccanti e centrocampisti senza gol né assist −1, difensori −0,1 per gol subito nelle sconfitte;
+   da 95 a 98 positivi ×0,5, sconfitta −3, attaccanti e centrocampisti senza gol né assist −1, difensori −0,2 per gol subito nelle sconfitte;
+   a 99 come da 95 a 98, ma una vittoria con meno di 2 gol vale −2. Le penalità fisse non si moltiplicano.
+   La sconfitta vale sempre come quella larga (sotto il 90: −2 per il moltiplicatore della fascia), qualunque sia lo scarto. */
 function ovrBand(shown){
-  if(shown >= 99) return { fp:0.5, z:99, lcap:4, lw:2, lb:3, dc:0.2, txt:'Leggenda (99): punti positivi dimezzati, sconfitta −2 (−3 larga), fino a −4; per restare serve vincere con almeno 2 gol (difensore: 1)' };
-  if(shown >= 95) return { fp:0.5, z:95, lcap:4, lw:2, lb:3, dc:0.2, txt:'OVR da 95 a 98: punti positivi dimezzati, sconfitta −2 (−3 larga), fino a −4' };
-  if(shown >= 90) return { fp:0.65, z:90, lcap:3, lw:1.5, lb:2.5, dc:0.1, txt:'OVR da 90 a 94: punti positivi ×0,65, sconfitta −1,5 (−2,5 larga), fino a −3' };
+  if(shown >= 99) return { fp:0.5, z:99, lcap:4, lb:3, dc:0.2, txt:'Leggenda (99): punti positivi dimezzati, sconfitta −3, fino a −4; per restare serve vincere con almeno 2 gol (difensore: 1)' };
+  if(shown >= 95) return { fp:0.5, z:95, lcap:4, lb:3, dc:0.2, txt:'OVR da 95 a 98: punti positivi dimezzati, sconfitta −3, fino a −4' };
+  if(shown >= 90) return { fp:0.65, z:90, lcap:3, lb:2.5, dc:0.1, txt:'OVR da 90 a 94: punti positivi ×0,65, sconfitta −2,5, fino a −3' };
   if(shown >= 85) return { fp:0.8, fl:1.2, z:85, txt:'OVR da 85 a 89: punti positivi ×0,8, perdite ×1,2' };
   if(shown <= OVR_MIN) return { fp:3, fl:0.5, txt:`OVR al minimo (${OVR_MIN}): punti positivi tripli, perdite dimezzate` };
   if(shown < 70) return { fp:2, fl:0.5, txt:`OVR da ${OVR_MIN + 1} a 69: punti positivi doppi, perdite dimezzate` };
@@ -3161,12 +3162,12 @@ function ovrParts(role, ovr, c){
   const R = ROLES[role] ? role : 'CEN';
   const shown = roundOvr(ovr);
   let pos = 0;
-  const vPts = c.res === 'v' ? Math.max(0, 2 - 0.1 * c.conceded) : 0, big = c.margin >= 3;
+  const vPts = c.res === 'v' ? Math.max(0, 2 - 0.1 * c.conceded) : 0;
   const B = ovrBand(shown), fp = B.fp, top = B.z >= 90;
   pos += vPts + (c.g * 1 + c.a * 0.5) * ROLE_MULT[R] + (c.award ? 0.2 : 0);
   pos *= fp;
   /* da 90 la sconfitta è un valore fisso; sotto si moltiplica come sempre */
-  const lPts = c.res !== 's' ? 0 : top ? (big ? B.lb : B.lw) : (big ? 2 : 1) * (B.fl || 1);
+  const lPts = c.res !== 's' ? 0 : top ? B.lb : 2 * (B.fl || 1);
   const none = !c.g && !c.a && (c.res === 'v' || c.res === 's');   /* il pareggio resta 0 a ogni livello */
   const dry = top ? (none && R !== 'DIF' ? 1 : 0) : (B.z === 85 && none && R === 'ATT' ? 0.5 : 0);
   const cpen = top && R === 'DIF' && c.res === 's' ? B.dc * c.conceded : 0;
@@ -5289,14 +5290,14 @@ document.addEventListener('pointerup', e => { const t = e.target.closest && e.ta
 function ovrExplainHTML(s){
   const sg = v => (v < 0 ? '−' : '+') + String(Math.round(Math.abs(v) * 100) / 100).replace('.', ',');
   const o1 = v => v.toFixed(1).replace('.', ',');
-  const how = `<details class="ox-how"><summary>Come si calcola</summary><p>Parti da ${OVR_START}. Dopo ogni gara: vittoria +2 (meno 0,1 per ogni gol subito), sconfitta −1 (−2 se perdi con 3 gol di scarto o più), pareggio 0. Ogni gol vale 1 e ogni assist 0,5, moltiplicati per il tuo ruolo (difensore ×${String(ROLE_MULT.DIF).replace('.', ',')}, centrocampista ×${String(ROLE_MULT.CEN).replace('.', ',')}, attaccante ×${String(ROLE_MULT.ATT).replace('.', ',')}). Il premio di reparto dà +0,2, ogni autogol −${OG_PEN}. Da 85 a 89 i punti positivi valgono ×0,8 e le perdite ×1,2, e un attaccante senza gol né assist perde 0,5. Da 90 a 94 i punti positivi valgono ×0,65, la sconfitta −1,5 (−2,5 con 3 gol di scarto o più), attaccanti e centrocampisti senza gol né assist perdono 1, i difensori 0,1 per ogni gol subito quando perdono, e in una gara scendi al massimo di 3. Da 95 a 98 i punti positivi si dimezzano, la sconfitta vale −2 (−3 larga), la penalità senza gol né assist resta −1, per i difensori 0,2 a gol subito quando perdono, e scendi al massimo di 4. A 99 valgono le stesse regole, ma se vinci con meno di 2 gol (difensore: senza segnare) perdi 2 punti. Il pareggio vale 0 a ogni livello, senza penalità. Da 61 a 69 i punti positivi valgono doppio e le perdite metà; al minimo (60) i punti positivi valgono triplo. Sotto il 90 in una gara non puoi salire più di ${OVR_GAIN_CAP} né scendere più di ${OVR_LOSS_CAP}. Poi si aggiungono i voti dei compagni (da −0,2 a +0,2) e −${String(LATE_PEN).replace('.', ',')} se arrivi in ritardo. L'OVR resta sempre tra ${OVR_MIN} e ${OVR_MAX}.</p></details>`;
+  const how = `<details class="ox-how"><summary>Come si calcola</summary><p>Parti da ${OVR_START}. Dopo ogni gara: vittoria +2 (meno 0,1 per ogni gol subito), sconfitta −2 (qualunque sia lo scarto), pareggio 0. Ogni gol vale 1 e ogni assist 0,5, moltiplicati per il tuo ruolo (difensore ×${String(ROLE_MULT.DIF).replace('.', ',')}, centrocampista ×${String(ROLE_MULT.CEN).replace('.', ',')}, attaccante ×${String(ROLE_MULT.ATT).replace('.', ',')}). Il premio di reparto dà +0,2, ogni autogol −${OG_PEN}. Da 85 a 89 i punti positivi valgono ×0,8 e le perdite ×1,2, e un attaccante senza gol né assist perde 0,5. Da 90 a 94 i punti positivi valgono ×0,65, la sconfitta −2,5, attaccanti e centrocampisti senza gol né assist perdono 1, i difensori 0,1 per ogni gol subito quando perdono, e in una gara scendi al massimo di 3. Da 95 a 98 i punti positivi si dimezzano, la sconfitta vale −3, la penalità senza gol né assist resta −1, per i difensori 0,2 a gol subito quando perdono, e scendi al massimo di 4. A 99 valgono le stesse regole, ma se vinci con meno di 2 gol (difensore: senza segnare) perdi 2 punti. Il pareggio vale 0 a ogni livello, senza penalità. Da 61 a 69 i punti positivi valgono doppio e le perdite metà; al minimo (60) i punti positivi valgono triplo. Sotto il 90 in una gara non puoi salire più di ${OVR_GAIN_CAP} né scendere più di ${OVR_LOSS_CAP}. Poi si aggiungono i voti dei compagni (da −0,2 a +0,2) e −${String(LATE_PEN).replace('.', ',')} se arrivi in ritardo. L'OVR resta sempre tra ${OVR_MIN} e ${OVR_MAX}.</p></details>`;
   if(!s.hist.length) return how + '<p class="mu sm" style="margin:8px 0 0">Dopo la tua prima gara vedrai qui come si forma ogni variazione.</p>';
   const one = h => {
     const P = h.parts; if(!P) return '';
     const rows = [];
     const add = (label, v, note) => { if(Math.abs(v) > 1e-9) rows.push(`<div><span>${label}${note ? ` <small>${note}</small>` : ''}</span><b>${sg(v)}</b></div>`); };
     if(h.r === 'v') add('Vittoria', P.v, P.conceded ? `${P.conceded} ${P.conceded === 1 ? 'gol subito' : 'gol subiti'}` : 'porta inviolata');
-    else if(h.r === 's') add('Sconfitta', -P.l, P.margin >= 3 ? 'di 3 o più gol' : '');
+    else if(h.r === 's') add('Sconfitta', -P.l);
     else rows.push('<div><span>Pareggio</span><b>0</b></div>');
     add(`Gol${h.g > 1 ? ' ×' + h.g : ''}`, P.g, `ruolo ×${String(P.mult).replace('.', ',')}`);
     add(`Assist${h.a > 1 ? ' ×' + h.a : ''}`, P.a);
@@ -5347,7 +5348,7 @@ function renderMe(){
   const tierBox = nx ? (() => {
     const need = Math.max(0, nx[0] - 0.5 - ov), pr = Math.max(0, Math.min(1, (ov - lowT) / (nx[0] - lowT)));
     return `<div class="me-tier"><div class="me-tl"><span>${TIERS[t].i} ${TIERS[t].l}</span><span>${TIERS[nx[1]].i} ${TIERS[nx[1]].l}</span></div><div class="me-bar t-${nx[1]}"><i style="width:${(pr * 100).toFixed(1)}%"></i></div><p>Ti mancano ${cu(+need.toFixed(1), 1)} punti OVR per il livello ${TIERS[nx[1]].l}.</p></div>`;
-  })() : `<div class="me-tier"><div class="me-bar t-leg"><i style="width:100%"></i></div><p>👑 Sei una Leggenda: 99, il massimo. Qui una sconfitta costa 2 (3 se larga) e una vittoria senza doppietta ti toglie 2 punti: per restarci devi vincere segnando almeno 2 gol (se sei difensore ne basta 1).</p></div>`;
+  })() : `<div class="me-tier"><div class="me-bar t-leg"><i style="width:100%"></i></div><p>👑 Sei una Leggenda: 99, il massimo. Qui una sconfitta costa 3 e una vittoria senza doppietta ti toglie 2 punti: per restarci devi vincere segnando almeno 2 gol (se sei difensore ne basta 1).</p></div>`;
   const last5 = h.slice(-5), sk = streakOf(s);
   const form = last5.length
     ? `<div class="me-form">${last5.map(x => `<span class="fp ${x.r}" title="Giornata ${num(x.m.day)}">${x.r === 'v' ? 'V' : x.r === 's' ? 'S' : 'P'}</span>`).join('')}</div><p class="mu sm">${sk ? (sk.kind === 'fire' ? `🔥 ${sk.n} vittorie di fila` : `❄️ ${sk.n} sconfitte di fila`) : 'Nessuna striscia aperta'}. Dalla più vecchia alla più recente.</p>`
@@ -9593,6 +9594,13 @@ try{
   if(!localStorage.getItem('cmb_mig_v162')){
     ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr'].forEach(k => localStorage.removeItem(k));
     localStorage.setItem('cmb_mig_v162', '1');
+  }
+}catch(e){}
+/* Migrazione 1.12.3: la sconfitta vale sempre come quella larga e gli OVR si ricalcolano. Si azzerano i "già visto": il codice li ricrea in silenzio */
+try{
+  if(!localStorage.getItem('cmb_mig_v1123')){
+    ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr','cmb_walkTier'].forEach(k => localStorage.removeItem(k));
+    localStorage.setItem('cmb_mig_v1123', '1');
   }
 }catch(e){}
 /* Migrazione 1.12.1: cambiano di nuovo le regole dell'OVR da 85 in su. Si azzerano i "già visto": il codice li ricrea in silenzio */
