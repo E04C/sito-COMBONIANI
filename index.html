@@ -630,6 +630,19 @@ body.theme-casino .slip{background:rgba(7,76,44,.98)}
 .stp button{width:36px;height:36px;border:0;background:rgba(255,255,255,.04);font:800 18px var(--body);touch-action:manipulation}
 .stp button:active{background:rgba(249,115,22,.25)}
 .stp output{min-width:26px;text-align:center;font:italic 800 19px var(--disp);font-variant-numeric:tabular-nums}
+/* Calcolo overall (admin) */
+.oc-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 6px}
+.oc-tabs button{min-height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--line-strong);background:transparent;color:var(--tx);font:700 13px var(--body)}
+.oc-tabs button[aria-selected="true"]{background:var(--or);border-color:var(--or);color:#1a0b02}
+.oc-r{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--hair);font-size:14px}
+.oc-r>span:first-child{min-width:0}
+.oc-r.ch>span:first-child{color:var(--or);font-weight:700}
+.oc-r .stp output{min-width:52px}
+.oc-n{margin:8px 0 0}
+.oc-act{gap:8px;flex-wrap:wrap;margin-top:12px}
+.oc-pv{margin-top:12px;max-height:260px;overflow:auto;border-top:1px solid var(--hair)}
+.oc-pr{display:grid;grid-template-columns:1fr auto 38px;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--hair);font-size:13.5px}
+.oc-pr em{font-style:normal;font-weight:800;text-align:right}.oc-pr em.up{color:#22c55e}.oc-pr em.dn{color:#fb7185}.oc-pr em.eq{color:var(--mu)}
 .stp.on{border-color:var(--line)}
 .stp.on output{color:var(--or)}
 .capb{width:32px;height:32px;border-radius:9px;border:1px solid var(--hair);background:none;color:var(--mu);font:800 14px var(--body);touch-action:manipulation}
@@ -1062,6 +1075,7 @@ button.rec-who{cursor:pointer}
 .ox-how{margin:0 0 10px;color:var(--mu);font-size:13px;line-height:1.5}
 .ox-how summary,.ox-more summary{cursor:pointer;color:var(--or);font-weight:700;min-height:36px;display:flex;align-items:center}
 .ox-how p{margin:6px 0 0}
+.ox-bands{margin:6px 0 0;padding-left:18px;display:grid;gap:4px}.ox-bands b{color:var(--tx)}
 .ox{border:1px solid var(--hair);border-radius:12px;background:rgba(255,255,255,.025);margin-bottom:8px;overflow:hidden}
 .ox summary{display:grid;grid-template-columns:1fr auto;gap:1px 10px;align-items:center;padding:8px 12px;cursor:pointer;list-style:none;min-height:48px}
 .ox summary::-webkit-details-marker{display:none}
@@ -2286,6 +2300,9 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 <div class="modal" id="m-mk" aria-hidden="true"><div class="sheet glass mk" role="dialog" aria-modal="true" aria-label="Apri scommesse" style="width:min(680px,100%)"><div id="mk-body"></div></div></div>
 <div class="modal" id="m-vinfo" aria-hidden="true"><div class="sheet glass vi" role="dialog" aria-modal="true" aria-label="Chi ha votato chi" style="width:min(560px,100%)"><div id="vi-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 
+<!-- Calcolo overall (admin) -->
+<div class="modal" id="m-ovrc" aria-hidden="true"><div class="sheet glass oc" role="dialog" aria-modal="true" aria-label="Calcolo overall" style="width:min(620px,100%)"><div id="oc-body"></div></div></div>
+
 <!-- Replay a schermo intero -->
 <div class="modal rpv-modal" id="m-replay" aria-hidden="true"></div>
 
@@ -2406,7 +2423,7 @@ const CACHE_KEY = 'cmb2627_cache_v1';
 const ROLES = { ATT:'Attaccante', CEN:'Centrocampista', DIF:'Difensore' };
 const FEET = { DX:'Destro', SX:'Sinistro', AMB:'Ambidestro' };
 const OG_PEN = 1;   /* punti tolti per ogni autogol (OVR, premi di reparto, Uomo Partita) */
-const OVR_START = 75, OVR_MIN = 60, OVR_MAX = 99, OVR_GAIN_CAP = 5, OVR_LOSS_CAP = 3;
+const OVR_START = 75, OVR_MIN = 60, OVR_MAX = 99;
 const ROLE_MULT = { ATT:0.8, CEN:1, DIF:1.2 };
 /* Half-up solo sull'OVR finale: .00-.49 per difetto, .50-.99 per eccesso (epsilon contro gli errori float) */
 const roundOvr = x => Math.floor(Math.round(x * 1e6) / 1e6 + 0.5);
@@ -3125,7 +3142,6 @@ function voteInfo(m, preFn){
    Vota chi ha giocato (in rosa), tutti i compagni della stessa squadra effettiva (effTeam), se stesso escluso.
    Massimo 3 voti da 5 stelle e 2 da 1 stella. Chiude a voteClose o quando hanno votato tutti. Bonus OVR = (media - 3) x 0,1 (da -0,2 a +0,2), con almeno 3 votanti. */
 const RATE_MAX5 = 3, RATE_MAX1 = 2, RATE_MIN_N = 3, RATE_STEP = 0.1;   /* bonus = (media − 3) × 0,1: da −0,2 a +0,2 */
-const LATE_PEN = 0.3;   /* punti OVR persi da chi arriva in ritardo, dopo i tetti */
 function rateInfo(m){
   const EE = effEntries(m), teamOf = {}, by = { white:[], black:[] };
   for(const t of ['white', 'black']) for(const e of EE[t]) if(store.players[e.pid] && !(e.pid in teamOf)){ teamOf[e.pid] = t; by[t].push(e.pid); }
@@ -3209,42 +3225,76 @@ function matchMvpLegacy(m){
 function rankCmp(a, b){
   return (b.v - a.v) || (b.pct - a.pct) || (b.g - a.g) || (b.a - a.a) || (a.og - b.og) || a.name.localeCompare(b.name, 'it');
 }
-/* Motore OVR v6. Delta senza arrotondamenti; tetti +5 / −3 (da 95 in su −4). Per livello (sull'OVR arrotondato):
-   da 61 a 69 positivi ×2 e perdite ×0,5; al minimo (60) positivi ×3 e perdite ×0,5; da 85 a 89 positivi ×0,8 e perdite ×1,2, attaccanti senza gol né assist −0,5;
-   da 90 a 94 positivi ×0,65, sconfitta −2,5, attaccanti e centrocampisti senza gol né assist −1, difensori −0,1 per gol subito nelle sconfitte;
-   da 95 a 98 positivi ×0,5, sconfitta −3, attaccanti e centrocampisti senza gol né assist −1, difensori −0,2 per gol subito nelle sconfitte;
-   a 99 come da 95 a 98, ma una vittoria con meno di 2 gol vale −2. Le penalità fisse non si moltiplicano.
-   La sconfitta vale sempre come quella larga (sotto il 90: −2 per il moltiplicatore della fascia), qualunque sia lo scarto. */
-function ovrBand(shown){
-  if(shown >= 99) return { fp:0.5, z:99, lcap:4, lb:3, dc:0.2, txt:'Leggenda (99): punti positivi dimezzati, sconfitta −3, fino a −4; per restare serve vincere con almeno 2 gol (difensore: 1)' };
-  if(shown >= 95) return { fp:0.5, z:95, lcap:4, lb:3, dc:0.2, txt:'OVR da 95 a 98: punti positivi dimezzati, sconfitta −3, fino a −4' };
-  if(shown >= 90) return { fp:0.65, z:90, lcap:3, lb:2.5, dc:0.1, txt:'OVR da 90 a 94: punti positivi ×0,65, sconfitta −2,5, fino a −3' };
-  if(shown >= 85) return { fp:0.8, fl:1.2, z:85, txt:'OVR da 85 a 89: punti positivi ×0,8, perdite ×1,2' };
-  if(shown <= OVR_MIN) return { fp:3, fl:0.5, txt:`OVR al minimo (${OVR_MIN}): punti positivi tripli, perdite dimezzate` };
-  if(shown < 70) return { fp:2, fl:0.5, txt:`OVR da ${OVR_MIN + 1} a 69: punti positivi doppi, perdite dimezzate` };
-  return { fp:1, fl:1, txt:'' };
+/* Motore OVR v7: i parametri si scelgono dall'area admin («Calcolo overall») e stanno in settings/ovr (campo facoltativo).
+   Senza quel campo valgono i valori di OVR_DEF, cioè le regole di prima. Delta senza arrotondamenti; la fascia si sceglie sull'OVR arrotondato.
+   Per fascia: moltiplicatore dei punti positivi (vittoria, gol, assist, premio di reparto; al minimo 60 uno a parte), punti di vittoria
+   (meno un tanto per gol subito), pareggio, sconfitta, penalità senza gol né assist per ruolo (solo in vittoria e sconfitta), gol subiti
+   del difensore in sconfitta, tetti per gara; nella fascia 95-99 la regola della Leggenda (a 99 una vittoria con pochi gol costa punti).
+   Le penalità fisse non si moltiplicano. */
+const OVR_BANDS = [['b60', 60, 69], ['b70', 70, 79], ['b80', 80, 84], ['b85', 85, 89], ['b90', 90, 94], ['b95', 95, 99]];
+const OVR_BAND0 = { fp:1, win:2, wc:0.1, draw:0, loss:2, dA:0, dC:0, dD:0, dc:0, cap:3, gcap:5 };
+const OVR_DEF = {
+  gol:1, ast:0.5, rATT:0.8, rCEN:1, rDIF:1.2, og:1, aw:0.2, late:0.3,
+  b60:{ ...OVR_BAND0, fp:2, minFp:3, loss:1 },
+  b70:{ ...OVR_BAND0 },
+  b80:{ ...OVR_BAND0 },
+  b85:{ ...OVR_BAND0, fp:0.8, loss:2.4, dA:0.5 },
+  b90:{ ...OVR_BAND0, fp:0.65, loss:2.5, dA:1, dC:1, dc:0.1 },
+  b95:{ ...OVR_BAND0, fp:0.5, loss:3, dA:1, dC:1, dc:0.2, cap:4, leg:2, legG:2, legGD:1 }
+};
+/* [chiave, etichetta, minimo, massimo, passo]: i valori fuori misura tornano a quello predefinito */
+const OVR_META_G = [
+  ['gol', 'Valore di un gol', 0, 3, 0.1], ['ast', 'Valore di un assist', 0, 3, 0.1],
+  ['rATT', 'Moltiplicatore attaccante', 0, 3, 0.05], ['rCEN', 'Moltiplicatore centrocampista', 0, 3, 0.05], ['rDIF', 'Moltiplicatore difensore', 0, 3, 0.05],
+  ['aw', 'Premio di reparto', 0, 2, 0.05], ['og', 'Autogol (punti persi)', 0, 5, 0.1], ['late', 'Ritardo (punti persi)', 0, 3, 0.1]
+];
+const OVR_META_B = [
+  ['fp', 'Moltiplicatore dei punti positivi', 0, 4, 0.05], ['minFp', 'Al minimo (60): moltiplicatore', 0, 5, 0.1],
+  ['win', 'Vittoria', 0, 6, 0.1], ['wc', 'Vittoria: meno per ogni gol subito', 0, 1, 0.05], ['draw', 'Pareggio', -3, 3, 0.1], ['loss', 'Sconfitta (punti persi)', 0, 8, 0.1],
+  ['dA', 'Né gol né assist: attaccante', 0, 4, 0.1], ['dC', 'Né gol né assist: centrocampista', 0, 4, 0.1], ['dD', 'Né gol né assist: difensore', 0, 4, 0.1],
+  ['dc', 'Difensore: per ogni gol subito in sconfitta', 0, 1, 0.05],
+  ['gcap', 'Massimo guadagnato in una gara', 0, 10, 0.5], ['cap', 'Massimo perso in una gara', 0, 10, 0.5],
+  ['leg', 'Leggenda (99): punti persi se vinci con pochi gol', 0, 6, 0.5], ['legG', 'Leggenda: gol richiesti (attaccante e centrocampista)', 0, 5, 1], ['legGD', 'Leggenda: gol richiesti (difensore)', 0, 5, 1]
+];
+function ovrCfg(raw){
+  const r = raw && typeof raw === 'object' ? raw : {}, out = {};
+  const pick = (src, k, def, lo, hi) => { const v = Number(src && src[k]); return Number.isFinite(v) && v >= lo && v <= hi ? Math.round(v * 100) / 100 : def; };
+  for(const [k, , lo, hi] of OVR_META_G) out[k] = pick(r, k, OVR_DEF[k], lo, hi);
+  for(const [bk] of OVR_BANDS){ const d = OVR_DEF[bk], o = {}; for(const [k, , lo, hi] of OVR_META_B) if(k in d) o[k] = pick(r[bk], k, d[k], lo, hi); out[bk] = o; }
+  return out;
 }
-/* Variazione di OVR di una gara con il dettaglio di come si forma. I numeri sono quelli di sempre: ovrDelta restituisce solo il totale. */
+let OVRC = ovrCfg(null);
+const ovrBandKey = shown => shown < 70 ? 'b60' : shown < 80 ? 'b70' : shown < 85 ? 'b80' : shown < 90 ? 'b85' : shown < 95 ? 'b90' : 'b95';
+const nIt = v => String(Math.round(v * 100) / 100).replace('.', ',');
+function ovrBandTxt(bk, C = OVRC){
+  const B = C[bk], [, lo, hi] = OVR_BANDS.find(x => x[0] === bk), bits = [];
+  if(B.fp !== 1) bits.push(`punti positivi ×${nIt(B.fp)}`);
+  bits.push(`sconfitta −${nIt(B.loss)}`);
+  if(B.cap !== OVR_BAND0.cap) bits.push(`fino a −${nIt(B.cap)}`);
+  return `OVR da ${lo} a ${hi}: ${bits.join(', ')}`;
+}
+function ovrBand(shown){
+  const bk = ovrBandKey(shown), B = OVRC[bk];
+  return { ...B, k:bk, fp:shown <= OVR_MIN && B.minFp != null ? B.minFp : B.fp, txt:ovrBandTxt(bk) };
+}
 function ovrParts(role, ovr, c){
-  const R = ROLES[role] ? role : 'CEN';
+  const R = ROLES[role] ? role : 'CEN', C = OVRC;
   const shown = roundOvr(ovr);
-  let pos = 0;
-  const vPts = c.res === 'v' ? Math.max(0, 2 - 0.1 * c.conceded) : 0;
-  const B = ovrBand(shown), fp = B.fp, top = B.z >= 90;
-  pos += vPts + (c.g * 1 + c.a * 0.5) * ROLE_MULT[R] + (c.award ? 0.2 : 0);
+  const B = ovrBand(shown), fp = B.fp, mult = C['r' + R];
+  const vPts = c.res === 'v' ? Math.max(0, B.win - B.wc * c.conceded) : 0;
+  const dPts = c.res === 'v' || c.res === 's' ? 0 : B.draw;   /* il pareggio: se positivo si moltiplica come gli altri punti, se negativo è una penalità */
+  let pos = vPts + Math.max(0, dPts) + (c.g * C.gol + c.a * C.ast) * mult + (c.award ? C.aw : 0);
   pos *= fp;
-  /* da 90 la sconfitta è un valore fisso; sotto si moltiplica come sempre */
-  const lPts = c.res !== 's' ? 0 : top ? B.lb : 2 * (B.fl || 1);
-  const none = !c.g && !c.a && (c.res === 'v' || c.res === 's');   /* il pareggio resta 0 a ogni livello */
-  const dry = top ? (none && R !== 'DIF' ? 1 : 0) : (B.z === 85 && none && R === 'ATT' ? 0.5 : 0);
-  const cpen = top && R === 'DIF' && c.res === 's' ? B.dc * c.conceded : 0;
-  const leg = B.z === 99 && c.res === 'v' && c.g < (R === 'DIF' ? 1 : 2);   /* Leggenda: vincere senza doppietta (difensore: senza gol) costa 2 */
+  const lPts = (c.res === 's' ? B.loss : 0) + Math.max(0, -dPts);
+  const none = !c.g && !c.a && (c.res === 'v' || c.res === 's');   /* niente penalità senza gol né assist nel pareggio */
+  const dry = none ? B['d' + R[0]] || 0 : 0;
+  const cpen = R === 'DIF' && c.res === 's' ? (B.dc || 0) * c.conceded : 0;
+  const leg = shown >= 99 && c.res === 'v' && (B.leg || 0) > 0 && c.g < (R === 'DIF' ? B.legGD : B.legG);   /* Leggenda: vincere senza i gol richiesti costa punti */
   if(leg) pos = 0;
-  const lcap = B.lcap || OVR_LOSS_CAP;
-  const raw = pos - lPts - c.og * OG_PEN - dry - cpen - (leg ? 2 : 0);
-  const d = Math.max(-lcap, Math.min(OVR_GAIN_CAP, raw));
-  return { d, fp, fl:top ? 1 : (B.fl || 1), band:B.txt, mult:ROLE_MULT[R],
-    v:leg ? 0 : vPts * fp, l:lPts, g:leg ? 0 : c.g * ROLE_MULT[R] * fp, a:leg ? 0 : c.a * 0.5 * ROLE_MULT[R] * fp, aw:!leg && c.award ? 0.2 * fp : 0, og:c.og * OG_PEN, dry, cpen, leg:leg ? 2 : 0, lcap, cap:d - raw };
+  const raw = pos - lPts - c.og * C.og - dry - cpen - (leg ? B.leg : 0);
+  const d = Math.max(-B.cap, Math.min(B.gcap, raw));
+  return { d, fp, fl:1, band:B.txt, mult, dr:dPts > 0 && !leg ? dPts * fp : 0,
+    v:leg ? 0 : vPts * fp, l:lPts, g:leg ? 0 : c.g * C.gol * mult * fp, a:leg ? 0 : c.a * C.ast * mult * fp, aw:!leg && c.award ? C.aw * fp : 0, og:c.og * C.og, dry, cpen, leg:leg ? B.leg : 0, lcap:B.cap, gcap:B.gcap, cap:d - raw };
 }
 function ovrDelta(role, ovr, c){ return ovrParts(role, ovr, c).d; }
 /* Premi di reparto: solo punti individuali (gol + assist pesati dal ruolo - autogol), niente esito. Parità: gol, assist, alfabeto. */
@@ -3375,9 +3425,9 @@ function computeStats(upto){
         const award = awardIds.has(e.pid);
         if(award) st.awards = (st.awards || 0) + 1;
         const preOvr = st.ovr;
-        /* il bonus delle stelle e la penalità del ritardo (LATE_PEN) si sommano dopo il delta già limitato dai tetti (+5/-3); la variazione mostrata li include */
+        /* il bonus delle stelle e la penalità del ritardo (OVRC.late) si sommano dopo il delta già limitato dai tetti della fascia; la variazione mostrata li include */
         const P = ovrParts(st.p.role, st.ovr, { res:r, margin, conceded, g, a, og, mvp:isMvp, award });
-        const bonus = RR[e.pid] ? RR[e.pid].bonus : 0, latePen = e.late ? LATE_PEN : 0;
+        const bonus = RR[e.pid] ? RR[e.pid].bonus : 0, latePen = e.late ? OVRC.late : 0;
         const d = P.d + bonus - latePen;
         st.ovr = Math.max(OVR_MIN, Math.min(OVR_MAX, st.ovr + d));
         const parts = { ...P, bonus, late:latePen, clamp:st.ovr - (preOvr + d), conceded, margin };
@@ -3581,12 +3631,21 @@ function adminCheck(){
 }
 const LAZY_V = { matches:() => renderMatches(), me:() => renderMe() }, lazyDirty = {};
 function lazyView(v, sx){ if(ui.view === v){ lazyDirty[v] = false; sx(LAZY_V[v]); } else lazyDirty[v] = true; }
+/* Se i parametri dell'OVR cambiano gli overall si ricalcolano: si azzerano i «già visto», così non escono promozioni o premi finti (il codice li ricrea in silenzio) */
+function ovrSigCheck(){
+  const sig = JSON.stringify(OVRC);
+  try{
+    const old = localStorage.getItem('cmb_ovrSig');
+    if(old !== sig){ if(old) ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr','cmb_walkTier'].forEach(k => localStorage.removeItem(k)); localStorage.setItem('cmb_ovrSig', sig); }
+  }catch(e){}
+}
 function render(){
   featSync(); adminCheck();
   watchRatings(); watchProfileReq(); watchMyKey();
   /* Ruolo Portiere eliminato: i POR già salvati valgono come DIF solo in memoria, nel database non si riscrive nulla */
   for(const id in store.players){ const p = store.players[id]; if(p && p.role === 'POR') p.role = 'DIF'; }
   attachPhotos();
+  OVRC = ovrCfg(store.settings && store.settings.ovr); ovrSigCheck();
   STATS = computeStats();
   document.body.classList.toggle('is-admin', ui.admin);
   { const me = myPid(); $('#lock-label').textContent = ui.admin ? 'Admin' : (me && store.players[me] ? pname(me).split(/\s+/)[0].slice(0, 12) : 'Ospite'); }
@@ -5381,10 +5440,23 @@ document.addEventListener('pointerup', e => { const t = e.target.closest && e.ta
 
 /* ---------- Il mio giocatore ---------- */
 /* Overall spiegato: per ogni gara da dove partivi, cosa ti ha mosso e dove sei arrivato (sola lettura, stessi numeri del calcolo) */
+function ovrHowHTML(C = OVRC){
+  const n = nIt, rows = OVR_BANDS.map(([bk, lo, hi]) => {
+    const B = C[bk], bits = [`vittoria +${n(B.win)}${B.wc ? ` (−${n(B.wc)} per gol subito)` : ''}`, `sconfitta −${n(B.loss)}`, `pareggio ${B.draw > 0 ? '+' : B.draw < 0 ? '−' : ''}${n(Math.abs(B.draw))}`];
+    bits.push(`punti positivi ×${n(B.fp)}${B.minFp != null && B.minFp !== B.fp ? ` (al minimo ${OVR_MIN}: ×${n(B.minFp)})` : ''}`);
+    const dry = [['ATT', B.dA], ['CEN', B.dC], ['DIF', B.dD]].filter(x => x[1] > 0);
+    if(dry.length) bits.push(`senza gol né assist ${dry.map(([r, v]) => `${ROLES[r].toLowerCase()} −${n(v)}`).join(', ')}`);
+    if(B.dc > 0) bits.push(`difensore −${n(B.dc)} per gol subito quando perde`);
+    bits.push(`in una gara al massimo +${n(B.gcap)} e −${n(B.cap)}`);
+    if(B.leg > 0) bits.push(`a ${OVR_MAX}, se vinci con meno di ${B.legG} gol (difensore: ${B.legGD}) perdi ${n(B.leg)}`);
+    return `<li><b>${lo}-${hi}</b>: ${bits.join('; ')}.</li>`;
+  }).join('');
+  return `<p>Parti da ${OVR_START}. Ogni gol vale ${n(C.gol)} e ogni assist ${n(C.ast)}, moltiplicati per il tuo ruolo (difensore ×${n(C.rDIF)}, centrocampista ×${n(C.rCEN)}, attaccante ×${n(C.rATT)}). Il premio di reparto dà +${n(C.aw)}, ogni autogol −${n(C.og)}. Poi conta la fascia del tuo OVR:</p><ul class="ox-bands">${rows}</ul><p>Nel pareggio non c'è la penalità senza gol né assist. Poi si aggiungono i voti dei compagni (da −0,2 a +0,2) e −${n(C.late)} se arrivi in ritardo. L'OVR resta sempre tra ${OVR_MIN} e ${OVR_MAX}.</p>`;
+}
 function ovrExplainHTML(s){
   const sg = v => (v < 0 ? '−' : '+') + String(Math.round(Math.abs(v) * 100) / 100).replace('.', ',');
   const o1 = v => v.toFixed(1).replace('.', ',');
-  const how = `<details class="ox-how"><summary>Come si calcola</summary><p>Parti da ${OVR_START}. Dopo ogni gara: vittoria +2 (meno 0,1 per ogni gol subito), sconfitta −2 (qualunque sia lo scarto), pareggio 0. Ogni gol vale 1 e ogni assist 0,5, moltiplicati per il tuo ruolo (difensore ×${String(ROLE_MULT.DIF).replace('.', ',')}, centrocampista ×${String(ROLE_MULT.CEN).replace('.', ',')}, attaccante ×${String(ROLE_MULT.ATT).replace('.', ',')}). Il premio di reparto dà +0,2, ogni autogol −${OG_PEN}. Da 85 a 89 i punti positivi valgono ×0,8 e le perdite ×1,2, e un attaccante senza gol né assist perde 0,5. Da 90 a 94 i punti positivi valgono ×0,65, la sconfitta −2,5, attaccanti e centrocampisti senza gol né assist perdono 1, i difensori 0,1 per ogni gol subito quando perdono, e in una gara scendi al massimo di 3. Da 95 a 98 i punti positivi si dimezzano, la sconfitta vale −3, la penalità senza gol né assist resta −1, per i difensori 0,2 a gol subito quando perdono, e scendi al massimo di 4. A 99 valgono le stesse regole, ma se vinci con meno di 2 gol (difensore: senza segnare) perdi 2 punti. Il pareggio vale 0 a ogni livello, senza penalità. Da 61 a 69 i punti positivi valgono doppio e le perdite metà; al minimo (60) i punti positivi valgono triplo. Sotto il 90 in una gara non puoi salire più di ${OVR_GAIN_CAP} né scendere più di ${OVR_LOSS_CAP}. Poi si aggiungono i voti dei compagni (da −0,2 a +0,2) e −${String(LATE_PEN).replace('.', ',')} se arrivi in ritardo. L'OVR resta sempre tra ${OVR_MIN} e ${OVR_MAX}.</p></details>`;
+  const how = `<details class="ox-how"><summary>Come si calcola</summary>${ovrHowHTML()}</details>`;
   if(!s.hist.length) return how + '<p class="mu sm" style="margin:8px 0 0">Dopo la tua prima gara vedrai qui come si forma ogni variazione.</p>';
   const one = h => {
     const P = h.parts; if(!P) return '';
@@ -5392,16 +5464,16 @@ function ovrExplainHTML(s){
     const add = (label, v, note) => { if(Math.abs(v) > 1e-9) rows.push(`<div><span>${label}${note ? ` <small>${note}</small>` : ''}</span><b>${sg(v)}</b></div>`); };
     if(h.r === 'v') add('Vittoria', P.v, P.conceded ? `${P.conceded} ${P.conceded === 1 ? 'gol subito' : 'gol subiti'}` : 'porta inviolata');
     else if(h.r === 's') add('Sconfitta', -P.l);
-    else rows.push('<div><span>Pareggio</span><b>0</b></div>');
-    add(`Gol${h.g > 1 ? ' ×' + h.g : ''}`, P.g, `ruolo ×${String(P.mult).replace('.', ',')}`);
+    else if(P.dr || P.l) add('Pareggio', P.dr - P.l); else rows.push('<div><span>Pareggio</span><b>0</b></div>');
+    add(`Gol${h.g > 1 ? ' ×' + h.g : ''}`, P.g, `ruolo ×${nIt(P.mult)}`);
     add(`Assist${h.a > 1 ? ' ×' + h.a : ''}`, P.a);
     add('Premio di reparto', P.aw);
     add(`Autogol${h.og > 1 ? ' ×' + h.og : ''}`, -P.og);
-    add('Né gol né assist', -(P.dry || 0), 'da 85 in su');
-    add('Gol subiti da difensore', -(P.cpen || 0), `${P.conceded} gol subiti, da 90 in su`);
+    add('Né gol né assist', -(P.dry || 0));
+    add('Gol subiti da difensore', -(P.cpen || 0), `${P.conceded} gol subiti`);
     add('Leggenda: vittoria senza gol richiesti', -(P.leg || 0));
     if(P.band || P.fp !== 1 || P.fl !== 1) rows.push(`<div class="nt"><span>${esc(P.band || 'Moltiplicatore del livello')}</span><b></b></div>`);
-    add(P.cap > 0 ? 'Tetto: massimo −' + (P.lcap || OVR_LOSS_CAP) + ' a gara' : 'Tetto: massimo +' + OVR_GAIN_CAP + ' a gara', P.cap);
+    add(P.cap > 0 ? 'Tetto: massimo −' + nIt(P.lcap) + ' a gara' : 'Tetto: massimo +' + nIt(P.gcap) + ' a gara', P.cap);
     add('Voti dei compagni', P.bonus);
     add('Ritardo', -P.late);
     add('Limite tra ' + OVR_MIN + ' e ' + OVR_MAX, P.clamp);
@@ -5442,7 +5514,7 @@ function renderMe(){
   const tierBox = nx ? (() => {
     const need = Math.max(0, nx[0] - 0.5 - ov), pr = Math.max(0, Math.min(1, (ov - lowT) / (nx[0] - lowT)));
     return `<div class="me-tier"><div class="me-tl"><span>${TIERS[t].i} ${TIERS[t].l}</span><span>${TIERS[nx[1]].i} ${TIERS[nx[1]].l}</span></div><div class="me-bar t-${nx[1]}"><i style="width:${(pr * 100).toFixed(1)}%"></i></div><p>Ti mancano ${cu(+need.toFixed(1), 1)} punti OVR per il livello ${TIERS[nx[1]].l}.</p></div>`;
-  })() : `<div class="me-tier"><div class="me-bar t-leg"><i style="width:100%"></i></div><p>👑 Sei una Leggenda: 99, il massimo. Qui una sconfitta costa 3 e una vittoria senza doppietta ti toglie 2 punti: per restarci devi vincere segnando almeno 2 gol (se sei difensore ne basta 1).</p></div>`;
+  })() : `<div class="me-tier"><div class="me-bar t-leg"><i style="width:100%"></i></div><p>👑 Sei una Leggenda: 99, il massimo. ${(() => { const B = OVRC.b95; return `Qui una sconfitta costa ${nIt(B.loss)}${B.leg > 0 ? ` e una vittoria con meno di ${B.legG} gol (se sei difensore ${B.legGD}) ti toglie ${nIt(B.leg)} punti` : ''}.`; })()}</p></div>`;
   const last5 = h.slice(-5), sk = streakOf(s);
   const form = last5.length
     ? `<div class="me-form">${last5.map(x => `<span class="fp ${x.r}" title="Giornata ${num(x.m.day)}">${x.r === 'v' ? 'V' : x.r === 's' ? 'S' : 'P'}</span>`).join('')}</div><p class="mu sm">${sk ? (sk.kind === 'fire' ? `🔥 ${sk.n} vittorie di fila` : `❄️ ${sk.n} sconfitte di fila`) : 'Nessuna striscia aperta'}. Dalla più vecchia alla più recente.</p>`
@@ -7810,6 +7882,46 @@ function starsAdminHTML(){
   }).join('');
   return `<h3>Voti a stelle</h3>${warn}<p class="mu sm">Qui si vede come è stata votata ogni persona, non chi ha dato quali voti: nei dati non c’è.</p>${body}`;
 }
+/* ---------- Calcolo overall (admin): parametri per fascia in settings/ovr ---------- */
+function openOvrCfg(){
+  ui.oc = { t:ui.oc ? ui.oc.t : 'b85', d:JSON.parse(JSON.stringify(OVRC)), prev:null };
+  paintOvrCfg(); openModal('#m-ovrc');
+}
+/* Overall di tutti con i parametri della bozza: si ricalcola la stagione e poi si tornano a usare quelli salvati */
+function ovrPreview(d){
+  const keep = OVRC; let st;
+  try{ OVRC = ovrCfg(d); st = computeStats(); }finally{ OVRC = keep; }
+  return st.list.map(s => ({ pid:s.pid, name:s.name, now:STATS.byId[s.pid] ? STATS.byId[s.pid].ovr : s.ovr, nw:s.ovr })).sort((a, b) => b.nw - a.nw);
+}
+function paintOvrCfg(){
+  const o = ui.oc, el = $('#oc-body'); if(!o || !el) return;
+  const tabs = [['g', 'Generale'], ...OVR_BANDS.map(([k, lo, hi]) => [k, `${lo}-${hi}`])];
+  const meta = o.t === 'g' ? OVR_META_G : OVR_META_B.filter(m => m[0] in OVR_DEF[o.t]);
+  const src = o.t === 'g' ? o.d : o.d[o.t], saved = o.t === 'g' ? OVRC : OVRC[o.t];
+  const isMul = k => k === 'fp' || k === 'minFp' || k[0] === 'r';
+  const fmt = (k, v) => (isMul(k) ? '×' : '') + nIt(v);
+  const rows = meta.map(([k, l]) => `<div class="oc-r${src[k] !== saved[k] ? ' ch' : ''}"><span>${l}</span><span class="stp"><button type="button" data-ocs="${k}|-1" aria-label="${l}: meno">−</button><output>${fmt(k, src[k])}</output><button type="button" data-ocs="${k}|1" aria-label="${l}: più">+</button></span></div>`).join('');
+  const changed = JSON.stringify(o.d) !== JSON.stringify(OVRC);
+  const pv = o.prev ? (() => {
+    const avg = k => o.prev.reduce((t, x) => t + x[k], 0) / Math.max(1, o.prev.length);
+    return `<div class="oc-pv"><p class="mu sm">OVR medio: <b>${itn(avg('now'))}</b> adesso → <b>${itn(avg('nw'))}</b> con questi valori.</p>${o.prev.map(x => { const dd = roundOvr(x.nw) - roundOvr(x.now); return `<div class="oc-pr"><span>${esc(x.name)}</span><span>${roundOvr(x.now)} → <b>${roundOvr(x.nw)}</b></span><em class="${dd > 0 ? 'up' : dd < 0 ? 'dn' : 'eq'}">${dd > 0 ? '+' + dd : dd < 0 ? '−' + Math.abs(dd) : '='}</em></div>`; }).join('')}</div>`;
+  })() : '';
+  el.innerHTML = `<h3>${ico('lens')}Calcolo overall</h3><p class="lead-p">Scegli i valori per ogni fascia di OVR (la fascia è quella che il giocatore ha prima della gara). Valgono per tutti e su tutte le gare: quando salvi, gli overall si ricalcolano.</p>
+    <div class="oc-tabs" role="tablist" aria-label="Fasce">${tabs.map(([k, l]) => `<button type="button" role="tab" aria-selected="${o.t === k}" data-oct="${k}">${l}</button>`).join('')}</div>
+    <div class="oc-list">${rows}</div>
+    <p class="mu sm oc-n">${o.t === 'g' ? 'Questi valori valgono in tutte le fasce. Il moltiplicatore del ruolo si applica a gol e assist.' : `Penalità e sconfitta non si moltiplicano. ${o.t === 'b95' ? `Le regole della Leggenda valgono solo a ${OVR_MAX}.` : ''}`}</p>
+    ${pv}
+    <div class="row oc-act"><button type="button" class="btn sm" data-action="ovrc-preview">👀 Anteprima</button><button type="button" class="btn sm ghost" data-action="ovrc-default">Valori predefiniti</button>${store.settings.ovrPrev ? '<button type="button" class="btn sm ghost" data-action="ovrc-back">↩︎ Valori di prima</button>' : ''}</div>
+    <div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button><button type="button" class="btn primary" data-action="ovrc-save" ${changed ? '' : 'disabled'}>Salva per tutti</button></div>`;
+}
+async function saveOvrCfg(){
+  const o = ui.oc; if(!o) return;
+  const ok = await confirmDlg('Salvare i nuovi valori?', 'Gli overall di tutti si ricalcolano su tutte le gare della stagione, per tutti i telefoni.', 'Salva per tutti');
+  if(!ok) return;
+  const cfg = ovrCfg(o.d);
+  await commit({ 'settings/ovr':{ ...cfg, at:Date.now() }, 'settings/ovrPrev':store.settings.ovr || null }, 'Calcolo overall aggiornato');
+  closeModal('#m-ovrc'); ui.oc = null;
+}
 function openStarsAdmin(){
   if(!ui.admin) return;
   ui.starsView = true;
@@ -7834,6 +7946,7 @@ function renderAdmin(){
     <div class="admin-grid">
       <button class="tile" data-action="new-sched"><span class="ic">🗓️</span><b>Programma gara</b><span>Data, ora e convocati bilanciati: tutti vedono dove giocano.</span></button>
       <button class="tile" data-action="new-match"><span class="ic">📝</span><b>Registra gara</b><span>Schiera le squadre e segna gol, assist e autogol.</span></button>
+      <button class="tile" data-action="ovrc-open"><span class="ic">⚙️</span><b>Calcolo overall</b><span>Per ogni fascia di OVR scegli quanto valgono vittorie, sconfitte, gol, assist e penalità.</span></button>
       <button class="tile" data-action="stars-view"><span class="ic">⭐</span><b>Voti a stelle</b><span>Per ogni gara: quanti voti ha preso ognuno, la media e il bonus. Mai chi ha votato.</span></button>
       ${feat('messages') ? `<button class="tile" data-action="msg-admin"><span class="ic">✉️</span><b>Richieste${msgNew() ? `<span class="cbadge">${msgNew()}</span>` : ''}</b><span>Messaggi degli amici: leggi, segna come risolti, archivia.</span></button>` : ''}
       ${feat('casino') ? `<button class="tile" data-action="auction-admin"><span class="ic">🔢</span><b>Aste dei numeri</b><span>Apri, chiudi e assegna i numeri di maglia.</span></button>
@@ -9002,6 +9115,12 @@ document.addEventListener('click', async e => {
     else ui.sort = { key:d.sort, dir:d.sort === 'rank' ? 1 : -1 };
     renderBoardPart(); return;
   }
+  if(d.oct && ui.oc){ ui.oc.t = d.oct; paintOvrCfg(); return; }
+  if(d.ocs && ui.oc){
+    const [k, dir] = d.ocs.split('|'), g = ui.oc.t === 'g', src = g ? ui.oc.d : ui.oc.d[ui.oc.t], m = (g ? OVR_META_G : OVR_META_B).find(x => x[0] === k);
+    if(m){ src[k] = Math.round(Math.min(m[3], Math.max(m[2], src[k] + Number(dir) * m[4])) * 100) / 100; ui.oc.prev = null; paintOvrCfg(); }
+    return;
+  }
   if(d.metab){ ui.meTab = ME_TABS.some(x => x[0] === d.metab) ? d.metab : 'pro'; renderMe(); const el = $('#me'); if(el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ block:'start', behavior:'instant' }); return; }
   if(d.fview){ ui.fView = d.fview === 'list' ? 'list' : 'pitch'; try{ localStorage.setItem('cmb_fView', ui.fView); }catch(e){} ui.swapSel = null; ui.swapMode = false; paintMatch(); return; }
   if(d.mtab){ ui.mTab = d.mtab === 'form' ? 'form' : 'rep'; ui.swapSel = null; if(ui.mTab === 'rep') ui.swapMode = false; paintMatch(); return; }
@@ -9153,6 +9272,11 @@ document.addEventListener('click', async e => {
     case 'who-guest': $('#who-g').hidden = false; setTimeout(() => $('#who-name').focus(), 50); break;
     case 'who-guest-ok': whoGuest(); break;
     case 'stars-view': openStarsAdmin(); break;
+    case 'ovrc-open': if(requireAdmin()) openOvrCfg(); break;
+    case 'ovrc-preview': if(ui.oc){ ui.oc.prev = ovrPreview(ui.oc.d); paintOvrCfg(); } break;
+    case 'ovrc-default': if(ui.oc){ ui.oc.d = ovrCfg(null); ui.oc.prev = null; paintOvrCfg(); } break;
+    case 'ovrc-back': if(ui.oc && store.settings.ovrPrev){ ui.oc.d = ovrCfg(store.settings.ovrPrev); ui.oc.prev = null; paintOvrCfg(); } break;
+    case 'ovrc-save': if(requireAdmin()) saveOvrCfg(); break;
     case 'vote-info': if(ui.admin){ ui.starsView = false; $('#vi-body').innerHTML = voteInfoHTML(d.mid); openModal('#m-vinfo'); } break;
     case 'vote-cancel': voteCancel(d.mid, d.voter); break;
     case 'open-news': openNews(); break;
