@@ -843,6 +843,7 @@ button.pcard:active .pc-fr{transform:scale(.96)}
 .prop-by{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:12px 16px;border-radius:16px;border:1px solid rgba(34,197,94,.55);background:linear-gradient(135deg,rgba(34,197,94,.22),rgba(22,163,74,.1));color:#dcfce7;font:700 15px var(--body)}
 .prop-by b{color:#fff}.prop-by small{display:block;font-weight:600;font-size:12.5px;color:#bbf7d0}
 .prop-box{padding:14px 18px;margin-bottom:12px}
+.msg-as{display:flex;align-items:center;gap:10px;margin:10px 0 4px;font-size:14px}
 .prop-by.sm{margin:10px 0 4px;padding:9px 12px;font-size:14px}
 .nx-pool{margin:12px 0 4px}.nx-pool b{display:block;font:italic 800 22px/1.1 var(--disp)}
 .nx-avs{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
@@ -7936,7 +7937,7 @@ const msgNew = () => msgList().filter(m => m.st === 'new' && !m.arch).length;
 const dayKey = t => { const d = new Date(t); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
 function msgCheck(pid, text){
   if(!feat('messages')) return 'I messaggi sono sospesi';
-  if(!store.players[pid]) return 'Scegli chi sei';
+  if(!store.players[pid]) return 'Entra prima con il tuo giocatore';
   const t = String(text || '').replace(/\s+/g, ' ').trim();
   if(t.length < 3) return 'Scrivi almeno 3 caratteri';
   if(t.length > MSG_MAX) return `Al massimo ${MSG_MAX} caratteri`;
@@ -7951,9 +7952,15 @@ function msgCheck(pid, text){
 }
 function openMsg(){
   if(!feat('messages')){ toast('I messaggi sono sospesi', 'warn'); return; }
-  const me = myPid(), ls = [...Object.entries(store.players)].filter(([, p]) => p).sort((a, b) => (a[1].name || '').localeCompare(b[1].name || '', 'it'));
-  $('#msg-body').innerHTML = `<h3>Scrivi all’organizzatore</h3><p class="mu sm">Per segnalare un problema o fare una richiesta. Scegli chi sei: il nome non è verificato. Al massimo ${MSG_PER_DAY} messaggi al giorno.</p>
-    <select id="msg-from" class="field" aria-label="Chi sei"><option value="">Chi sei?</option>${ls.map(([id, p]) => `<option value="${id}" ${id === me ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>
+  /* il messaggio parte con il nome del giocatore con cui sei entrato: niente scelta del mittente */
+  const me = myPid();
+  if(!me || !store.players[me]){
+    $('#msg-body').innerHTML = `<h3>Scrivi all’organizzatore</h3><p class="lead-p">Per scrivere all’organizzatore entra prima con il tuo giocatore: il messaggio partirà con il tuo nome.</p>
+      <div class="row end"><button type="button" class="btn ghost" data-close>Chiudi</button><button type="button" class="btn primary" data-action="who-open">Scegli il tuo giocatore</button></div>`;
+    openModal('#m-msg'); return;
+  }
+  $('#msg-body').innerHTML = `<h3>Scrivi all’organizzatore</h3><p class="mu sm">Per segnalare un problema o fare una richiesta. Al massimo ${MSG_PER_DAY} messaggi al giorno.</p>
+    <div class="msg-as">${avatar(store.players[me], 'sm')}<span>Scrivi come <b>${esc(pname(me))}</b></span></div>
     <textarea id="msg-text" class="field" rows="5" maxlength="${MSG_MAX}" placeholder="Il tuo messaggio" style="margin-top:8px;resize:vertical" aria-label="Messaggio"></textarea>
     <div class="mu sm" id="msg-n" style="text-align:right">0 / ${MSG_MAX}</div>
     <div class="row end" style="margin-top:8px"><button type="button" class="btn ghost" data-close>Chiudi</button><button type="button" class="btn primary" data-action="msg-send">Invia</button></div>`;
@@ -7962,7 +7969,7 @@ function openMsg(){
 let msgBusy = false;
 async function sendMsg(){
   if(msgBusy) return;
-  const pid = ($('#msg-from') || {}).value, text = ($('#msg-text') || {}).value;
+  const pid = myPid(), text = ($('#msg-text') || {}).value;
   const err = msgCheck(pid, text); if(err){ toast(err, 'warn'); return; }
   if(db && syncState !== 'live'){ toast('Per inviare serve la connessione', 'warn'); return; }
   msgBusy = true;
@@ -7980,7 +7987,7 @@ function msgAdminHTML(){
   const f = ui.msgF || 'new', all = msgList(), rows = all.filter(m => f === 'arch' ? m.arch : f === 'all' ? !m.arch : (!m.arch && m.st === 'new'));
   const tab = (k, l, n) => `<button type="button" class="btn sm ${f === k ? 'primary' : ''}" data-msgf="${k}">${l}${n ? ` (${n})` : ''}</button>`;
   const fmt = t => new Date(t).toLocaleString('it-IT', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-  return `<h3>Richieste</h3><p class="mu sm">I mittenti non sono verificati: chiunque può scegliere un nome qualsiasi.</p>
+  return `<h3>Richieste</h3><p class="mu sm">Il mittente è il giocatore con cui la persona è entrata nell’app.</p>
     <div class="row" style="gap:6px;margin:8px 0">${tab('new', 'Nuove', all.filter(m => m.st === 'new' && !m.arch).length)}${tab('all', 'Tutte', all.filter(m => !m.arch).length)}${tab('arch', 'Archiviate', all.filter(m => m.arch).length)}</div>
     ${rows.length ? rows.map(m => `<div class="msg-r ${m.st}"><div class="msg-h"><b>${esc(pname(m.from, 'Ex giocatore'))}</b><span class="mu sm">${fmt(m.at)}</span><span class="msg-st st-${m.st}">${MSG_ST[m.st]}</span></div>
       <p class="msg-t">${esc(m.text)}</p><div class="row" style="gap:6px;flex-wrap:wrap">${['new', 'read', 'done'].filter(k => k !== m.st).map(k => `<button type="button" class="btn sm" data-action="msg-st" data-id="${m.id}" data-st="${k}">${k === 'new' ? 'Da leggere' : k === 'read' ? 'Letto' : 'Risolto'}</button>`).join('')}
