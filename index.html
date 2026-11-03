@@ -840,6 +840,19 @@ button.pcard:active .pc-fr{transform:scale(.96)}
 .pc-plus{font:800 8cqw/1 var(--body);color:#fb923c}
 .pc-empty .pc-name{color:#fdba74}
 .cmp .pp-ctrl{gap:10px}
+.prop-by{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:12px 16px;border-radius:16px;border:1px solid rgba(34,197,94,.55);background:linear-gradient(135deg,rgba(34,197,94,.22),rgba(22,163,74,.1));color:#dcfce7;font:700 15px var(--body)}
+.prop-by b{color:#fff}.prop-by small{display:block;font-weight:600;font-size:12.5px;color:#bbf7d0}
+.prop-box{padding:14px 18px;margin-bottom:12px}
+.prop-row{gap:10px;align-items:center;flex-wrap:wrap}
+.prop-me{margin:0 0 10px;font-size:14px}
+.pool-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px;padding:0 18px 12px}
+.pool-p{display:flex;align-items:center;gap:8px;padding:6px 0;border:0;border-bottom:1px solid var(--hair);background:none;color:inherit;font:inherit;text-align:left;min-width:0}
+.pool-p span{min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pool-p small{display:block;font-weight:600;font-size:11.5px;color:var(--mu)}
+.prop-it{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--hair)}
+.prop-it .pi-t{min-width:0}.prop-it .pi-t b{display:block}.prop-it .pi-t small{display:block;color:var(--mu);font-size:12.5px}
+.prop-it .pi-a{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.cmp-left{border-style:solid}
+.ask-in{min-height:84px;resize:vertical;font-family:var(--body)}
 .cmp-t{display:inline-flex;align-items:center;gap:6px;font:700 13px var(--body)}
 .cmp-t .stp button{width:32px;height:32px}.cmp-t .stp output{min-width:22px;font-size:17px}
 .cmp-act{padding:12px 18px 16px;gap:8px}
@@ -2322,6 +2335,11 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 
 <!-- Componi sul campo: scelta del giocatore per un posto (admin) -->
 <div class="modal" id="m-cmp" aria-hidden="true"><div class="sheet glass cmp-sheet" role="dialog" aria-modal="true" aria-label="Scegli il giocatore" style="width:min(520px,100%)"><div id="cmp-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
+
+<!-- Proposte di formazione ricevute (admin) -->
+<div class="modal" id="m-props" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Proposte di formazione" style="width:min(560px,100%)"><div id="props-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
+<!-- Testo libero (motivo del rifiuto) -->
+<div class="modal" id="m-ask" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-labelledby="ask-t" style="width:min(460px,100%)"><h3 id="ask-t"></h3><p class="lead-p" id="ask-p"></p><textarea id="ask-in" class="field w100 ask-in" rows="3" maxlength="200"></textarea><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Annulla</button><button type="button" class="btn primary" data-action="ask-ok" id="ask-ok">Conferma</button></div></div></div>
 
 <!-- Calcolo overall (admin) -->
 <div class="modal" id="m-ovrc" aria-hidden="true"><div class="sheet glass oc" role="dialog" aria-modal="true" aria-label="Calcolo overall" style="width:min(620px,100%)"><div id="oc-body"></div></div></div>
@@ -4374,24 +4392,118 @@ function fViewHTML(){
 }
 function formViewHTML(m, flags){
   if(cmpFor(m.id)){ const mm = cmpMatch(m); return `<div class="mone form">${pitchPanelHTML(mm)}${lineupsHTML(mm, false)}</div>`; }
-  return `<div class="mone form">${fViewHTML()}${ui.fView === 'list' ? lineupListHTML(m) : pitchPanelHTML(m) + lineupsHTML(m, flags)}</div>`;
+  const top = propByHTML(m) + (m.status === 'scheduled' ? propsBoxHTML(m) : '');
+  if(m.status === 'scheduled' && !starters(m, 'white').length && !starters(m, 'black').length && matchPool(m)) return `<div class="mone form">${top}${poolHTML(m)}</div>`;
+  return `<div class="mone form">${top}${fViewHTML()}${ui.fView === 'list' ? lineupListHTML(m) : pitchPanelHTML(m) + lineupsHTML(m, flags)}</div>`;
+}
+/* ---------- Proposte di formazione: lineupProps/{mid}/{pid} = { at, w:[pid], b:[pid], fmW, fmB, st:'wait'|'ok'|'mod'|'no'|'old', why?, dec? } ----------
+   Le manda chiunque abbia scelto il suo giocatore, fino a 1 ora dalla partita (anche se una è già stata accettata).
+   L'admin le accetta così, con modifiche, o le rifiuta con un motivo. Le squadre accettate tengono l'autore in matches/{id}/propBy. */
+const lineupProp = (mid, pid) => (store.lineupProps && store.lineupProps[mid] && store.lineupProps[mid][pid]) || null;
+const lineupPropsOf = mid => Object.entries((store.lineupProps && store.lineupProps[mid]) || {}).filter(([pid, x]) => x && store.players[pid]).sort((a, b) => num(b[1].at) - num(a[1].at));
+function propsOpen(m){
+  if(!m || m.status !== 'scheduled') return false;
+  const kd = m.time ? kickDate(m) : null;
+  return !kd || kd.getTime() - Date.now() > 3600e3;
+}
+function propByHTML(m){
+  if(!m.propBy) return '';
+  return `<div class="prop-by">✅ <span>Squadre di <b>${esc(pname(m.propBy))}</b>${m.propMod ? '<small>con qualche modifica dell’organizzatore</small>' : ''}</span></div>`;
+}
+const PROP_ST = { wait:['⏳', 'in attesa'], ok:['✅', 'accettata'], mod:['✅', 'accettata con modifiche'], no:['❌', 'rifiutata'], old:['↩︎', 'superata da un’altra proposta'] };
+function propsBoxHTML(m){
+  const me = myPid(), known = !!(me && store.players[me]), open = propsOpen(m), mine = known ? lineupProp(m.id, me) : null;
+  const all = lineupPropsOf(m.id), wait = all.filter(([, x]) => x.st === 'wait').length;
+  const kd = m.time ? kickDate(m) : null, until = kd ? new Date(kd.getTime() - 3600e3) : null;
+  const when = until ? `fino alle ${String(until.getHours()).padStart(2, '0')}:${String(until.getMinutes()).padStart(2, '0')} del ${shortDay(`${until.getFullYear()}-${String(until.getMonth() + 1).padStart(2, '0')}-${String(until.getDate()).padStart(2, '0')}`)}` : 'fino alla partita';
+  const st = mine ? PROP_ST[mine.st] || PROP_ST.wait : null;
+  const myLine = mine ? `<p class="prop-me">${st[0]} La tua proposta è <b>${st[1]}</b>${mine.st === 'no' && mine.why ? `: «${esc(mine.why)}»` : ''}.</p>` : '';
+  const btn = !open ? '<p class="mu sm" style="margin:0">Le proposte di formazione sono chiuse (si chiudono 1 ora prima della partita).</p>'
+    : known ? `<button type="button" class="btn primary" data-action="prop-start" data-mid="${m.id}">📋 ${mine ? 'Manda una nuova formazione' : 'Manda la tua formazione'}</button><span class="mu sm">Si può mandare ${when}.</span>`
+    : '<p class="mu sm" style="margin:0">Per mandare la tua formazione scegli il tuo giocatore in «Io».</p>';
+  const adm = ui.admin ? `<button type="button" class="btn sm" data-action="props-open" data-mid="${m.id}">📥 Proposte ricevute${all.length ? ` (${all.length}${wait ? `, ${wait} in attesa` : ''})` : ''}</button>` : '';
+  return `<section class="glass prop-box">${myLine}<div class="row prop-row">${btn}${adm}</div></section>`;
+}
+function poolHTML(m){
+  const pool = matchPool(m);
+  return `<section class="glass pool-box"><div class="panel-h"><h2>🗓️ Squadre da decidere</h2><span class="mu sm">${pool.length} convocati</span></div>
+    <div class="pool-list">${pool.map(pid => { const st = STATS.byId[pid]; return `<button type="button" class="pool-p" data-open-player="${pid}">${avatar(store.players[pid], 'sm')}<span>${esc(pname(pid))}<small>${ROLES[store.players[pid].role] || ROLES.CEN}${st ? ' · ' + roundOvr(st.ovr) : ''}</small></span></button>`; }).join('')}</div>
+    ${ui.admin ? `<div class="row" style="padding:0 18px 16px"><button type="button" class="btn sm primary" data-action="cmp-start" data-mid="${m.id}">✏️ Componi sul campo</button></div>` : ''}</section>`;
+}
+function propsListHTML(mid){
+  const m = store.matches[mid], all = lineupPropsOf(mid);
+  const mean = L => { const v = list(L).filter(pid => store.players[pid]).map(ovrOf); return v.length ? itn(v.reduce((t, x) => t + x, 0) / v.length) : '–'; };
+  const hh = t => { const d = new Date(num(t)); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+  return `<h3>Proposte di formazione</h3><p class="lead-p">Giornata ${num(m && m.day)}: apri una proposta sul campo per vederla bene e, se vuoi, correggerla prima di accettarla.</p>
+    ${all.length ? all.map(([pid, x]) => { const st = PROP_ST[x.st] || PROP_ST.wait; return `<div class="prop-it">${avatar(store.players[pid], 'sm')}<div class="pi-t"><b>${esc(pname(pid))}</b><small>${hh(x.at)} · ${st[0]} ${st[1]}${x.st === 'no' && x.why ? `: «${esc(x.why)}»` : ''}</small><small>Bianchi ${list(x.w).length} (OVR ${mean(x.w)}) · Neri ${list(x.b).length} (OVR ${mean(x.b)})</small></div>
+      <div class="pi-a"><button type="button" class="btn sm" data-action="prop-review" data-mid="${mid}" data-pid="${pid}">Apri sul campo</button>${x.st !== 'ok' && x.st !== 'mod' ? `<button type="button" class="btn sm primary" data-action="prop-ok" data-mid="${mid}" data-pid="${pid}">Accetta</button>` : ''}${x.st !== 'no' ? `<button type="button" class="btn sm danger" data-action="prop-no" data-mid="${mid}" data-pid="${pid}">Rifiuta</button>` : ''}</div></div>`; }).join('') : '<p class="mu">Nessuna proposta per ora.</p>'}`;
+}
+async function propSend(){
+  const c = ui.cmp, m = c && store.matches[c.mid], me = myPid();
+  if(!m || !me || !store.players[me]) return;
+  if(!propsOpen(m)){ toast('Le proposte sono chiuse: manca meno di un’ora alla partita', 'warn'); return; }
+  const w = c.slots.white.filter(Boolean), b = c.slots.black.filter(Boolean);
+  if(!w.length || !b.length){ toast('Metti almeno un giocatore per squadra', 'warn'); return; }
+  const pool = matchPool(m), left = pool ? pool.filter(pid => !w.includes(pid) && !b.includes(pid)) : [];
+  if(left.length){ const ok = await confirmDlg('Mancano dei convocati', `${left.length} convocati non sono in nessuna squadra (${left.map(pid => pname(pid)).join(', ')}). Vuoi inviare lo stesso?`, 'Invia lo stesso'); if(!ok) return; }
+  const fmOk = (t, n) => fmSize(c.fm[t]) === n ? c.fm[t] : (fmOptions(n)[0] || null);
+  const mid = c.mid; ui.cmp = null;
+  await commit({ [`lineupProps/${mid}/${me}`]:{ at:Date.now(), w, b, fmW:fmOk('white', w.length), fmB:fmOk('black', b.length), st:'wait' } }, 'Formazione inviata all’organizzatore');
+  paintMatch();
+}
+async function propAccept(mid, pid){
+  const m = store.matches[mid], pr = lineupProp(mid, pid); if(!m || !pr || m.status !== 'scheduled') return;
+  const fromCmp = ui.cmp && ui.cmp.mode === 'rev' && ui.cmp.mid === mid && ui.cmp.src === pid;
+  const entry = id => { const e = [...list(m.white), ...list(m.black)].find(x => x.pid === id); return { pid:id, n:pname(id, e && e.n), g:0, a:0, og:0 }; };
+  let pW, pB, fmW, fmB, mod = false;
+  if(fromCmp){ pW = ui.cmp.slots.white.filter(Boolean); pB = ui.cmp.slots.black.filter(Boolean); mod = cmpChanged(); fmW = ui.cmp.fm.white; fmB = ui.cmp.fm.black; }
+  else { pW = list(pr.w).filter(id => store.players[id]); pB = list(pr.b).filter(id => store.players[id]); fmW = pr.fmW; fmB = pr.fmB; }
+  const fmOk = (f, n) => f && FORMATIONS[f] && fmSize(f) === n ? f : (fmOptions(n)[0] || null);
+  const W = pW.map(entry), B = pB.map(entry);
+  const up = { [`matches/${mid}/white`]:W, [`matches/${mid}/black`]:B, [`matches/${mid}/posW`]:pW, [`matches/${mid}/posB`]:pB, [`matches/${mid}/fmW`]:fmOk(fmW, pW.length), [`matches/${mid}/fmB`]:fmOk(fmB, pB.length),
+    [`matches/${mid}/propBy`]:pid, [`matches/${mid}/propMod`]:mod ? 1 : null, [`matches/${mid}/updatedAt`]:Date.now(),
+    [`lineupProps/${mid}/${pid}/st`]:mod ? 'mod' : 'ok', [`lineupProps/${mid}/${pid}/dec`]:Date.now(), [`lineupProps/${mid}/${pid}/why`]:null };
+  for(const [o, x] of lineupPropsOf(mid)) if(o !== pid && (x.st === 'ok' || x.st === 'mod')) up[`lineupProps/${mid}/${o}/st`] = 'old';
+  const mkc = mkOf(mid);
+  if(mkc && mkc.status === 'open' && lineupKey({ white:W, black:B }) !== mkc.lineup && feat('casino')){ up[`casino/markets/${mid}/status`] = 'void'; toast('Formazione cambiata: scommesse rimborsate, riaprile', 'warn'); }
+  ui.cmp = null;
+  await commit(up, mod ? `Formazione di ${pname(pid)} accettata con le tue modifiche` : `Formazione di ${pname(pid)} accettata`);
+  closeModal('#m-props'); paintMatch();
+}
+async function propReject(mid, pid){
+  if(!lineupProp(mid, pid)) return;
+  const why = await askText(`Rifiuti la proposta di ${pname(pid)}?`, 'Scrivi il motivo: lo vedrà chi l’ha mandata.', 'Rifiuta', 'Es. squadre poco equilibrate');
+  if(why === null) return;
+  if(!why){ toast('Scrivi un motivo per il rifiuto', 'warn'); return; }
+  if(ui.cmp && ui.cmp.mode === 'rev' && ui.cmp.src === pid) ui.cmp = null;
+  await commit({ [`lineupProps/${mid}/${pid}/st`]:'no', [`lineupProps/${mid}/${pid}/why`]:why.slice(0, 200), [`lineupProps/${mid}/${pid}/dec`]:Date.now() }, 'Proposta rifiutata');
+  if($('#m-props').classList.contains('open')) $('#props-body').innerHTML = propsListHTML(mid);
+  paintMatch();
 }
 /* ---------- Componi sul campo (admin, gare in programma) ----------
    Bozza: posti per squadra (id o vuoto) nell'ordine del modulo, giocatori "in più" a parte, modulo per squadra.
    Si salva solo con «Salva formazioni»: squadre, ordine (posW/posB) e moduli della gara, come fanno già gli scambi. */
-const cmpFor = mid => !!(ui.admin && ui.cmp && ui.cmp.mid === mid);
-function cmpStart(mid){
+const cmpFor = mid => !!(ui.cmp && ui.cmp.mid === mid && (ui.admin || ui.cmp.mode === 'prop'));
+/* Convocati della gara (pool + chi è già in squadra); null se la gara non li indica: allora si sceglie tra tutta la rosa */
+const matchPool = m => m && m.pool ? [...new Set([...list(m.pool), ...list(m.white).map(e => e.pid), ...list(m.black).map(e => e.pid)])].filter(pid => store.players[pid]) : null;
+/* mode: 'adm' (l'admin compone), 'prop' (chi manda la sua formazione), 'rev' (l'admin guarda la proposta di src) */
+function cmpStart(mid, mode = 'adm', src = null){
   const m = store.matches[mid]; if(!m || m.status !== 'scheduled') return;
-  const c = { mid, slots:{}, bench:{}, ent:{}, fm:{}, move:false, sel:null, pick:null, q:'' };
-  const size = t => orderFor(m, t).length;
+  const c = { mid, mode, src, slots:{}, bench:{}, ent:{}, fm:{}, move:false, sel:null, pick:null, q:'' };
+  const pr = src ? lineupProp(mid, src) : null, pool = matchPool(m);
+  const ords = { white:orderFor(m, 'white'), black:orderFor(m, 'black') };
+  if(pr){ ords.white = list(pr.w).filter(pid => store.players[pid]); ords.black = list(pr.b).filter(pid => store.players[pid]); }
   for(const t of ['white', 'black']){
     for(const e of list(m[t])) if(e && e.pid) c.ent[e.pid] = { ...e };
-    c.bench[t] = list(m[t]).filter(e => e && e.bench).map(e => e.pid);
-    const ord = orderFor(m, t), n = Math.min(MAX_START, Math.max(ord.length, size(t === 'white' ? 'black' : 'white')) || 8);   /* squadre pari: alla più corta compaiono i posti liberi */
+    c.bench[t] = pr || mode === 'prop' ? [] : list(m[t]).filter(e => e && e.bench).map(e => e.pid);
+    const ord = ords[t], other = ords[t === 'white' ? 'black' : 'white'].length;
+    const half = pool && !ord.length && !other ? (t === 'white' ? Math.ceil(pool.length / 2) : Math.floor(pool.length / 2)) : 0;
+    const n = Math.min(MAX_START, Math.max(ord.length, other, half) || 8);   /* squadre pari: alla più corta compaiono i posti liberi */
     c.slots[t] = [...ord, ...Array(Math.max(0, n - ord.length)).fill(null)];
-    const saved = m[t === 'white' ? 'fmW' : 'fmB'];
+    const saved = pr ? pr[t === 'white' ? 'fmW' : 'fmB'] : m[t === 'white' ? 'fmW' : 'fmB'];
     c.fm[t] = saved && FORMATIONS[saved] && fmSize(saved) === n ? saved : fmOptions(n)[0];
   }
+  c.orig = JSON.stringify([c.slots, c.fm]);
   ui.cmp = c; ui.swapMode = false; ui.swapSel = null; ui.mTab = 'form'; ui.fView = 'pitch';
   paintMatch();
 }
@@ -4417,14 +4529,24 @@ function cmpPanelHTML(m){
     ? (selPid ? `Selezionato <b>${esc(pname(selPid))}</b>: tocca un altro giocatore per scambiarli o un posto libero per spostarlo, anche nell'altra squadra.` : 'Tocca il giocatore da spostare, poi il posto dove metterlo.')
     : 'Tocca un posto, pieno o libero, per scegliere chi ci gioca. Con «Sposta» cambi posto o squadra con due tocchi.';
   const filled = t => c.slots[t].filter(Boolean).length;
+  const title = c.mode === 'prop' ? '📋 La tua formazione' : c.mode === 'rev' ? `📥 Proposta di ${esc(pname(c.src))}` : '✏️ Componi le squadre';
+  const pool = matchPool(store.matches[c.mid] || m), placed = new Set([...c.slots.white, ...c.slots.black].filter(Boolean));
+  const left = pool ? pool.filter(pid => !placed.has(pid)) : [];
+  const acts = c.mode === 'prop'
+    ? `<button type="button" class="btn ghost" data-action="cmp-cancel">Annulla</button><button type="button" class="btn primary" data-action="prop-send">📨 Invia la mia formazione</button>`
+    : c.mode === 'rev'
+      ? `<button type="button" class="btn ghost" data-action="cmp-cancel">Chiudi</button><button type="button" class="btn danger" data-action="prop-no" data-pid="${c.src}">✗ Rifiuta</button><button type="button" class="btn primary" data-action="prop-ok" data-pid="${c.src}">${cmpChanged() ? '✓ Accetta con le modifiche' : '✓ Accetta così'}</button>`
+      : `<button type="button" class="btn ghost" data-action="cmp-cancel">Annulla</button><button type="button" class="btn primary" data-action="cmp-save">✓ Salva formazioni</button>`;
   return `<section class="glass pp cmp">
-    <div class="panel-h"><h2>✏️ Componi le squadre</h2><span class="mu sm">Bianchi ${filled('white')}/${c.slots.white.length} · Neri ${filled('black')}/${c.slots.black.length}</span></div>
+    <div class="panel-h"><h2>${title}</h2><span class="mu sm">Bianchi ${filled('white')}/${c.slots.white.length} · Neri ${filled('black')}/${c.slots.black.length}</span></div>
+    ${left.length ? `<div class="swap-hint cmp-left">Convocati ancora da sistemare: ${left.map(pid => esc(pname(pid))).join(', ')}</div>` : ''}
     <div class="pp-ctrl">${ctl('white')}${ctl('black')}<button type="button" class="btn sm ${c.move ? 'primary' : ''}" data-action="cmp-move">${c.move ? '✓ Fine spostamenti' : '🔀 Sposta'}</button></div>
     <div class="swap-hint">${hint}</div>
     <div class="pp-wrap">${pitchHTML(m)}</div>
-    <div class="row end cmp-act"><button type="button" class="btn ghost" data-action="cmp-cancel">Annulla</button><button type="button" class="btn primary" data-action="cmp-save">✓ Salva formazioni</button></div>
+    <div class="row end cmp-act">${acts}</div>
   </section>`;
 }
+const cmpChanged = () => !!ui.cmp && JSON.stringify([ui.cmp.slots, ui.cmp.fm]) !== ui.cmp.orig;
 function cmpTap(team, k){
   const c = ui.cmp; if(!c) return;
   const key = team + '|' + k, pid = c.slots[team][k];
@@ -4442,7 +4564,8 @@ function paintCmpPick(full){
   const { team, k } = c.pick, cur = c.slots[team][k], q = norm(c.q || '');
   const where = pid => { for(const t of ['white', 'black']){ if(c.slots[t].includes(pid)) return t; if(c.bench[t].includes(pid)) return t + 'b'; } return ''; };
   const TAG = { white:'Bianchi', black:'Neri', whiteb:'In più (Bianchi)', blackb:'In più (Neri)' };
-  const ps = STATS.list.filter(s => s.pid !== cur && (!q || norm(s.name).includes(q)))
+  const pool = matchPool(store.matches[c.mid]), inPool = pid => !pool || pool.includes(pid);
+  const ps = STATS.list.filter(s => s.pid !== cur && inPool(s.pid) && (!q || norm(s.name).includes(q)))
     .map(s => ({ s, w:where(s.pid) })).sort((a, b) => (!!a.w - !!b.w) || (b.s.ovr - a.s.ovr));
   const rows = ps.map(({ s, w }) => `<button type="button" class="cmp-o${w ? ' busy' : ''}" data-cmppick="${s.pid}">${avatar(s.p, 'sm')}<span class="nm"><b>${esc(s.name)}</b><small>${ROLES[s.p.role] || ROLES.CEN} · OVR ${roundOvr(s.ovr)}</small></span>${isInj(s.pid) ? '<em class="inj" title="In infermeria">🩹</em>' : ''}${w ? `<em class="tg">${TAG[w]}</em>` : '<em class="tg free">Libero</em>'}</button>`).join('') || '<p class="mu sm">Nessun giocatore trovato.</p>';
   const list_ = $('#cmp-list');
@@ -4450,7 +4573,7 @@ function paintCmpPick(full){
   $('#cmp-body').innerHTML = `<h3>${team === 'white' ? 'Bianchi' : 'Neri'} · posto ${k + 1}</h3>
     ${cur ? `<div class="cmp-cur">${avatar(store.players[cur] || { name:pname(cur) }, 'sm')}<span>Adesso: <b>${esc(pname(cur))}</b></span><button type="button" class="btn sm ghost" data-action="cmp-remove">Togli dal campo</button></div>` : '<p class="lead-p">Posto libero: scegli chi ci gioca.</p>'}
     <input id="cmp-q" class="field w100" type="search" placeholder="Cerca giocatore" aria-label="Cerca giocatore" autocomplete="off">
-    <p class="mu sm" style="margin:8px 0 6px">Chi è già in una squadra si sposta qui.</p>
+    <p class="mu sm" style="margin:8px 0 6px">${pool ? `Solo i ${pool.length} convocati. ` : ''}Chi è già in una squadra si sposta qui.</p>
     <div class="cmp-list" id="cmp-list">${rows}</div>`;
 }
 function cmpPick(pid){
@@ -8281,7 +8404,7 @@ function openMatchEditor(id, mode){
   const cp = arr => list(arr).map(e => ({ pid:e.pid, n:e.n, g:num(e.g), a:num(e.a), og:num(e.og), ...(e.bench ? { bench:1 } : {}), ...(e.late ? { late:1 } : {}), ...(e.inj ? { inj:1 } : {}) }));
   const wasSched = m?.status === 'scheduled';
   ED = { id:id || null, day:m ? num(m.day) : nextDay(), date:m?.date || todayISO(), time:m?.time || '', end:m?.end || '', fmW:m?.fmW || DEF_FM, fmB:m?.fmB || DEF_FM, posW:m?.posW || null, posB:m?.posB || null, balW:null, balB:null, capW:m?.capW || null, capB:m?.capB || null,
-         white:cp(m?.white), black:cp(m?.black), called:[], status:mode || (wasSched ? 'scheduled' : 'played'),
+         white:cp(m?.white), black:cp(m?.black), called:wasSched ? list(m.pool).filter(pid => store.players[pid] && ![...list(m.white), ...list(m.black)].some(e => e.pid === pid)) : [], status:mode || (wasSched ? 'scheduled' : 'played'),
          goals:list(m?.goals).map(g => ({ s:g.s, a:g.a || '', og:!!num(g.og), min:(g.min == null ? null : num(g.min)), ts:g.ts || '' })),
          moves:list(m?.moves).map(x => ({ pid:x.pid, k:x.k, ...(x.why ? { why:x.why } : {}), min:(x.min == null ? null : num(x.min)), ts:x.ts || '', at:num(x.at) })),
          seq:!m || wasSched || list(m.goals).length > 0 || [...list(m.white), ...list(m.black)].every(e => !num(e.g) && !num(e.a) && !num(e.og)) };
@@ -8727,12 +8850,17 @@ async function saveMatch(){
   ED.end = $('#ed-end').value || '';
   if(ED.status !== 'scheduled' && ED.end && (!ED.time || matchLen({ time:ED.time, end:ED.end }) == null)){ toast('Controlla ora inizio e ora fine della gara', 'err'); return; }
   const w = ED.white.filter(e => !e.bench).length, b = ED.black.filter(e => !e.bench).length;
-  if(ED.called.length){
+  const poolOnly = ED.status === 'scheduled' && ED.called.length;   /* gara in programma: chi è convocato ma senza squadra resta convocato, e le squadre si decidono dopo (anche con le proposte) */
+  if(ED.called.length && !poolOnly){
     const ok = await confirmDlg('Convocati non assegnati', `${ED.called.length} convocati non sono in nessuna squadra e non verranno salvati. Premi “Bilancia squadre” oppure continua.`, 'Salva senza di loro');
     if(!ok) return;
   }
-  if(!w && !b){ toast('Schiera almeno un giocatore', 'err'); return; }
-  if(!w || !b){
+  if(poolOnly && (w || b)){
+    const ok = await confirmDlg('Convocati da dividere', `${ED.called.length} convocati non sono ancora in una squadra: restano convocati e potrai sistemarli dopo. Tutti potranno mandare la loro formazione.`, 'Salva così');
+    if(!ok) return;
+  }
+  if(!w && !b && !poolOnly){ toast('Schiera almeno un giocatore', 'err'); return; }
+  if((!w || !b) && !poolOnly){
     const ok = await confirmDlg('Formazioni incomplete', `Una squadra è vuota (Bianchi ${w}, Neri ${b}): vuoi salvare comunque?`, 'Salva comunque');
     if(!ok) return;
   }
@@ -8766,6 +8894,9 @@ async function saveMatch(){
     voteClose:sched ? null : (store.matches[ED.id]?.voteClose || (newPlayed ? Date.now() + (vHrs || VOTE_HRS_OLD) * 3600e3 : null)),
     updatedAt:Date.now()
   };
+  /* Convocati (facoltativo, solo in programma) e autore delle squadre accettate: si conservano */
+  if(sched && (ED.called.length || (oldM && oldM.pool))) payload.pool = [...new Set([...ED.called, ...payload.white.map(e => e.pid), ...payload.black.map(e => e.pid)])];
+  if(oldM && oldM.propBy){ payload.propBy = oldM.propBy; if(oldM.propMod || lineupKey(payload) !== lineupKey(oldM)) payload.propMod = 1; }
   /* Gara giocata senza capitano scelto: si salva quello automatico di adesso, così non cambia nelle settimane dopo */
   if(!sched){
     if(!payload.capW){ const c = captainOf(payload.white.filter(e => !e.bench)); if(c) payload.capW = c; }
@@ -9107,8 +9238,17 @@ function closeModal(sel, force){
   if(sel === '#m-walk') clearTimeout(walkT);
   if(sel === '#m-replay'){ rpStop(); if(document.fullscreenElement) document.exitFullscreen().catch(() => {}); setTimeout(() => { if(!RP) m.innerHTML = ''; }, 320); }
   if(sel === '#m-confirm' && confirmResolve){ const r = confirmResolve; confirmResolve = null; r(false); }
+  if(sel === '#m-ask' && askResolve){ const r = askResolve; askResolve = null; r(null); }
   if(!$('.modal.open')) document.body.classList.remove('noscroll');
   setTimeout(flow, 450);
+}
+let askResolve = null;
+function askText(title, text, okLabel = 'Conferma', ph = ''){
+  if(askResolve){ const r = askResolve; askResolve = null; r(null); }
+  $('#ask-t').textContent = title; $('#ask-p').textContent = text; $('#ask-ok').textContent = okLabel;
+  const inp = $('#ask-in'); inp.value = ''; inp.placeholder = ph;
+  openModal('#m-ask'); setTimeout(() => inp.focus(), 80);
+  return new Promise(r => { askResolve = r; });
 }
 function confirmDlg(title, text, okLabel='Conferma', danger=false){
   if(confirmResolve){ const r = confirmResolve; confirmResolve = null; r(false); }
@@ -9377,6 +9517,12 @@ document.addEventListener('click', async e => {
     case 'balance': balanceTeams(); break;
     case 'flip': ui.flip = !ui.flip; rerenderPitch(); break;
     case 'cmp-start': if(requireAdmin()) cmpStart(d.mid); break;
+    case 'prop-start': { const me = myPid(); if(!me || !store.players[me]){ toast('Scegli prima il tuo giocatore in «Io»', 'warn'); break; } if(!propsOpen(store.matches[d.mid])){ toast('Le proposte sono chiuse', 'warn'); break; } cmpStart(d.mid, 'prop'); break; }
+    case 'prop-send': propSend(); break;
+    case 'props-open': if(requireAdmin()){ $('#props-body').innerHTML = propsListHTML(d.mid); openModal('#m-props'); } break;
+    case 'prop-review': if(requireAdmin()){ closeModal('#m-props'); ui.matchId = d.mid; cmpStart(d.mid, 'rev', d.pid); } break;
+    case 'prop-ok': if(requireAdmin()) propAccept(d.mid || (ui.cmp && ui.cmp.mid), d.pid); break;
+    case 'prop-no': if(requireAdmin()) propReject(d.mid || (ui.cmp && ui.cmp.mid), d.pid); break;
     case 'cmp-cancel': ui.cmp = null; paintMatch(); break;
     case 'cmp-save': if(requireAdmin()) cmpSave(); break;
     case 'cmp-move': if(ui.cmp){ ui.cmp.move = !ui.cmp.move; ui.cmp.sel = null; paintMatch(); } break;
@@ -9454,6 +9600,7 @@ document.addEventListener('click', async e => {
     case 'rp-prev': rpPrev(); break;
     case 'rp-next': rpNext(); break;
     case 'rp-speed': rpSpeed(); break;
+    case 'ask-ok': { const r = askResolve, v = $('#ask-in').value.trim(); askResolve = null; closeModal('#m-ask'); if(r) r(v); break; }
     case 'cf-ok': { const r = confirmResolve; confirmResolve = null; closeModal('#m-confirm'); if(r) r(true); break; }
   }
 });
