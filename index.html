@@ -1953,6 +1953,11 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 .tw-adm{margin:0 0 12px;padding:12px;border-radius:14px;border:1px solid rgba(168,85,247,.4);background:rgba(139,92,246,.08)}
 .tw-adm small{display:block;margin-top:8px;color:var(--mu)}
 .tw-empty{padding:22px 16px;text-align:center;color:var(--mu)}
+.th-filter{display:flex;justify-content:flex-end;margin:0 0 10px}
+.th-filter button{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line-strong);background:transparent;color:var(--tx);font:700 13px var(--body)}
+.th-filter button[aria-pressed="true"]{background:var(--or);border-color:var(--or);color:#1a0b02}
+.th-empty{grid-column:1/-1;text-align:center;margin:12px 0}
+.plv-near{display:block;margin-top:4px;font:800 10.5px/1.25 var(--body);color:#fbbf24}
 .tw-empty .tw-ill{display:block;width:min(170px,52%);height:auto;margin:2px auto 14px}
 .tw-empty p{margin:0;max-width:34ch;margin-inline:auto}
 .empty-ill{display:block;width:min(260px,90%);height:auto;margin:4px auto 10px}
@@ -6537,12 +6542,13 @@ function renderTrophies(){
     for(let k = hist.length - 1; k >= 0 && hist[k].plaques[P.id] === s.pid; k--) reign++;
     const cands = STATS.list.filter(x => x.pres >= PLQ_MIN_PRES && P.ok(x)).sort((a, b) => P.cmp(a, b) || a.name.localeCompare(b.name, 'it'));
     const rv = cands.find(x => x.pid !== s.pid), G = PLQ_GAP[P.id];
-    let rival = '', danger = false;
+    let rival = '', danger = false, near = null;
     if(rv && G){
       const gap = Math.abs(G[0](s) - G[0](rv));
       danger = gap <= G[3] + 1e-9;
       const gt = gap < 1e-9 ? 'a pari merito' : `a ${gap.toFixed(G[4]).replace('.', ',')} ${Math.abs(gap - 1) < 1e-9 ? G[1] : G[2]}`;
       rival = `<span class="rival">⚔️ Rivale: <button data-open-player="${rv.pid}">${esc(rv.name)}</button>, ${gt}</span>`;
+      if(me && rv.pid === me) near = gt;   /* per il filtro «Solo i miei»: sei il primo inseguitore */
     }
     const old = seenP && seenP[P.id];
     const changed = !!old && old !== s.pid;
@@ -6554,7 +6560,7 @@ function renderTrophies(){
       ${rival}<small>${esc(P.desc)}</small></div></div>`;
     const stT = st === 'danger' ? ', in pericolo' : st === 'open' ? ', nuovo detentore' : P.feat ? '' : `, da ${reign} ${reign === 1 ? 'gara' : 'gare'}`;
     const tile = `<button type="button" class="plv ${metal} ${mine ? 'mine' : ''}" data-plv="${P.id}" aria-label="${P.name}: ${esc(s.name)}, ${esc(h.val)}${stT}"><span class="plv-med"><span class="plv-face">${avatar(s.p, 'md')}</span><span class="plv-sym">${P.icon}</span></span><span class="plv-st ${st}">${lockSVG(st)}</span>${mine ? '<span class="plv-tua">Tua</span>' : ''}<span class="plv-t">${P.name}</span><span class="plv-h">${esc(s.name)}</span><span class="plv-v">${esc(h.val)}</span></button>`;
-    return { id:P.id, tile, card };
+    return { id:P.id, tile:near ? tile.replace('</button>', `<span class="plv-near">Sei 2°, ${near}</span></button>`) : tile, card, mine, near };
   });
   PLK_CARDS = Object.fromEntries(plk.map(x => [x.id, x.card]));
   const cards = buildRecordCards(computeRecords(), nM);
@@ -6569,15 +6575,19 @@ function renderTrophies(){
       if(sg !== ps){ chain.push({ m:stp.m, txt:r.txt }); ps = sg; }
     }
     const mine = !!me && (c.pid === me || (c.pair && c.pair.includes(me)));
-    return { key:c.key, tile:recTile(c, { broken, mine }), card:recCard(c, { broken, chain, mine }) };
+    return { key:c.key, tile:recTile(c, { broken, mine }), card:recCard(c, { broken, chain, mine }), mine };
   });
   REC_CARDS = Object.fromEntries(recs.map(x => [x.key, x.card])); REC_TITLES = Object.fromEntries(cards.map(c => [c.key, c.title]));
   const tt = ui.tTab === 'rec' ? 'rec' : ui.tTab === 'tw' ? 'tw' : ui.tTab === 'tm' ? 'tm' : 'plq';
+  /* Filtro «Solo i miei»: le tue targhe e quelle in cui sei il primo inseguitore; nei primati, solo i tuoi */
+  let onlyMine = false; try{ onlyMine = !!me && localStorage.getItem('cmb_tMine') === '1'; }catch(e){}
+  const mineChip = me ? `<div class="th-filter"><button type="button" data-action="t-mine" aria-pressed="${onlyMine}">${onlyMine ? '✓ ' : ''}Solo i miei</button></div>` : '';
+  const mineEmpty = t => `<p class="mu sm th-empty">${t}</p>`;
   const ttabs = `<div class="sub-tabs" role="tablist" aria-label="Trofei">${[['plq', 'Targhe'], ['rec', 'Trofei storici'], ['tw', 'TOTW'], ['tm', 'TOTM']].map(([k, l]) => `<button type="button" role="tab" class="sub-tab ${k === tt ? 'on' : ''}" aria-selected="${k === tt}" data-ttab="${k}">${l}</button>`).join('')}</div>`;
   el.innerHTML = `${ttabs}${tt === 'tw' || tt === 'tm' ? '' : `<details class="glass th-how"${ui.thHow ? ' open' : ''}><summary>ℹ️ Come funzionano targhe e primati</summary><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa, servono almeno ${PLQ_MIN_PRES} presenze). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa davvero meglio: a pari merito non cambiano mano.</p></details>`}
     ${tt === 'tw' ? `<div class="th-sec"><h3>Team of the Week</h3><span>2-4-2 · da lunedì a domenica</span></div>${twView('w')}` : tt === 'tm' ? `<div class="th-sec"><h3>Team of the Month</h3><span>2-4-2 · dal primo all’ultimo del mese</span></div>${twView('m')}` : tt === 'plq' ? `<div class="th-sec"><h3>Le ${PL.length} targhe stagionali</h3><span>Leader in tempo reale · tocca una targa per i dettagli</span></div>
-    <div class="plv-grid">${plk.map(x => x.tile).join('')}</div>` : `<div class="th-sec"><h3>Bacheca dei primati storici</h3><span>${nM} ${nM === 1 ? 'gara analizzata' : 'gare analizzate'} · tocca un primato per i dettagli</span></div>
-    <div class="plv-grid">${recs.map(x => x.tile).join('')}</div>`}`;
+    ${mineChip}<div class="plv-grid">${(onlyMine ? plk.filter(x => x.mine || x.near) : plk).map(x => x.tile).join('') || mineEmpty('Non detieni ancora nessuna targa e non sei secondo in nessuna: gioca e segna per entrare in corsa.')}</div>` : `<div class="th-sec"><h3>Bacheca dei primati storici</h3><span>${nM} ${nM === 1 ? 'gara analizzata' : 'gare analizzate'} · tocca un primato per i dettagli</span></div>
+    ${mineChip}<div class="plv-grid">${(onlyMine ? recs.filter(x => x.mine) : recs).map(x => x.tile).join('') || mineEmpty('Non detieni ancora nessun primato storico.')}</div>`}`;
   twFit();
   if(plqOpen && $('#m-plq').classList.contains('open')){ if(plqHTML()) paintPlq(); else closeModal('#m-plq', true); }
   try{ localStorage.setItem('cmb2627_seenPlq', JSON.stringify(curP)); localStorage.setItem('cmb2627_seenRecV', JSON.stringify(curR)); }catch(e){}
@@ -9370,6 +9380,7 @@ document.addEventListener('click', async e => {
     case 'who-guest': $('#who-g').hidden = false; setTimeout(() => $('#who-name').focus(), 50); break;
     case 'who-guest-ok': whoGuest(); break;
     case 'stars-view': openStarsAdmin(); break;
+    case 't-mine': { let v = false; try{ v = localStorage.getItem('cmb_tMine') === '1'; localStorage.setItem('cmb_tMine', v ? '0' : '1'); }catch(e){} renderTrophies(); break; }
     case 'ovrc-open': if(requireAdmin()) openOvrCfg(); break;
     case 'ovrc-preview': if(ui.oc){ ui.oc.prev = ovrPreview(ui.oc.d); paintOvrCfg(); } break;
     case 'ovrc-default': if(ui.oc){ ui.oc.d = ovrCfg(null); ui.oc.prev = null; paintOvrCfg(); } break;
