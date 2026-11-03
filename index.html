@@ -6138,6 +6138,11 @@ function computeRecords(){
   const aw = s => num(s.awards), awR = s => s.pres ? num(s.awards) / s.pres : 0;
   const repOf = (role, key) => recPick(key, L.filter(s => (ROLES[s.p.role] ? s.p.role : 'CEN') === role && aw(s) > 0).sort((a, b) => (aw(b) - aw(a)) || (awR(b) - awR(a)) || alpha(a, b)), (x, y) => aw(x) === aw(y) && near(awR(x), awR(y)), RID.pid);
   const repatt = repOf('ATT', 'repatt'), repcen = repOf('CEN', 'repcen'), repdif = repOf('DIF', 'repdif');
+  /* Il Mister: più formazioni proposte e accettate dall'organizzatore (matches/{id}/propBy) nelle gare giocate. Parità: più accettate senza modifiche */
+  const mst = {};
+  for(const m of STATS.matches) if(m.propBy && known(m.propBy)){ const o = mst[m.propBy] || (mst[m.propBy] = { n:0, clean:0 }); o.n++; if(!m.propMod) o.clean++; }
+  const mister = recPick('mister', L.filter(s => mst[s.pid]).sort((a, b) => (mst[b.pid].n - mst[a.pid].n) || (mst[b.pid].clean - mst[a.pid].clean) || alpha(a, b)), (x, y) => mst[x.pid].n === mst[y.pid].n && mst[x.pid].clean === mst[y.pid].clean, RID.pid);
+  if(mister) mister.mst = mst[mister.pid];
   const capo = recPick('capo', L.filter(s => s.g > 0).sort((a, b) => (b.g - a.g) || (a.pres - b.pres) || alpha(a, b)), (x, y) => x.g === y.g && x.pres === y.pres, RID.pid);
   const malato = recPick('malato', L.filter(s => pres[s.pid] && pres[s.pid].best >= 2).sort((a, b) => (pres[b.pid].best - pres[a.pid].best) || alpha(a, b)), (x, y) => pres[x.pid].best === pres[y.pid].best, RID.pid);
   /* Serie sulle gare giocate da ognuno (le assenze non contano): Sempre a Segno (almeno un gol) e Il Digiuno (attaccanti senza gol) */
@@ -6155,7 +6160,7 @@ function computeRecords(){
   const sovrano = recPick('sovrano', L.filter(s => top1[s.pid] > 0).sort((a, b) => (top1[b.pid] - top1[a.pid]) || alpha(a, b)), (x, y) => top1[x.pid] === top1[y.pid], RID.pid);
   const fedeli = recPick('fedeli', Object.entries(pairs).sort(([ka, a], [kb, b]) => (b.n - a.n) || (b.v - a.v) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([, a], [, b]) => a.n === b.n, RID.pair);
   const { colp, kami } = casinoRecords();
-  return { repatt, repcen, repdif, capo, malato, pres, momento, segno, segR, rimonta, digiuno, digR, sovrano, top1, fedeli, inf, colp, kami, manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, ritard, bunkerAny:Object.keys(bunker).length };
+  return { mister, repatt, repcen, repdif, capo, malato, pres, momento, segno, segR, rimonta, digiuno, digR, sovrano, top1, fedeli, inf, colp, kami, manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, ritard, bunkerAny:Object.keys(bunker).length };
 }
 const matchWhen = m => `Giornata ${num(m.day)}${m.date ? ', ' + fmtDateCap(m.date) : ''}`;
 function recCard(o, x = {}){
@@ -6767,10 +6772,10 @@ function renderTrophies(){
   try{ localStorage.setItem('cmb2627_seenPlq', JSON.stringify(curP)); localStorage.setItem('cmb2627_seenRecV', JSON.stringify(curR)); }catch(e){}
 }
 const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk','rit','inf','colp','kami',
-  'repatt','repcen','repdif','capo','malato','momento','segno','rimonta','digiuno','sovrano','fedeli'];
+  'repatt','repcen','repdif','capo','malato','momento','segno','rimonta','digiuno','sovrano','fedeli','mister'];
 /* event = record di una singola impresa (festeggiato anche se lo stesso giocatore si migliora); lead = primato di classifica (festeggiato solo al cambio di detentore) */
 const REC_KIND = { manita:'event', mitra:'event', lampo:'event', scadere:'event', mida:'event', uomo:'event', inarr:'event', goleada:'event', cappotto:'event', cecchino:'lead', fortino:'lead', mina:'lead', come:'lead', down:'lead', eroe:'lead', oro:'lead', intesa:'lead', derby:'lead', bunk:'lead', rit:'lead', inf:'lead', colp:'event', kami:'event',
-  repatt:'lead', repcen:'lead', repdif:'lead', capo:'lead', malato:'event', momento:'event', segno:'event', rimonta:'event', digiuno:'event', sovrano:'lead', fedeli:'lead' };
+  repatt:'lead', repcen:'lead', repdif:'lead', capo:'lead', malato:'event', momento:'event', segno:'event', rimonta:'event', digiuno:'event', sovrano:'lead', fedeli:'lead', mister:'lead' };
 /* Primati legati a una funzione: con la funzione spenta la scheda non si mostra e non fa popup */
 const REC_FEAT = { eroe:'mvp', colp:'casino', kami:'casino' };
 function buildRecordCards(R, nM){
@@ -6844,6 +6849,8 @@ function buildRecordCards(R, nM){
       : { icon:'👑', title:'Il Sovrano', desc:'Più giornate chiuse al primo posto della classifica.', lock:none }
     ,R.fedeli ? (() => { const [k, p] = R.fedeli; return { icon:'👯', title:'Compagni fedeli', desc:'La coppia che ha giocato più partite nella stessa squadra.', pair:k.split('|'), value:p.n, unit:p.n === 1 ? 'gara insieme' : 'gare insieme', foot:`Record insieme ${p.v}-${p.pa}-${p.s}` }; })()
       : { icon:'👯', title:'Compagni fedeli', desc:'La coppia che ha giocato più partite nella stessa squadra.', lock:need('Ancora nessuna gara insieme') }
+    ,R.mister ? { icon:'📋', title:'Il Mister', desc:'Più formazioni proposte e accettate dall’organizzatore nelle partite giocate. Parità: più accettate senza modifiche.', pid:R.mister.pid, sub:`${R.mister.mst.clean} ${R.mister.mst.clean === 1 ? 'accettata così com’era' : 'accettate così com’erano'}`, value:R.mister.mst.n, unit:R.mister.mst.n === 1 ? 'formazione accettata' : 'formazioni accettate' }
+      : { icon:'📋', title:'Il Mister', desc:'Più formazioni proposte e accettate dall’organizzatore nelle partite giocate. Parità: più accettate senza modifiche.', lock:need('Ancora nessuna formazione proposta e accettata') }
   ];
   cards.forEach((c, i) => { c.key = REC_KEYS[i]; if(REC_FEAT[c.key] && !feat(REC_FEAT[c.key])) c.off = true; });   /* le chiavi restano per posizione: una funzione spenta nasconde la scheda, non la toglie */
   return cards;
