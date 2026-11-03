@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.12.4
+- Tolti gli effetti di movimento: giroscopio (`deviceorientation`, richiesta su iPhone), inclinazione della figurina col dito, luce col mouse, scossone della splash, classe `.shake` su PIN e codice.
+- Classifica: vista «Gol + assist» (`CVIEWS.ga`, colonna `ga`, campo `st.ga`).
+- Trofei: filtro «Solo i miei» (`cmb_tMine`) in Targhe (più le targhe dove sei il primo inseguitore) e in Trofei storici.
+- Targhe: chi potrebbe vincerne 3 o più sceglie le sue 2 (`plqPick/{pid}/p`), le altre passano a chi segue; targa in vetrina (`plqPick/{pid}/v`) messa per prima in `s.plaques`. Senza scelte l'assegnazione è identica a prima.
+- Partite: convocati della gara in programma (`matches/{id}/pool`, facoltativo) salvati dal registro gara; «Squadre da decidere»; proposte di formazione in `lineupProps/{mid}/{pid}` (stato wait/ok/mod/no/old, motivo) composte sul campo con i soli convocati, aperte fino a 1 ora prima; l'admin le accetta, le corregge o le rifiuta; squadre accettate con `propBy`/`propMod` e riquadro verde «Squadre di …». Nella prossima gara della Classifica il tasto «Manda la tua formazione»; nell'area admin il riquadro «Proposte di formazione».
+- Primati: «Il Mister» (`mister`, in coda a `REC_KEYS`).
+
 ## 1.12.3
 - Giocatori: ordinamento «Gol + assist» (`PSORT.ga`).
 - OVR: tolta la sconfitta di misura, ogni sconfitta vale come quella larga; migrazione `cmb_mig_v1123` azzera i «già visto».
