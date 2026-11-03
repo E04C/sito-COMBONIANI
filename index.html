@@ -570,8 +570,6 @@ body.theme-casino .slip{background:rgba(7,76,44,.98)}
 .row.end .pf-del{margin-right:auto}
 .lbl{display:block;font:700 12.5px var(--body);color:var(--mu);margin:14px 0 6px}
 .w100{width:100%}
-.shake{animation:shake .4s}
-@keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 .pin-in{width:100%;height:60px;text-align:center;font:italic 800 34px var(--disp);letter-spacing:.4em;margin:6px 0 16px}
 @media (max-width:640px){
   .modal:not(.fig-modal){place-items:end center;padding:0}
@@ -1070,7 +1068,6 @@ button.rec-who{cursor:pointer}
 .flip-hint{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:5;padding:6px 14px;border-radius:999px;background:rgba(10,13,20,.88);border:1px solid var(--line-strong);color:var(--tx);font:800 13px var(--body);white-space:nowrap;pointer-events:none;animation:hintOut .4s ease 2.2s forwards}
 @keyframes hintOut{to{opacity:0}}
 .tilt{transition:transform .14s linear}
-.tilt.on-holo{transform:rotateY(calc(var(--lx,0) * 9deg)) rotateX(calc(var(--ly,0) * -9deg));touch-action:none}
 .face-front,.face-back{-webkit-backface-visibility:hidden;backface-visibility:hidden}
 /* Figurina girata: il retro sta fermo (niente inclinazione) e la faccia nascosta sparisce a metà giro, così muovendo il telefono il retro non sfarfalla né si sovrappone al fronte */
 .flip.turned .tilt.on-holo{transform:none;touch-action:pan-y}
@@ -4168,7 +4165,6 @@ function openFigurina(pid, turned){
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const cls = (reduce || turned) ? '' : promo ? 'promo' : (t === 'dia' || t === 'leg') ? 'reveal-dia' : t === 'gold' ? 'reveal-gold' : '';
   figAnim = cls ? { pid, cls, promo } : (promo ? { pid, cls:'', promo } : null);
-  if(isHolo(s.ovr)) askGyro();
   figTurned = !!turned;
   openFigPid = pid; renderFigurina(); openModal('#m-fig'); figCounters(pid);
   flipHint();
@@ -4805,7 +4801,7 @@ async function whoCodeSubmit(form){
       if(!rec){ whoBusy = false; whoCodeUI(pid, 'new'); return; }
       const hh = await keyCheck(rec, code);
       if(hh === null){
-        const left = keyFail(), sh = form.closest('.sheet'); sh.classList.remove('shake'); void sh.offsetWidth; sh.classList.add('shake');
+        const left = keyFail();
         toast(left ? `Codice sbagliato. Tentativi rimasti: ${left}` : keyLockMsg(), 'err'); $('#key-in').value = ''; $('#key-in').focus(); return;
       }
       keyLogin(pid, hh);
@@ -5527,51 +5523,7 @@ function handleSwap(mid, team, pid){
   rerenderPitch();
 }
 
-/* ---------- Luce olografica: giroscopio sul telefono, mouse su PC, dito sulla figurina ---------- */
-const light = { tx:0, ty:0, raf:0, base:null };
-function applyLight(){
-  light.raf = 0;
-  for(const el of [$('#fig-body'), $('#rw-body'), $('#duel-body'), $('#troph')]){
-    if(!el) continue;
-    el.style.setProperty('--lx', light.tx.toFixed(3));
-    el.style.setProperty('--ly', light.ty.toFixed(3));
-  }
-}
-function setLight(tx, ty){
-  light.tx = Math.max(-1, Math.min(1, tx)); light.ty = Math.max(-1, Math.min(1, ty));
-  document.body.classList.add('lit');
-  if(!light.raf) light.raf = requestAnimationFrame(applyLight);
-}
-function onOrient(e){
-  if(e.gamma == null || e.beta == null) return;
-  if(light.base == null) light.base = e.beta;
-  light.base = light.base * 0.985 + e.beta * 0.015;          // si riadatta lentamente all'inclinazione con cui tieni il telefono
-  setLight(e.gamma / 28, (e.beta - light.base) / 28);
-}
-let gyroOn = false;
-function startGyro(){ if(gyroOn) return; gyroOn = true; window.addEventListener('deviceorientation', onOrient, { passive:true }); }
-function askGyro(){
-  const D = window.DeviceOrientationEvent;
-  if(!D) return;
-  if(typeof D.requestPermission === 'function'){                 // iPhone: serve un tocco dell'utente
-    if(localStorage.getItem('cmb_gyro') === 'no') return;
-    D.requestPermission().then(r => { localStorage.setItem('cmb_gyro', r === 'granted' ? 'yes' : 'no'); if(r === 'granted') startGyro(); }).catch(() => {});
-  }else startGyro();
-}
-if(window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission !== 'function') startGyro();
-window.addEventListener('pointermove', e => {
-  if(e.pointerType !== 'mouse') return;
-  setLight(e.clientX / innerWidth * 2 - 1, e.clientY / innerHeight * 2 - 1);
-}, { passive:true });
-/* trascinando il dito sulla figurina la si inclina a mano */
-document.addEventListener('pointermove', e => {
-  const t = e.target.closest && e.target.closest('.tilt.on-holo');
-  if(!t || e.pointerType === 'mouse') return;
-  const r = t.getBoundingClientRect();
-  t.style.setProperty('--lx', ((e.clientX - r.left) / r.width * 2 - 1).toFixed(3));
-  t.style.setProperty('--ly', ((e.clientY - r.top) / r.height * 2 - 1).toFixed(3));
-}, { passive:true });
-document.addEventListener('pointerup', e => { const t = e.target.closest && e.target.closest('.tilt.on-holo'); if(t){ t.style.removeProperty('--lx'); t.style.removeProperty('--ly'); } });
+/* Luce olografica ferma: niente giroscopio, mouse o dito che muovono le carte (tolti in 1.12.4) */
 
 /* ---------- Il mio giocatore ---------- */
 /* Overall spiegato: per ogni gara da dove partivi, cosa ti ha mosso e dove sei arrivato (sola lettura, stessi numeri del calcolo) */
@@ -9557,8 +9509,6 @@ $('#pin-form').addEventListener('submit', e => {
     inp.value = ''; closeModal('#m-pin');
     toast('Area admin sbloccata'); render(); go('admin');
   }else{
-    const sh = inp.closest('.sheet');
-    sh.classList.remove('shake'); void sh.offsetWidth; sh.classList.add('shake');
     toast('PIN errato', 'err'); inp.select();
   }
 });
@@ -9916,7 +9866,6 @@ function openNews(){
     }
     flash.animate([{ opacity:0, transform:'scale(.3)' }, { opacity:1, transform:'scale(.85)', offset:.22 }, { opacity:0, transform:'scale(1.4)' }], { duration:480, easing:'cubic-bezier(.2,.7,.3,1)', fill:'forwards' });
     ring.animate([{ opacity:.9, transform:'scale(.15)' }, { opacity:0, transform:'scale(3.2)' }], { duration:760, easing:'cubic-bezier(.1,.75,.3,1)', fill:'forwards' });
-    stage.animate([{ transform:'translate(0,0) scale(1.035)' }, { transform:'translate(-9px,5px) scale(1.02)' }, { transform:'translate(7px,-6px) scale(1.012)' }, { transform:'translate(-4px,3px) scale(1.005)' }, { transform:'translate(0,0) scale(1)' }], { duration:360, easing:'ease-out' });
   };
   /* Il pallone parte piano da lontano e accelera con forza: i "fantasmi" dietro lo fanno sembrare veloce */
   const W = innerWidth, H = innerHeight;
