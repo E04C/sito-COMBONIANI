@@ -1957,6 +1957,9 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 .th-filter button{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line-strong);background:transparent;color:var(--tx);font:700 13px var(--body)}
 .th-filter button[aria-pressed="true"]{background:var(--or);border-color:var(--or);color:#1a0b02}
 .th-empty{grid-column:1/-1;text-align:center;margin:12px 0}
+.plq-pick{display:flex;flex-wrap:wrap;gap:8px}
+.plq-pick button{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 12px;border-radius:999px;border:1px solid var(--line-strong);background:transparent;color:var(--tx);font:700 13px var(--body)}
+.plq-pick button[aria-pressed="true"]{background:var(--or);border-color:var(--or);color:#1a0b02}
 .plv-near{display:block;margin-top:4px;font:800 10.5px/1.25 var(--body);color:#fbbf24}
 .tw-empty .tw-ill{display:block;width:min(170px,52%);height:auto;margin:2px auto 14px}
 .tw-empty p{margin:0;max-width:34ch;margin-inline:auto}
@@ -2589,7 +2592,7 @@ const CVIEW_ORDER = ['gen', 'g', 'a', 'ga', 'pct', 's', 'og'];
 /* =========================================================
    STATE
    ========================================================= */
-const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{}, casino:{}, messages:{}, playerKeys:{}, totw:{}, totm:{}, ballon:{} };
+const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{}, casino:{}, messages:{}, playerKeys:{}, totw:{}, totm:{}, ballon:{}, plqPick:{}, lineupProps:{} };
 const loaded = { players:false, matches:false, settings:false };
 let localMode = false;
 /* Accesso admin ricordato su questo dispositivo per 30 giorni (finché non si esce o non cambia il PIN) */
@@ -2770,7 +2773,7 @@ function featuresHTML(){
 function loadCache(){
   try{
     const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    if(c){ store.players = cleanPlayers(c.players); store.matches = cleanMatches(c.matches); store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; store.playerKeys = c.playerKeys || {}; store.casino = c.casino || {}; store.totw = c.totw || {}; store.totm = c.totm || {}; store.ballon = c.ballon || {}; }
+    if(c){ store.players = cleanPlayers(c.players); store.matches = cleanMatches(c.matches); store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; store.playerKeys = c.playerKeys || {}; store.casino = c.casino || {}; store.totw = c.totw || {}; store.totm = c.totm || {}; store.ballon = c.ballon || {}; store.plqPick = c.plqPick || {}; store.lineupProps = c.lineupProps || {}; }
   }catch(e){}
 }
 let cacheT;
@@ -2783,7 +2786,7 @@ function saveCache(){
       const { photo, ...rest } = p;
       return [k, (!rest.photoV && photo) ? p : rest];
     }));
-    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, profileReq:store.profileReq, casino:store.casino, totw:store.totw, totm:store.totm, ballon:store.ballon, photos:localMode ? store.photos : {}, ...(localMode ? { playerKeys:store.playerKeys } : {}) };
+    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, profileReq:store.profileReq, casino:store.casino, totw:store.totw, totm:store.totm, ballon:store.ballon, plqPick:store.plqPick, lineupProps:store.lineupProps, photos:localMode ? store.photos : {}, ...(localMode ? { playerKeys:store.playerKeys } : {}) };
     try{ localStorage.setItem(CACHE_KEY, JSON.stringify(data)); }
     catch(e){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, players:Object.fromEntries(Object.entries(players).map(([k, p]) => { const { photo, ...r } = p || {}; return [k, r]; })) })); }catch(e2){} }
   }, 400);
@@ -2859,6 +2862,9 @@ function initFirebase(){
   db.ref('casino').on('value', s => { store.casino = s.val() || {}; casinoIssue = false; afterData(); }, () => { casinoIssue = true; scheduleRender(); });
   /* Pallone d'Oro: se le regole non permettono questo percorso l'app continua a funzionare e l'admin vede il motivo nella sezione */
   db.ref('ballon').on('value', s => { store.ballon = s.val() || {}; ballonIssue = false; afterData(); }, () => { ballonIssue = true; scheduleRender(); });
+  /* Targhe scelte e proposte di formazione (percorsi nuovi e facoltativi plqPick e lineupProps): se le regole non li permettono l'app continua a funzionare */
+  db.ref('plqPick').on('value', s => { store.plqPick = s.val() || {}; afterData(); }, () => scheduleRender());
+  db.ref('lineupProps').on('value', s => { store.lineupProps = s.val() || {}; afterData(); }, () => scheduleRender());
   /* Voto ai compagni: se le regole non permettono questi percorsi l'app continua a funzionare e l'admin vede il motivo nel pannello */
   db.ref('ratingsDone').on('value', s => { store.ratingsDone = s.val() || {}; loaded.ratingsDone = true; afterData(); }, () => { loaded.ratingsDone = true; ratingsProblem('read', 'ratingsDone'); });
   db.ref('.info/connected').on('value', s => {
@@ -3482,15 +3488,45 @@ function computeStats(upto){
   if(wal){ for(const st of arr) walletBuild(st); WCTX = null; }
   arr.sort(rankCmp);
   arr.forEach((s, i) => s.rank = i + 1);
-  /* Targhe: assegnazione in ordine gerarchico con tetto di 2 per giocatore */
-  const held = {}, plaques = {};
+  /* Targhe: assegnazione in ordine gerarchico con tetto di 2 per giocatore.
+     Chi potrebbe vincerne 3 o più (è primo, oppure primo tra chi non è già al massimo) sceglie le sue 2 (plqPick/{pid}/p):
+     quelle gli restano, le altre vanno a chi segue. Senza scelta resta l'ordine gerarchico. */
+  const PC = {};
+  for(const P of PLAQUES){ if(plqOn(P)) PC[P.id] = arr.filter(s => s.pres >= PLQ_MIN_PRES && P.ok(s)).sort((a, b) => P.cmp(a, b) || a.name.localeCompare(b.name, 'it')); }
+  const allot = resv => {
+    const held = {}, plaques = {};
+    for(const [id, pid] of Object.entries(resv)) (held[pid] = held[pid] || []).push(id);
+    for(const P of PLAQUES){
+      if(!PC[P.id]) continue;
+      const cands = PC[P.id];
+      if(resv[P.id]){ const w = cands.find(s => s.pid === resv[P.id]); plaques[P.id] = { pid:w.pid, val:P.val(w) }; continue; }
+      const win = cands.find(s => P.free || (held[s.pid] || []).length < 2);
+      if(win){ (held[win.pid] = held[win.pid] || []).push(P.id); plaques[P.id] = { pid:win.pid, val:P.val(win) }; }
+    }
+    return { held, plaques };
+  };
+  let { held, plaques } = allot({});
+  const leads = {};
   for(const P of PLAQUES){
-    if(!plqOn(P)) continue;
-    const cands = arr.filter(s => s.pres >= PLQ_MIN_PRES && P.ok(s)).sort((a, b) => P.cmp(a, b) || a.name.localeCompare(b.name, 'it'));
-    const win = cands.find(s => P.free || (held[s.pid] || []).length < 2);
-    if(win){ (held[win.pid] = held[win.pid] || []).push(P.id); plaques[P.id] = { pid:win.pid, val:P.val(win) }; }
+    if(!PC[P.id] || P.free) continue;
+    /* la può vincere il primo in classifica e chi è primo tra quelli che non hanno già altre 2 targhe */
+    const first = PC[P.id][0], free = PC[P.id].find(s => (held[s.pid] || []).filter(id => id !== P.id).length < 2);
+    for(const c of [first, free]) if(c && !(leads[c.pid] || []).includes(P.id)) (leads[c.pid] = leads[c.pid] || []).push(P.id);
   }
-  arr.forEach(s => s.plaques = held[s.pid] || []);
+  const resv = {};
+  for(const [pid, L] of Object.entries(leads)){
+    if(L.length < 3) continue;
+    const pick = list(store.plqPick && store.plqPick[pid] && store.plqPick[pid].p).filter((id, i, a) => L.includes(id) && a.indexOf(id) === i && !resv[id]).slice(0, 2);
+    for(const id of pick) resv[id] = pid;
+  }
+  if(Object.keys(resv).length) ({ held, plaques } = allot(resv));
+  /* la targa in vetrina (plqPick/{pid}/v) va per prima: è quella che si vede sul nastro della figurina */
+  arr.forEach(s => {
+    const L = (held[s.pid] || []).slice().sort((a, b) => PLAQUES.findIndex(P => P.id === a) - PLAQUES.findIndex(P => P.id === b));
+    const v = store.plqPick && store.plqPick[s.pid] && store.plqPick[s.pid].v;
+    s.plaques = v && L.includes(v) ? [v, ...L.filter(x => x !== v)] : L;
+    s.plqLeads = leads[s.pid] || [];
+  });
   const scheduled = all.filter(m => m.status === 'scheduled')
     .sort((a, b) => String(a.date || '9').localeCompare(String(b.date || '9')) || String(a.time || '').localeCompare(String(b.time || '')) || (num(a.day) - num(b.day)));
   return { list:arr, byId:Object.fromEntries(arr.map(s => [s.pid, s])), matches:ms, plaques, log, scheduled };
@@ -5592,6 +5628,21 @@ const ME_TABS = [['pro', 'Profilo'], ['stat', 'Statistiche'], ['goal', 'Traguard
 function meTabsHTML(t){
   return `<div class="sub-tabs me-tabs" role="tablist" aria-label="Io">${ME_TABS.map(([k, l]) => `<button type="button" role="tab" class="sub-tab ${k === t ? 'on' : ''}" aria-selected="${k === t}" data-metab="${k}">${l}</button>`).join('')}</div>`;
 }
+/* Le tue targhe: chi è primo in 3 o più sceglie le sue 2; chi ne ha almeno 2 sceglie quella in vetrina sulla figurina */
+function myPlqHTML(s){
+  const leads = (s.plqLeads || []).map(plaqueById).filter(Boolean), mine = s.plaques.map(plaqueById).filter(Boolean);
+  if(leads.length < 3 && mine.length < 2) return '';
+  const pick = list(store.plqPick && store.plqPick[s.pid] && store.plqPick[s.pid].p);
+  if(!ui.plqSel || ui.plqSel.pid !== s.pid) ui.plqSel = { pid:s.pid, ids:s.plaques.filter(id => leads.some(P => P.id === id)).slice(0, 2) };
+  const sel = ui.plqSel.ids, saved = pick.length === 2 && sel.length === 2 && sel.every(id => pick.includes(id));
+  const chooser = leads.length >= 3 ? `<p class="mu sm" style="margin:0 0 8px">Potresti avere ${leads.length} targhe, ma se ne tengono al massimo 2: scegli quali. Le altre vanno a chi ti segue.</p>
+    <div class="plq-pick">${leads.map(P => `<button type="button" data-plqsel="${P.id}" aria-pressed="${sel.includes(P.id)}"><span>${P.icon}</span>${P.name}</button>`).join('')}</div>
+    <div class="row" style="margin-top:10px"><button type="button" class="btn sm primary" data-action="plq-pick-save" ${sel.length === 2 && !saved ? '' : 'disabled'}>${saved ? '✓ Scelta salvata' : 'Tieni queste 2'}</button></div>` : '';
+  const v = mine[0];
+  const showcase = mine.length >= 2 ? `<p class="mu sm" style="margin:${chooser ? '14px' : '0'} 0 8px">Targa in vetrina: quella che si vede in cima alla tua figurina.</p>
+    <div class="plq-pick">${mine.map(P => `<button type="button" data-plqv="${P.id}" aria-pressed="${v && v.id === P.id}"><span>${P.icon}</span>${P.name}</button>`).join('')}</div>` : '';
+  return `<section class="glass me-sec wide"><h3>${ico('medal')}Le tue targhe</h3>${chooser}${showcase}</section>`;
+}
 function renderMe(){
   const el = $('#me'); if(!el) return;
   const ae = document.activeElement; if(ae && typeof ae.id === 'string' && /^pf2-/.test(ae.id)) return;   /* mentre scrivi la scheda la pagina non si ridisegna */
@@ -5708,7 +5759,7 @@ function renderMe(){
       <section class="glass me-sec"><h3>${ico('pin')}Il tuo posto in campo</h3>${posBox}</section>
       ${rateSec}
       <section class="glass me-sec wide"><h3>${ico('clock')}Quando segni</h3>${histBox}</section>`,
-      goal:`<section class="glass me-sec"><h3>${ico('medal')}Corsa alle targhe</h3>${raceBox}</section>
+      goal:`${myPlqHTML(s)}<section class="glass me-sec"><h3>${ico('medal')}Corsa alle targhe</h3>${raceBox}</section>
       <section class="glass me-sec"><h3>${ico('vs')}Vittima e incubo</h3>${rivBox}</section>
       <section class="glass me-sec"><h3>${ico('duo')}Il tuo uomo</h3>${manBox}</section>
       <section class="glass me-sec wide"><h3>${ico('compass')}Il tuo percorso</h3>${pathBox}</section>`
@@ -6584,7 +6635,7 @@ function renderTrophies(){
   const mineChip = me ? `<div class="th-filter"><button type="button" data-action="t-mine" aria-pressed="${onlyMine}">${onlyMine ? '✓ ' : ''}Solo i miei</button></div>` : '';
   const mineEmpty = t => `<p class="mu sm th-empty">${t}</p>`;
   const ttabs = `<div class="sub-tabs" role="tablist" aria-label="Trofei">${[['plq', 'Targhe'], ['rec', 'Trofei storici'], ['tw', 'TOTW'], ['tm', 'TOTM']].map(([k, l]) => `<button type="button" role="tab" class="sub-tab ${k === tt ? 'on' : ''}" aria-selected="${k === tt}" data-ttab="${k}">${l}</button>`).join('')}</div>`;
-  el.innerHTML = `${ttabs}${tt === 'tw' || tt === 'tm' ? '' : `<details class="glass th-how"${ui.thHow ? ' open' : ''}><summary>ℹ️ Come funzionano targhe e primati</summary><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa, servono almeno ${PLQ_MIN_PRES} presenze). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa davvero meglio: a pari merito non cambiano mano.</p></details>`}
+  el.innerHTML = `${ttabs}${tt === 'tw' || tt === 'tm' ? '' : `<details class="glass th-how"${ui.thHow ? ' open' : ''}><summary>ℹ️ Come funzionano targhe e primati</summary><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa, servono almeno ${PLQ_MIN_PRES} presenze; chi ne potrebbe avere di più sceglie le sue 2 in Io → Traguardi). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa davvero meglio: a pari merito non cambiano mano.</p></details>`}
     ${tt === 'tw' ? `<div class="th-sec"><h3>Team of the Week</h3><span>2-4-2 · da lunedì a domenica</span></div>${twView('w')}` : tt === 'tm' ? `<div class="th-sec"><h3>Team of the Month</h3><span>2-4-2 · dal primo all’ultimo del mese</span></div>${twView('m')}` : tt === 'plq' ? `<div class="th-sec"><h3>Le ${PL.length} targhe stagionali</h3><span>Leader in tempo reale · tocca una targa per i dettagli</span></div>
     ${mineChip}<div class="plv-grid">${(onlyMine ? plk.filter(x => x.mine || x.near) : plk).map(x => x.tile).join('') || mineEmpty('Non detieni ancora nessuna targa e non sei secondo in nessuna: gioca e segna per entrare in corsa.')}</div>` : `<div class="th-sec"><h3>Bacheca dei primati storici</h3><span>${nM} ${nM === 1 ? 'gara analizzata' : 'gare analizzate'} · tocca un primato per i dettagli</span></div>
     ${mineChip}<div class="plv-grid">${(onlyMine ? recs.filter(x => x.mine) : recs).map(x => x.tile).join('') || mineEmpty('Non detieni ancora nessun primato storico.')}</div>`}`;
@@ -8925,7 +8976,7 @@ async function backupAll(){
   backing = true;
   toast('Backup in corso…');
   const data = {}, failed = [];
-  const PATHS = ['players','matches','settings','votes','photos','ratings','ratingsDone','profileReq','casino','messages'];
+  const PATHS = ['players','matches','settings','votes','photos','ratings','ratingsDone','profileReq','casino','messages','plqPick','lineupProps'];
   for(const path of PATHS){
     try{ data[path] = (await db.ref(path).once('value')).val(); }
     catch(e){ console.warn('backup', path, e); failed.push(path); }
@@ -9215,6 +9266,8 @@ document.addEventListener('click', async e => {
     else ui.sort = { key:d.sort, dir:d.sort === 'rank' ? 1 : -1 };
     renderBoardPart(); return;
   }
+  if(d.plqsel && ui.plqSel){ const L = ui.plqSel.ids, i = L.indexOf(d.plqsel); if(i >= 0) L.splice(i, 1); else { if(L.length >= 2) L.shift(); L.push(d.plqsel); } renderMe(); return; }
+  if(d.plqv){ const me = myPid(); if(me && store.players[me]) commit({ [`plqPick/${me}/v`]:d.plqv }, 'Targa in vetrina scelta'); return; }
   if(d.oct && ui.oc){ ui.oc.t = d.oct; paintOvrCfg(); return; }
   if(d.ocs && ui.oc){
     const [k, dir] = d.ocs.split('|'), g = ui.oc.t === 'g', src = g ? ui.oc.d : ui.oc.d[ui.oc.t], m = (g ? OVR_META_G : OVR_META_B).find(x => x[0] === k);
@@ -9380,6 +9433,7 @@ document.addEventListener('click', async e => {
     case 'who-guest': $('#who-g').hidden = false; setTimeout(() => $('#who-name').focus(), 50); break;
     case 'who-guest-ok': whoGuest(); break;
     case 'stars-view': openStarsAdmin(); break;
+    case 'plq-pick-save': { const me = myPid(); if(me && store.players[me] && ui.plqSel && ui.plqSel.ids.length === 2) commit({ [`plqPick/${me}/p`]:ui.plqSel.ids.slice() }, 'Le tue 2 targhe sono salvate'); break; }
     case 't-mine': { let v = false; try{ v = localStorage.getItem('cmb_tMine') === '1'; localStorage.setItem('cmb_tMine', v ? '0' : '1'); }catch(e){} renderTrophies(); break; }
     case 'ovrc-open': if(requireAdmin()) openOvrCfg(); break;
     case 'ovrc-preview': if(ui.oc){ ui.oc.prev = ovrPreview(ui.oc.d); paintOvrCfg(); } break;
