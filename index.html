@@ -2542,7 +2542,7 @@ PLAQUES.push({ id:'apriscatole', icon:'🥫', name:'L’Apriscatole', desc:'Più
   ok:s => s.firstG >= 1, cmp:(a,b) => (b.firstG - a.firstG) || (b.g - a.g), val:s => `${s.firstG} ${s.firstG === 1 ? 'primo gol' : 'primi gol'}` });
 PLAQUES.push({ id:'ultimo', icon:'⏳', name:'Ultimo Respiro', desc:'Più gol nell’ultimo 20% della gara (servono minuti e ora di fine). Parità: più gol totali.',
   ok:s => s.lateG >= 1, cmp:(a,b) => (b.lateG - a.lateG) || (b.g - a.g), val:s => `${s.lateG} ${s.lateG === 1 ? 'gol nel finale' : 'gol nel finale'}` });
-/* Targhe legate a una funzione (feat): con la funzione spenta non si assegnano, non si mostrano e non contano nel tetto di 2 a testa.
+/* Targhe legate a una funzione (feat): con la funzione spenta non si assegnano, non si mostrano e non contano nel tetto (PLQ_CAP) a testa.
    Il saldo esiste solo sulla stagione intera, quindi negli storici dei trofei queste targhe non risultano mai assegnate. */
 PLAQUES.push({ id:'banco', feat:'casino', icon:'💰', name:'Il Banco', desc:`Il saldo più alto di ${CURRENCY}, senza contare le spese del Negozio. Parità: più ${CURRENCY} guadagnate nelle gare.`,
   ok:s => !!s.mov && s.mov.length > 1 && s.balB > 0, cmp:(a,b) => (b.balB - a.balB) || (b.earn - a.earn), val:s => `${fmtPat(s.balB)} ${CURRENCY}` });
@@ -2556,8 +2556,28 @@ PLAQUES.push({ id:'regista', icon:'🧠', name:'Il Regista', desc:'Il centrocamp
   ok:s => s.p.role === 'CEN' && s.a >= 1, cmp:(a,b) => (b.a - a.a) || (b.apg - a.apg) || (b.v - a.v), val:s => `${s.a} assist` });
 PLAQUES.push({ id:'altruista', icon:'🤝', name:'L’Altruista', desc:'Assist serviti al maggior numero di compagni diversi (serve la sequenza dei gol). Parità: più assist.',
   ok:s => s.alt >= 1, cmp:(a,b) => (b.alt - a.alt) || (b.a - a.a), val:s => `assist a ${s.alt} ${s.alt === 1 ? 'compagno' : 'compagni diversi'}` });
+/* Targhe arrivate dai primati individuali (1.13.0): i valori (presRun, goalRun, concAvg, mom5, top1, mstN, colpNet, kamiX) li calcola computeStats */
+PLAQUES.push({ id:'mina', icon:'💥', name:'Mina Vagante', desc:'Il non-attaccante con più gol segnati. Parità: meno presenze.',
+  ok:s => s.p.role !== 'ATT' && s.g >= 1, cmp:(a,b) => (b.g - a.g) || (a.pres - b.pres), val:s => `${s.g} gol` });
+PLAQUES.push({ id:'fortino', icon:'🏰', name:'Il Fortino', desc:'Il difensore con la media più bassa di gol subiti a partita. Parità: più presenze.',
+  ok:s => isDef(s) && s.concAvg != null, cmp:(a,b) => (a.concAvg - b.concAvg) || (b.pres - a.pres), val:s => `${itn(s.concAvg, 2)} gol subiti a gara` });
+PLAQUES.push({ id:'malato', icon:'🤒', name:'Malato di calcio', desc:'La serie più lunga di presenze di fila, senza saltare una gara. Parità: più presenze.',
+  ok:s => s.presRun >= 2, cmp:(a,b) => (b.presRun - a.presRun) || (b.pres - a.pres), val:s => `${s.presRun} gare di fila` });
+PLAQUES.push({ id:'momento', icon:'📈', name:'Uomo del Momento', desc:'Più overall guadagnato nelle ultime 5 giornate del torneo (contano le gare giocate). Parità: OVR più alto.',
+  ok:s => s.mom5 > 0, cmp:(a,b) => (b.mom5 - a.mom5) || (b.ovr - a.ovr), val:s => `+${itn(s.mom5)} OVR nelle ultime 5 giornate` });
+PLAQUES.push({ id:'segno', icon:'🎯', name:'Sempre a Segno', desc:'Più partite giocate di fila con almeno un gol. Parità: più gol.',
+  ok:s => s.goalRun >= 2, cmp:(a,b) => (b.goalRun - a.goalRun) || (b.g - a.g), val:s => `${s.goalRun} gare di fila a segno` });
+PLAQUES.push({ id:'sovrano', icon:'👑', name:'Il Sovrano', desc:'Più giornate chiuse al primo posto della classifica. Parità: più vittorie.',
+  ok:s => s.top1 >= 1, cmp:(a,b) => (b.top1 - a.top1) || (b.v - a.v), val:s => `${s.top1} ${s.top1 === 1 ? 'giornata' : 'giornate'} da primo` });
+PLAQUES.push({ id:'mister', icon:'📋', name:'Il Mister', desc:'Più formazioni proposte e accettate dall’organizzatore nelle partite giocate. Parità: più accettate senza modifiche.',
+  ok:s => s.mstN >= 1, cmp:(a,b) => (b.mstN - a.mstN) || (b.mstC - a.mstC), val:s => `${s.mstN} ${s.mstN === 1 ? 'formazione accettata' : 'formazioni accettate'}` });
+PLAQUES.push({ id:'colp', feat:'casino', icon:'🎲', name:'Il Colpaccio', desc:`La vincita netta più grande in una singola scommessa. Parità: chi l’ha fatta prima.`,
+  ok:s => s.colpNet > 0, cmp:(a,b) => (b.colpNet - a.colpNet) || (a.colpAt - b.colpAt), val:s => `+${fmtPat(s.colpNet)} ${CURRENCY} in una scommessa` });
+PLAQUES.push({ id:'kami', feat:'casino', icon:'💣', name:'Il Kamikaze', desc:'L’all-in vinto con il moltiplicatore più alto. Parità: puntata più alta.',
+  ok:s => s.kamiX > 0, cmp:(a,b) => (b.kamiX - a.kamiX) || (b.kamiS - a.kamiS), val:s => `all-in a ×${itn(s.kamiX, 2)}` });
 const plqOn = P => !P.feat || feat(P.feat);
 const PLQ_MIN_PRES = 3;   /* per tenere una targa servono almeno 3 presenze in stagione */
+const PLQ_CAP = 3;        /* targhe al massimo per giocatore (dalla 1.13.0; prima erano 2) */
 /* Moduli per ogni misura di squadra (da 1 a 11 titolari). La prima riga è sempre un solo giocatore "in porta"; massimo 4 righe e 5 per riga.
    Quelli a 8 sono i quattro di sempre. Il menu del modulo mostra solo quelli la cui somma è uguale ai titolari. */
 const FORMATIONS = {
@@ -2587,9 +2607,12 @@ const PLQ_GAP = {
   roccia:[s => s.ovr, 'OVR', 'OVR', 1, 1], re:[s => s.hat, 'gara da 3+ gol', 'gare da 3+ gol', 1, 0],
   profeta:[s => s.betPct, 'punto %', 'punti %', 5, 0], muro:[s => s.minConcW, 'gol subito', 'gol subiti', 1, 0], banco:[s => s.balB, CURRENCY1, CURRENCY, 20, 0], treno:[s => s.g + s.a, 'bonus', 'bonus', 1, 0],
   apriscatole:[s => s.firstG, 'primo gol', 'primi gol', 1, 0], ultimo:[s => s.lateG, 'gol', 'gol', 1, 0], inarrestabile:[s => winRun(s).best, 'vittoria', 'vittorie', 1, 0],
-  fantasista:[s => s.fant, 'gara', 'gare', 1, 0], regista:[s => s.a, 'assist', 'assist', 1, 0], altruista:[s => s.alt, 'compagno', 'compagni', 1, 0]
+  fantasista:[s => s.fant, 'gara', 'gare', 1, 0], regista:[s => s.a, 'assist', 'assist', 1, 0], altruista:[s => s.alt, 'compagno', 'compagni', 1, 0],
+  mina:[s => s.g, 'gol', 'gol', 1, 0], fortino:[s => s.concAvg, 'gol subito di media', 'gol subiti di media', 0.3, 2], malato:[s => s.presRun, 'gara', 'gare', 1, 0],
+  momento:[s => s.mom5, 'OVR', 'OVR', 1, 1], segno:[s => s.goalRun, 'gara', 'gare', 1, 0], sovrano:[s => s.top1, 'giornata', 'giornate', 1, 0],
+  mister:[s => s.mstN, 'formazione', 'formazioni', 1, 0], colp:[s => s.colpNet, CURRENCY1, CURRENCY, 20, 0], kami:[s => s.kamiX, 'di moltiplicatore', 'di moltiplicatore', 0.5, 2]
 };
-const METALS = { noexcuses:'steel', cecchino:'gold', assist:'rose', vittoria:'gold', gladiatore:'bronze', amuleto:'emerald', roccia:'titanium', re:'gold', muro:'steel', treno:'copper', apriscatole:'silver', ultimo:'rose', inarrestabile:'copper', banco:'gold', profeta:'emerald', fantasista:'rose', regista:'silver', altruista:'emerald' };
+const METALS = { noexcuses:'steel', cecchino:'gold', assist:'rose', vittoria:'gold', gladiatore:'bronze', amuleto:'emerald', roccia:'titanium', re:'gold', muro:'steel', treno:'copper', apriscatole:'silver', ultimo:'rose', inarrestabile:'copper', banco:'gold', profeta:'emerald', fantasista:'rose', regista:'silver', altruista:'emerald' , mina:'copper', fortino:'titanium', malato:'rose', momento:'emerald', segno:'gold', sovrano:'gold', mister:'silver', colp:'emerald', kami:'bronze' };
 const COLS = [
   { k:'ovr',  l:'OVR', t:'Overall dinamico (60-99)' },
   { k:'pres', l:'Pr',  t:'Presenze' },
@@ -3424,6 +3447,42 @@ function walletExtra(st, mov){
 const walletOf = pid => { const s = STATS.byId[pid]; return s && s.mov ? { bal:s.bal, mov:s.mov, earn:s.earn } : null; };
 const CUR_ICON = '🥔';
 const fmtPat = n => (n < 0 ? '−' : '') + Math.abs(Math.round(n)).toLocaleString('it-IT');
+/* Valori per le targhe arrivate dai primati: presenze di fila, gare di fila a segno, media gol subiti, OVR delle ultime 5 giornate,
+   giornate chiuse al primo posto, formazioni accettate e (solo sulla stagione intera, come il saldo) le migliori scommesse */
+function plqExtras(arr, ms, wal){
+  const idx = new Map(ms.map((m, i) => [m.id, i])), last5 = new Set(ms.slice(-5).map(m => m.id));
+  for(const s of arr){
+    let pr = 0, pb = 0, prev = -2, gr = 0, gb = 0, conc = 0, mom = 0;
+    for(const h of s.hist){
+      const i = idx.get(h.m.id); pr = i === prev + 1 ? pr + 1 : 1; prev = i; if(pr > pb) pb = pr;
+      gr = h.g > 0 ? gr + 1 : 0; if(gr > gb) gb = gr;
+      conc += num(h.parts && h.parts.conceded);
+      if(last5.has(h.m.id)) mom += h.d;
+    }
+    Object.assign(s, { presRun:pb, goalRun:gb, concAvg:s.pres ? conc / s.pres : null, mom5:mom, top1:0, mstN:0, mstC:0, colpNet:0, colpAt:0, kamiX:0, kamiS:0 });
+  }
+  const by = Object.fromEntries(arr.map(s => [s.pid, s])), cum = {}, at = {};
+  for(const s of arr) for(const h of s.hist) (at[h.m.id] = at[h.m.id] || []).push([s, h]);
+  for(const m of ms){
+    for(const [s, h] of at[m.id] || []){ const c = cum[s.pid] || (cum[s.pid] = { pid:s.pid, name:s.name, v:0, n:0, g:0, a:0, og:0, pct:0 }); c.n++; if(h.r === 'v') c.v++; c.g += h.g; c.a += h.a; c.og += h.og; c.pct = c.v / c.n * 100; }
+    const lead = arr.map(s => cum[s.pid] || { pid:s.pid, name:s.name, v:0, n:0, g:0, a:0, og:0, pct:0 }).sort(rankCmp)[0];
+    if(lead && by[lead.pid]) by[lead.pid].top1++;
+    if(m.propBy && by[m.propBy]){ by[m.propBy].mstN++; if(!m.propMod) by[m.propBy].mstC++; }
+  }
+  if(!wal || !feat('casino')) return;
+  const inK = new Set(ms.map(m => m.id));
+  for(const [mid, bets] of Object.entries((store.casino && store.casino.bets) || {})){
+    if(!inK.has(mid)) continue;
+    const m = store.matches[mid], mk = mkOf(mid);
+    for(const b of Object.values(bets || {})){
+      if(!b || !by[b.pid] || !betLive(mid, b)) continue;
+      const r = settleBet(b, mk, m); if(r.state !== 'won') continue;
+      const s = by[b.pid], stake = num(b.stake), net = r.payout - stake, mult = r.payout / stake;
+      if(net > s.colpNet){ s.colpNet = net; s.colpAt = num(b.at); }
+      if(b.allin && (mult > s.kamiX + 1e-9 || (Math.abs(mult - s.kamiX) < 1e-9 && stake > s.kamiS))){ s.kamiX = mult; s.kamiS = stake; }
+    }
+  }
+}
 function computeStats(upto){
   const S = {}, wal = upto == null;   /* il portafoglio si calcola solo sulla stagione intera: gli storici dei trofei non lo usano */
   if(wal) WCTX = { mv:{} };
@@ -3515,9 +3574,10 @@ function computeStats(upto){
   if(wal){ for(const st of arr) walletBuild(st); WCTX = null; }
   arr.sort(rankCmp);
   arr.forEach((s, i) => s.rank = i + 1);
-  /* Targhe: assegnazione in ordine gerarchico con tetto di 2 per giocatore.
+  /* Targhe: assegnazione in ordine gerarchico con tetto di PLQ_CAP per giocatore.
      Chi potrebbe vincerne 3 o più (è primo, oppure primo tra chi non è già al massimo) sceglie le sue 2 (plqPick/{pid}/p):
      quelle gli restano, le altre vanno a chi segue. Senza scelta resta l'ordine gerarchico. */
+  plqExtras(arr, ms, wal);
   const PC = {};
   for(const P of PLAQUES){ if(plqOn(P)) PC[P.id] = arr.filter(s => s.pres >= PLQ_MIN_PRES && P.ok(s)).sort((a, b) => P.cmp(a, b) || a.name.localeCompare(b.name, 'it')); }
   const allot = resv => {
@@ -3527,7 +3587,7 @@ function computeStats(upto){
       if(!PC[P.id]) continue;
       const cands = PC[P.id];
       if(resv[P.id]){ const w = cands.find(s => s.pid === resv[P.id]); plaques[P.id] = { pid:w.pid, val:P.val(w) }; continue; }
-      const win = cands.find(s => P.free || (held[s.pid] || []).length < 2);
+      const win = cands.find(s => P.free || (held[s.pid] || []).length < PLQ_CAP);
       if(win){ (held[win.pid] = held[win.pid] || []).push(P.id); plaques[P.id] = { pid:win.pid, val:P.val(win) }; }
     }
     return { held, plaques };
@@ -3537,13 +3597,13 @@ function computeStats(upto){
   for(const P of PLAQUES){
     if(!PC[P.id] || P.free) continue;
     /* la può vincere il primo in classifica e chi è primo tra quelli che non hanno già altre 2 targhe */
-    const first = PC[P.id][0], free = PC[P.id].find(s => (held[s.pid] || []).filter(id => id !== P.id).length < 2);
+    const first = PC[P.id][0], free = PC[P.id].find(s => (held[s.pid] || []).filter(id => id !== P.id).length < PLQ_CAP);
     for(const c of [first, free]) if(c && !(leads[c.pid] || []).includes(P.id)) (leads[c.pid] = leads[c.pid] || []).push(P.id);
   }
   const resv = {};
   for(const [pid, L] of Object.entries(leads)){
-    if(L.length < 3) continue;
-    const pick = list(store.plqPick && store.plqPick[pid] && store.plqPick[pid].p).filter((id, i, a) => L.includes(id) && a.indexOf(id) === i && !resv[id]).slice(0, 2);
+    if(L.length <= PLQ_CAP) continue;
+    const pick = list(store.plqPick && store.plqPick[pid] && store.plqPick[pid].p).filter((id, i, a) => L.includes(id) && a.indexOf(id) === i && !resv[id]).slice(0, PLQ_CAP);
     for(const id of pick) resv[id] = pid;
   }
   if(Object.keys(resv).length) ({ held, plaques } = allot(resv));
@@ -5779,13 +5839,13 @@ function meTabsHTML(t){
 /* Le tue targhe: chi è primo in 3 o più sceglie le sue 2; chi ne ha almeno 2 sceglie quella in vetrina sulla figurina */
 function myPlqHTML(s){
   const leads = (s.plqLeads || []).map(plaqueById).filter(Boolean), mine = s.plaques.map(plaqueById).filter(Boolean);
-  if(leads.length < 3 && mine.length < 2) return '';
+  if(leads.length <= PLQ_CAP && mine.length < 2) return '';
   const pick = list(store.plqPick && store.plqPick[s.pid] && store.plqPick[s.pid].p);
-  if(!ui.plqSel || ui.plqSel.pid !== s.pid) ui.plqSel = { pid:s.pid, ids:s.plaques.filter(id => leads.some(P => P.id === id)).slice(0, 2) };
-  const sel = ui.plqSel.ids, saved = pick.length === 2 && sel.length === 2 && sel.every(id => pick.includes(id));
-  const chooser = leads.length >= 3 ? `<p class="mu sm" style="margin:0 0 8px">Potresti avere ${leads.length} targhe, ma se ne tengono al massimo 2: scegli quali. Le altre vanno a chi ti segue.</p>
+  if(!ui.plqSel || ui.plqSel.pid !== s.pid) ui.plqSel = { pid:s.pid, ids:s.plaques.filter(id => leads.some(P => P.id === id)).slice(0, PLQ_CAP) };
+  const sel = ui.plqSel.ids, saved = pick.length === PLQ_CAP && sel.length === PLQ_CAP && sel.every(id => pick.includes(id));
+  const chooser = leads.length > PLQ_CAP ? `<p class="mu sm" style="margin:0 0 8px">Potresti avere ${leads.length} targhe, ma se ne tengono al massimo ${PLQ_CAP}: scegli quali. Le altre vanno a chi ti segue.</p>
     <div class="plq-pick">${leads.map(P => `<button type="button" data-plqsel="${P.id}" aria-pressed="${sel.includes(P.id)}"><span>${P.icon}</span>${P.name}</button>`).join('')}</div>
-    <div class="row" style="margin-top:10px"><button type="button" class="btn sm primary" data-action="plq-pick-save" ${sel.length === 2 && !saved ? '' : 'disabled'}>${saved ? '✓ Scelta salvata' : 'Tieni queste 2'}</button></div>` : '';
+    <div class="row" style="margin-top:10px"><button type="button" class="btn sm primary" data-action="plq-pick-save" ${sel.length === PLQ_CAP && !saved ? '' : 'disabled'}>${saved ? '✓ Scelta salvata' : `Tieni queste ${PLQ_CAP}`}</button></div>` : '';
   const v = mine[0];
   const showcase = mine.length >= 2 ? `<p class="mu sm" style="margin:${chooser ? '14px' : '0'} 0 8px">Targa in vetrina: quella che si vede in cima alla tua figurina.</p>
     <div class="plq-pick">${mine.map(P => `<button type="button" data-plqv="${P.id}" aria-pressed="${v && v.id === P.id}"><span>${P.icon}</span>${P.name}</button>`).join('')}</div>` : '';
@@ -5822,7 +5882,7 @@ function renderMe(){
     const hold = STATS.plaques[P.id];
     return { P, pos:i + 1, mine:!!hold && hold.pid === s.pid, hold };
   }).filter(Boolean).sort((a, b) => (b.mine - a.mine) || (a.pos - b.pos)).slice(0, 4);
-  const raceBox = race.length ? race.map(r => `<div class="me-race ${r.mine ? 'mine' : ''}"><span class="ri">${r.P.icon}</span><span class="rn"><b>${r.P.name}</b><small>${r.mine ? 'La detieni tu: ' + esc(r.hold.val) : (r.pos === 1 && r.hold ? `Saresti 1°, ma hai già il massimo di 2 targhe: va a ${esc(pname(r.hold.pid))}` : `Sei ${r.pos}°${r.hold ? `, la detiene ${esc(pname(r.hold.pid))} (${esc(r.hold.val)})` : ''}`)}</small></span><span class="rp">${r.mine ? '🏅' : r.pos + '°'}</span></div>`).join('')
+  const raceBox = race.length ? race.map(r => `<div class="me-race ${r.mine ? 'mine' : ''}"><span class="ri">${r.P.icon}</span><span class="rn"><b>${r.P.name}</b><small>${r.mine ? 'La detieni tu: ' + esc(r.hold.val) : (r.pos === 1 && r.hold ? `Saresti 1°, ma hai già il massimo di ${PLQ_CAP} targhe: va a ${esc(pname(r.hold.pid))}` : `Sei ${r.pos}°${r.hold ? `, la detiene ${esc(pname(r.hold.pid))} (${esc(r.hold.val)})` : ''}`)}</small></span><span class="rp">${r.mine ? '🏅' : r.pos + '°'}</span></div>`).join('')
     : '<p class="mu sm" style="margin:0">Gioca qualche gara per entrare nella corsa alle targhe.</p>';
   const Wn = {}, Ls = {};
   for(const x of h){ const opp = x.team === 'white' ? 'black' : 'white'; for(const o of effEntries(x.m)[opp]){ if(!store.players[o.pid]) continue; if(x.r === 'v') Wn[o.pid] = (Wn[o.pid] || 0) + 1; if(x.r === 's') Ls[o.pid] = (Ls[o.pid] || 0) + 1; } }
@@ -6168,6 +6228,19 @@ function computeRecords(){
   for(const m of STATS.matches) if(m.propBy && known(m.propBy)){ const o = mst[m.propBy] || (mst[m.propBy] = { n:0, clean:0 }); o.n++; if(!m.propMod) o.clean++; }
   const mister = recPick('mister', L.filter(s => mst[s.pid]).sort((a, b) => (mst[b.pid].n - mst[a.pid].n) || (mst[b.pid].clean - mst[a.pid].clean) || alpha(a, b)), (x, y) => mst[x.pid].n === mst[y.pid].n && mst[x.pid].clean === mst[y.pid].clean, RID.pid);
   if(mister) mister.mst = mst[mister.pid];
+  /* Assist man: più assist in tutto il torneo. Brutto periodo: più OVR perso nelle ultime 5 giornate (mom5 da computeStats) */
+  const assistman = recPick('assistman', L.filter(s => s.a > 0).sort((a, b) => (b.a - a.a) || (a.pres - b.pres) || alpha(a, b)), (x, y) => x.a === y.a && x.pres === y.pres, RID.pid);
+  const brutto = recPick('brutto', L.filter(s => s.mom5 < -1e-9).sort((a, b) => (a.mom5 - b.mom5) || (a.ovr - b.ovr) || alpha(a, b)), (x, y) => near(x.mom5, y.mom5) && near(x.ovr, y.ovr), RID.pid);
+  /* Bianchi contro Neri: vittorie per colore; in copertina chi ha vinto più gare con il colore avanti (nessuna se sono pari) */
+  let bvn = null;
+  if(STATS.matches.length){
+    let w = 0, b = 0, d = 0; const won = { white:{}, black:{} };
+    for(const m of STATS.matches){ const sc = matchScore(m), t = sc.w > sc.b ? 'white' : sc.b > sc.w ? 'black' : null; if(!t){ d++; continue; } if(t === 'white') w++; else b++;
+      for(const e of effEntries(m)[t]) if(known(e.pid)) won[t][e.pid] = (won[t][e.pid] || 0) + 1; }
+    const lead = w > b ? 'white' : b > w ? 'black' : null;
+    const top = lead ? Object.entries(won[lead]).sort((x, y) => (y[1] - x[1]) || pname(x[0]).localeCompare(pname(y[0]), 'it'))[0] : null;
+    bvn = { w, b, d, lead, pid:top ? top[0] : null, k:top ? top[1] : 0 };
+  }
   const capo = recPick('capo', L.filter(s => s.g > 0).sort((a, b) => (b.g - a.g) || (a.pres - b.pres) || alpha(a, b)), (x, y) => x.g === y.g && x.pres === y.pres, RID.pid);
   const malato = recPick('malato', L.filter(s => pres[s.pid] && pres[s.pid].best >= 2).sort((a, b) => (pres[b.pid].best - pres[a.pid].best) || alpha(a, b)), (x, y) => pres[x.pid].best === pres[y.pid].best, RID.pid);
   /* Serie sulle gare giocate da ognuno (le assenze non contano): Sempre a Segno (almeno un gol) e Il Digiuno (attaccanti senza gol) */
@@ -6185,7 +6258,7 @@ function computeRecords(){
   const sovrano = recPick('sovrano', L.filter(s => top1[s.pid] > 0).sort((a, b) => (top1[b.pid] - top1[a.pid]) || alpha(a, b)), (x, y) => top1[x.pid] === top1[y.pid], RID.pid);
   const fedeli = recPick('fedeli', Object.entries(pairs).sort(([ka, a], [kb, b]) => (b.n - a.n) || (b.v - a.v) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([, a], [, b]) => a.n === b.n, RID.pair);
   const { colp, kami } = casinoRecords();
-  return { mister, repatt, repcen, repdif, capo, malato, pres, momento, segno, segR, rimonta, digiuno, digR, sovrano, top1, fedeli, inf, colp, kami, manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, ritard, bunkerAny:Object.keys(bunker).length };
+  return { bvn, assistman, brutto, mister, repatt, repcen, repdif, capo, malato, pres, momento, segno, segR, rimonta, digiuno, digR, sovrano, top1, fedeli, inf, colp, kami, manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, ritard, bunkerAny:Object.keys(bunker).length };
 }
 const matchWhen = m => `Giornata ${num(m.day)}${m.date ? ', ' + fmtDateCap(m.date) : ''}`;
 function recCard(o, x = {}){
@@ -6788,7 +6861,7 @@ function renderTrophies(){
   const mineChip = me ? `<div class="th-filter"><button type="button" data-action="t-mine" aria-pressed="${onlyMine}">${onlyMine ? '✓ ' : ''}Solo i miei</button></div>` : '';
   const mineEmpty = t => `<p class="mu sm th-empty">${t}</p>`;
   const ttabs = `<div class="sub-tabs" role="tablist" aria-label="Trofei">${[['plq', 'Targhe'], ['rec', 'Trofei storici'], ['tw', 'TOTW'], ['tm', 'TOTM']].map(([k, l]) => `<button type="button" role="tab" class="sub-tab ${k === tt ? 'on' : ''}" aria-selected="${k === tt}" data-ttab="${k}">${l}</button>`).join('')}</div>`;
-  el.innerHTML = `${ttabs}${tt === 'tw' || tt === 'tm' ? '' : `<details class="glass th-how"${ui.thHow ? ' open' : ''}><summary>ℹ️ Come funzionano targhe e primati</summary><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo 2 a testa, servono almeno ${PLQ_MIN_PRES} presenze; chi ne potrebbe avere di più sceglie le sue 2 in Io → Traguardi). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa davvero meglio: a pari merito non cambiano mano.</p></details>`}
+  el.innerHTML = `${ttabs}${tt === 'tw' || tt === 'tm' ? '' : `<details class="glass th-how"${ui.thHow ? ' open' : ''}><summary>ℹ️ Come funzionano targhe e primati</summary><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo ${PLQ_CAP} a testa, servono almeno ${PLQ_MIN_PRES} presenze; chi ne potrebbe avere di più sceglie le sue ${PLQ_CAP} in Io → Traguardi). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa davvero meglio: a pari merito non cambiano mano.</p></details>`}
     ${tt === 'tw' ? `<div class="th-sec"><h3>Team of the Week</h3><span>2-4-2 · da lunedì a domenica</span></div>${twView('w')}` : tt === 'tm' ? `<div class="th-sec"><h3>Team of the Month</h3><span>2-4-2 · dal primo all’ultimo del mese</span></div>${twView('m')}` : tt === 'plq' ? `<div class="th-sec"><h3>Le ${PL.length} targhe stagionali</h3><span>Leader in tempo reale · tocca una targa per i dettagli</span></div>
     ${mineChip}<div class="plv-grid">${(onlyMine ? plk.filter(x => x.mine || x.near) : plk).map(x => x.tile).join('') || mineEmpty('Non detieni ancora nessuna targa e non sei secondo in nessuna: gioca e segna per entrare in corsa.')}</div>` : `<div class="th-sec"><h3>Bacheca dei primati storici</h3><span>${nM} ${nM === 1 ? 'gara analizzata' : 'gare analizzate'} · tocca un primato per i dettagli</span></div>
     ${mineChip}<div class="plv-grid">${(onlyMine ? recs.filter(x => x.mine) : recs).map(x => x.tile).join('') || mineEmpty('Non detieni ancora nessun primato storico.')}</div>`}`;
@@ -6797,10 +6870,12 @@ function renderTrophies(){
   try{ localStorage.setItem('cmb2627_seenPlq', JSON.stringify(curP)); localStorage.setItem('cmb2627_seenRecV', JSON.stringify(curR)); }catch(e){}
 }
 const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk','rit','inf','colp','kami',
-  'repatt','repcen','repdif','capo','malato','momento','segno','rimonta','digiuno','sovrano','fedeli','mister'];
+  'repatt','repcen','repdif','capo','malato','momento','segno','rimonta','digiuno','sovrano','fedeli','mister','bvn','assistman','brutto'];
+/* Trofei solo di coppia, di squadra, di partita e quelli scelti dal proprietario: i doppioni delle targhe e gli individuali diventati targhe restano in coda di chiavi (posizione) ma spenti */
+const REC_OFF = new Set(['cecchino', 'inarr', 'eroe', 'mina', 'fortino', 'malato', 'momento', 'segno', 'sovrano', 'mister', 'colp', 'kami']);
 /* event = record di una singola impresa (festeggiato anche se lo stesso giocatore si migliora); lead = primato di classifica (festeggiato solo al cambio di detentore) */
 const REC_KIND = { manita:'event', mitra:'event', lampo:'event', scadere:'event', mida:'event', uomo:'event', inarr:'event', goleada:'event', cappotto:'event', cecchino:'lead', fortino:'lead', mina:'lead', come:'lead', down:'lead', eroe:'lead', oro:'lead', intesa:'lead', derby:'lead', bunk:'lead', rit:'lead', inf:'lead', colp:'event', kami:'event',
-  repatt:'lead', repcen:'lead', repdif:'lead', capo:'lead', malato:'event', momento:'event', segno:'event', rimonta:'event', digiuno:'event', sovrano:'lead', fedeli:'lead', mister:'lead' };
+  repatt:'lead', repcen:'lead', repdif:'lead', capo:'lead', malato:'event', momento:'event', segno:'event', rimonta:'event', digiuno:'event', sovrano:'lead', fedeli:'lead', mister:'lead', bvn:'lead', assistman:'lead', brutto:'lead' };
 /* Primati legati a una funzione: con la funzione spenta la scheda non si mostra e non fa popup */
 const REC_FEAT = { eroe:'mvp', colp:'casino', kami:'casino' };
 function buildRecordCards(R, nM){
@@ -6876,8 +6951,16 @@ function buildRecordCards(R, nM){
       : { icon:'👯', title:'Compagni fedeli', desc:'La coppia che ha giocato più partite nella stessa squadra.', lock:need('Ancora nessuna gara insieme') }
     ,R.mister ? { icon:'📋', title:'Il Mister', desc:'Più formazioni proposte e accettate dall’organizzatore nelle partite giocate. Parità: più accettate senza modifiche.', pid:R.mister.pid, sub:`${R.mister.mst.clean} ${R.mister.mst.clean === 1 ? 'accettata così com’era' : 'accettate così com’erano'}`, value:R.mister.mst.n, unit:R.mister.mst.n === 1 ? 'formazione accettata' : 'formazioni accettate' }
       : { icon:'📋', title:'Il Mister', desc:'Più formazioni proposte e accettate dall’organizzatore nelle partite giocate. Parità: più accettate senza modifiche.', lock:need('Ancora nessuna formazione proposta e accettata') }
+    ,R.bvn ? (R.bvn.pid
+      ? { icon:'⚪⚫', title:'Bianchi contro Neri', desc:'Le vittorie di ogni colore in tutta la stagione. In copertina chi ha vinto più partite con il colore che vince di più.', pid:R.bvn.pid, sub:`${R.bvn.k} vittorie con i ${R.bvn.lead === 'white' ? 'Bianchi' : 'Neri'}`, value:`${R.bvn.w}–${R.bvn.b}`, unit:'vittorie Bianchi–Neri', foot:`${R.bvn.d} ${R.bvn.d === 1 ? 'pareggio' : 'pareggi'} · avanti i ${R.bvn.lead === 'white' ? 'Bianchi' : 'Neri'}` }
+      : { icon:'⚪⚫', title:'Bianchi contro Neri', desc:'Le vittorie di ogni colore in tutta la stagione. In copertina chi ha vinto più partite con il colore che vince di più.', label:'Bianchi e Neri pari', value:`${R.bvn.w}–${R.bvn.b}`, unit:'vittorie Bianchi–Neri', foot:`${R.bvn.d} ${R.bvn.d === 1 ? 'pareggio' : 'pareggi'} · nessuna copertina finché un colore non passa avanti` })
+      : { icon:'⚪⚫', title:'Bianchi contro Neri', desc:'Le vittorie di ogni colore in tutta la stagione. In copertina chi ha vinto più partite con il colore che vince di più.', lock:none }
+    ,R.assistman ? { icon:'👟', title:'Assist man', desc:'Più assist serviti in tutto il torneo. Parità: meno presenze.', pid:R.assistman.pid, sub:`${R.assistman.pres} ${R.assistman.pres === 1 ? 'presenza' : 'presenze'}, ${itn(R.assistman.a / R.assistman.pres, 2)} assist a gara`, value:R.assistman.a, unit:'assist' }
+      : { icon:'👟', title:'Assist man', desc:'Più assist serviti in tutto il torneo. Parità: meno presenze.', lock:need('Ancora nessun assist') }
+    ,R.brutto ? { icon:'📉', title:'Brutto periodo', desc:'Più overall perso nelle ultime 5 giornate del torneo (contano le gare giocate). Parità: OVR più basso.', pid:R.brutto.pid, sub:`OVR ${roundOvr(R.brutto.ovr)} adesso`, value:'−' + itn(-R.brutto.mom5), unit:'OVR nelle ultime 5 giornate' }
+      : { icon:'📉', title:'Brutto periodo', desc:'Più overall perso nelle ultime 5 giornate del torneo (contano le gare giocate). Parità: OVR più basso.', lock:need('Nessuno ha perso overall nelle ultime 5 giornate') }
   ];
-  cards.forEach((c, i) => { c.key = REC_KEYS[i]; if(REC_FEAT[c.key] && !feat(REC_FEAT[c.key])) c.off = true; });   /* le chiavi restano per posizione: una funzione spenta nasconde la scheda, non la toglie */
+  cards.forEach((c, i) => { c.key = REC_KEYS[i]; if((REC_FEAT[c.key] && !feat(REC_FEAT[c.key])) || REC_OFF.has(c.key)) c.off = true; });   /* le chiavi restano per posizione: una funzione spenta nasconde la scheda, non la toglie */
   return cards;
 }
 function recHolder(c){ return c.pid || (c.pair ? [...c.pair].sort().join('+') : '') || c.label || ''; }
@@ -9445,7 +9528,7 @@ document.addEventListener('click', async e => {
     else ui.sort = { key:d.sort, dir:d.sort === 'rank' ? 1 : -1 };
     renderBoardPart(); return;
   }
-  if(d.plqsel && ui.plqSel){ const L = ui.plqSel.ids, i = L.indexOf(d.plqsel); if(i >= 0) L.splice(i, 1); else { if(L.length >= 2) L.shift(); L.push(d.plqsel); } renderMe(); return; }
+  if(d.plqsel && ui.plqSel){ const L = ui.plqSel.ids, i = L.indexOf(d.plqsel); if(i >= 0) L.splice(i, 1); else { if(L.length >= PLQ_CAP) L.shift(); L.push(d.plqsel); } renderMe(); return; }
   if(d.plqv){ const me = myPid(); if(me && store.players[me]) commit({ [`plqPick/${me}/v`]:d.plqv }, 'Targa in vetrina scelta'); return; }
   if(d.oct && ui.oc){ ui.oc.t = d.oct; paintOvrCfg(); return; }
   if(d.ocs && ui.oc){
@@ -9620,7 +9703,7 @@ document.addEventListener('click', async e => {
     case 'who-guest': $('#who-g').hidden = false; setTimeout(() => $('#who-name').focus(), 50); break;
     case 'who-guest-ok': whoGuest(); break;
     case 'stars-view': openStarsAdmin(); break;
-    case 'plq-pick-save': { const me = myPid(); if(me && store.players[me] && ui.plqSel && ui.plqSel.ids.length === 2) commit({ [`plqPick/${me}/p`]:ui.plqSel.ids.slice() }, 'Le tue 2 targhe sono salvate'); break; }
+    case 'plq-pick-save': { const me = myPid(); if(me && store.players[me] && ui.plqSel && ui.plqSel.ids.length === PLQ_CAP) commit({ [`plqPick/${me}/p`]:ui.plqSel.ids.slice() }, `Le tue ${PLQ_CAP} targhe sono salvate`); break; }
     case 't-mine': { let v = false; try{ v = localStorage.getItem('cmb_tMine') === '1'; localStorage.setItem('cmb_tMine', v ? '0' : '1'); }catch(e){} renderTrophies(); break; }
     case 'ovrc-open': if(requireAdmin()) openOvrCfg(); break;
     case 'ovrc-preview': if(ui.oc){ ui.oc.prev = ovrPreview(ui.oc.d); paintOvrCfg(); } break;
@@ -10183,6 +10266,13 @@ try{
   if(!localStorage.getItem('cmb_mig_v162')){
     ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr'].forEach(k => localStorage.removeItem(k));
     localStorage.setItem('cmb_mig_v162', '1');
+  }
+}catch(e){}
+/* Migrazione 1.13.0: trofei e targhe si riordinano (targhe nuove, tetto a 3). Si azzerano i "già visto": il codice li ricrea in silenzio */
+try{
+  if(!localStorage.getItem('cmb_mig_v1130')){
+    ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV'].forEach(k => localStorage.removeItem(k));
+    localStorage.setItem('cmb_mig_v1130', '1');
   }
 }catch(e){}
 /* Migrazione 1.12.3: la sconfitta vale sempre come quella larga e gli OVR si ricalcolano. Si azzerano i "già visto": il codice li ricrea in silenzio */
