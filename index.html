@@ -2565,6 +2565,7 @@ const COLS = [
   { k:'g',    l:'G',   t:'Capocannoniere (gol)' },
   { k:'a',    l:'A',   t:'Assist man (assist)' },
   { k:'og',   l:'AG',  t:'Autogol' },
+  { k:'ga',   l:'G+A', t:'Gol + assist' },
   { k:'avg',  l:'MG',  t:'Media gol a partita' }
 ];
 
@@ -2573,11 +2574,12 @@ const CVIEWS = {
   gen:{ l:'Generale', cols:['ovr', 'pres', 'v', 'pa', 's'], sort:'rank', legend:'OVR overall dinamico, Pr presenze, V vittorie, P pareggi, S sconfitte. Ordine base: vittorie, poi % vittorie, poi gol. Tocca un\u2019intestazione per riordinare.' },
   g:{ l:'Capocannoniere', cols:['ovr', 'pres', 'g', 'avg'], sort:'g', legend:'Capocannoniere: G gol, MG media gol a partita.' },
   a:{ l:'Assist man', cols:['ovr', 'pres', 'a'], sort:'a', legend:'Assist man: A assist forniti.' },
+  ga:{ l:'Gol + assist', cols:['ovr', 'pres', 'g', 'a', 'ga'], sort:'ga', legend:'Gol + assist: G gol, A assist, G+A la somma.' },
   pct:{ l:'% vittorie', cols:['pres', 'v', 'pct'], sort:'pct', legend:'Percentuale di vittorie sulle presenze.' },
   s:{ l:'Sconfitte', cols:['pres', 's'], sort:'s', legend:'Sconfitte subite, dalla più alta.' },
   og:{ l:'Autogol', cols:['pres', 'og'], sort:'og', legend:'Autogol segnati.' }
 };
-const CVIEW_ORDER = ['gen', 'g', 'a', 'pct', 's', 'og'];
+const CVIEW_ORDER = ['gen', 'g', 'a', 'ga', 'pct', 's', 'og'];
 
 /* =========================================================
    STATE
@@ -3460,6 +3462,7 @@ function computeStats(upto){
   const arr = Object.values(S).map(st => {
     st.pct = st.pres ? st.v / st.pres * 100 : 0;
     st.avg = st.pres ? st.g / st.pres : 0;
+    st.ga = st.g + st.a;
     st.apg = st.pres ? st.a / st.pres : 0;
     st.alt = Object.keys(st.aTo).length;
     let ideal = null, nem = null;
@@ -3806,7 +3809,7 @@ function podTop(){
 }
 function podiumHTML(){
   const k = ui.cView || 'gen', gen = k === 'gen';
-  const sub = { g:s => `${s.g} gol`, a:s => `${s.a} assist`, pct:s => `${s.pct.toFixed(0)}% su ${s.pres} ${s.pres === 1 ? 'gara' : 'gare'}`, s:s => `${s.s} ${s.s === 1 ? 'sconfitta' : 'sconfitte'}`, og:s => `${s.og} autogol` };
+  const sub = { g:s => `${s.g} gol`, a:s => `${s.a} assist`, ga:s => `${s.g} gol, ${s.a} assist`, pct:s => `${s.pct.toFixed(0)}% su ${s.pres} ${s.pres === 1 ? 'gara' : 'gare'}`, s:s => `${s.s} ${s.s === 1 ? 'sconfitta' : 'sconfitte'}`, og:s => `${s.og} autogol` };
   const top = podTop();
   if(!top.length) return '';
   return `<div class="podium" aria-label="Podio">${[1, 0, 2].filter(i => top[i]).map(i => {
