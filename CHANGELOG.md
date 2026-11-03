@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.12.5
+- Trofei riordinati: spenti (chiavi in coda, `REC_OFF`) i doppioni delle targhe (cecchino, inarr, eroe) e gli individuali diventati targhe (mina, fortino, malato, momento, segno, sovrano, mister, colp, kami); nuovi primati `bvn` (Bianchi contro Neri, copertina a chi ha vinto di più con il colore avanti, nessuna se pari), `assistman` e `brutto` (OVR perso nelle ultime 5 giornate).
+- Targhe nuove: mina, fortino, malato, momento (OVR guadagnato nelle ultime 5 giornate), segno, sovrano, mister, colp e kami (CASiNO), con i valori calcolati da `plqExtras` in `computeStats`.
+- Tetto delle targhe a 3 (`PLQ_CAP`), anche nella scelta di `plqPick`.
+- Migrazione `cmb_mig_v1125`: azzera i «già visto» di trofei e targhe.
+
 ## 1.12.4
 - Tolti gli effetti di movimento: giroscopio (`deviceorientation`, richiesta su iPhone), inclinazione della figurina col dito, luce col mouse, scossone della splash, classe `.shake` su PIN e codice.
 - Classifica: vista «Gol + assist» (`CVIEWS.ga`, colonna `ga`, campo `st.ga`).

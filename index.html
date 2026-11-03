@@ -2444,7 +2444,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.12.4';
+const APP_VERSION = '1.12.5';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -2556,7 +2556,7 @@ PLAQUES.push({ id:'regista', icon:'🧠', name:'Il Regista', desc:'Il centrocamp
   ok:s => s.p.role === 'CEN' && s.a >= 1, cmp:(a,b) => (b.a - a.a) || (b.apg - a.apg) || (b.v - a.v), val:s => `${s.a} assist` });
 PLAQUES.push({ id:'altruista', icon:'🤝', name:'L’Altruista', desc:'Assist serviti al maggior numero di compagni diversi (serve la sequenza dei gol). Parità: più assist.',
   ok:s => s.alt >= 1, cmp:(a,b) => (b.alt - a.alt) || (b.a - a.a), val:s => `assist a ${s.alt} ${s.alt === 1 ? 'compagno' : 'compagni diversi'}` });
-/* Targhe arrivate dai primati individuali (1.13.0): i valori (presRun, goalRun, concAvg, mom5, top1, mstN, colpNet, kamiX) li calcola computeStats */
+/* Targhe arrivate dai primati individuali (1.12.5): i valori (presRun, goalRun, concAvg, mom5, top1, mstN, colpNet, kamiX) li calcola computeStats */
 PLAQUES.push({ id:'mina', icon:'💥', name:'Mina Vagante', desc:'Il non-attaccante con più gol segnati. Parità: meno presenze.',
   ok:s => s.p.role !== 'ATT' && s.g >= 1, cmp:(a,b) => (b.g - a.g) || (a.pres - b.pres), val:s => `${s.g} gol` });
 PLAQUES.push({ id:'fortino', icon:'🏰', name:'Il Fortino', desc:'Il difensore con la media più bassa di gol subiti a partita. Parità: più presenze.',
@@ -2577,7 +2577,7 @@ PLAQUES.push({ id:'kami', feat:'casino', icon:'💣', name:'Il Kamikaze', desc:'
   ok:s => s.kamiX > 0, cmp:(a,b) => (b.kamiX - a.kamiX) || (b.kamiS - a.kamiS), val:s => `all-in a ×${itn(s.kamiX, 2)}` });
 const plqOn = P => !P.feat || feat(P.feat);
 const PLQ_MIN_PRES = 3;   /* per tenere una targa servono almeno 3 presenze in stagione */
-const PLQ_CAP = 3;        /* targhe al massimo per giocatore (dalla 1.13.0; prima erano 2) */
+const PLQ_CAP = 3;        /* targhe al massimo per giocatore (dalla 1.12.5; prima erano 2) */
 /* Moduli per ogni misura di squadra (da 1 a 11 titolari). La prima riga è sempre un solo giocatore "in porta"; massimo 4 righe e 5 per riga.
    Quelli a 8 sono i quattro di sempre. Il menu del modulo mostra solo quelli la cui somma è uguale ai titolari. */
 const FORMATIONS = {
@@ -9872,6 +9872,13 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.12.5', date:'2026-11-03', items:[
+    `🏆 Trofei e targhe riordinati: nei Trofei restano le partite epiche, le coppie e i grandi titoli della stagione; i premi individuali sono diventati targhe.`,
+    `⚪⚫ Nuovo trofeo «Bianchi contro Neri»: il conto delle vittorie dei due colori, con in copertina chi ha vinto di più con il colore che è avanti.`,
+    `👟 Nuovi trofei «Assist man» (più assist in stagione) e «Brutto periodo» (più overall perso nelle ultime 5 giornate).`,
+    `🎖️ Nuove targhe: Mina Vagante, Il Fortino, Malato di calcio, Sempre a Segno, Il Sovrano, Il Mister e Uomo del Momento, che ora va a chi ha guadagnato più overall nelle ultime 5 giornate.`,
+    `🥉 Adesso ognuno può tenere fino a 3 targhe: se potresti averne di più, scegli tu quali in Io → Traguardi.`
+  ] },
   { v:'1.12.4', date:'2026-11-03', items:[
     `📋 Formazioni proposte: per le prossime partite l’organizzatore può indicare solo i convocati. Dalla Classifica o da Formazioni premi «Manda la tua formazione», dividi i convocati sul campo e la mandi. Vedi se è in attesa, accettata o rifiutata (con il motivo). Si possono mandare fino a un’ora prima della partita.`,
     `✅ Quando l’organizzatore accetta una formazione, in alto compare «Squadre di…» con il nome di chi l’ha proposta.`,
@@ -10268,11 +10275,11 @@ try{
     localStorage.setItem('cmb_mig_v162', '1');
   }
 }catch(e){}
-/* Migrazione 1.13.0: trofei e targhe si riordinano (targhe nuove, tetto a 3). Si azzerano i "già visto": il codice li ricrea in silenzio */
+/* Migrazione 1.12.5: trofei e targhe si riordinano (targhe nuove, tetto a 3). Si azzerano i "già visto": il codice li ricrea in silenzio */
 try{
-  if(!localStorage.getItem('cmb_mig_v1130')){
+  if(!localStorage.getItem('cmb_mig_v1125')){
     ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV'].forEach(k => localStorage.removeItem(k));
-    localStorage.setItem('cmb_mig_v1130', '1');
+    localStorage.setItem('cmb_mig_v1125', '1');
   }
 }catch(e){}
 /* Migrazione 1.12.3: la sconfitta vale sempre come quella larga e gli OVR si ricalcolano. Si azzerano i "già visto": il codice li ricrea in silenzio */
