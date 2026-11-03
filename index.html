@@ -843,6 +843,13 @@ button.pcard:active .pc-fr{transform:scale(.96)}
 .prop-by{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:12px 16px;border-radius:16px;border:1px solid rgba(34,197,94,.55);background:linear-gradient(135deg,rgba(34,197,94,.22),rgba(22,163,74,.1));color:#dcfce7;font:700 15px var(--body)}
 .prop-by b{color:#fff}.prop-by small{display:block;font-weight:600;font-size:12.5px;color:#bbf7d0}
 .prop-box{padding:14px 18px;margin-bottom:12px}
+.prop-by.sm{margin:10px 0 4px;padding:9px 12px;font-size:14px}
+.nx-pool{margin:12px 0 4px}.nx-pool b{display:block;font:italic 800 22px/1.1 var(--disp)}
+.nx-avs{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.nx-prop{margin:12px 0 6px;padding-top:12px;border-top:1px solid var(--hair)}
+.nx-prop .prop-go{min-height:48px;font-size:16px;padding:0 18px}
+.nx-prop .prop-me{margin:0 0 8px}
+.nx-prop .mu,.nx-pool .mu{display:block;font-style:normal;font-weight:600}.nx-prop .prop-row .mu{display:inline}.nx-pool .mu{margin-top:2px}
 .prop-row{gap:10px;align-items:center;flex-wrap:wrap}
 .prop-me{margin:0 0 10px;font-size:14px}
 .pool-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px;padding:0 18px 12px}
@@ -3775,11 +3782,14 @@ function renderDashboardInner(){
   const nx = STATS.scheduled[0];
   /* Prossima gara: i due capitani carta contro carta (come in Partite) e la barra degli OVR medi; tocco sulla carta = figurina, altrove = gara */
   const nxW = nx ? teamMean(nx.white) : 0, nxB = nx ? teamMean(nx.black) : 0, nxSh = nxW + nxB ? nxW / (nxW + nxB) * 100 : 50, nxCaps = !!nx && (list(nx.white).length || list(nx.black).length);
+  const nxPool = nx ? matchPool(nx) : null, nxPb = nx ? propsBits(nx, 'prop-go') : null;
   const next = nx ? `<div class="glass next big" role="button" tabindex="0" data-open-match="${nx.id}" aria-label="Apri la gara in programma">
       <div class="nx-top"><span class="tag">🗓️ Prossima gara</span><b>Giornata ${num(nx.day)}</b><span class="mu">${esc(whenLabel(nx) || 'Data da definire')}</span>${cdSpan(nx)}</div>
-      ${nxCaps ? capsVsHTML(nx) : ''}
-      <div class="ovbar" aria-label="OVR medio Bianchi ${itn(nxW)}, Neri ${itn(nxB)}"><span>${itn(nxW)}</span><span class="bar"><i style="width:${nxSh}%"></i><em></em></span><span>${itn(nxB)}</span></div>
-      <div class="nx-bot"><span class="mu sm">OVR medio delle due squadre</span><span class="go">Scopri dove giochi ›</span></div></div>` : '';
+      ${nx.propBy ? propByHTML(nx).replace('class="prop-by"', 'class="prop-by sm"') : ''}
+      ${nxCaps ? capsVsHTML(nx) : nxPool ? `<div class="nx-pool"><b>Squadre da decidere</b><span class="mu sm">${nxPool.length} convocati</span><div class="nx-avs">${nxPool.map(pid => avatar(store.players[pid], 'xs')).join('')}</div></div>` : ''}
+      ${nxCaps ? `<div class="ovbar" aria-label="OVR medio Bianchi ${itn(nxW)}, Neri ${itn(nxB)}"><span>${itn(nxW)}</span><span class="bar"><i style="width:${nxSh}%"></i><em></em></span><span>${itn(nxB)}</span></div>` : ''}
+      <div class="nx-prop">${nxPb.myLine}<div class="row prop-row">${nxPb.btn}${nxPb.adm}</div></div>
+      <div class="nx-bot"><span class="mu sm">${nxCaps ? 'OVR medio delle due squadre' : 'Proponi tu come dividere i convocati'}</span><span class="go">${nxCaps ? 'Scopri dove giochi ›' : 'Apri la gara ›'}</span></div></div>` : '';
   const cv = CVIEWS[ui.cView] || CVIEWS.gen, cf = ui.cf;
   const nF = (cf.q ? 1 : 0) + (cf.played ? 1 : 0) + (cf.min > 0 ? 1 : 0);
   $('#dash').innerHTML = `<div class="dash">${bdayHTML()}${next}${hero}
@@ -4411,17 +4421,24 @@ function propByHTML(m){
   return `<div class="prop-by">✅ <span>Squadre di <b>${esc(pname(m.propBy))}</b>${m.propMod ? '<small>con qualche modifica dell’organizzatore</small>' : ''}</span></div>`;
 }
 const PROP_ST = { wait:['⏳', 'in attesa'], ok:['✅', 'accettata'], mod:['✅', 'accettata con modifiche'], no:['❌', 'rifiutata'], old:['↩︎', 'superata da un’altra proposta'] };
-function propsBoxHTML(m){
+function propWhen(m){
+  const kd = m.time ? kickDate(m) : null, until = kd ? new Date(kd.getTime() - 3600e3) : null;
+  return until ? `fino alle ${String(until.getHours()).padStart(2, '0')}:${String(until.getMinutes()).padStart(2, '0')} del ${shortDay(`${until.getFullYear()}-${String(until.getMonth() + 1).padStart(2, '0')}-${String(until.getDate()).padStart(2, '0')}`)}` : 'fino alla partita';
+}
+/* tasto «Manda la tua formazione», stato della tua proposta e (admin) proposte ricevute: in Formazioni e nella prossima gara della Classifica */
+function propsBits(m, act){
   const me = myPid(), known = !!(me && store.players[me]), open = propsOpen(m), mine = known ? lineupProp(m.id, me) : null;
   const all = lineupPropsOf(m.id), wait = all.filter(([, x]) => x.st === 'wait').length;
-  const kd = m.time ? kickDate(m) : null, until = kd ? new Date(kd.getTime() - 3600e3) : null;
-  const when = until ? `fino alle ${String(until.getHours()).padStart(2, '0')}:${String(until.getMinutes()).padStart(2, '0')} del ${shortDay(`${until.getFullYear()}-${String(until.getMonth() + 1).padStart(2, '0')}-${String(until.getDate()).padStart(2, '0')}`)}` : 'fino alla partita';
   const st = mine ? PROP_ST[mine.st] || PROP_ST.wait : null;
   const myLine = mine ? `<p class="prop-me">${st[0]} La tua proposta è <b>${st[1]}</b>${mine.st === 'no' && mine.why ? `: «${esc(mine.why)}»` : ''}.</p>` : '';
   const btn = !open ? '<p class="mu sm" style="margin:0">Le proposte di formazione sono chiuse (si chiudono 1 ora prima della partita).</p>'
-    : known ? `<button type="button" class="btn primary" data-action="prop-start" data-mid="${m.id}">📋 ${mine ? 'Manda una nuova formazione' : 'Manda la tua formazione'}</button><span class="mu sm">Si può mandare ${when}.</span>`
-    : '<p class="mu sm" style="margin:0">Per mandare la tua formazione scegli il tuo giocatore in «Io».</p>';
-  const adm = ui.admin ? `<button type="button" class="btn sm" data-action="props-open" data-mid="${m.id}">📥 Proposte ricevute${all.length ? ` (${all.length}${wait ? `, ${wait} in attesa` : ''})` : ''}</button>` : '';
+    : known ? `<button type="button" class="btn primary prop-go" data-action="${act}" data-mid="${m.id}">📋 ${mine ? 'Manda una nuova formazione' : 'Manda la tua formazione'}</button><span class="mu sm">Si può mandare ${propWhen(m)}.</span>`
+    : `<button type="button" class="btn primary prop-go" data-action="who-open">📋 Manda la tua formazione</button><span class="mu sm">Prima scegli il tuo giocatore.</span>`;
+  const adm = ui.admin ? `<button type="button" class="btn sm" data-action="props-open" data-mid="${m.id}">📥 Proposte ricevute${all.length ? ` (${all.length}${wait ? `, ${wait} da vedere` : ''})` : ''}</button>` : '';
+  return { myLine, btn, adm };
+}
+function propsBoxHTML(m){
+  const { myLine, btn, adm } = propsBits(m, 'prop-start');
   return `<section class="glass prop-box">${myLine}<div class="row prop-row">${btn}${adm}</div></section>`;
 }
 function poolHTML(m){
@@ -4429,6 +4446,12 @@ function poolHTML(m){
   return `<section class="glass pool-box"><div class="panel-h"><h2>🗓️ Squadre da decidere</h2><span class="mu sm">${pool.length} convocati</span></div>
     <div class="pool-list">${pool.map(pid => { const st = STATS.byId[pid]; return `<button type="button" class="pool-p" data-open-player="${pid}">${avatar(store.players[pid], 'sm')}<span>${esc(pname(pid))}<small>${ROLES[store.players[pid].role] || ROLES.CEN}${st ? ' · ' + roundOvr(st.ovr) : ''}</small></span></button>`; }).join('')}</div>
     ${ui.admin ? `<div class="row" style="padding:0 18px 16px"><button type="button" class="btn sm primary" data-action="cmp-start" data-mid="${m.id}">✏️ Componi sul campo</button></div>` : ''}</section>`;
+}
+const propsWaitN = () => STATS.scheduled.reduce((t, m) => t + lineupPropsOf(m.id).filter(([, x]) => x.st === 'wait').length, 0);
+function propsAllHTML(){
+  const ms = STATS.scheduled.filter(m => lineupPropsOf(m.id).length || matchPool(m));
+  return `<h3>Proposte di formazione</h3><p class="lead-p">Arrivano qui e in Partite → giornata → Formazioni → «📥 Proposte ricevute».</p>${ms.length ? ms.map(m => { const all = lineupPropsOf(m.id), w = all.filter(([, x]) => x.st === 'wait').length;
+    return `<div class="prop-it"><div class="pi-t" style="grid-column:1/-1"><b>Giornata ${num(m.day)}</b><small>${esc(whenLabel(m) || 'Data da definire')} · ${all.length} ${all.length === 1 ? 'proposta' : 'proposte'}${w ? `, ${w} da vedere` : ''}${propsOpen(m) ? '' : ' · chiuse'}</small></div><div class="pi-a"><button type="button" class="btn sm primary" data-action="props-open" data-mid="${m.id}" ${all.length ? '' : 'disabled'}>Vedi le proposte</button></div></div>`; }).join('') : '<p class="mu">Nessuna gara in programma con proposte.</p>'}`;
 }
 function propsListHTML(mid){
   const m = store.matches[mid], all = lineupPropsOf(mid);
@@ -8227,6 +8250,7 @@ function renderAdmin(){
     <div class="admin-grid">
       <button class="tile" data-action="new-sched"><span class="ic">🗓️</span><b>Programma gara</b><span>Data, ora e convocati bilanciati: tutti vedono dove giocano.</span></button>
       <button class="tile" data-action="new-match"><span class="ic">📝</span><b>Registra gara</b><span>Schiera le squadre e segna gol, assist e autogol.</span></button>
+      <button class="tile" data-action="props-all"><span class="ic">📥</span><b>Proposte di formazione${propsWaitN() ? `<span class="cbadge">${propsWaitN()}</span>` : ''}</b><span>Le formazioni mandate dai giocatori per le prossime gare: accettale, correggile o rifiutale.</span></button>
       <button class="tile" data-action="ovrc-open"><span class="ic">⚙️</span><b>Calcolo overall</b><span>Per ogni fascia di OVR scegli quanto valgono vittorie, sconfitte, gol, assist e penalità.</span></button>
       <button class="tile" data-action="stars-view"><span class="ic">⭐</span><b>Voti a stelle</b><span>Per ogni gara: quanti voti ha preso ognuno, la media e il bonus. Mai chi ha votato.</span></button>
       ${feat('messages') ? `<button class="tile" data-action="msg-admin"><span class="ic">✉️</span><b>Richieste${msgNew() ? `<span class="cbadge">${msgNew()}</span>` : ''}</b><span>Messaggi degli amici: leggi, segna come risolti, archivia.</span></button>` : ''}
@@ -9526,6 +9550,8 @@ document.addEventListener('click', async e => {
     case 'cmp-start': if(requireAdmin()) cmpStart(d.mid); break;
     case 'prop-start': { const me = myPid(); if(!me || !store.players[me]){ toast('Scegli prima il tuo giocatore in «Io»', 'warn'); break; } if(!propsOpen(store.matches[d.mid])){ toast('Le proposte sono chiuse', 'warn'); break; } cmpStart(d.mid, 'prop'); break; }
     case 'prop-send': propSend(); break;
+    case 'prop-go': { const m = store.matches[d.mid], me = myPid(); if(!m || !me || !store.players[me] || !propsOpen(m)) break; ui.matchId = d.mid; ui.mTab = 'form'; lazyDirty.matches = true; go('matches'); cmpStart(d.mid, 'prop'); break; }
+    case 'props-all': if(requireAdmin()){ $('#props-body').innerHTML = propsAllHTML(); openModal('#m-props'); } break;
     case 'props-open': if(requireAdmin()){ $('#props-body').innerHTML = propsListHTML(d.mid); openModal('#m-props'); } break;
     case 'prop-review': if(requireAdmin()){ closeModal('#m-props'); ui.matchId = d.mid; cmpStart(d.mid, 'rev', d.pid); } break;
     case 'prop-ok': if(requireAdmin()) propAccept(d.mid || (ui.cmp && ui.cmp.mid), d.pid); break;
