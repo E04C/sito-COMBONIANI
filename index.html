@@ -4656,7 +4656,7 @@ function cmpPanelHTML(m){
   return `<section class="glass pp cmp">
     <div class="panel-h"><h2>${title}</h2><span class="mu sm">Bianchi ${filled('white')}/${c.slots.white.length} · Neri ${filled('black')}/${c.slots.black.length}</span></div>
     ${left.length ? `<div class="swap-hint cmp-left">Convocati ancora da sistemare: ${left.map(pid => esc(pname(pid))).join(', ')}</div>` : ''}
-    <div class="pp-ctrl">${ctl('white')}${ctl('black')}<button type="button" class="btn sm ${c.move ? 'primary' : ''}" data-action="cmp-move">${c.move ? '✓ Fine spostamenti' : '🔀 Sposta'}</button></div>
+    <div class="pp-ctrl">${ctl('white')}${ctl('black')}<button type="button" class="btn sm ${c.move ? 'primary' : ''}" data-action="cmp-move">${c.move ? '✓ Fine spostamenti' : '🔀 Sposta'}</button><button type="button" class="btn sm ghost" data-action="cmp-clear" ${[...c.slots.white, ...c.slots.black].some(Boolean) ? '' : 'disabled'}>🧹 Svuota</button></div>
     <div class="swap-hint">${hint}</div>
     <div class="pp-wrap">${pitchHTML(m)}</div>
     <div class="row end cmp-act">${acts}</div>
@@ -4681,15 +4681,16 @@ function paintCmpPick(full){
   const where = pid => { for(const t of ['white', 'black']){ if(c.slots[t].includes(pid)) return t; if(c.bench[t].includes(pid)) return t + 'b'; } return ''; };
   const TAG = { white:'Bianchi', black:'Neri', whiteb:'In più (Bianchi)', blackb:'In più (Neri)' };
   const pool = matchPool(store.matches[c.mid]), inPool = pid => !pool || pool.includes(pid);
-  const ps = STATS.list.filter(s => s.pid !== cur && inPool(s.pid) && (!q || norm(s.name).includes(q)))
+  const placed = new Set([...c.slots.white, ...c.slots.black].filter(Boolean));   /* chi è già in campo non compare: se lo togli, ricompare */
+  const ps = STATS.list.filter(s => s.pid !== cur && !placed.has(s.pid) && inPool(s.pid) && (!q || norm(s.name).includes(q)))
     .map(s => ({ s, w:where(s.pid) })).sort((a, b) => (!!a.w - !!b.w) || (b.s.ovr - a.s.ovr));
-  const rows = ps.map(({ s, w }) => `<button type="button" class="cmp-o${w ? ' busy' : ''}" data-cmppick="${s.pid}">${avatar(s.p, 'sm')}<span class="nm"><b>${esc(s.name)}</b><small>${ROLES[s.p.role] || ROLES.CEN} · OVR ${roundOvr(s.ovr)}</small></span>${isInj(s.pid) ? '<em class="inj" title="In infermeria">🩹</em>' : ''}${w ? `<em class="tg">${TAG[w]}</em>` : '<em class="tg free">Libero</em>'}</button>`).join('') || '<p class="mu sm">Nessun giocatore trovato.</p>';
+  const rows = ps.map(({ s, w }) => `<button type="button" class="cmp-o${w ? ' busy' : ''}" data-cmppick="${s.pid}">${avatar(s.p, 'sm')}<span class="nm"><b>${esc(s.name)}</b><small>${ROLES[s.p.role] || ROLES.CEN} · OVR ${roundOvr(s.ovr)}</small></span>${isInj(s.pid) ? '<em class="inj" title="In infermeria">🩹</em>' : ''}${w ? `<em class="tg">${TAG[w]}</em>` : '<em class="tg free">Libero</em>'}</button>`).join('') || `<p class="mu sm">${q ? 'Nessun giocatore trovato.' : 'Sono già tutti in campo: togline uno per metterne un altro.'}</p>`;
   const list_ = $('#cmp-list');
   if(!full && list_){ list_.innerHTML = rows; return; }
   $('#cmp-body').innerHTML = `<h3>${team === 'white' ? 'Bianchi' : 'Neri'} · posto ${k + 1}</h3>
     ${cur ? `<div class="cmp-cur">${avatar(store.players[cur] || { name:pname(cur) }, 'sm')}<span>Adesso: <b>${esc(pname(cur))}</b></span><button type="button" class="btn sm ghost" data-action="cmp-remove">Togli dal campo</button></div>` : '<p class="lead-p">Posto libero: scegli chi ci gioca.</p>'}
     <input id="cmp-q" class="field w100" type="search" placeholder="Cerca giocatore" aria-label="Cerca giocatore" autocomplete="off">
-    <p class="mu sm" style="margin:8px 0 6px">${pool ? `Solo i ${pool.length} convocati. ` : ''}Chi è già in una squadra si sposta qui.</p>
+    <p class="mu sm" style="margin:8px 0 6px">${pool ? `Convocati ancora da sistemare: ${pool.filter(pid => !placed.has(pid)).length} su ${pool.length}.` : 'Giocatori non ancora in campo.'} Per cambiare squadra a chi è già in campo usa «Sposta».</p>
     <div class="cmp-list" id="cmp-list">${rows}</div>`;
 }
 function cmpPick(pid){
@@ -9674,6 +9675,7 @@ document.addEventListener('click', async e => {
     case 'prop-ok': if(requireAdmin()) propAccept(d.mid || (ui.cmp && ui.cmp.mid), d.pid); break;
     case 'prop-no': if(requireAdmin()) propReject(d.mid || (ui.cmp && ui.cmp.mid), d.pid); break;
     case 'cmp-cancel': ui.cmp = null; paintMatch(); break;
+    case 'cmp-clear': if(ui.cmp){ for(const t of ['white', 'black']){ ui.cmp.slots[t] = ui.cmp.slots[t].map(() => null); ui.cmp.bench[t] = []; } ui.cmp.sel = null; paintMatch(); toast('Formazione svuotata: i posti restano, scegli di nuovo chi ci gioca'); } break;
     case 'cmp-save': if(requireAdmin()) cmpSave(); break;
     case 'cmp-move': if(ui.cmp){ ui.cmp.move = !ui.cmp.move; ui.cmp.sel = null; paintMatch(); } break;
     case 'cmp-remove': if(ui.cmp && ui.cmp.pick){ ui.cmp.slots[ui.cmp.pick.team][ui.cmp.pick.k] = null; ui.cmp.pick = null; closeModal('#m-cmp'); paintMatch(); } break;
