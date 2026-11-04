@@ -2575,6 +2575,15 @@ PLAQUES.push({ id:'colp', feat:'casino', icon:'🎲', name:'Il Colpaccio', desc:
   ok:s => s.colpNet > 0, cmp:(a,b) => (b.colpNet - a.colpNet) || (a.colpAt - b.colpAt), val:s => `+${fmtPat(s.colpNet)} ${CURRENCY} in una scommessa` });
 PLAQUES.push({ id:'kami', feat:'casino', icon:'💣', name:'Il Kamikaze', desc:'L’all-in vinto con il moltiplicatore più alto. Parità: puntata più alta.',
   ok:s => s.kamiX > 0, cmp:(a,b) => (b.kamiX - a.kamiX) || (b.kamiS - a.kamiS), val:s => `all-in a ×${itn(s.kamiX, 2)}` });
+/* Imprese di una sola partita diventate targhe (1.12.6): il record personale di ognuno (maxG, maxA, bestPts, burst) lo calcolano computeStats e plqExtras */
+PLAQUES.push({ id:'manita', icon:'🎩', name:'Re della Manita', desc:'Più gol in una sola partita. Parità: più gol in stagione.',
+  ok:s => s.maxG >= 2, cmp:(a,b) => (b.maxG - a.maxG) || (b.g - a.g), val:s => `${s.maxG} gol in una gara` });
+PLAQUES.push({ id:'mida', icon:'🪙', name:'Re Mida', desc:'Più assist serviti in una sola partita. Parità: più assist in stagione.',
+  ok:s => s.maxA >= 2, cmp:(a,b) => (b.maxA - a.maxA) || (b.a - a.a), val:s => `${s.maxA} assist in una gara` });
+PLAQUES.push({ id:'uomo', icon:'⭐', name:'Uomo Partita', desc:'La miglior prestazione in una sola partita: gol 1 e assist 0,5 per il moltiplicatore di ruolo, meno gli autogol. Parità: più gol in stagione.',
+  ok:s => s.bestPts > 0, cmp:(a,b) => (b.bestPts - a.bestPts) || (b.g - a.g), val:s => `${itn(s.bestPts)} punti in una gara` });
+PLAQUES.push({ id:'mitra', icon:'💥', name:'La Mitragliatrice', desc:'Più gol in 15 minuti di una stessa partita (servono i minuti dei gol). Parità: meno minuti.',
+  ok:s => s.burstN >= 2, cmp:(a,b) => (b.burstN - a.burstN) || (a.burstSpan - b.burstSpan) || (b.g - a.g), val:s => `${s.burstN} gol in ${s.burstSpan} ${s.burstSpan === 1 ? 'minuto' : 'minuti'}` });
 const plqOn = P => !P.feat || feat(P.feat);
 const PLQ_MIN_PRES = 3;   /* per tenere una targa servono almeno 3 presenze in stagione */
 const PLQ_CAP = 3;        /* targhe al massimo per giocatore (dalla 1.12.5; prima erano 2) */
@@ -2613,6 +2622,12 @@ const PLQ_GAP = {
   mister:[s => s.mstN, 'formazione', 'formazioni', 1, 0], colp:[s => s.colpNet, CURRENCY1, CURRENCY, 20, 0], kami:[s => s.kamiX, 'di moltiplicatore', 'di moltiplicatore', 0.5, 2]
 };
 const METALS = { noexcuses:'steel', cecchino:'gold', assist:'rose', vittoria:'gold', gladiatore:'bronze', amuleto:'emerald', roccia:'titanium', re:'gold', muro:'steel', treno:'copper', apriscatole:'silver', ultimo:'rose', inarrestabile:'copper', banco:'gold', profeta:'emerald', fantasista:'rose', regista:'silver', altruista:'emerald' , mina:'copper', fortino:'titanium', malato:'rose', momento:'emerald', segno:'gold', sovrano:'gold', mister:'silver', colp:'emerald', kami:'bronze' };
+/* imprese di una sola partita diventate targhe (1.12.6) */
+PLQ_GAP.manita = [s => s.maxG, 'gol', 'gol', 1, 0];
+PLQ_GAP.mida = [s => s.maxA, 'assist', 'assist', 1, 0];
+PLQ_GAP.uomo = [s => s.bestPts, 'punto', 'punti', 0.5, 1];
+PLQ_GAP.mitra = [s => s.burstN, 'gol', 'gol', 1, 0];
+Object.assign(METALS, { manita:'gold', mida:'gold', uomo:'silver', mitra:'copper' });
 const COLS = [
   { k:'ovr',  l:'OVR', t:'Overall dinamico (60-99)' },
   { k:'pres', l:'Pr',  t:'Presenze' },
@@ -3459,7 +3474,23 @@ function plqExtras(arr, ms, wal){
       conc += num(h.parts && h.parts.conceded);
       if(last5.has(h.m.id)) mom += h.d;
     }
-    Object.assign(s, { presRun:pb, goalRun:gb, concAvg:s.pres ? conc / s.pres : null, mom5:mom, top1:0, mstN:0, mstC:0, colpNet:0, colpAt:0, kamiX:0, kamiS:0 });
+    const R = ROLES[s.p.role] ? s.p.role : 'CEN';
+    Object.assign(s, { presRun:pb, goalRun:gb, concAvg:s.pres ? conc / s.pres : null, mom5:mom, top1:0, mstN:0, mstC:0, colpNet:0, colpAt:0, kamiX:0, kamiS:0,
+      maxA:s.hist.reduce((t, h) => Math.max(t, h.a), 0), bestPts:s.hist.reduce((t, h) => Math.max(t, (h.g + h.a * 0.5) * ROLE_MULT[R] - h.og * OG_PEN), 0), burstN:0, burstSpan:0 });
+  }
+  /* La Mitragliatrice: più gol dello stesso giocatore entro BURST_WIN minuti di una partita */
+  const byP = Object.fromEntries(arr.map(s => [s.pid, s]));
+  for(const m of ms){
+    const byS = {};
+    for(const x of matchGoals(m)) if(!x.og && !x.est && x.min != null && byP[x.s]) (byS[x.s] = byS[x.s] || []).push(x.min);
+    for(const [pid, mins] of Object.entries(byS)){
+      mins.sort((a, b) => a - b);
+      for(let i = 0; i < mins.length; i++){
+        let j = i; while(j + 1 < mins.length && mins[j + 1] - mins[i] <= BURST_WIN) j++;
+        const n = j - i + 1, sp = mins[j] - mins[i], s = byP[pid];
+        if(n >= 2 && (n > s.burstN || (n === s.burstN && sp < s.burstSpan))){ s.burstN = n; s.burstSpan = sp; }
+      }
+    }
   }
   const by = Object.fromEntries(arr.map(s => [s.pid, s])), cum = {}, at = {};
   for(const s of arr) for(const h of s.hist) (at[h.m.id] = at[h.m.id] || []).push([s, h]);
@@ -6231,15 +6262,12 @@ function computeRecords(){
   /* Assist man: più assist in tutto il torneo. Brutto periodo: più OVR perso nelle ultime 5 giornate (mom5 da computeStats) */
   const assistman = recPick('assistman', L.filter(s => s.a > 0).sort((a, b) => (b.a - a.a) || (a.pres - b.pres) || alpha(a, b)), (x, y) => x.a === y.a && x.pres === y.pres, RID.pid);
   const brutto = recPick('brutto', L.filter(s => s.mom5 < -1e-9).sort((a, b) => (a.mom5 - b.mom5) || (a.ovr - b.ovr) || alpha(a, b)), (x, y) => near(x.mom5, y.mom5) && near(x.ovr, y.ovr), RID.pid);
-  /* Bianchi contro Neri: vittorie per colore; in copertina chi ha vinto più gare con il colore avanti (nessuna se sono pari) */
+  /* Bianchi contro Neri: vittorie per colore in tutta la stagione (titolo di squadra, senza giocatore) */
   let bvn = null;
   if(STATS.matches.length){
-    let w = 0, b = 0, d = 0; const won = { white:{}, black:{} };
-    for(const m of STATS.matches){ const sc = matchScore(m), t = sc.w > sc.b ? 'white' : sc.b > sc.w ? 'black' : null; if(!t){ d++; continue; } if(t === 'white') w++; else b++;
-      for(const e of effEntries(m)[t]) if(known(e.pid)) won[t][e.pid] = (won[t][e.pid] || 0) + 1; }
-    const lead = w > b ? 'white' : b > w ? 'black' : null;
-    const top = lead ? Object.entries(won[lead]).sort((x, y) => (y[1] - x[1]) || pname(x[0]).localeCompare(pname(y[0]), 'it'))[0] : null;
-    bvn = { w, b, d, lead, pid:top ? top[0] : null, k:top ? top[1] : 0 };
+    let w = 0, b = 0, d = 0;
+    for(const m of STATS.matches){ const sc = matchScore(m); if(sc.w > sc.b) w++; else if(sc.b > sc.w) b++; else d++; }
+    bvn = { w, b, d, lead:w > b ? 'white' : b > w ? 'black' : null };
   }
   const capo = recPick('capo', L.filter(s => s.g > 0).sort((a, b) => (b.g - a.g) || (a.pres - b.pres) || alpha(a, b)), (x, y) => x.g === y.g && x.pres === y.pres, RID.pid);
   const malato = recPick('malato', L.filter(s => pres[s.pid] && pres[s.pid].best >= 2).sort((a, b) => (pres[b.pid].best - pres[a.pid].best) || alpha(a, b)), (x, y) => pres[x.pid].best === pres[y.pid].best, RID.pid);
@@ -6872,7 +6900,7 @@ function renderTrophies(){
 const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk','rit','inf','colp','kami',
   'repatt','repcen','repdif','capo','malato','momento','segno','rimonta','digiuno','sovrano','fedeli','mister','bvn','assistman','brutto'];
 /* Trofei solo di coppia, di squadra, di partita e quelli scelti dal proprietario: i doppioni delle targhe e gli individuali diventati targhe restano in coda di chiavi (posizione) ma spenti */
-const REC_OFF = new Set(['cecchino', 'inarr', 'eroe', 'mina', 'fortino', 'malato', 'momento', 'segno', 'sovrano', 'mister', 'colp', 'kami']);
+const REC_OFF = new Set(['cecchino', 'inarr', 'eroe', 'mina', 'fortino', 'malato', 'momento', 'segno', 'sovrano', 'mister', 'colp', 'kami', 'manita', 'mitra', 'mida', 'uomo']);
 /* event = record di una singola impresa (festeggiato anche se lo stesso giocatore si migliora); lead = primato di classifica (festeggiato solo al cambio di detentore) */
 const REC_KIND = { manita:'event', mitra:'event', lampo:'event', scadere:'event', mida:'event', uomo:'event', inarr:'event', goleada:'event', cappotto:'event', cecchino:'lead', fortino:'lead', mina:'lead', come:'lead', down:'lead', eroe:'lead', oro:'lead', intesa:'lead', derby:'lead', bunk:'lead', rit:'lead', inf:'lead', colp:'event', kami:'event',
   repatt:'lead', repcen:'lead', repdif:'lead', capo:'lead', malato:'event', momento:'event', segno:'event', rimonta:'event', digiuno:'event', sovrano:'lead', fedeli:'lead', mister:'lead', bvn:'lead', assistman:'lead', brutto:'lead' };
@@ -6951,10 +6979,8 @@ function buildRecordCards(R, nM){
       : { icon:'👯', title:'Compagni fedeli', desc:'La coppia che ha giocato più partite nella stessa squadra.', lock:need('Ancora nessuna gara insieme') }
     ,R.mister ? { icon:'📋', title:'Il Mister', desc:'Più formazioni proposte e accettate dall’organizzatore nelle partite giocate. Parità: più accettate senza modifiche.', pid:R.mister.pid, sub:`${R.mister.mst.clean} ${R.mister.mst.clean === 1 ? 'accettata così com’era' : 'accettate così com’erano'}`, value:R.mister.mst.n, unit:R.mister.mst.n === 1 ? 'formazione accettata' : 'formazioni accettate' }
       : { icon:'📋', title:'Il Mister', desc:'Più formazioni proposte e accettate dall’organizzatore nelle partite giocate. Parità: più accettate senza modifiche.', lock:need('Ancora nessuna formazione proposta e accettata') }
-    ,R.bvn ? (R.bvn.pid
-      ? { icon:'⚪⚫', title:'Bianchi contro Neri', desc:'Le vittorie di ogni colore in tutta la stagione. In copertina chi ha vinto più partite con il colore che vince di più.', pid:R.bvn.pid, sub:`${R.bvn.k} vittorie con i ${R.bvn.lead === 'white' ? 'Bianchi' : 'Neri'}`, value:`${R.bvn.w}–${R.bvn.b}`, unit:'vittorie Bianchi–Neri', foot:`${R.bvn.d} ${R.bvn.d === 1 ? 'pareggio' : 'pareggi'} · avanti i ${R.bvn.lead === 'white' ? 'Bianchi' : 'Neri'}` }
-      : { icon:'⚪⚫', title:'Bianchi contro Neri', desc:'Le vittorie di ogni colore in tutta la stagione. In copertina chi ha vinto più partite con il colore che vince di più.', label:'Bianchi e Neri pari', value:`${R.bvn.w}–${R.bvn.b}`, unit:'vittorie Bianchi–Neri', foot:`${R.bvn.d} ${R.bvn.d === 1 ? 'pareggio' : 'pareggi'} · nessuna copertina finché un colore non passa avanti` })
-      : { icon:'⚪⚫', title:'Bianchi contro Neri', desc:'Le vittorie di ogni colore in tutta la stagione. In copertina chi ha vinto più partite con il colore che vince di più.', lock:none }
+    ,R.bvn ? { icon:'⚪⚫', title:'Bianchi contro Neri', desc:'Le vittorie di ogni colore in tutta la stagione: è un titolo di squadra.', label:R.bvn.lead ? `Avanti i ${R.bvn.lead === 'white' ? 'Bianchi' : 'Neri'}` : 'Bianchi e Neri pari', value:`${R.bvn.w}–${R.bvn.b}`, unit:'vittorie Bianchi–Neri', foot:`${R.bvn.d} ${R.bvn.d === 1 ? 'pareggio' : 'pareggi'}` }
+      : { icon:'⚪⚫', title:'Bianchi contro Neri', desc:'Le vittorie di ogni colore in tutta la stagione: è un titolo di squadra.', lock:none }
     ,R.assistman ? { icon:'👟', title:'Assist man', desc:'Più assist serviti in tutto il torneo. Parità: meno presenze.', pid:R.assistman.pid, sub:`${R.assistman.pres} ${R.assistman.pres === 1 ? 'presenza' : 'presenze'}, ${itn(R.assistman.a / R.assistman.pres, 2)} assist a gara`, value:R.assistman.a, unit:'assist' }
       : { icon:'👟', title:'Assist man', desc:'Più assist serviti in tutto il torneo. Parità: meno presenze.', lock:need('Ancora nessun assist') }
     ,R.brutto ? { icon:'📉', title:'Brutto periodo', desc:'Più overall perso nelle ultime 5 giornate del torneo (contano le gare giocate). Parità: OVR più basso.', pid:R.brutto.pid, sub:`OVR ${roundOvr(R.brutto.ovr)} adesso`, value:'−' + itn(-R.brutto.mom5), unit:'OVR nelle ultime 5 giornate' }
@@ -10273,6 +10299,13 @@ try{
   if(!localStorage.getItem('cmb_mig_v162')){
     ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr'].forEach(k => localStorage.removeItem(k));
     localStorage.setItem('cmb_mig_v162', '1');
+  }
+}catch(e){}
+/* Migrazione 1.12.6: quattro imprese diventano targhe. Si azzerano i "già visto" di trofei e targhe: il codice li ricrea in silenzio */
+try{
+  if(!localStorage.getItem('cmb_mig_v1126')){
+    ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV'].forEach(k => localStorage.removeItem(k));
+    localStorage.setItem('cmb_mig_v1126', '1');
   }
 }catch(e){}
 /* Migrazione 1.12.5: trofei e targhe si riordinano (targhe nuove, tetto a 3). Si azzerano i "già visto": il codice li ricrea in silenzio */
