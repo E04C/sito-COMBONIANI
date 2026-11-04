@@ -2298,6 +2298,7 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
         <label>Data<input id="ed-date" class="field" type="date"></label>
         <label id="ed-time-w">Ora inizio<input id="ed-time" class="field" type="time"></label>
         <label id="ed-end-w">Ora fine<input id="ed-end" class="field" type="time"></label>
+        <label>Campo<select id="ed-surf" class="field"><option value="">Non indicato</option><option value="s">🟩 Sintetico</option><option value="t">🟫 Terra</option></select></label>
       </div>
     </div>
     <div class="edmode" role="group" aria-label="Tipo di gara">
@@ -2684,7 +2685,7 @@ const ui = {
   twSel:null,
   twCtx:null,
   mTab:'rep',
-  cf:{ q:'', played:false, min:0, open:false },
+  cf:{ q:'', played:false, min:0, open:false, month:'', surf:'' },
   duel:null
 };
 let db = null;
@@ -3884,7 +3885,7 @@ function renderDashboardInner(){
       <div class="nx-prop">${nxPb.myLine}<div class="row prop-row">${nxPb.btn}${nxPb.adm}</div></div>
       <div class="nx-bot"><span class="mu sm">${nxCaps ? 'OVR medio delle due squadre' : 'Proponi tu come dividere i convocati'}</span><span class="go">${nxCaps ? 'Scopri dove giochi ›' : 'Apri la gara ›'}</span></div></div>` : '';
   const cv = CVIEWS[ui.cView] || CVIEWS.gen, cf = ui.cf;
-  const nF = (cf.q ? 1 : 0) + (cf.played ? 1 : 0) + (cf.min > 0 ? 1 : 0);
+  const nF = clsNF();
   $('#dash').innerHTML = `<div class="dash">${bdayHTML()}${next}${hero}
     <button type="button" class="season-btn" data-action="season-awards" aria-label="Premi stagionali, stagione 26/27"><span class="ico" aria-hidden="true">🏆</span><span><b>Premi stagionali</b><small>Stagione 26/27</small></span><span class="go" aria-hidden="true">›</span></button>${ballonBtnHTML()}
     <section class="glass">
@@ -3897,10 +3898,12 @@ function renderDashboardInner(){
         <input id="cf-q" class="field" type="search" placeholder="Cerca giocatore" aria-label="Cerca giocatore" autocomplete="off" value="${esc(cf.q)}">
         <label><input id="cf-played" type="checkbox" ${cf.played ? 'checked' : ''}> Solo chi ha giocato</label>
         <label>PG minimo <input id="cf-min" class="field" type="number" min="0" max="99" inputmode="numeric" value="${cf.min || ''}" placeholder="0"></label>
+        <label>Mese <select id="cf-month" class="field"><option value="">Tutta la stagione</option>${clsMonths().map(k => `<option value="${k}" ${k === cf.month ? 'selected' : ''}>${esc(monthLbl(k))}</option>`).join('')}</select></label>
+        <label>Campo <select id="cf-surf" class="field"><option value="">Tutti i campi</option>${Object.entries(SURF).map(([k, l]) => `<option value="${k}" ${k === cf.surf ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
       </div>
       <div id="cls-podium">${podiumHTML()}</div>
       <div class="table-wrap" id="cls-wrap">${tableHTML()}</div>
-      <p class="legend" id="cls-legend">${esc(cv.legend)}</p>
+      <p class="legend" id="cls-legend">${esc(cv.legend + clsNote())}</p>
     </section>
   </div>`;
 }
@@ -3908,7 +3911,7 @@ function renderDashboardInner(){
 function renderBoardPart(){
   const cv = CVIEWS[ui.cView] || CVIEWS.gen;
   const p = $('#cls-podium'), w = $('#cls-wrap'), l = $('#cls-legend'); if(!p || !w){ renderDashboard(); return; }
-  p.innerHTML = podiumHTML(); w.innerHTML = tableHTML(); if(l) l.textContent = cv.legend;
+  p.innerHTML = podiumHTML(); w.innerHTML = tableHTML(); if(l) l.textContent = cv.legend + clsNote();
   watchMeRow();
 }
 /* La tua riga a portata: si osserva la propria riga della classifica; quando esce dallo schermo (sotto l'intestazione e sopra la barra) compare la barretta */
@@ -3936,9 +3939,30 @@ function goMeRow(){
   tr.scrollIntoView({ block:'center', behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   tr.classList.remove('flash'); void tr.offsetWidth; tr.classList.add('flash');
 }
+const clsNote = () => { const cf = ui.cf; if(!cf.month && !cf.surf) return ''; const bits = [cf.month ? monthLbl(cf.month) : '', cf.surf ? (cf.surf === 't' ? 'su terra' : 'sul sintetico') : ''].filter(Boolean); return ` Contano solo le partite di: ${bits.join(', ')}; l’OVR è quello di adesso.`; };
+const clsNF = () => { const cf = ui.cf; return (cf.q ? 1 : 0) + (cf.played ? 1 : 0) + (cf.min > 0 ? 1 : 0) + (cf.month ? 1 : 0) + (cf.surf ? 1 : 0); };
+const MESI_LUNGHI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+const monthLbl = k => { const [y, mo] = k.split('-').map(Number); const n = MESI_LUNGHI[mo - 1] || ''; return n.charAt(0).toUpperCase() + n.slice(1) + ' ' + y; };
+const clsMonths = () => [...new Set(STATS.matches.map(m => String(m.date || '').slice(0, 7)).filter(k => /^\d{4}-\d{2}$/.test(k)))].sort().reverse();
+/* Classifica con il filtro di mese o di campo: gli stessi conteggi della stagione, solo sulle gare scelte (l'OVR resta quello di adesso) */
+function clsBase(){
+  const cf = ui.cf; if(!cf.month && !cf.surf) return STATS.list;
+  const key = cf.month + '|' + cf.surf;
+  if(STATS._cls && STATS._cls.k === key) return STATS._cls.list;
+  const S = Object.fromEntries(STATS.list.map(s => [s.pid, { ...s, pres:0, v:0, pa:0, s:0, g:0, a:0, og:0, prevRank:null }]));
+  for(const m of STATS.matches){
+    if((cf.month && String(m.date || '').slice(0, 7) !== cf.month) || (cf.surf && m.surf !== cf.surf)) continue;
+    const sc = matchScore(m), res = { white:sc.w > sc.b ? 'v' : sc.w < sc.b ? 's' : 'pa', black:sc.b > sc.w ? 'v' : sc.b < sc.w ? 's' : 'pa' };
+    for(const t of ['white', 'black']) for(const e of effEntries(m)[t]){ const x = S[e.pid]; if(!x) continue; x.pres++; x[res[t]]++; x.g += num(e.g); x.a += num(e.a); x.og += num(e.og); }
+  }
+  const list = Object.values(S).map(x => Object.assign(x, { pct:x.pres ? x.v / x.pres * 100 : 0, avg:x.pres ? x.g / x.pres : 0, ga:x.g + x.a })).sort(rankCmp);
+  list.forEach((x, i) => x.rank = i + 1);
+  STATS._cls = { k:key, list };
+  return list;
+}
 function clsList(){
   const cf = ui.cf, q = norm(cf.q || '');
-  return STATS.list.filter(s => (!q || norm(s.name).includes(q)) && (!cf.played || s.pres > 0) && s.pres >= (cf.min || 0));
+  return clsBase().filter(s => (!q || norm(s.name).includes(q)) && (!cf.played || s.pres > 0) && s.pres >= (cf.min || 0));
 }
 
 function mvArrow(s){
@@ -3966,8 +3990,9 @@ function rankShift(){
 function podTop(){
   const k = ui.cView || 'gen';
   if(!STATS.matches.length || STATS.list.length < 2) return [];
-  return k === 'gen' ? STATS.list.slice(0, 3)
-    : [...STATS.list].filter(s => (k === 'pct' ? s.pres > 0 : s[k] > 0)).sort((a, b) => (b[k] - a[k]) || (a.rank - b.rank)).slice(0, 3);
+  const L = clsBase(); if(L !== STATS.list && !L.some(s => s.pres > 0)) return [];
+  return k === 'gen' ? L.slice(0, 3)
+    : [...L].filter(s => (k === 'pct' ? s.pres > 0 : s[k] > 0)).sort((a, b) => (b[k] - a[k]) || (a.rank - b.rank)).slice(0, 3);
 }
 function podiumHTML(){
   const k = ui.cView || 'gen', gen = k === 'gen';
@@ -4464,6 +4489,8 @@ function lineupsHTML(m, withFlags){
   return `<section class="glass tab"><div class="tab-cols" style="margin-top:0">${col('white')}${col('black')}</div></section>`;
 }
 /* Formazioni a elenco: Bianchi a sinistra, Neri a destra, a specchio. Prima della gara l'OVR attuale, dopo i punti presi o persi */
+/* Campo della partita (facoltativo): matches/{id}/surf = 's' sintetico, 't' terra */
+const SURF = { s:'🟩 Sintetico', t:'🟫 Terra' };
 const LX_ROLE = { DIF:['D', 'd'], CEN:['C', 'c'], ATT:['A', 'a'] };
 function lxName(n){ const w = String(n || '').trim().split(/\s+/); return w.length > 1 ? w[0] + ' ' + w.slice(1).map(x => x[0] + '.').join(' ') : w[0] || ''; }
 function lxIcons(n, ic, cls){ n = num(n); if(n <= 0) return ''; const one = `<i class="lx-i${cls ? ' ' + cls : ''}" aria-hidden="true">${ic}</i>`; return n <= 3 ? one.repeat(n) : `${one}<b class="lx-x" aria-hidden="true">×${n}</b>`; }
@@ -4741,7 +4768,7 @@ function matchDetailHTML(id){
     ? `<button class="awd" data-open-player="${c.pid}" ${store.players[c.pid] ? '' : 'disabled'}><span class="ai aw-f">${avatar(store.players[c.pid] || { name:c.n }, 'sm')}<i class="lx-dot ${LX_ROLE[A.k][1]}" aria-hidden="true">${LX_ROLE[A.k][0]}</i></span><span><small>${A.l}</small><b>${esc(pname(c.pid, c.n))}</b></span><em>${fmtD(c.pts)}</em></button>`
     : `<div class="awd off"><span class="ai aw-f"><span class="av av-sm" aria-hidden="true">–</span><i class="lx-dot ${LX_ROLE[A.k][1]}" aria-hidden="true">${LX_ROLE[A.k][0]}</i></span><span><small>${A.l}</small><b>Non assegnato</b></span></div>`; }).join('')}</div>`;
   return `${tabs}<div class="mone"><article class="glass tab">
-    <div class="hero-meta"><span class="tag">Giornata ${num(m.day)}</span>${m.date ? `<span>${fmtDate(m.date)}</span>` : ''}${matchLen(m) ? `<span>Durata ${matchLen(m)}’</span>` : ''}<span class="sum">${starters(m, 'white').length} contro ${starters(m, 'black').length}</span></div>
+    <div class="hero-meta"><span class="tag">Giornata ${num(m.day)}</span>${m.date ? `<span>${fmtDate(m.date)}</span>` : ''}${matchLen(m) ? `<span>Durata ${matchLen(m)}’</span>` : ''}${SURF[m.surf] ? `<span>${SURF[m.surf]}</span>` : ''}<span class="sum">${starters(m, 'white').length} contro ${starters(m, 'black').length}</span></div>
     ${boardHTML(sc)}
     ${scorersHTML(m)}
     ${cambiHTML(m)}
@@ -5323,7 +5350,7 @@ function scheduledDetailHTML(m){
   const share = mW + mB ? mW / (mW + mB) * 100 : 50;
   if(ui.mTab === 'form') return formViewHTML(m, false);
   return `<div class="mone"><article class="glass tab">
-    <div class="hero-meta"><span class="tag">🗓️ In programma</span><span>Giornata ${num(m.day)}</span><span>${esc(whenLabel(m) || 'Data da definire')}</span>${cdSpan(m)}<span class="sum">${list(m.white).length} contro ${list(m.black).length}</span></div>
+    <div class="hero-meta"><span class="tag">🗓️ In programma</span><span>Giornata ${num(m.day)}</span><span>${esc(whenLabel(m) || 'Data da definire')}</span>${SURF[m.surf] ? `<span>${SURF[m.surf]}</span>` : ''}${cdSpan(m)}<span class="sum">${list(m.white).length} contro ${list(m.black).length}</span></div>
     ${capsVsHTML(m)}
     <div class="ovbar" aria-label="OVR medio Bianchi ${itn(mW)}, Neri ${itn(mB)}"><span>${itn(mW)}</span><span class="bar"><i style="width:${share}%"></i><em></em></span><span>${itn(mB)}</span></div>
     <p class="mu sm" style="text-align:center;margin:0 0 12px">OVR medio delle due squadre</p>
@@ -8564,6 +8591,7 @@ function openMatchEditor(id, mode){
   $('#ed-date').value = ED.date;
   $('#ed-time').value = ED.time;
   $('#ed-end').value = ED.end;
+  $('#ed-surf').value = SURF[m && m.surf] ? m.surf : '';
   $('#ed-filter').value = '';
   setEdMode(ED.status);
   openModal('#m-match');
@@ -8997,6 +9025,7 @@ async function saveMatch(){
   ED.date = $('#ed-date').value || '';
   ED.time = $('#ed-time').value || '';
   ED.end = $('#ed-end').value || '';
+  ED.surf = SURF[$('#ed-surf').value] ? $('#ed-surf').value : '';
   if(ED.status !== 'scheduled' && ED.end && (!ED.time || matchLen({ time:ED.time, end:ED.end }) == null)){ toast('Controlla ora inizio e ora fine della gara', 'err'); return; }
   const w = ED.white.filter(e => !e.bench).length, b = ED.black.filter(e => !e.bench).length;
   const poolOnly = ED.status === 'scheduled' && ED.called.length;   /* gara in programma: chi è convocato ma senza squadra resta convocato, e le squadre si decidono dopo (anche con le proposte) */
@@ -9034,7 +9063,7 @@ async function saveMatch(){
     status:sched ? 'scheduled' : 'played', time:ED.time, ...(!sched && ED.end ? { end:ED.end } : {}), fmW:ED.fmW || DEF_FM, fmB:ED.fmB || DEF_FM,
     ...(ED.posW ? { posW:list(ED.posW) } : {}), ...(ED.posB ? { posB:list(ED.posB) } : {}),
     ...(ED.capW ? { capW:ED.capW } : {}), ...(ED.capB ? { capB:ED.capB } : {}),
-    day:ED.day, date:ED.date,
+    day:ED.day, date:ED.date, ...(ED.surf ? { surf:ED.surf } : {}),
     white:ED.white.map(clean), black:ED.black.map(clean),
     ...(goalsOut.length ? { goals:goalsOut } : {}),
     ...(movesOut.length ? { moves:movesOut } : {}),
@@ -9783,8 +9812,9 @@ document.addEventListener('change', e => {
 document.addEventListener('input', e => {
   const t = e.target; if(!t || !t.id || t.id.indexOf('cf-') !== 0) return;
   if(t.id === 'cf-q') ui.cf.q = t.value; else if(t.id === 'cf-played') ui.cf.played = t.checked; else if(t.id === 'cf-min') ui.cf.min = Math.max(0, Math.floor(Number(t.value) || 0));
+  else if(t.id === 'cf-month') ui.cf.month = t.value; else if(t.id === 'cf-surf') ui.cf.surf = SURF[t.value] ? t.value : '';
   renderBoardPart();
-  const b = $('[data-action="cls-filters"]'); if(b){ const n = (ui.cf.q ? 1 : 0) + (ui.cf.played ? 1 : 0) + (ui.cf.min > 0 ? 1 : 0); b.textContent = 'Filtri' + (n ? ` (${n})` : ''); b.classList.toggle('primary', !!n); }
+  const b = $('[data-action="cls-filters"]'); if(b){ const n = clsNF(); b.textContent = 'Filtri' + (n ? ` (${n})` : ''); b.classList.toggle('primary', !!n); }
 });
 document.addEventListener('input', e => { const t = e.target; if(t && t.id === 'msg-text'){ const n = $('#msg-n'); if(n) n.textContent = t.value.length + ' / ' + MSG_MAX; } });
 document.addEventListener('input', e => { const t = e.target; if(t && t.dataset && t.dataset.slipI !== undefined && ui.slip){ ui.slip.stakes[t.dataset.slipI] = Math.floor(Number(t.value) || 0); slipRefreshNums(); } });
