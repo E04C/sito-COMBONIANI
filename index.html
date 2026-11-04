@@ -246,7 +246,7 @@ table.cls{width:100%;border-collapse:separate;border-spacing:0;font-variant-nume
 .bd-btn small{color:rgba(253,230,138,.78)}
 .bd-ico .bdball{display:block;width:34px;height:34px;filter:drop-shadow(0 0 10px rgba(251,191,36,.55))}
 @media (prefers-reduced-motion:reduce){.season-btn{transition:none}}
-@media (max-width:520px){.cls td{padding:9px 6px}.cls th button{padding:10px 6px}.cls .pl-cell{min-width:0;gap:6px}.cls .pl-name{max-width:104px}.cls .pl-sub .foot{display:none}.cls .mv{display:none}}
+@media (max-width:520px){.cls td{padding:9px 6px}.cls th button{padding:10px 6px}.cls .pl-cell{min-width:0;gap:6px}.cls .pl-name{max-width:104px}.cls .pl-sub .foot{display:none}.cls .mv{display:none}.cls.mth .mv{display:inline-block;min-width:0;margin-left:-5px;font-size:9.5px}}
 .pos{width:24px;flex:none;font:italic 800 19px/1 var(--disp);color:var(--mu2);text-align:center}
 .r1 .pos{color:var(--gold)} .r2 .pos{color:#d6dbe4} .r3 .pos{color:#e08a3a}
 .pl-name{display:block;font-weight:800;font-size:14.5px;line-height:1.15;max-width:170px;overflow:hidden;text-overflow:ellipsis}
@@ -3944,7 +3944,7 @@ function goMeRow(){
   tr.scrollIntoView({ block:'center', behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   tr.classList.remove('flash'); void tr.offsetWidth; tr.classList.add('flash');
 }
-const clsNote = () => { const cf = ui.cf; if(!cf.month && !cf.surf) return ''; const bits = [cf.month ? monthLbl(cf.month) : '', cf.surf ? (cf.surf === 't' ? 'su terra' : 'sul sintetico') : ''].filter(Boolean); return ` Contano solo le partite di: ${bits.join(', ')}; l’OVR è quello di adesso.`; };
+const clsNote = () => { const cf = ui.cf; if(!cf.month && !cf.surf) return ''; const bits = [cf.month ? monthLbl(cf.month) : '', cf.surf ? (cf.surf === 't' ? 'su terra' : 'sul sintetico') : ''].filter(Boolean); return ` Contano solo le partite di: ${bits.join(', ')}; l’OVR è quello di adesso.${cf.month ? ' Le frecce confrontano la posizione con il mese prima.' : ''}`; };
 const clsNF = () => { const cf = ui.cf; return (cf.q ? 1 : 0) + (cf.played ? 1 : 0) + (cf.min > 0 ? 1 : 0) + (cf.month ? 1 : 0) + (cf.surf ? 1 : 0); };
 const MESI_LUNGHI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
 const monthLbl = k => { const [y, mo] = k.split('-').map(Number); const n = MESI_LUNGHI[mo - 1] || ''; return n.charAt(0).toUpperCase() + n.slice(1) + ' ' + y; };
@@ -3954,15 +3954,25 @@ function clsBase(){
   const cf = ui.cf; if(!cf.month && !cf.surf) return STATS.list;
   const key = cf.month + '|' + cf.surf;
   if(STATS._cls && STATS._cls.k === key) return STATS._cls.list;
+  const list = clsCompute(cf.month, cf.surf);
+  /* nel mese scelto, la freccia dice di quanto sei salito o sceso rispetto al mese prima (solo per chi ha giocato in tutti e due) */
+  if(cf.month){
+    const [y, mo] = cf.month.split('-').map(Number), pk = mo === 1 ? `${y - 1}-12` : `${y}-${String(mo - 1).padStart(2, '0')}`;
+    const prev = clsCompute(pk, cf.surf), pr = Object.fromEntries(prev.filter(x => x.pres > 0).map(x => [x.pid, x.rank]));
+    list.forEach(x => { x.prevRank = x.pres > 0 && pr[x.pid] != null ? pr[x.pid] : null; });
+  }
+  STATS._cls = { k:key, list };
+  return list;
+}
+function clsCompute(month, surf){
   const S = Object.fromEntries(STATS.list.map(s => [s.pid, { ...s, pres:0, v:0, pa:0, s:0, g:0, a:0, og:0, prevRank:null }]));
   for(const m of STATS.matches){
-    if((cf.month && String(m.date || '').slice(0, 7) !== cf.month) || (cf.surf && m.surf !== cf.surf)) continue;
+    if((month && String(m.date || '').slice(0, 7) !== month) || (surf && m.surf !== surf)) continue;
     const sc = matchScore(m), res = { white:sc.w > sc.b ? 'v' : sc.w < sc.b ? 's' : 'pa', black:sc.b > sc.w ? 'v' : sc.b < sc.w ? 's' : 'pa' };
     for(const t of ['white', 'black']) for(const e of effEntries(m)[t]){ const x = S[e.pid]; if(!x) continue; x.pres++; x[res[t]]++; x.g += num(e.g); x.a += num(e.a); x.og += num(e.og); }
   }
   const list = Object.values(S).map(x => Object.assign(x, { pct:x.pres ? x.v / x.pres * 100 : 0, avg:x.pres ? x.g / x.pres : 0, ga:x.g + x.a })).sort(rankCmp);
   list.forEach((x, i) => x.rank = i + 1);
-  STATS._cls = { k:key, list };
   return list;
 }
 function clsList(){
@@ -4035,7 +4045,7 @@ function tableHTML(){
     const val = c.k === 'pct' ? s.pct.toFixed(0) + '%' : c.k === 'avg' ? itn(s.avg, 2) : s[c.k];
     return `<td class="${big}${on}">${val}</td>`;
   };
-  return `<table class="cls"><thead><tr>${th(cv.sort, '#  Giocatore', gen ? 'Posizione in classifica' : 'Riordina', 'c-pl')}${cols.map(c => th(c.k, c.l, c.t)).join('')}</tr></thead><tbody>${
+  return `<table class="cls${ui.cf.month ? ' mth' : ''}"><thead><tr>${th(cv.sort, '#  Giocatore', gen ? 'Posizione in classifica' : 'Riordina', 'c-pl')}${cols.map(c => th(c.k, c.l, c.t)).join('')}</tr></thead><tbody>${
     rows.map((s, i) => `<tr class="r${gen ? s.rank : (s[cv.sort] > 0 ? i + 1 + off : 0)} ${gen && STATS.matches.length && s.rank <= 3 ? 'pod' + s.rank : ''}${rowCls(s.pid) ? ' ' + rowCls(s.pid) : ''}${s.pid === meId ? ' me' : ''}" data-open-player="${s.pid}">
       <td class="c-pl"><div class="pl-cell"><span class="pos">${gen ? s.rank : i + 1 + off}</span>${mvArrow(s)}${avatar(s.p, 'sm')}<span><span class="pl-name">${nameHTML(s.pid)}</span><span class="pl-sub">${roleChip(s.p.role)}<span class="foot">${esc(FEET[s.p.foot] || '')}</span>${s.pid === meId ? '<span class="me-tag">Tu</span>' : ''}</span></span></div></td>
       ${cols.map(c => cell(c, s)).join('')}
