@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.12.6
+- Componi sul campo: nell'elenco solo i giocatori non ancora in campo; tasto «Svuota» (`cmp-clear`).
+- Proposte: finestra con l'esito alla prima apertura dopo la decisione (`#m-propres`, `cmb_propSeen`, solo decisioni degli ultimi 7 giorni su un telefono nuovo); contatore delle proposte visibile a tutti.
+- Campo della partita (`matches/{id}/surf`, facoltativo: 's' sintetico, 't' terra) nel registro gara e nel Resoconto; filtri della Classifica per mese e per campo (`clsBase`/`clsCompute`), con frecce di posizione rispetto al mese prima.
+- Targhe: Re della Manita, Re Mida, Uomo Partita, La Mitragliatrice (primati spenti in `REC_OFF`), Zappatore e Re del Sintetico (% vittorie per campo, almeno 3 gare); «Bianchi contro Neri» senza giocatore in copertina. Migrazione `cmb_mig_v1126`.
+
 ## 1.12.5
 - Trofei riordinati: spenti (chiavi in coda, `REC_OFF`) i doppioni delle targhe (cecchino, inarr, eroe) e gli individuali diventati targhe (mina, fortino, malato, momento, segno, sovrano, mister, colp, kami); nuovi primati `bvn` (Bianchi contro Neri, copertina a chi ha vinto di più con il colore avanti, nessuna se pari), `assistman` e `brutto` (OVR perso nelle ultime 5 giornate).
 - Targhe nuove: mina, fortino, malato, momento (OVR guadagnato nelle ultime 5 giornate), segno, sovrano, mister, colp e kami (CASiNO), con i valori calcolati da `plqExtras` in `computeStats`.

@@ -2450,7 +2450,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.12.5';
+const APP_VERSION = '1.12.6';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -9975,6 +9975,13 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.12.6', date:'2026-11-04', items:[
+    `📋 Quando componi la formazione vedi solo chi non è ancora in campo, e con «Svuota» riparti da zero.`,
+    `✅ Se hai mandato una formazione, alla prima apertura dopo la decisione dell’organizzatore vedi subito se è stata accettata o rifiutata. Nella prossima gara si vede anche quante formazioni sono state proposte.`,
+    `🏟️ L’organizzatore ora indica se si è giocato sul sintetico o sulla terra. In Classifica, dentro «Filtri», puoi vedere la classifica di un solo mese o di un solo campo, con le frecce che dicono se sei salito o sceso rispetto al mese prima.`,
+    `🎖️ Nuove targhe: Re della Manita, Re Mida, Uomo Partita e La Mitragliatrice (prima erano trofei), più Zappatore per la terra e Re del Sintetico.`,
+    `⚪⚫ «Bianchi contro Neri» è un titolo di squadra: mostra solo il conto dei due colori.`
+  ] },
   { v:'1.12.5', date:'2026-11-03', items:[
     `🏆 Trofei e targhe riordinati: nei Trofei restano le partite epiche, le coppie e i grandi titoli della stagione; i premi individuali sono diventati targhe.`,
     `⚪⚫ Nuovo trofeo «Bianchi contro Neri»: il conto delle vittorie dei due colori, con in copertina chi ha vinto di più con il colore che è avanti.`,
