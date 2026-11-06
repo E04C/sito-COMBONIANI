@@ -2609,6 +2609,10 @@ PLAQUES.push({ id:'mitra', icon:'💥', name:'La Mitragliatrice', desc:'Più gol
 /* Targhe nuove (1.12.8): i valori (soloG, astG, ...) li calcola plqExtras */
 PLAQUES.push({ id:'solista', icon:'🎸', name:'Il Solista', desc:'Più gol segnati senza assist (serve la sequenza dei gol). Parità: meno gol su assist.',
   ok:s => s.soloG >= 1, cmp:(a,b) => (b.soloG - a.soloG) || (a.astG - b.astG), val:s => `${s.soloG} gol senza assist` });
+PLAQUES.push({ id:'cuore', icon:'⚪', name:'Cuore Bianco', desc:'Più vittorie con la maglia bianca. Parità: miglior percentuale di vittorie con i Bianchi.',
+  ok:s => s.wW >= 1, cmp:(a,b) => (b.wW - a.wW) || (b.wW / b.nW - a.wW / a.nW), val:s => `${s.wW} ${s.wW === 1 ? 'vittoria' : 'vittorie'} con i Bianchi (su ${s.nW})` });
+PLAQUES.push({ id:'anima', icon:'⚫', name:'Anima Nera', desc:'Più vittorie con la maglia nera. Parità: miglior percentuale di vittorie con i Neri.',
+  ok:s => s.wB >= 1, cmp:(a,b) => (b.wB - a.wB) || (b.wB / b.nB - a.wB / a.nB), val:s => `${s.wB} ${s.wB === 1 ? 'vittoria' : 'vittorie'} con i Neri (su ${s.nB})` });
 const plqOn = P => !P.feat || feat(P.feat);
 const PLQ_MIN_PRES = 3;   /* per tenere una targa servono almeno 3 presenze in stagione */
 const PLQ_CAP = 3;        /* targhe al massimo per giocatore (dalla 1.12.5; prima erano 2) */
@@ -2658,7 +2662,9 @@ PLQ_GAP.mitra = [s => s.burstN, 'gol', 'gol', 1, 0];
 Object.assign(METALS, { manita:'gold', mida:'gold', uomo:'silver', mitra:'copper' });
 /* targhe nuove (1.12.8) */
 PLQ_GAP.solista = [s => s.soloG, 'gol', 'gol', 1, 0];
-Object.assign(METALS, { solista:'copper' });
+PLQ_GAP.cuore = [s => s.wW, 'vittoria', 'vittorie', 1, 0];
+PLQ_GAP.anima = [s => s.wB, 'vittoria', 'vittorie', 1, 0];
+Object.assign(METALS, { solista:'copper', cuore:'silver', anima:'titanium' });
 const COLS = [
   { k:'ovr',  l:'OVR', t:'Overall dinamico (60-99)' },
   { k:'pres', l:'Pr',  t:'Presenze' },
@@ -3511,7 +3517,9 @@ function plqExtras(arr, ms, wal){
     Object.assign(s, { presRun:pb, goalRun:gb, concAvg:s.pres ? conc / s.pres : null, mom5:mom, top1:0, mstN:0, mstC:0, colpNet:0, colpAt:0, kamiX:0, kamiS:0,
       tN:s.hist.filter(h => h.m.surf === 't').length, tV:s.hist.filter(h => h.m.surf === 't' && h.r === 'v').length,
       sN:s.hist.filter(h => h.m.surf === 's').length, sV:s.hist.filter(h => h.m.surf === 's' && h.r === 'v').length,
-      maxA:s.hist.reduce((t, h) => Math.max(t, h.a), 0), bestPts:s.hist.reduce((t, h) => Math.max(t, (h.g + h.a * 0.5) * ROLE_MULT[R] - h.og * OG_PEN), 0), burstN:0, burstSpan:0, soloG:0, astG:0 });
+      maxA:s.hist.reduce((t, h) => Math.max(t, h.a), 0), bestPts:s.hist.reduce((t, h) => Math.max(t, (h.g + h.a * 0.5) * ROLE_MULT[R] - h.og * OG_PEN), 0), burstN:0, burstSpan:0, soloG:0, astG:0,
+      wW:s.hist.filter(h => h.team === 'white' && h.r === 'v').length, nW:s.hist.filter(h => h.team === 'white').length,
+      wB:s.hist.filter(h => h.team === 'black' && h.r === 'v').length, nB:s.hist.filter(h => h.team === 'black').length });
   }
   /* La Mitragliatrice: più gol dello stesso giocatore entro BURST_WIN minuti di una partita */
   const byP = Object.fromEntries(arr.map(s => [s.pid, s]));
