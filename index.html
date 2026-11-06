@@ -3339,15 +3339,15 @@ function rankCmp(a, b){
    del difensore in sconfitta, tetti per gara; nella fascia 95-99 la regola della Leggenda (a 99 una vittoria con pochi gol costa punti).
    Le penalità fisse non si moltiplicano. */
 const OVR_BANDS = [['b60', 60, 69], ['b70', 70, 79], ['b80', 80, 84], ['b85', 85, 89], ['b90', 90, 94], ['b95', 95, 99]];
-const OVR_BAND0 = { fp:1, win:2, wc:0.1, draw:0, loss:2, dA:0, dC:0, dD:0, dc:0, cap:3, gcap:5 };
+const OVR_BAND0 = { fp:1, win:2, wc:0.1, draw:0, loss:2, ldc:1, dA:0, dC:0, dD:0, dc:0, cap:3, gcap:5 };
 const OVR_DEF = {
   gol:1, ast:0.5, rATT:0.8, rCEN:1, rDIF:1.2, og:1, aw:0.2, late:0.3,
-  b60:{ ...OVR_BAND0, fp:2, minFp:3, loss:1 },
+  b60:{ ...OVR_BAND0, fp:2, minFp:3, loss:1, ldc:0.5 },
   b70:{ ...OVR_BAND0 },
   b80:{ ...OVR_BAND0 },
-  b85:{ ...OVR_BAND0, fp:0.8, loss:2.4, dA:0.5 },
-  b90:{ ...OVR_BAND0, fp:0.65, loss:2.5, dA:1, dC:1, dc:0.1 },
-  b95:{ ...OVR_BAND0, fp:0.5, loss:3, dA:1, dC:1, dc:0.2, cap:4, leg:2, legG:2, legGD:1 }
+  b85:{ ...OVR_BAND0, fp:0.8, loss:2.4, ldc:1.2, dA:0.5 },
+  b90:{ ...OVR_BAND0, fp:0.65, loss:2.5, ldc:1.5, dA:1, dC:1, dc:0.1 },
+  b95:{ ...OVR_BAND0, fp:0.5, loss:3, ldc:2, dA:1, dC:1, dc:0.2, cap:4, leg:2, legG:2, legGD:1 }
 };
 /* [chiave, etichetta, minimo, massimo, passo]: i valori fuori misura tornano a quello predefinito */
 const OVR_META_G = [
@@ -3357,7 +3357,7 @@ const OVR_META_G = [
 ];
 const OVR_META_B = [
   ['fp', 'Moltiplicatore dei punti positivi', 0, 4, 0.05], ['minFp', 'Al minimo (60): moltiplicatore', 0, 5, 0.1],
-  ['win', 'Vittoria', 0, 6, 0.1], ['wc', 'Vittoria: meno per ogni gol subito', 0, 1, 0.05], ['draw', 'Pareggio', -3, 3, 0.1], ['loss', 'Sconfitta (punti persi)', 0, 8, 0.1],
+  ['win', 'Vittoria', 0, 6, 0.1], ['wc', 'Vittoria: meno per ogni gol subito', 0, 1, 0.05], ['draw', 'Pareggio', -3, 3, 0.1], ['loss', 'Sconfitta (punti persi)', 0, 8, 0.1], ['ldc', 'Difensore: sconfitta di misura (2 gol o meno)', 0, 8, 0.1],
   ['dA', 'Né gol né assist: attaccante', 0, 4, 0.1], ['dC', 'Né gol né assist: centrocampista', 0, 4, 0.1], ['dD', 'Né gol né assist: difensore', 0, 4, 0.1],
   ['dc', 'Difensore: per ogni gol subito in sconfitta', 0, 1, 0.05],
   ['gcap', 'Massimo guadagnato in una gara', 0, 10, 0.5], ['cap', 'Massimo perso in una gara', 0, 10, 0.5],
@@ -3392,7 +3392,9 @@ function ovrParts(role, ovr, c){
   const dPts = c.res === 'v' || c.res === 's' ? 0 : B.draw;   /* il pareggio: se positivo si moltiplica come gli altri punti, se negativo è una penalità */
   let pos = vPts + Math.max(0, dPts) + (c.g * C.gol + c.a * C.ast) * mult + (c.award ? C.aw : 0);
   pos *= fp;
-  const lPts = (c.res === 's' ? B.loss : 0) + Math.max(0, -dPts);
+  /* il difensore che perde di 2 gol o meno prende la sconfitta di misura (ldc), più leggera */
+  const near2 = c.res === 's' && R === 'DIF' && c.margin <= 2;
+  const lPts = (c.res === 's' ? (near2 ? B.ldc : B.loss) : 0) + Math.max(0, -dPts);
   const none = !c.g && !c.a && (c.res === 'v' || c.res === 's');   /* niente penalità senza gol né assist nel pareggio */
   const dry = none ? B['d' + R[0]] || 0 : 0;
   const cpen = R === 'DIF' && c.res === 's' ? (B.dc || 0) * c.conceded : 0;
@@ -3400,7 +3402,7 @@ function ovrParts(role, ovr, c){
   if(leg) pos = 0;
   const raw = pos - lPts - c.og * C.og - dry - cpen - (leg ? B.leg : 0);
   const d = Math.max(-B.cap, Math.min(B.gcap, raw));
-  return { d, fp, fl:1, band:B.txt, mult, dr:dPts > 0 && !leg ? dPts * fp : 0,
+  return { d, fp, fl:1, band:B.txt, mult, near2, dr:dPts > 0 && !leg ? dPts * fp : 0,
     v:leg ? 0 : vPts * fp, l:lPts, g:leg ? 0 : c.g * C.gol * mult * fp, a:leg ? 0 : c.a * C.ast * mult * fp, aw:!leg && c.award ? C.aw * fp : 0, og:c.og * C.og, dry, cpen, leg:leg ? B.leg : 0, lcap:B.cap, gcap:B.gcap, cap:d - raw };
 }
 function ovrDelta(role, ovr, c){ return ovrParts(role, ovr, c).d; }
@@ -5888,6 +5890,7 @@ function ovrHowHTML(C = OVRC){
     bits.push(`punti positivi ×${n(B.fp)}${B.minFp != null && B.minFp !== B.fp ? ` (al minimo ${OVR_MIN}: ×${n(B.minFp)})` : ''}`);
     const dry = [['ATT', B.dA], ['CEN', B.dC], ['DIF', B.dD]].filter(x => x[1] > 0);
     if(dry.length) bits.push(`senza gol né assist ${dry.map(([r, v]) => `${ROLES[r].toLowerCase()} −${n(v)}`).join(', ')}`);
+    if(B.ldc !== B.loss) bits.push(`il difensore che perde di 2 gol o meno prende −${n(B.ldc)}`);
     if(B.dc > 0) bits.push(`difensore −${n(B.dc)} per gol subito quando perde`);
     bits.push(`in una gara al massimo +${n(B.gcap)} e −${n(B.cap)}`);
     if(B.leg > 0) bits.push(`a ${OVR_MAX}, se vinci con meno di ${B.legG} gol (difensore: ${B.legGD}) perdi ${n(B.leg)}`);
@@ -5905,7 +5908,7 @@ function ovrExplainHTML(s){
     const rows = [];
     const add = (label, v, note) => { if(Math.abs(v) > 1e-9) rows.push(`<div><span>${label}${note ? ` <small>${note}</small>` : ''}</span><b>${sg(v)}</b></div>`); };
     if(h.r === 'v') add('Vittoria', P.v, P.conceded ? `${P.conceded} ${P.conceded === 1 ? 'gol subito' : 'gol subiti'}` : 'porta inviolata');
-    else if(h.r === 's') add('Sconfitta', -P.l);
+    else if(h.r === 's') add('Sconfitta', -P.l, P.near2 ? 'di misura, da difensore' : '');
     else if(P.dr || P.l) add('Pareggio', P.dr - P.l); else rows.push('<div><span>Pareggio</span><b>0</b></div>');
     add(`Gol${h.g > 1 ? ' ×' + h.g : ''}`, P.g, `ruolo ×${nIt(P.mult)}`);
     add(`Assist${h.a > 1 ? ' ×' + h.a : ''}`, P.a);
@@ -10383,6 +10386,13 @@ try{
   if(!localStorage.getItem('cmb_mig_v162')){
     ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr'].forEach(k => localStorage.removeItem(k));
     localStorage.setItem('cmb_mig_v162', '1');
+  }
+}catch(e){}
+/* Migrazione 1.12.7: il difensore che perde di misura perde meno, gli OVR si ricalcolano. Si azzerano i "già visto": il codice li ricrea in silenzio */
+try{
+  if(!localStorage.getItem('cmb_mig_v1127')){
+    ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr','cmb_walkTier'].forEach(k => localStorage.removeItem(k));
+    localStorage.setItem('cmb_mig_v1127', '1');
   }
 }catch(e){}
 /* Migrazione 1.12.6: quattro imprese diventano targhe. Si azzerano i "già visto" di trofei e targhe: il codice li ricrea in silenzio */
