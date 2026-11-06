@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.12.9
+- Pannello admin: tolti i riquadri Programma gara, Registra gara, Voti a stelle, Aggiungi giocatore, Importa Excel, Ottimizza foto e Cambia PIN (i gestori restano nel codice; gare e giocatori si aggiungono da Partite e Giocatori, «Cambia PIN» solo nell'avviso del PIN predefinito).
+- Pannello admin: «Funzioni» e «Gestione admin» chiusi dietro due tasti (`ui.admOpen`, azione `adm-tg`); sul telefono riquadri piccoli con icona e nome, sul computer come prima. Il tasto «Gestione admin» mostra proposte e richieste in attesa.
+- Trofei: «La Rimonta» senza faccina (`noFace` sulla scheda del primato); il primato resta del giocatore.
+
 ## 1.12.8
 - Targhe nuove, con i valori calcolati da `plqExtras`: `solista` (gol senza assist dalla cronaca, `soloG`/`astG`), `cuore` e `anima` (vittorie con i Bianchi e con i Neri, `wW`/`nW`, `wB`/`nB`), `babbo` (miglior media assist, almeno 5 presenze) e `matador` (gare chiuse da miglior marcatore, `topS`, contando i gol di tutti i giocatori della gara). Migrazione `cmb_mig_v1128`.
 
