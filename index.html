@@ -2615,6 +2615,8 @@ PLAQUES.push({ id:'anima', icon:'⚫', name:'Anima Nera', desc:'Più vittorie co
   ok:s => s.wB >= 1, cmp:(a,b) => (b.wB - a.wB) || (b.wB / b.nB - a.wB / a.nB), val:s => `${s.wB} ${s.wB === 1 ? 'vittoria' : 'vittorie'} con i Neri (su ${s.nB})` });
 PLAQUES.push({ id:'babbo', icon:'🎅', name:'Babbo Natale', desc:'La miglior media di assist a partita (almeno 5 presenze). Parità: più assist in stagione.',
   ok:s => s.pres >= 5 && s.a >= 1, cmp:(a,b) => (b.apg - a.apg) || (b.a - a.a), val:s => `${itn(s.apg, 2)} assist a gara` });
+PLAQUES.push({ id:'matador', icon:'🐂', name:'El Matador', desc:'Più partite chiuse da miglior marcatore della gara (a pari gol vale per tutti). Parità: più gol in stagione.',
+  ok:s => s.topS >= 1, cmp:(a,b) => (b.topS - a.topS) || (b.g - a.g), val:s => `${s.topS} ${s.topS === 1 ? 'gara' : 'gare'} da miglior marcatore` });
 const plqOn = P => !P.feat || feat(P.feat);
 const PLQ_MIN_PRES = 3;   /* per tenere una targa servono almeno 3 presenze in stagione */
 const PLQ_CAP = 3;        /* targhe al massimo per giocatore (dalla 1.12.5; prima erano 2) */
@@ -2667,7 +2669,8 @@ PLQ_GAP.solista = [s => s.soloG, 'gol', 'gol', 1, 0];
 PLQ_GAP.cuore = [s => s.wW, 'vittoria', 'vittorie', 1, 0];
 PLQ_GAP.anima = [s => s.wB, 'vittoria', 'vittorie', 1, 0];
 PLQ_GAP.babbo = [s => s.apg, 'di media', 'di media', 0.2, 2];
-Object.assign(METALS, { solista:'copper', cuore:'silver', anima:'titanium', babbo:'rose' });
+PLQ_GAP.matador = [s => s.topS, 'gara', 'gare', 1, 0];
+Object.assign(METALS, { solista:'copper', cuore:'silver', anima:'titanium', babbo:'rose', matador:'gold' });
 const COLS = [
   { k:'ovr',  l:'OVR', t:'Overall dinamico (60-99)' },
   { k:'pres', l:'Pr',  t:'Presenze' },
@@ -3520,7 +3523,7 @@ function plqExtras(arr, ms, wal){
     Object.assign(s, { presRun:pb, goalRun:gb, concAvg:s.pres ? conc / s.pres : null, mom5:mom, top1:0, mstN:0, mstC:0, colpNet:0, colpAt:0, kamiX:0, kamiS:0,
       tN:s.hist.filter(h => h.m.surf === 't').length, tV:s.hist.filter(h => h.m.surf === 't' && h.r === 'v').length,
       sN:s.hist.filter(h => h.m.surf === 's').length, sV:s.hist.filter(h => h.m.surf === 's' && h.r === 'v').length,
-      maxA:s.hist.reduce((t, h) => Math.max(t, h.a), 0), bestPts:s.hist.reduce((t, h) => Math.max(t, (h.g + h.a * 0.5) * ROLE_MULT[R] - h.og * OG_PEN), 0), burstN:0, burstSpan:0, soloG:0, astG:0,
+      maxA:s.hist.reduce((t, h) => Math.max(t, h.a), 0), bestPts:s.hist.reduce((t, h) => Math.max(t, (h.g + h.a * 0.5) * ROLE_MULT[R] - h.og * OG_PEN), 0), burstN:0, burstSpan:0, soloG:0, astG:0, topS:0,
       wW:s.hist.filter(h => h.team === 'white' && h.r === 'v').length, nW:s.hist.filter(h => h.team === 'white').length,
       wB:s.hist.filter(h => h.team === 'black' && h.r === 'v').length, nB:s.hist.filter(h => h.team === 'black').length });
   }
@@ -3540,6 +3543,11 @@ function plqExtras(arr, ms, wal){
         if(n >= 2 && (n > s.burstN || (n === s.burstN && sp < s.burstSpan))){ s.burstN = n; s.burstSpan = sp; }
       }
     }
+  }
+  /* El Matador (1.12.8): chi chiude la gara da miglior marcatore, contando i gol di tutti i giocatori della gara (a pari gol vale per tutti) */
+  for(const m of ms){
+    const E = effEntries(m), all = [...E.white, ...E.black], mx = all.reduce((t, e) => Math.max(t, num(e.g)), 0);
+    if(mx >= 1) for(const e of all) if(num(e.g) === mx && byP[e.pid]) byP[e.pid].topS++;
   }
   const by = Object.fromEntries(arr.map(s => [s.pid, s])), cum = {}, at = {};
   for(const s of arr) for(const h of s.hist) (at[h.m.id] = at[h.m.id] || []).push([s, h]);
