@@ -2606,6 +2606,9 @@ PLAQUES.push({ id:'uomo', icon:'⭐', name:'Uomo Partita', desc:'La miglior pres
   ok:s => s.bestPts > 0, cmp:(a,b) => (b.bestPts - a.bestPts) || (b.g - a.g), val:s => `${itn(s.bestPts)} punti in una gara` });
 PLAQUES.push({ id:'mitra', icon:'💥', name:'La Mitragliatrice', desc:'Più gol in 15 minuti di una stessa partita (servono i minuti dei gol). Parità: meno minuti.',
   ok:s => s.burstN >= 2, cmp:(a,b) => (b.burstN - a.burstN) || (a.burstSpan - b.burstSpan) || (b.g - a.g), val:s => `${s.burstN} gol in ${s.burstSpan} ${s.burstSpan === 1 ? 'minuto' : 'minuti'}` });
+/* Targhe nuove (1.12.8): i valori (soloG, astG, ...) li calcola plqExtras */
+PLAQUES.push({ id:'solista', icon:'🎸', name:'Il Solista', desc:'Più gol segnati senza assist (serve la sequenza dei gol). Parità: meno gol su assist.',
+  ok:s => s.soloG >= 1, cmp:(a,b) => (b.soloG - a.soloG) || (a.astG - b.astG), val:s => `${s.soloG} gol senza assist` });
 const plqOn = P => !P.feat || feat(P.feat);
 const PLQ_MIN_PRES = 3;   /* per tenere una targa servono almeno 3 presenze in stagione */
 const PLQ_CAP = 3;        /* targhe al massimo per giocatore (dalla 1.12.5; prima erano 2) */
@@ -2653,6 +2656,9 @@ PLQ_GAP.mida = [s => s.maxA, 'assist', 'assist', 1, 0];
 PLQ_GAP.uomo = [s => s.bestPts, 'punto', 'punti', 0.5, 1];
 PLQ_GAP.mitra = [s => s.burstN, 'gol', 'gol', 1, 0];
 Object.assign(METALS, { manita:'gold', mida:'gold', uomo:'silver', mitra:'copper' });
+/* targhe nuove (1.12.8) */
+PLQ_GAP.solista = [s => s.soloG, 'gol', 'gol', 1, 0];
+Object.assign(METALS, { solista:'copper' });
 const COLS = [
   { k:'ovr',  l:'OVR', t:'Overall dinamico (60-99)' },
   { k:'pres', l:'Pr',  t:'Presenze' },
@@ -3505,13 +3511,16 @@ function plqExtras(arr, ms, wal){
     Object.assign(s, { presRun:pb, goalRun:gb, concAvg:s.pres ? conc / s.pres : null, mom5:mom, top1:0, mstN:0, mstC:0, colpNet:0, colpAt:0, kamiX:0, kamiS:0,
       tN:s.hist.filter(h => h.m.surf === 't').length, tV:s.hist.filter(h => h.m.surf === 't' && h.r === 'v').length,
       sN:s.hist.filter(h => h.m.surf === 's').length, sV:s.hist.filter(h => h.m.surf === 's' && h.r === 'v').length,
-      maxA:s.hist.reduce((t, h) => Math.max(t, h.a), 0), bestPts:s.hist.reduce((t, h) => Math.max(t, (h.g + h.a * 0.5) * ROLE_MULT[R] - h.og * OG_PEN), 0), burstN:0, burstSpan:0 });
+      maxA:s.hist.reduce((t, h) => Math.max(t, h.a), 0), bestPts:s.hist.reduce((t, h) => Math.max(t, (h.g + h.a * 0.5) * ROLE_MULT[R] - h.og * OG_PEN), 0), burstN:0, burstSpan:0, soloG:0, astG:0 });
   }
   /* La Mitragliatrice: più gol dello stesso giocatore entro BURST_WIN minuti di una partita */
   const byP = Object.fromEntries(arr.map(s => [s.pid, s]));
   for(const m of ms){
     const byS = {};
-    for(const x of matchGoals(m)) if(!x.og && !x.est && x.min != null && byP[x.s]) (byS[x.s] = byS[x.s] || []).push(x.min);
+    for(const x of matchGoals(m)){
+      if(!x.og && byP[x.s]){ if(x.a && x.a !== x.s) byP[x.s].astG++; else byP[x.s].soloG++; }   /* Il Solista: gol senza assist e gol su assist */
+      if(!x.og && !x.est && x.min != null && byP[x.s]) (byS[x.s] = byS[x.s] || []).push(x.min);
+    }
     for(const [pid, mins] of Object.entries(byS)){
       mins.sort((a, b) => a - b);
       for(let i = 0; i < mins.length; i++){
@@ -10428,6 +10437,13 @@ try{
   if(!localStorage.getItem('cmb_mig_v162')){
     ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr'].forEach(k => localStorage.removeItem(k));
     localStorage.setItem('cmb_mig_v162', '1');
+  }
+}catch(e){}
+/* Migrazione 1.12.8: arrivano targhe nuove. Si azzerano i "già visto" di trofei e targhe: il codice li ricrea in silenzio */
+try{
+  if(!localStorage.getItem('cmb_mig_v1128')){
+    ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV'].forEach(k => localStorage.removeItem(k));
+    localStorage.setItem('cmb_mig_v1128', '1');
   }
 }catch(e){}
 /* Migrazione 1.12.7: il difensore che perde di misura perde meno, gli OVR si ricalcolano. Si azzerano i "già visto": il codice li ricrea in silenzio */
