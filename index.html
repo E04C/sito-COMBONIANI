@@ -6456,7 +6456,7 @@ function recCard(o, x = {}){
     const [a, b] = o.pair;
     who = `<div class="rec-who"><span class="rec-pair">${avatar(store.players[a], 'md')}${avatar(store.players[b], 'md')}</span><span style="min-width:0"><span class="nm">${esc(pname(a))}</span><span class="nm">${esc(pname(b))}</span></span></div>`;
   }else if(o.pid){
-    who = `<button class="rec-who" data-open-player="${o.pid}">${avatar(store.players[o.pid], 'md')}<span style="min-width:0"><span class="nm">${esc(pname(o.pid))}</span><span class="sub">${o.sub || ''}</span></span></button>`;
+    who = `<button class="rec-who" data-open-player="${o.pid}">${o.noFace ? '' : avatar(store.players[o.pid], 'md')}<span style="min-width:0"><span class="nm">${esc(pname(o.pid))}</span><span class="sub">${o.sub || ''}</span></span></button>`;
   }else{
     who = `<div class="rec-who"><span style="min-width:0"><span class="nm">${o.label}</span><span class="sub">${o.sub || ''}</span></span></div>`;
   }
@@ -6977,11 +6977,12 @@ function paintPlq(){
   b.setAttribute('aria-label', isR ? 'Primato ' + (REC_TITLES[plqOpen.slice(2)] || '') : 'Targa ' + (P ? P.name : ''));
   b.innerHTML = `${html}<div class="row end"><button type="button" class="btn ghost" data-close>Chiudi</button></div>`;
 }
-/* Medaglione di un primato nella bacheca: volto del detentore (o della coppia) in grande, simbolo piccolo; i primati di una partita mostrano il simbolo */
+/* Medaglione di un primato nella bacheca: volto del detentore (o della coppia) in grande, simbolo piccolo; i primati di una partita mostrano il simbolo.
+   noFace (La Rimonta, 1.12.9): il primato resta del giocatore, ma al posto della faccina c'è il simbolo */
 function recTile(c, x){
   const who = c.lock ? 'Da sbloccare' : c.pid ? esc(pname(c.pid)) : c.pair ? c.pair.map(p => esc(pname(p))).join(' e ') : esc(c.label || '');
   const face = c.lock ? `<span class="plv-ic">${c.icon}</span>`
-    : c.pid ? `<span class="plv-face">${avatar(store.players[c.pid], 'md')}</span><span class="plv-sym">${c.icon}</span>`
+    : c.pid && !c.noFace ? `<span class="plv-face">${avatar(store.players[c.pid], 'md')}</span><span class="plv-sym">${c.icon}</span>`
     : c.pair ? `<span class="plv-face pair">${avatar(store.players[c.pair[0]], 'md')}${avatar(store.players[c.pair[1]], 'md')}</span><span class="plv-sym">${c.icon}</span>`
     : `<span class="plv-ic">${c.icon}</span>`;
   return `<button type="button" class="plv rcv${c.lock ? ' off' : ''}${x.mine ? ' mine' : ''}${x.broken ? ' broken' : ''}" data-rcv="${c.key}" aria-label="${esc(c.title)}: ${c.lock ? 'da sbloccare' : `${who}, ${esc(String(c.value))} ${esc(c.unit)}`}">
@@ -7129,7 +7130,7 @@ function buildRecordCards(R, nM){
       : { icon:'📈', title:'Uomo del Momento', desc:'Il guadagno di OVR più alto in 5 gare giocate di fila.', lock:need('Servono 5 presenze con l’OVR in salita') }
     ,R.segno ? (() => { const r = R.segR[R.segno.pid]; return { icon:'🥅', title:'Sempre a Segno', desc:'Più partite giocate di fila con almeno un gol.', pid:R.segno.pid, sub:`dalla G${num(r.bFrom.day)} alla G${num(r.bTo.day)}${r.live ? ', in corso' : ''}`, value:r.best, unit:'gare di fila a segno' }; })()
       : { icon:'🥅', title:'Sempre a Segno', desc:'Più partite giocate di fila con almeno un gol.', lock:need('Serve un giocatore a segno in 2 gare di fila') }
-    ,R.rimonta ? { icon:'↩️', title:'La Rimonta', desc:'La vittoria con la rimonta più grande (serve la sequenza dei gol). Il primato va a chi ha segnato il gol decisivo.', pid:R.rimonta.pid, sub:`${matchWhen(R.rimonta.m)}, ${R.rimonta.W === 'white' ? 'Bianchi' : 'Neri'} da ${R.rimonta.at[0]}–${R.rimonta.at[1]} a ${R.rimonta.fin[0]}–${R.rimonta.fin[1]}`, value:R.rimonta.def, unit:R.rimonta.def === 1 ? 'gol di svantaggio rimontato' : 'gol di svantaggio rimontati' }
+    ,R.rimonta ? { icon:'↩️', title:'La Rimonta', desc:'La vittoria con la rimonta più grande (serve la sequenza dei gol). Il primato va a chi ha segnato il gol decisivo.', pid:R.rimonta.pid, noFace:true, sub:`${matchWhen(R.rimonta.m)}, ${R.rimonta.W === 'white' ? 'Bianchi' : 'Neri'} da ${R.rimonta.at[0]}–${R.rimonta.at[1]} a ${R.rimonta.fin[0]}–${R.rimonta.fin[1]}`, value:R.rimonta.def, unit:R.rimonta.def === 1 ? 'gol di svantaggio rimontato' : 'gol di svantaggio rimontati' }
       : { icon:'↩️', title:'La Rimonta', desc:'La vittoria con la rimonta più grande (serve la sequenza dei gol). Il primato va a chi ha segnato il gol decisivo.', lock:need('Ancora nessuna vittoria in rimonta con la sequenza dei gol') }
     ,R.digiuno ? (() => { const r = R.digR[R.digiuno.pid]; return { icon:'🥶', title:'Il Digiuno', desc:'L’attaccante con più partite giocate di fila senza segnare.', pid:R.digiuno.pid, sub:`dalla G${num(r.bFrom.day)} alla G${num(r.bTo.day)}${r.live ? ', in corso' : ''}`, value:r.best, unit:'gare senza gol' }; })()
       : { icon:'🥶', title:'Il Digiuno', desc:'L’attaccante con più partite giocate di fila senza segnare.', lock:need('Nessun attaccante a secco per 2 gare di fila') }
@@ -7194,7 +7195,7 @@ function drawRec(){
   const { card:c, prev, same } = recList[recIdx], rest = recList.length - 1 - recIdx;
   const who = c.pair
     ? `<span class="rec-pair">${avatar(store.players[c.pair[0]], 'md')}${avatar(store.players[c.pair[1]], 'md')}</span><span>${esc(pname(c.pair[0]))}<br>${esc(pname(c.pair[1]))}</span>`
-    : c.pid ? `${avatar(store.players[c.pid], 'md')}<span>${esc(pname(c.pid))}</span>` : `<span>${esc(c.label)}</span>`;
+    : c.pid ? `${c.noFace ? '' : avatar(store.players[c.pid], 'md')}<span>${esc(pname(c.pid))}</span>` : `<span>${esc(c.label)}</span>`;
   $('#rw-body').innerHTML = `<div class="burst b-gold" style="--bd:.1s"></div>
     <div class="rw-k">${same ? 'Record migliorato' : 'Nuovo record'}</div>
     <span class="rw-ic">${c.icon}</span>
