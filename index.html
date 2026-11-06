@@ -2461,7 +2461,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.12.7';
+const APP_VERSION = '1.12.8';
 const DEFAULT_PIN = '2026';
 /* CASiNO: la valuta ha un solo nome, qui. I numeri sono tutti in un posto, così si regolano senza toccare il resto */
 const CURRENCY = 'patate', CURRENCY1 = 'patata';
@@ -10043,6 +10043,14 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.12.8', date:'2026-11-06', items:[
+    `🎖️ Cinque targhe nuove! Le trovi in Trofei → Targhe. Ricorda: al massimo 3 targhe a testa, le scegli tu in Io → Traguardi.`,
+    `🎸 Il Solista: più gol segnati senza assist.`,
+    `⚪ Cuore Bianco: più vittorie con la maglia bianca.`,
+    `⚫ Anima Nera: più vittorie con la maglia nera.`,
+    `🎅 Babbo Natale: la miglior media di assist a partita (servono almeno 5 presenze).`,
+    `🐂 El Matador: più partite chiuse da miglior marcatore della gara.`
+  ] },
   { v:'1.12.7', date:'2026-11-06', items:[
     `🛡️ Overall: se sei difensore e perdi di 2 gol o meno, perdi meno punti. Per centrocampisti e attaccanti non cambia nulla.`,
     `⚽ Nella figurina di un giocatore tocca «Gol» o «Assist»: vedi tutti i suoi gol (o assist) con il minuto, chi ha fatto l’assist, la giornata, il campo e il risultato. In cima c’è chi gli ha servito più assist, oppure il compagno che ha mandato più volte in gol.`,

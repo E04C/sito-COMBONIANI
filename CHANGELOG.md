@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.12.8
+- Targhe nuove, con i valori calcolati da `plqExtras`: `solista` (gol senza assist dalla cronaca, `soloG`/`astG`), `cuore` e `anima` (vittorie con i Bianchi e con i Neri, `wW`/`nW`, `wB`/`nB`), `babbo` (miglior media assist, almeno 5 presenze) e `matador` (gare chiuse da miglior marcatore, `topS`, contando i gol di tutti i giocatori della gara). Migrazione `cmb_mig_v1128`.
+
 ## 1.12.7
 - OVR: sconfitta di misura solo per i difensori (`ldc` per fascia in `OVR_BANDS`/`OVR_META_B`: 2 gol di scarto o meno), anche nel pannello Calcolo overall e nel dettaglio della gara. Migrazione `cmb_mig_v1127`.
 - Figurina: Gol e Assist si toccano e aprono `#m-glist` (`glistHTML`): elenco con minuto, compagno, giornata, campo e risultato; in cima il compagno più legato (pari merito tutti insieme). Le gare senza cronaca mostrano solo il totale.
