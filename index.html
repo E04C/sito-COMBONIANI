@@ -8504,11 +8504,8 @@ function renderAdmin(){
   el.innerHTML = `<div class="toolbar"><h2 class="vtitle">Pannello admin</h2></div>
     ${featuresHTML()}
     <div class="admin-grid">
-      <button class="tile" data-action="new-sched"><span class="ic">🗓️</span><b>Programma gara</b><span>Data, ora e convocati bilanciati: tutti vedono dove giocano.</span></button>
-      <button class="tile" data-action="new-match"><span class="ic">📝</span><b>Registra gara</b><span>Schiera le squadre e segna gol, assist e autogol.</span></button>
       <button class="tile" data-action="props-all"><span class="ic">📥</span><b>Proposte di formazione${propsWaitN() ? `<span class="cbadge">${propsWaitN()}</span>` : ''}</b><span>Le formazioni mandate dai giocatori per le prossime gare: accettale, correggile o rifiutale.</span></button>
       <button class="tile" data-action="ovrc-open"><span class="ic">⚙️</span><b>Calcolo overall</b><span>Per ogni fascia di OVR scegli quanto valgono vittorie, sconfitte, gol, assist e penalità.</span></button>
-      <button class="tile" data-action="stars-view"><span class="ic">⭐</span><b>Voti a stelle</b><span>Per ogni gara: quanti voti ha preso ognuno, la media e il bonus. Mai chi ha votato.</span></button>
       ${feat('messages') ? `<button class="tile" data-action="msg-admin"><span class="ic">✉️</span><b>Richieste${msgNew() ? `<span class="cbadge">${msgNew()}</span>` : ''}</b><span>Messaggi degli amici: leggi, segna come risolti, archivia.</span></button>` : ''}
       ${feat('casino') ? `<button class="tile" data-action="auction-admin"><span class="ic">🔢</span><b>Aste dei numeri</b><span>Apri, chiudi e assegna i numeri di maglia.</span></button>
       <button class="tile" data-action="shop-admin"><span class="ic">🛍️</span><b>Negozio</b><span>Prezzi, durata e disponibilità di ogni oggetto.</span></button>
@@ -8516,18 +8513,14 @@ function renderAdmin(){
       <button class="tile" data-action="adj-admin"><span class="ic">🥔</span><b>Rettifica saldo</b><span>Aggiungi o togli ${CURRENCY} a un giocatore, con un motivo.</span></button>` : ''}
       <button class="tile" data-action="keys-open"><span class="ic">🔐</span><b>Codici giocatori</b><span>Vedi chi ha un codice e azzeralo se qualcuno ha preso il posto di un altro.</span></button>
       <button class="tile" data-action="prof-list"><span class="ic">🪪</span><b>Richieste schede${profPending().length ? `<span class="cbadge">${profPending().length}</span>` : ''}</b><span>Approva o rifiuta le schede dei giocatori (nascita, nazionalità, ruolo preciso).</span></button>
-      <button class="tile" data-action="add-player"><span class="ic">🧑‍🎤</span><b>Aggiungi giocatore</b><span>Nome, ruolo, piede e foto dal rullino.</span></button>
       <button class="tile" data-action="backup-all"><span class="ic">💾</span><b>Backup completo</b><span>Scarica tutti i dati del database in un file .json. Contiene anche il PIN.</span></button>
-      <button class="tile" data-action="import-xlsx"><span class="ic">📥</span><b>Importa Excel</b><span>Carica un file con i fogli “Giocatori” e “Partite”. Aggiorna senza cancellare.</span></button>
-      <button class="tile quiet" data-action="optimize-photos"><span class="ic">🗜️</span><b>Ottimizza foto</b><span>Alleggerisce solo le foto oltre ~90 KB, mantenendo l’alta definizione.</span></button>
-      <button class="tile quiet" data-action="change-pin"><span class="ic">🔑</span><b>Cambia PIN</b><span>Vale per tutti i dispositivi del torneo.</span></button>
       <button class="tile quiet" data-action="logout"><span class="ic">🚪</span><b>Esci dall’area admin</b><span>Torni in sola lettura su questo dispositivo.</span></button>
     </div>
     ${ratingsIssue && feat('ratings') ? `<div class="warnline">${ratingsIssue.kind === 'read'
       ? `Il database non permette di leggere «${esc(ratingsIssue.path)}». Per il voto ai compagni aggiungi nelle regole di Firebase i percorsi “ratings” e “ratingsDone” (lettura e scrittura per tutti i dispositivi).`
       : `Il database ha rifiutato la scrittura di un voto ai compagni (percorso «${esc(ratingsIssue.path)}»). Nelle regole di Firebase servono ratings/$gara/$rid e ratingsDone/$gara/$pid con scrittura consentita a tutti i dispositivi.`}</div>` : ''}
     ${casinoIssue && feat('casino') ? `<div class="warnline">Il database non permette di leggere «casino». Per il CASiNO aggiungi nelle regole di Firebase il percorso “casino” (lettura e scrittura per tutti i dispositivi).</div>` : ''}
-    ${!store.settings?.pin ? `<div class="warnline">Stai usando il PIN predefinito ${DEFAULT_PIN}: cambialo prima di condividere il link.</div>` : ''}
+    ${!store.settings?.pin ? `<div class="warnline">Stai usando il PIN predefinito ${DEFAULT_PIN}: cambialo prima di condividere il link. <button type="button" class="btn sm" data-action="change-pin">Cambia PIN</button></div>` : ''}
     <div class="glass db-info"><span>Archivio: <b>${mode}</b></span><span>Giocatori: <b>${STATS.list.length}</b></span><span>Gare: <b>${STATS.matches.length}</b></span><span>Versione: <b>v${APP_VERSION}</b></span></div>
     ${anHTML()}`;
 }
