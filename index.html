@@ -2709,7 +2709,7 @@ const ui = {
   twSel:null,
   twCtx:null,
   mTab:'rep',
-  cf:{ q:'', played:false, min:0, open:false, month:'', surf:'' },
+  cf:{ q:'', played:false, min:0, open:false, month:'', surf:'', role:'' },
   duel:null
 };
 let db = null;
@@ -3927,6 +3927,7 @@ function renderDashboardInner(){
         <label><input id="cf-played" type="checkbox" ${cf.played ? 'checked' : ''}> Solo chi ha giocato</label>
         <label>PG minimo <input id="cf-min" class="field" type="number" min="0" max="99" inputmode="numeric" value="${cf.min || ''}" placeholder="0"></label>
         <label>Mese <select id="cf-month" class="field"><option value="">Tutta la stagione</option>${clsMonths().map(k => `<option value="${k}" ${k === cf.month ? 'selected' : ''}>${esc(monthLbl(k))}</option>`).join('')}</select></label>
+        <label>Ruolo <select id="cf-role" class="field"><option value="">Tutti i ruoli</option>${Object.entries(ROLES).map(([k, l]) => `<option value="${k}" ${k === cf.role ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         <label>Campo <select id="cf-surf" class="field"><option value="">Tutti i campi</option>${Object.entries(SURF).map(([k, l]) => `<option value="${k}" ${k === cf.surf ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
       </div>
       <div id="cls-podium">${podiumHTML()}</div>
@@ -3968,7 +3969,8 @@ function goMeRow(){
   tr.classList.remove('flash'); void tr.offsetWidth; tr.classList.add('flash');
 }
 const clsNote = () => { const cf = ui.cf; if(!cf.month && !cf.surf) return ''; const bits = [cf.month ? monthLbl(cf.month) : '', cf.surf ? (cf.surf === 't' ? 'su terra' : 'sul sintetico') : ''].filter(Boolean); return ` Contano solo le partite di: ${bits.join(', ')}; l’OVR è quello di adesso.${cf.month ? ' Le frecce confrontano la posizione con il mese prima.' : ''}`; };
-const clsNF = () => { const cf = ui.cf; return (cf.q ? 1 : 0) + (cf.played ? 1 : 0) + (cf.min > 0 ? 1 : 0) + (cf.month ? 1 : 0) + (cf.surf ? 1 : 0); };
+const clsNF = () => { const cf = ui.cf; return (cf.q ? 1 : 0) + (cf.played ? 1 : 0) + (cf.min > 0 ? 1 : 0) + (cf.month ? 1 : 0) + (cf.surf ? 1 : 0) + (cf.role ? 1 : 0); };
+const roleOk = s => !ui.cf.role || (ROLES[s.p.role] ? s.p.role : 'CEN') === ui.cf.role;
 const MESI_LUNGHI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
 const monthLbl = k => { const [y, mo] = k.split('-').map(Number); const n = MESI_LUNGHI[mo - 1] || ''; return n.charAt(0).toUpperCase() + n.slice(1) + ' ' + y; };
 const clsMonths = () => [...new Set(STATS.matches.map(m => String(m.date || '').slice(0, 7)).filter(k => /^\d{4}-\d{2}$/.test(k)))].sort().reverse();
@@ -4000,7 +4002,7 @@ function clsCompute(month, surf){
 }
 function clsList(){
   const cf = ui.cf, q = norm(cf.q || '');
-  return clsBase().filter(s => (!q || norm(s.name).includes(q)) && (!cf.played || s.pres > 0) && s.pres >= (cf.min || 0));
+  return clsBase().filter(s => roleOk(s)).filter(s => (!q || norm(s.name).includes(q)) && (!cf.played || s.pres > 0) && s.pres >= (cf.min || 0));
 }
 
 function mvArrow(s){
@@ -4028,7 +4030,7 @@ function rankShift(){
 function podTop(){
   const k = ui.cView || 'gen';
   if(!STATS.matches.length || STATS.list.length < 2) return [];
-  const L = clsBase(); if(L !== STATS.list && !L.some(s => s.pres > 0)) return [];
+  const B0 = clsBase(), L = ui.cf.role ? B0.filter(roleOk) : B0; if(!L.some(s => s.pres > 0)) return [];
   return k === 'gen' ? L.slice(0, 3)
     : [...L].filter(s => (k === 'pct' ? s.pres > 0 : s[k] > 0)).sort((a, b) => (b[k] - a[k]) || (a.rank - b.rank)).slice(0, 3);
 }
@@ -4069,8 +4071,8 @@ function tableHTML(){
     return `<td class="${big}${on}">${val}</td>`;
   };
   return `<table class="cls${ui.cf.month ? ' mth' : ''}"><thead><tr>${th(cv.sort, '#  Giocatore', gen ? 'Posizione in classifica' : 'Riordina', 'c-pl')}${cols.map(c => th(c.k, c.l, c.t)).join('')}</tr></thead><tbody>${
-    rows.map((s, i) => `<tr class="r${gen ? s.rank : (s[cv.sort] > 0 ? i + 1 + off : 0)} ${gen && STATS.matches.length && s.rank <= 3 ? 'pod' + s.rank : ''}${rowCls(s.pid) ? ' ' + rowCls(s.pid) : ''}${s.pid === meId ? ' me' : ''}" data-open-player="${s.pid}">
-      <td class="c-pl"><div class="pl-cell"><span class="pos">${gen ? s.rank : i + 1 + off}</span>${mvArrow(s)}${avatar(s.p, 'sm')}<span><span class="pl-name">${nameHTML(s.pid)}</span><span class="pl-sub">${roleChip(s.p.role)}<span class="foot">${esc(FEET[s.p.foot] || '')}</span>${s.pid === meId ? '<span class="me-tag">Tu</span>' : ''}</span></span></div></td>
+    rows.map((s, i) => `<tr class="r${gen && !ui.cf.role ? s.rank : (s[cv.sort] > 0 ? i + 1 + off : 0)} ${gen && STATS.matches.length && s.rank <= 3 ? 'pod' + s.rank : ''}${rowCls(s.pid) ? ' ' + rowCls(s.pid) : ''}${s.pid === meId ? ' me' : ''}" data-open-player="${s.pid}">
+      <td class="c-pl"><div class="pl-cell"><span class="pos">${gen && !ui.cf.role ? s.rank : i + 1 + off}</span>${mvArrow(s)}${avatar(s.p, 'sm')}<span><span class="pl-name">${nameHTML(s.pid)}</span><span class="pl-sub">${roleChip(s.p.role)}<span class="foot">${esc(FEET[s.p.foot] || '')}</span>${s.pid === meId ? '<span class="me-tag">Tu</span>' : ''}</span></span></div></td>
       ${cols.map(c => cell(c, s)).join('')}
     </tr>`).join('')}</tbody></table>`;
 }
@@ -9895,7 +9897,7 @@ document.addEventListener('change', e => {
 document.addEventListener('input', e => {
   const t = e.target; if(!t || !t.id || t.id.indexOf('cf-') !== 0) return;
   if(t.id === 'cf-q') ui.cf.q = t.value; else if(t.id === 'cf-played') ui.cf.played = t.checked; else if(t.id === 'cf-min') ui.cf.min = Math.max(0, Math.floor(Number(t.value) || 0));
-  else if(t.id === 'cf-month') ui.cf.month = t.value; else if(t.id === 'cf-surf') ui.cf.surf = SURF[t.value] ? t.value : '';
+  else if(t.id === 'cf-month') ui.cf.month = t.value; else if(t.id === 'cf-surf') ui.cf.surf = SURF[t.value] ? t.value : ''; else if(t.id === 'cf-role') ui.cf.role = ROLES[t.value] ? t.value : '';
   renderBoardPart();
   const b = $('[data-action="cls-filters"]'); if(b){ const n = clsNF(); b.textContent = 'Filtri' + (n ? ` (${n})` : ''); b.classList.toggle('primary', !!n); }
 });
