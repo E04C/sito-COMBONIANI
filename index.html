@@ -2613,6 +2613,8 @@ PLAQUES.push({ id:'cuore', icon:'⚪', name:'Cuore Bianco', desc:'Più vittorie 
   ok:s => s.wW >= 1, cmp:(a,b) => (b.wW - a.wW) || (b.wW / b.nW - a.wW / a.nW), val:s => `${s.wW} ${s.wW === 1 ? 'vittoria' : 'vittorie'} con i Bianchi (su ${s.nW})` });
 PLAQUES.push({ id:'anima', icon:'⚫', name:'Anima Nera', desc:'Più vittorie con la maglia nera. Parità: miglior percentuale di vittorie con i Neri.',
   ok:s => s.wB >= 1, cmp:(a,b) => (b.wB - a.wB) || (b.wB / b.nB - a.wB / a.nB), val:s => `${s.wB} ${s.wB === 1 ? 'vittoria' : 'vittorie'} con i Neri (su ${s.nB})` });
+PLAQUES.push({ id:'babbo', icon:'🎅', name:'Babbo Natale', desc:'La miglior media di assist a partita (almeno 5 presenze). Parità: più assist in stagione.',
+  ok:s => s.pres >= 5 && s.a >= 1, cmp:(a,b) => (b.apg - a.apg) || (b.a - a.a), val:s => `${itn(s.apg, 2)} assist a gara` });
 const plqOn = P => !P.feat || feat(P.feat);
 const PLQ_MIN_PRES = 3;   /* per tenere una targa servono almeno 3 presenze in stagione */
 const PLQ_CAP = 3;        /* targhe al massimo per giocatore (dalla 1.12.5; prima erano 2) */
@@ -2664,7 +2666,8 @@ Object.assign(METALS, { manita:'gold', mida:'gold', uomo:'silver', mitra:'copper
 PLQ_GAP.solista = [s => s.soloG, 'gol', 'gol', 1, 0];
 PLQ_GAP.cuore = [s => s.wW, 'vittoria', 'vittorie', 1, 0];
 PLQ_GAP.anima = [s => s.wB, 'vittoria', 'vittorie', 1, 0];
-Object.assign(METALS, { solista:'copper', cuore:'silver', anima:'titanium' });
+PLQ_GAP.babbo = [s => s.apg, 'di media', 'di media', 0.2, 2];
+Object.assign(METALS, { solista:'copper', cuore:'silver', anima:'titanium', babbo:'rose' });
 const COLS = [
   { k:'ovr',  l:'OVR', t:'Overall dinamico (60-99)' },
   { k:'pres', l:'Pr',  t:'Presenze' },
