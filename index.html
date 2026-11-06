@@ -426,6 +426,26 @@ button.affr:hover{border-color:var(--line)}
 .tile b{font:italic 800 23px/1 var(--disp)}
 .tile span{color:var(--mu);font-size:13.5px;line-height:1.4}
 .tile.quiet{border-color:var(--hair)}
+/* Pannello admin (1.12.9): «Funzioni» e «Gestione admin» chiusi dietro due tasti; sul telefono i riquadri sono piccoli, solo icona e nome */
+.adm-sec{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.adm-tg{display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;text-align:left;border-radius:18px;border:1px solid var(--line);background:var(--panel);color:inherit;font:inherit;cursor:pointer}
+.adm-tg:hover{border-color:var(--line-strong)}
+.adm-tg.on{border-color:var(--or)}
+.adm-tg .ic{font-size:22px;flex:none}
+.adm-tg .tx{flex:1;min-width:0}
+.adm-tg b{display:block;font:italic 800 21px/1.1 var(--disp)}
+.adm-tg small{display:block;margin-top:3px;color:var(--mu);font-size:12.5px;line-height:1.35}
+.adm-tg .chev{flex:none;width:20px;height:20px;color:var(--mu)}
+.adm-tg.on .chev{transform:rotate(90deg);color:var(--or)}
+.adm-sec .fx-box{margin-bottom:0}
+.adm-sec .fx-box h3{display:none}
+@media (max-width:600px){
+  .adm-sec .admin-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .adm-sec .tile{flex-direction:row;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;min-height:54px}
+  .adm-sec .tile .ic{font-size:18px;flex:none}
+  .adm-sec .tile b{font-size:15.5px;line-height:1.1;min-width:0}
+  .adm-sec .tile>span:not(.ic){display:none}
+}
 .locked{padding:40px 22px;text-align:center;max-width:520px;margin:30px auto}
 .locked h2{margin:10px 0 6px;font:italic 800 32px/1 var(--disp)}
 .locked p{color:var(--mu);margin:0 auto 18px;max-width:40ch}
@@ -2710,6 +2730,7 @@ function adminRemember(pin){ try{ sessionStorage.setItem('cmb_admin', '1'); loca
 function adminForget(){ try{ sessionStorage.removeItem('cmb_admin'); localStorage.removeItem('cmb_admin_until'); localStorage.removeItem('cmb_admin_sig'); }catch(e){} }
 const ui = {
   view:'dashboard',
+  admOpen:{ fx:false, gs:false },   /* pannello admin: «Funzioni» e «Gestione admin» aperti o chiusi */
   fView:(() => { try{ return localStorage.getItem('cmb_fView') === 'list' ? 'list' : 'pitch'; }catch(e){ return 'pitch'; } })(),
   sort:{ key:'rank', dir:1 },
   matchId:null,
@@ -8501,9 +8522,14 @@ function renderAdmin(){
     return;
   }
   const mode = db ? (syncState === 'live' ? 'Firebase, sincronizzato' : 'Firebase, in attesa di connessione') : 'Solo su questo dispositivo';
+  const open = ui.admOpen, nReq = propsWaitN() + (feat('messages') ? msgNew() : 0) + profPending().length, nOn = FEATURES.filter(F => feat(F.k)).length;
+  const tg = (k, ic, t, sub, badge) => `<button type="button" class="adm-tg${open[k] ? ' on' : ''}" data-action="adm-tg" data-k="${k}" aria-expanded="${!!open[k]}" aria-controls="adm-${k}"><span class="ic" aria-hidden="true">${ic}</span><span class="tx"><b>${t}${badge ? `<span class="cbadge">${badge}</span>` : ''}</b><small>${sub}</small></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>`;
   el.innerHTML = `<div class="toolbar"><h2 class="vtitle">Pannello admin</h2></div>
-    ${featuresHTML()}
-    <div class="admin-grid">
+    <div class="adm-sec">
+    ${tg('fx', '🎛️', 'Funzioni', `Accese ${nOn} su ${FEATURES.length}: accendile o spegnile per tutti`, 0)}
+    <div id="adm-fx"${open.fx ? '' : ' hidden'}>${open.fx ? featuresHTML() : ''}</div>
+    ${tg('gs', '🛠️', 'Gestione admin', 'Proposte, overall, richieste, codici, schede e backup', nReq)}
+    <div class="admin-grid" id="adm-gs"${open.gs ? '' : ' hidden'}>
       <button class="tile" data-action="props-all"><span class="ic">📥</span><b>Proposte di formazione${propsWaitN() ? `<span class="cbadge">${propsWaitN()}</span>` : ''}</b><span>Le formazioni mandate dai giocatori per le prossime gare: accettale, correggile o rifiutale.</span></button>
       <button class="tile" data-action="ovrc-open"><span class="ic">⚙️</span><b>Calcolo overall</b><span>Per ogni fascia di OVR scegli quanto valgono vittorie, sconfitte, gol, assist e penalità.</span></button>
       ${feat('messages') ? `<button class="tile" data-action="msg-admin"><span class="ic">✉️</span><b>Richieste${msgNew() ? `<span class="cbadge">${msgNew()}</span>` : ''}</b><span>Messaggi degli amici: leggi, segna come risolti, archivia.</span></button>` : ''}
@@ -8515,6 +8541,7 @@ function renderAdmin(){
       <button class="tile" data-action="prof-list"><span class="ic">🪪</span><b>Richieste schede${profPending().length ? `<span class="cbadge">${profPending().length}</span>` : ''}</b><span>Approva o rifiuta le schede dei giocatori (nascita, nazionalità, ruolo preciso).</span></button>
       <button class="tile" data-action="backup-all"><span class="ic">💾</span><b>Backup completo</b><span>Scarica tutti i dati del database in un file .json. Contiene anche il PIN.</span></button>
       <button class="tile quiet" data-action="logout"><span class="ic">🚪</span><b>Esci dall’area admin</b><span>Torni in sola lettura su questo dispositivo.</span></button>
+    </div>
     </div>
     ${ratingsIssue && feat('ratings') ? `<div class="warnline">${ratingsIssue.kind === 'read'
       ? `Il database non permette di leggere «${esc(ratingsIssue.path)}». Per il voto ai compagni aggiungi nelle regole di Firebase i percorsi “ratings” e “ratingsDone” (lettura e scrittura per tutti i dispositivi).`
@@ -9802,6 +9829,7 @@ document.addEventListener('click', async e => {
     case 'prop-start': { const me = myPid(); if(!me || !store.players[me]){ toast('Scegli prima il tuo giocatore in «Io»', 'warn'); break; } if(!propsOpen(store.matches[d.mid])){ toast('Le proposte sono chiuse', 'warn'); break; } cmpStart(d.mid, 'prop'); break; }
     case 'prop-send': propSend(); break;
     case 'glist': { const h = glistHTML(d.pid, d.k === 'a' ? 'a' : 'g'); if(h){ $('#gl-body').innerHTML = h; openModal('#m-glist'); } break; }
+    case 'adm-tg': { const k = d.k === 'fx' ? 'fx' : 'gs'; ui.admOpen[k] = !ui.admOpen[k]; renderAdmin(); $(`[data-action="adm-tg"][data-k="${k}"]`)?.focus(); break; }
     case 'propres-see': closeModal('#m-propres'); ui.matchId = d.mid; ui.mTab = 'form'; lazyDirty.matches = true; go('matches'); break;
     case 'prop-go': { const m = store.matches[d.mid], me = myPid(); if(!m || !me || !store.players[me] || !propsOpen(m)) break; ui.matchId = d.mid; ui.mTab = 'form'; lazyDirty.matches = true; go('matches'); cmpStart(d.mid, 'prop'); break; }
     case 'props-all': if(requireAdmin()){ $('#props-body').innerHTML = propsAllHTML(); openModal('#m-props'); } break;
