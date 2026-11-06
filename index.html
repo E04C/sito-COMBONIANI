@@ -360,6 +360,14 @@ table.cls{width:100%;border-collapse:separate;border-spacing:0;font-variant-nume
 .fig-bot{flex:1;min-height:0;overflow:auto;padding:12px 14px 16px;display:flex;flex-direction:column;gap:10px}
 .fig-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .m{padding:8px 4px 7px;border-radius:10px;background:rgba(255,255,255,.035);border:1px solid var(--hair);text-align:center;min-width:0}
+button.m.tap{display:block;width:100%;font:inherit;color:inherit;cursor:pointer;border-color:var(--line)}
+button.m.tap:active{transform:scale(.97)}
+.gx-top{display:flex;gap:10px;align-items:center;padding:12px;border-radius:14px;background:var(--or-soft);border:1px solid var(--line);margin:12px 0 6px}
+.gx-top>.av{margin-right:-4px}.gx-top span{margin-left:6px;min-width:0}.gx-top b{font-size:15px}.gx-top small{display:block;color:var(--mu);font-size:12px}
+.gx-oth{font:600 12.5px var(--body);color:var(--mu);margin:0 0 8px}
+.gx-r{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--hair)}
+.gx-min{font:italic 800 20px var(--disp);color:var(--or);text-align:center}.gx-r b{display:block;font-size:14px}.gx-r small{color:var(--mu);font-size:12px}
+.gx-s{font:700 12px var(--body);color:var(--mu);text-align:right;white-space:nowrap}
 .m b{display:block;font:italic 800 24px/1 var(--disp);font-variant-numeric:tabular-nums;white-space:nowrap}
 .m span{display:block;font:700 10.5px/1.2 var(--body);color:var(--mu);margin-top:4px}
 .m.hl{border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.06)}
@@ -2355,6 +2363,9 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 <div class="modal" id="m-propres" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Esito della tua formazione" style="width:min(460px,100%)"><div id="propres-body"></div></div></div>
 <!-- Testo libero (motivo del rifiuto) -->
 <div class="modal" id="m-ask" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-labelledby="ask-t" style="width:min(460px,100%)"><h3 id="ask-t"></h3><p class="lead-p" id="ask-p"></p><textarea id="ask-in" class="field w100 ask-in" rows="3" maxlength="200"></textarea><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Annulla</button><button type="button" class="btn primary" data-action="ask-ok" id="ask-ok">Conferma</button></div></div></div>
+
+<!-- Gol o assist di un giocatore (dalla figurina) -->
+<div class="modal" id="m-glist" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Gol e assist" style="width:min(520px,100%)"><div id="gl-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 
 <!-- Calcolo overall (admin) -->
 <div class="modal" id="m-ovrc" aria-hidden="true"><div class="sheet glass oc" role="dialog" aria-modal="true" aria-label="Calcolo overall" style="width:min(620px,100%)"><div id="oc-body"></div></div></div>
@@ -4392,6 +4403,8 @@ function renderFigurina(){
   const t = tierOf(s.ovr);
   const metric = (label, val, cls='') => `<div class="m ${cls}"><b>${val}</b><span>${label}</span></div>`;
   const mc = (label, html, cls='') => `<div class="m ${cls}">${html}<span>${label}</span></div>`;
+  /* Gol e Assist si toccano: si apre la lista (glistHTML) */
+  const tapM = (label, html, k, cls = '') => (k === 'g' ? s.g : s.a) ? `<button type="button" class="m tap ${cls}" data-action="glist" data-pid="${pid}" data-k="${k}" aria-label="${label}: apri la lista">${html}<span>${label} ›</span></button>` : mc(label, html, cls);
   const aff = (o, label, cls, val, unit) => o
     ? `<button class="affr ${cls}" data-open-player="${o.pid}">${avatar(store.players[o.pid], 'xs')}<span><span class="k">${label}</span><span class="n">${esc(pname(o.pid))}</span></span><span class="x">${val}<small>${unit}</small></span></button>`
     : `<div class="affr ${cls}"><span><span class="k">${label}</span><span class="n mu">Servono più gare insieme</span></span></div>`;
@@ -4421,7 +4434,7 @@ function renderFigurina(){
     </div>
     <div class="fig-bot">
       <div class="fig-grid">
-        ${mc('Presenze', cu(s.pres))}${mc('% vittorie', cu(+s.pct.toFixed(0), 0, '%'))}${mc('Gol', cu(s.g), 'hl')}${mc('Assist', cu(s.a))}
+        ${mc('Presenze', cu(s.pres))}${mc('% vittorie', cu(+s.pct.toFixed(0), 0, '%'))}${tapM('Gol', cu(s.g), 'g', 'hl')}${tapM('Assist', cu(s.a), 'a')}
         ${metric('V-P-S', `${s.v}-${s.pa}-${s.s}`, 'rec')}${mc('Media gol', cu(+s.avg.toFixed(2), 2))}${mc('Autogol', cu(s.og))}${mc('MVP', cu(s.mvp), 'hl')}
       </div>
       ${plq}
@@ -4617,6 +4630,27 @@ function propResCheck(me){
     <div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button><button type="button" class="btn primary" data-action="propres-see" data-mid="${mid}">Vedi la formazione</button></div>`;
   openModal('#m-propres');
   return true;
+}
+/* Gol (k = 'g') o assist (k = 'a') di un giocatore: in cima il compagno più legato (chi gli ha servito più assist / chi ha servito di più), poi una riga per gol.
+   Le gare senza cronaca dei gol hanno una riga sola con il totale. */
+function glistHTML(pid, k){
+  const s = STATS.byId[pid]; if(!s) return '';
+  const rows = [], by = {};
+  for(const h of s.hist){
+    const m = h.m, sc = matchScore(m), own = h.team === 'white' ? `${sc.w}–${sc.b}` : `${sc.b}–${sc.w}`;
+    const gl = matchGoals(m).filter(x => !x.og && (k === 'g' ? x.s === pid : x.a === pid && x.s !== pid));
+    if(gl.length) for(const x of gl){ rows.push({ m, x, own, team:h.team }); const o = k === 'g' ? x.a : x.s; if(o && store.players[o]) by[o] = (by[o] || 0) + 1; }
+    else if((k === 'g' ? h.g : h.a) > 0) rows.push({ m, n:k === 'g' ? h.g : h.a, own, team:h.team });
+  }
+  const tops = Object.entries(by).sort((a, b) => b[1] - a[1]), best = tops.length ? tops[0][1] : 0, first = tops.filter(x => x[1] === best), rest = tops.filter(x => x[1] < best).slice(0, 3);
+  const unit = n => n === 1 ? (k === 'g' ? 'assist' : 'gol') : (k === 'g' ? 'assist' : 'gol');
+  const lead = first.length ? `<div class="gx-top">${first.slice(0, 3).map(([o]) => avatar(store.players[o], 'md')).join('')}<span><small>${k === 'g' ? 'Chi gli ha servito più assist' : 'Il compagno che ha servito di più'}</small><b>${first.map(([o]) => esc(pname(o))).join(', ').replace(/, ([^,]*)$/, ' e $1')} · ${best} ${unit(best)}${first.length > 1 ? ' ciascuno' : ''}</b></span></div>${rest.length ? `<p class="gx-oth">Poi ${rest.map(([o, n]) => `${esc(pname(o))} (${n})`).join(', ')}</p>` : ''}` : '';
+  const line = r => {
+    const what = r.x ? (k === 'g' ? (r.x.a && store.players[r.x.a] ? `Assist di ${esc(pname(r.x.a))}` : 'Senza assist') : `Gol di ${esc(pname(r.x.s))}`) : `${r.n} ${k === 'g' ? 'gol' : 'assist'} (dettaglio non registrato)`;
+    return `<div class="gx-r"><span class="gx-min">${r.x && r.x.min != null ? r.x.min + '’' : k === 'g' ? '⚽' : '👟'}</span><span><b>${what}</b><small>Giornata ${num(r.m.day)}${r.m.date ? ' · ' + esc(fmtDate(r.m.date)) : ''}</small></span><span class="gx-s">${SURF[r.m.surf] ? SURF[r.m.surf] + '<br>' : ''}${r.team === 'white' ? 'Bianchi' : 'Neri'} ${r.own}</span></div>`;
+  };
+  const tot = k === 'g' ? s.g : s.a;
+  return `<h3>${k === 'g' ? '⚽ I gol' : '👟 Gli assist'} di ${esc(s.name)}</h3><p class="lead-p" style="margin:0">${tot} ${k === 'g' ? 'gol' : 'assist'} in ${s.pres} ${s.pres === 1 ? 'partita' : 'partite'}</p>${lead}${rows.slice().reverse().map(line).join('') || '<p class="mu">Ancora niente.</p>'}`;
 }
 function propsListHTML(mid){
   const m = store.matches[mid], all = lineupPropsOf(mid);
@@ -9744,6 +9778,7 @@ document.addEventListener('click', async e => {
     case 'cmp-start': if(requireAdmin()) cmpStart(d.mid); break;
     case 'prop-start': { const me = myPid(); if(!me || !store.players[me]){ toast('Scegli prima il tuo giocatore in «Io»', 'warn'); break; } if(!propsOpen(store.matches[d.mid])){ toast('Le proposte sono chiuse', 'warn'); break; } cmpStart(d.mid, 'prop'); break; }
     case 'prop-send': propSend(); break;
+    case 'glist': { const h = glistHTML(d.pid, d.k === 'a' ? 'a' : 'g'); if(h){ $('#gl-body').innerHTML = h; openModal('#m-glist'); } break; }
     case 'propres-see': closeModal('#m-propres'); ui.matchId = d.mid; ui.mTab = 'form'; lazyDirty.matches = true; go('matches'); break;
     case 'prop-go': { const m = store.matches[d.mid], me = myPid(); if(!m || !me || !store.players[me] || !propsOpen(m)) break; ui.matchId = d.mid; ui.mTab = 'form'; lazyDirty.matches = true; go('matches'); cmpStart(d.mid, 'prop'); break; }
     case 'props-all': if(requireAdmin()){ $('#props-body').innerHTML = propsAllHTML(); openModal('#m-props'); } break;
