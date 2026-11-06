@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.12.7
+- OVR: sconfitta di misura solo per i difensori (`ldc` per fascia in `OVR_BANDS`/`OVR_META_B`: 2 gol di scarto o meno), anche nel pannello Calcolo overall e nel dettaglio della gara. Migrazione `cmb_mig_v1127`.
+- Figurina: Gol e Assist si toccano e aprono `#m-glist` (`glistHTML`): elenco con minuto, compagno, giornata, campo e risultato; in cima il compagno più legato (pari merito tutti insieme). Le gare senza cronaca mostrano solo il totale.
+- Classifica: filtro per ruolo (`ui.cf.role`, `#cf-role`) con podio e posizioni del solo ruolo.
+
 ## 1.12.6
 - Componi sul campo: nell'elenco solo i giocatori non ancora in campo; tasto «Svuota» (`cmp-clear`).
 - Proposte: finestra con l'esito alla prima apertura dopo la decisione (`#m-propres`, `cmb_propSeen`, solo decisioni degli ultimi 7 giorni su un telefono nuovo); contatore delle proposte visibile a tutti.
