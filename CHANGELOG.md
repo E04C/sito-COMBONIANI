@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.12.10
+- Tolto del tutto il Replay dei gol (tasto, `#m-replay`, funzioni `rp*`, stile `rpv`/`rv-`, comandi da tastiera). Nel Negozio le categorie `trail` e `cheer` (solo replay) escono da `SHOP_CATS`: non si vendono né si mostrano, ma gli oggetti restano in `SHOP_ITEMS` così gli acquisti già fatti contano ancora nel saldo.
+- Highlights su YouTube: campo facoltativo `matches/{id}/yt` con il solo codice del video (`ytId` accetta link watch, youtu.be, shorts, live, embed; altri link rifiutati). Tasto rosso «Highlights» sotto il punteggio del Resoconto; il link si incolla nel registro gara (solo gare giocate).
+
 ## 1.12.9
 - Pannello admin: tolti i riquadri Programma gara, Registra gara, Voti a stelle, Aggiungi giocatore, Importa Excel, Ottimizza foto e Cambia PIN (i gestori restano nel codice; gare e giocatori si aggiungono da Partite e Giocatori, «Cambia PIN» solo nell'avviso del PIN predefinito).
 - Pannello admin: «Funzioni» e «Gestione admin» chiusi dietro due tasti (`ui.admOpen`, azione `adm-tg`); sul telefono riquadri piccoli con icona e nome, sul computer come prima. Il tasto «Gestione admin» mostra proposte e richieste in attesa.
