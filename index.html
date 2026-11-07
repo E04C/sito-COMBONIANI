@@ -132,6 +132,13 @@ main{max-width:1440px;margin:0 auto;padding:18px max(14px,env(safe-area-inset-le
 .panel-h{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;padding:16px 18px 8px}
 .panel-h h2{margin:0;font:italic 800 25px/1 var(--disp);display:flex;align-items:center;gap:8px}
 .panel-h .ico{font-size:19px;font-style:normal}
+/* Highlights su YouTube (1.12.10): tasto rosso con scritte bianche (rosso un po' scuro per leggere bene il bianco) */
+.yt-wrap{display:flex;justify-content:center;margin:4px 0 14px}
+.btn.yt-btn{background:#e00000;border-color:#e00000;color:#fff;font-weight:800;text-decoration:none;padding:0 20px}
+.btn.yt-btn:hover{background:#c40000;border-color:#c40000}
+.btn.yt-btn svg{width:26px;height:18px;flex:none}
+.mm-meta .ed-yt{flex-basis:100%}
+.mm-meta .ed-yt .field{width:100%}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:rgba(249,115,22,.08);color:var(--tx);font:700 14px var(--body);text-decoration:none;transition:transform .12s var(--ease),background .2s,border-color .2s,box-shadow .2s;touch-action:manipulation}
 .btn:hover{border-color:var(--line-strong)}
 .btn:active{transform:scale(.96)}
@@ -2244,6 +2251,7 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
         <label id="ed-time-w">Ora inizio<input id="ed-time" class="field" type="time"></label>
         <label id="ed-end-w">Ora fine<input id="ed-end" class="field" type="time"></label>
         <label>Campo<select id="ed-surf" class="field"><option value="">Non indicato</option><option value="s">🟩 Sintetico</option><option value="t">🟫 Terra</option></select></label>
+        <label class="ed-yt" id="ed-yt-w">Highlights su YouTube (facoltativo)<input id="ed-yt" class="field" type="url" inputmode="url" autocomplete="off" placeholder="Incolla il link del video"></label>
       </div>
     </div>
     <div class="edmode" role="group" aria-label="Tipo di gara">
@@ -2711,6 +2719,23 @@ function cleanEntries(x){
   if(x && typeof x === 'object'){ const o = {}; for(const [k, e] of Object.entries(x)){ const f = fix(e); if(f && idOk(k)) o[k] = f; } return o; }
   return x;
 }
+/* Highlights su YouTube (1.12.10): matches/{id}/yt (facoltativo) è solo il codice del video di 11 caratteri, mai il link intero.
+   ytId accetta il codice o i link di YouTube (watch, youtu.be, shorts, live, embed): '' se vuoto, null se non è un video di YouTube. */
+const YT_ID = /^[A-Za-z0-9_-]{11}$/;
+function ytId(s){
+  s = String(s || '').trim(); if(!s) return '';
+  if(YT_ID.test(s)) return s;
+  let u; try{ u = new URL(/^https?:\/\//i.test(s) ? s : 'https://' + s); }catch(e){ return null; }
+  const host = u.hostname.toLowerCase().replace(/^(www|m|music)\./, '');
+  let id = '';
+  if(host === 'youtu.be') id = u.pathname.split('/')[1] || '';
+  else if(host === 'youtube.com' || host === 'youtube-nocookie.com'){
+    if(u.pathname === '/watch') id = u.searchParams.get('v') || '';
+    else { const k = u.pathname.match(/^\/(shorts|live|embed|v)\/([^/?#]+)/); if(k) id = k[2]; }
+  }
+  return YT_ID.test(id) ? id : null;
+}
+const ytUrl = id => 'https://www.youtube.com/watch?v=' + id;
 function cleanMatches(raw){
   const out = {};
   if(!raw || typeof raw !== 'object') return out;
@@ -2722,6 +2747,7 @@ function cleanMatches(raw){
     if('status' in c) c.status = txt(c.status, 20);
     for(const k of ['white', 'black']) if(k in c) c[k] = cleanEntries(c[k]);
     for(const k of ['capW', 'capB']) if(k in c && !(c[k] === null || idOk(c[k]))) c[k] = null;
+    if('yt' in c && !(typeof c.yt === 'string' && YT_ID.test(c.yt))) delete c.yt;
     out[id] = c;
   }
   return out;
@@ -4476,6 +4502,8 @@ function scorersHTML(m){
   if(!cols[0].li.length && !cols[1].li.length) return `<div class="scorers"><p class="sc-none">Nessun gol o assist registrato.</p></div>`;
   return `<div class="scorers">${cols.map(c => `<div class="sc-col${c.cls}">${c.li.join('')}</div>`).join('')}</div>`;
 }
+/* Tasto degli highlights su YouTube: solo nelle gare giocate che hanno il video (si apre l'app o il sito di YouTube) */
+const ytBtnHTML = m => m.status !== 'scheduled' && m.yt && YT_ID.test(m.yt) ? `<div class="yt-wrap"><a class="btn yt-btn" href="${ytUrl(m.yt)}" target="_blank" rel="noopener noreferrer" aria-label="Guarda gli highlights della partita su YouTube"><svg viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="5" fill="#fff"/><path d="M11.2 5.6v8.8l7.6-4.4z" fill="#e00000"/></svg>Highlights</a></div>` : '';
 /* Esportazioni: stessi pulsanti sotto Resoconto e Formazioni */
 function mediaBtns(m){
   const pre = m.status === 'scheduled';
@@ -4812,6 +4840,7 @@ function matchDetailHTML(id){
   return `${tabs}<div class="mone"><article class="glass tab">
     <div class="hero-meta"><span class="tag">Giornata ${num(m.day)}</span>${m.date ? `<span>${fmtDate(m.date)}</span>` : ''}${matchLen(m) ? `<span>Durata ${matchLen(m)}’</span>` : ''}${SURF[m.surf] ? `<span>${SURF[m.surf]}</span>` : ''}<span class="sum">${starters(m, 'white').length} contro ${starters(m, 'black').length}</span></div>
     ${boardHTML(sc)}
+    ${ytBtnHTML(m)}
     ${scorersHTML(m)}
     ${cambiHTML(m)}
     ${mvp}${awards}${voteBoxHTML(m)}${rateBoxHTML(m)}
@@ -8431,6 +8460,7 @@ function setEdMode(mode){
   $$('[data-edmode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.edmode === mode)));
   $('#m-match .sheet').classList.toggle('sched', mode === 'scheduled');
   $('#ed-end-w').hidden = mode === 'scheduled';
+  $('#ed-yt-w').hidden = mode === 'scheduled';
   $('#ed-save').textContent = mode === 'scheduled' ? 'Salva gara in programma' : 'Salva risultato';
   if(mode === 'scheduled'){
     [...ED.white, ...ED.black].forEach(e => { e.g = 0; e.a = 0; e.og = 0; delete e.late; delete e.inj; }); ED.goals = []; ED.moves = []; goalFormReset(); moveFormReset();
@@ -8457,6 +8487,7 @@ function openMatchEditor(id, mode){
   $('#ed-time').value = ED.time;
   $('#ed-end').value = ED.end;
   $('#ed-surf').value = SURF[m && m.surf] ? m.surf : '';
+  $('#ed-yt').value = m && m.yt && YT_ID.test(m.yt) ? ytUrl(m.yt) : '';
   $('#ed-filter').value = '';
   setEdMode(ED.status);
   openModal('#m-match');
@@ -8891,6 +8922,8 @@ async function saveMatch(){
   ED.time = $('#ed-time').value || '';
   ED.end = $('#ed-end').value || '';
   ED.surf = SURF[$('#ed-surf').value] ? $('#ed-surf').value : '';
+  ED.yt = ED.status === 'scheduled' ? '' : ytId($('#ed-yt').value);
+  if(ED.yt === null){ toast('Il link degli highlights non è un video di YouTube: su YouTube tocca «Condividi» e poi «Copia link»', 'err'); $('#ed-yt').focus(); return; }
   if(ED.status !== 'scheduled' && ED.end && (!ED.time || matchLen({ time:ED.time, end:ED.end }) == null)){ toast('Controlla ora inizio e ora fine della gara', 'err'); return; }
   const w = ED.white.filter(e => !e.bench).length, b = ED.black.filter(e => !e.bench).length;
   const poolOnly = ED.status === 'scheduled' && ED.called.length;   /* gara in programma: chi è convocato ma senza squadra resta convocato, e le squadre si decidono dopo (anche con le proposte) */
@@ -8928,7 +8961,7 @@ async function saveMatch(){
     status:sched ? 'scheduled' : 'played', time:ED.time, ...(!sched && ED.end ? { end:ED.end } : {}), fmW:ED.fmW || DEF_FM, fmB:ED.fmB || DEF_FM,
     ...(ED.posW ? { posW:list(ED.posW) } : {}), ...(ED.posB ? { posB:list(ED.posB) } : {}),
     ...(ED.capW ? { capW:ED.capW } : {}), ...(ED.capB ? { capB:ED.capB } : {}),
-    day:ED.day, date:ED.date, ...(ED.surf ? { surf:ED.surf } : {}),
+    day:ED.day, date:ED.date, ...(ED.surf ? { surf:ED.surf } : {}), ...(ED.yt ? { yt:ED.yt } : {}),
     white:ED.white.map(clean), black:ED.black.map(clean),
     ...(goalsOut.length ? { goals:goalsOut } : {}),
     ...(movesOut.length ? { moves:movesOut } : {}),
