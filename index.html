@@ -3307,7 +3307,7 @@ function matchAwards(m){
   return best;
 }
 /* Valori per le targhe arrivate dai primati: presenze di fila, gare di fila a segno, media gol subiti, OVR delle ultime 5 giornate,
-   giornate chiuse al primo posto, formazioni accettate e (solo sulla stagione intera, come il saldo) le migliori scommesse */
+   giornate chiuse al primo posto, formazioni accettate e i valori delle targhe più nuove (gol senza assist, maglie, miglior marcatore) */
 function plqExtras(arr, ms, wal){
   const idx = new Map(ms.map((m, i) => [m.id, i])), last5 = new Set(ms.slice(-5).map(m => m.id));
   for(const s of arr){
@@ -4360,7 +4360,7 @@ function openClip(cid){
   const who = [...c.pids.map(p => [p, '']), ...(c.ast ? [[c.ast, 'assist']] : [])].map(([p, r]) => `<span>${avatar(store.players[p] || { name:pname(p) }, 'xs')}${esc(pname(p))}${r ? ` <em>${r}</em>` : ''}</span>`).join('');
   $('#clip-body').innerHTML = `<div class="clip-v${c.sh ? ' sh' : ''}"><iframe src="https://www.youtube-nocookie.com/embed/${c.yt}?autoplay=1&amp;playsinline=1&amp;rel=0" title="${esc(clipTitle(c))}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
     <div class="clip-info"><span class="clp-cat">${C.i} ${C.l}</span><h3>${esc(clipTitle(c))}</h3>${m ? `<p class="mu sm" style="margin:0">Giornata ${num(m.day)}${m.date ? ' · ' + fmtDate(m.date) : ''}</p>` : ''}${who ? `<div class="clip-who">${who}</div>` : ''}</div>
-    <div class="clip-act">${ui.admin ? `<button type="button" class="btn sm" data-action="clip-edit" data-cid="${cid}">✏️ Modifica</button><button type="button" class="btn sm danger" data-action="clip-del" data-cid="${cid}">Elimina</button>` : ''}<a class="btn sm" href="${ytUrl(c.yt)}" target="_blank" rel="noopener noreferrer">Apri su YouTube</a><button type="button" class="btn sm ghost" data-close>Chiudi</button></div>`;
+    <div class="clip-act">${ui.admin ? `<button type="button" class="btn sm" data-action="clip-edit" data-cid="${cid}">✏️ Modifica</button><button type="button" class="btn sm danger" data-action="clip-del" data-cid="${cid}">Elimina</button>` : ''}<a class="btn sm" href="${ytUrl(c.yt)}" target="_blank" rel="noopener noreferrer">Apri su YouTube</a><button type="button" class="btn sm ghost" data-close autofocus>Chiudi</button></div>`;
   openModal('#m-clip');
 }
 /* Modulo dell'admin: tutta la rosa in ordine di nome; la giornata è facoltativa */
