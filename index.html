@@ -1346,6 +1346,24 @@ h4 .hico{width:1.1em;height:1.1em;vertical-align:-.18em}
 .me-sec .affr+.affr{border-top:1px solid var(--hair)}
 .me-sec p{margin:8px 0 0}
 .ovrchart{display:block;width:100%;height:auto;max-height:260px}
+/* Io (1.14.0): il contenitore ha le proporzioni del disegno, così i puntini toccabili restano sopra i punti */
+.oc-wrap{position:relative;max-width:589px;margin:0 auto}
+.oc-wrap .ovrchart{max-height:none}
+.oc-hit{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;padding:0;border:0;border-radius:50%;background:transparent;cursor:pointer}
+.oc-hit:hover,.oc-hit:focus-visible{background:rgba(249,115,22,.22);outline:2px solid var(--or);outline-offset:-2px}
+.oc-tip{margin:4px 0 0;text-align:center}
+.snap-hd{display:flex;align-items:center;gap:8px;margin:0 0 10px}
+.snap-hd h3{flex:1;margin:0;text-align:center;font:italic 800 24px/1.1 var(--disp)}
+.snap-hd small{display:block;margin-top:2px;font:600 12.5px var(--body);font-style:normal;color:var(--mu)}
+.snap-hd .btn{min-width:44px;font-size:20px}
+.snap-card{width:min(170px,46vw);margin:0 auto 12px}
+.snap-res{margin:0 0 10px;text-align:center;font-size:14px;line-height:1.45}
+.snap-res .up{color:#4ade80;font-weight:800}.snap-res .dn{color:#fb7185;font-weight:800}.snap-res .eq{color:var(--mu);font-weight:800}
+.snap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.snap-grid div{padding:8px 4px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--hair);text-align:center}
+.snap-grid b{display:block;font:italic 800 22px/1.1 var(--disp)}
+.snap-grid span{font:600 11.5px var(--body);color:var(--mu)}
+.snap-more{margin:10px 0 4px;text-align:center}
 .oc-leg{display:flex;gap:14px;justify-content:center;margin:6px 0 0;font:700 11.5px var(--body);color:var(--mu)}.oc-leg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:0}
 .me-anim .ocl{animation:draw 1.3s ease-out}
 @keyframes draw{from{stroke-dashoffset:1}}
@@ -2190,6 +2208,8 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 <div class="modal" id="m-props" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Proposte di formazione" style="width:min(560px,100%)"><div id="props-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 <!-- Esito della tua proposta di formazione -->
 <!-- Clip: si guarda dentro l'app -->
+<!-- Io: la tua scheda di un giorno, dal grafico dell'overall -->
+<div class="modal" id="m-snap" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-labelledby="snap-t" style="width:min(440px,100%)"><div id="snap-body"></div></div></div>
 <div class="modal" id="m-clip" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Clip" style="width:min(560px,100%)"><div id="clip-body"></div></div></div>
 <!-- Clip: aggiungi o modifica (admin) -->
 <div class="modal" id="m-clipf" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-labelledby="clf-t" style="width:min(560px,100%)">
@@ -3582,7 +3602,7 @@ function cdText(ts, hasTime){
 }
 const cdSpan = m => { const d = kickDate(m); return d ? `<span class="cd" data-cd="${d.getTime()}" data-t="${m.time ? 1 : 0}">${cdText(d.getTime(), !!m.time)}</span>` : ''; };
 setInterval(() => $$('[data-cd]').forEach(el => { const txt = cdText(+el.dataset.cd, el.dataset.t === '1'); if(el.textContent !== txt) el.textContent = txt; el.classList.toggle('live', txt.includes('In campo')); }), 1000);
-function ovrChartHTML(s){
+function ovrChartHTML(s, tap){
   const h = s.hist;
   if(!h.length) return '<p class="mu sm" style="margin:0">Il grafico compare dopo la prima gara.</p>';
   const pts = [OVR_START, ...h.map(x => x.ovr)];
@@ -3604,7 +3624,35 @@ function ovrChartHTML(s){
   const rc = r => r === 'v' ? '#22c55e' : r === 's' ? '#fb7185' : '#8a93a6';
   const dots = pts.map((v, i) => { const last = i === pts.length - 1;
     return `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${last ? 4.8 : 3}" fill="${i ? rc(h[i - 1].r) : '#0a0d14'}" stroke="${last ? '#f97316' : i ? '#0a0d14' : '#f97316'}" stroke-width="${last ? 2 : 1.3}"/>`; }).join('');
-  return `<svg class="ovrchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Andamento OVR da ${OVR_START} a ${roundOvr(s.ovr)}"><defs><linearGradient id="oca" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f97316" stop-opacity=".24"/><stop offset="1" stop-color="#f97316" stop-opacity="0"/></linearGradient></defs>${th}${yl}${xl}<path d="${area}" fill="url(#oca)"/><path class="ocl" d="${line}" fill="none" stroke="#f97316" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" pathLength="1"/>${dots}</svg><p class="oc-leg"><span><i style="background:#22c55e"></i>vittoria</span><span><i style="background:#fb7185"></i>sconfitta</span><span><i style="background:#8a93a6"></i>pareggio</span></p>`;
+  /* In Io ogni puntino di una partita è un tasto (sopra il disegno): apre la scheda di quel giorno (1.14.0) */
+  const hits = tap ? h.map((x, j) => `<button type="button" class="oc-hit" style="left:${(X(j + 1) / W * 100).toFixed(2)}%;top:${(Y(pts[j + 1]) / H * 100).toFixed(2)}%" data-action="ovr-snap" data-pid="${s.pid}" data-i="${j}" aria-label="Giornata ${num(x.m.day)}: OVR ${roundOvr(x.ovr)}. Apri la tua scheda di quel giorno"></button>`).join('') : '';
+  return `<div class="oc-wrap"><svg class="ovrchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Andamento OVR da ${OVR_START} a ${roundOvr(s.ovr)}"><defs><linearGradient id="oca" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f97316" stop-opacity=".24"/><stop offset="1" stop-color="#f97316" stop-opacity="0"/></linearGradient></defs>${th}${yl}${xl}<path d="${area}" fill="url(#oca)"/><path class="ocl" d="${line}" fill="none" stroke="#f97316" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" pathLength="1"/>${dots}</svg>${hits}</div><p class="oc-leg"><span><i style="background:#22c55e"></i>vittoria</span><span><i style="background:#fb7185"></i>sconfitta</span><span><i style="background:#8a93a6"></i>pareggio</span></p>`;
+}
+/* Scheda di un giorno (1.14.0): com'eri dopo la partita j del tuo grafico. Statistiche di stagione fino a quella gara
+   (computeStats(k)) e targhe di quel momento dalla storia gara per gara */
+function snapHTML(pid, j){
+  const s = STATS.byId[pid], x = s && s.hist[j]; if(!x) return '';
+  const m = x.m, k = STATS.matches.findIndex(z => z.id === m.id) + 1; if(k < 1) return '';
+  const keep = STATS; let T; try{ T = computeStats(k); } finally { STATS = keep; }
+  const t = T.byId[pid]; if(!t) return '';
+  const step = trophyHistory()[k - 1], plq = step ? Object.entries(step.plaques).filter(([, p]) => p === pid).map(([id]) => plaqueById(id)).filter(Boolean) : [];
+  const sc = matchScore(m), own = x.team === 'white' ? [sc.w, sc.b] : [sc.b, sc.w], d = x.ovr - x.pre;
+  const res = { v:'Vittoria', pa:'Pareggio', s:'Sconfitta' }[x.r] || '';
+  const ev = [x.g ? `${x.g} gol` : '', x.a ? `${x.a} assist` : '', x.og ? `${x.og} autogol` : ''].filter(Boolean).join(', ') || 'nessun gol né assist';
+  const nav = (dir, lbl) => { const i = j + dir, ok = i >= 0 && i < s.hist.length; return `<button type="button" class="btn sm ghost" data-action="ovr-snap" data-pid="${pid}" data-i="${i}" data-dir="${dir}" aria-label="${lbl}" ${ok ? '' : 'disabled'}>${dir < 0 ? '‹' : '›'}</button>`; };
+  const cell = (v, l) => `<div><b>${v}</b><span>${l}</span></div>`;
+  return `<div class="snap-hd">${nav(-1, 'Giornata prima')}<h3 id="snap-t">Giornata ${num(m.day)}<small>${m.date ? esc(fmtDate(m.date)) : ''}</small></h3>${nav(1, 'Giornata dopo')}</div>
+    <div class="snap-card">${walkCardHTML(t, tierOf(t.ovr), t.ovr)}</div>
+    <p class="snap-res ${x.r}"><b>${res} ${own[0]}–${own[1]}</b> con i ${x.team === 'white' ? 'Bianchi' : 'Neri'} · ${ev} · OVR <span class="${d > 1e-9 ? 'up' : d < -1e-9 ? 'dn' : 'eq'}">${d > 1e-9 ? '▲' : d < -1e-9 ? '▼' : '='} ${fmtD(d).replace('.', ',')}</span></p>
+    <div class="snap-grid">${cell(t.pres, 'presenze')}${cell(`${t.v}-${t.pa}-${t.s}`, 'V-P-S')}${cell(`${Math.round(t.pct)}%`, 'vittorie')}${cell(t.g, 'gol')}${cell(t.a, 'assist')}${cell(t.mvp, 'MVP')}</div>
+    <p class="mu sm snap-more">${t.rank}° in classifica a quel punto${plq.length ? ` · Targhe: ${plq.map(P => `${P.icon} ${P.name}`).join(', ')}` : ''}</p>
+    <div class="row end"><button type="button" class="btn ghost" data-close autofocus>Chiudi</button></div>`;
+}
+function openSnap(pid, j, dir){
+  const html = snapHTML(pid, j); if(!html) return;
+  $('#snap-body').innerHTML = html;
+  if(!$('#m-snap').classList.contains('open')) openModal('#m-snap');
+  else if(dir) $(`#snap-body [data-dir="${dir}"]`)?.focus();
 }
 const holoSpan = () => '';   /* riflesso olografico tolto dalle carte Oro e Diamante */
 const teamMean = entries => { const l = list(entries); return l.length ? l.reduce((t, e) => t + ovrOf(e.pid), 0) / l.length : 0; };
@@ -5833,7 +5881,7 @@ function renderMe(){
     <div class="me-grid">${{
       pro:`<section class="glass me-sec"><h3>${ico('up')}Prossimo livello</h3>${tierBox}</section>
       <section class="glass me-sec"><h3>${ico('bars')}Forma recente</h3>${form}</section>`,
-      stat:`<section class="glass me-sec wide"><h3>${ico('trend')}Andamento OVR</h3>${ovrChartHTML(s)}</section>
+      stat:`<section class="glass me-sec wide"><h3>${ico('trend')}Andamento OVR</h3>${ovrChartHTML(s, true)}<p class="mu sm oc-tip">Tocca un puntino per rivedere la tua scheda di quel giorno.</p></section>
       <section class="glass me-sec wide"><h3>${ico('lens')}Overall spiegato</h3>${ovrExplainHTML(s)}</section>
       <section class="glass me-sec"><h3>${ico('star')}La tua miglior partita</h3>${bestBox}</section>
       <section class="glass me-sec"><h3>${ico('pin')}Il tuo posto in campo</h3>${posBox}</section>
@@ -8314,6 +8362,7 @@ document.addEventListener('click', async e => {
     case 'edit-match': if(requireAdmin()) openMatchEditor(d.mid); break;
     case 'del-match': if(requireAdmin()) deleteMatch(d.mid); break;
     case 'clip-open': openClip(d.cid); break;
+    case 'ovr-snap': openSnap(d.pid, +d.i, +d.dir || 0); break;
     case 'clip-new': if(requireAdmin()) openClipForm(); break;
     case 'clip-edit': if(requireAdmin()){ closeModal('#m-clip'); openClipForm(d.cid); } break;
     case 'clip-del': deleteClip(d.cid); break;
