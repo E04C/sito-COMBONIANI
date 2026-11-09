@@ -139,6 +139,39 @@ main{max-width:1440px;margin:0 auto;padding:18px max(14px,env(safe-area-inset-le
 .btn.yt-btn svg{width:26px;height:18px;flex:none}
 .mm-meta .ed-yt{flex-basis:100%}
 .mm-meta .ed-yt .field{width:100%}
+/* Clip della stagione (1.13.0): fila nel Resoconto, raccolta in Partite, finestra con il video e modulo dell'admin */
+.clp-sec{margin:0 0 16px}
+.clp-add{display:flex;justify-content:center;margin:-4px 0 14px}
+.clp-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 8px}
+.clp-hd h3{margin:0;font:italic 800 20px/1.1 var(--disp);white-space:nowrap}
+.clp-hd h3 small{font:700 13px var(--body);color:var(--mu);margin-left:4px}
+.clp-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x proximity}
+.clp-row .clp{flex:0 0 min(64%,240px);scroll-snap-align:start}
+.clp{display:flex;flex-direction:column;gap:4px;min-width:0;padding:0;border:0;background:none;color:inherit;text-align:left;cursor:pointer;font:inherit}
+.clp-th{position:relative;display:block;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#11151c;border:1px solid var(--hair)}
+.clp-th img{width:100%;height:100%;object-fit:cover;display:block}
+.clp:hover .clp-th{border-color:var(--line-strong)}
+.clp-cat{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;background:rgba(0,0,0,.72);color:#fff;font:800 11.5px/1.6 var(--body);white-space:nowrap}
+.clp-th .clp-cat{position:absolute;left:6px;top:6px;max-width:calc(100% - 12px);overflow:hidden;text-overflow:ellipsis}
+.clp-pl{position:absolute;left:50%;top:50%;width:40px;height:28px;margin:-14px 0 0 -20px;border-radius:8px;background:#e00000;color:#fff;display:grid;place-items:center;font-size:13px}
+.clp-t{font:700 13.5px/1.3 var(--body);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.clp small{color:var(--mu);font-size:12px}
+.clip-v{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000}
+.clip-v.sh{aspect-ratio:9/16;width:min(100%,calc(52vh * 9 / 16));margin:0 auto}
+.clip-v iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.clip-info{margin:12px 0 6px}
+.clip-info h3{margin:6px 0 2px;font:italic 800 22px/1.15 var(--disp)}
+.clip-info .clp-cat{background:var(--or-soft);color:var(--tx);border:1px solid var(--line)}
+.clip-who{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.clip-who span{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 3px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--hair);font:700 13px var(--body)}
+.clip-who em{font-style:normal;color:var(--mu);font-weight:600}
+.clip-act{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:12px}
+.clf-l{display:block;margin:12px 0 6px;font:700 12.5px var(--body);color:var(--mu)}
+.clf-ch{display:flex;flex-wrap:wrap;gap:6px}
+.clf-ch button{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 12px 0 5px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--tx);font:700 13.5px var(--body);cursor:pointer}
+.clf-ch.cats button,.clf-ch button.none{padding:0 12px}
+.clf-ch button[aria-pressed="true"]{background:var(--or);border-color:var(--or);color:#1a0a00}
+.clf-ch .tm{width:100%;font:800 11.5px var(--body);color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-top:4px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:rgba(249,115,22,.08);color:var(--tx);font:700 14px var(--body);text-decoration:none;transition:transform .12s var(--ease),background .2s,border-color .2s,box-shadow .2s;touch-action:manipulation}
 .btn:hover{border-color:var(--line-strong)}
 .btn:active{transform:scale(.96)}
@@ -2302,6 +2335,18 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
 <!-- Proposte di formazione ricevute (admin) -->
 <div class="modal" id="m-props" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Proposte di formazione" style="width:min(560px,100%)"><div id="props-body"></div><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Chiudi</button></div></div></div>
 <!-- Esito della tua proposta di formazione -->
+<!-- Clip: si guarda dentro l'app -->
+<div class="modal" id="m-clip" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Clip" style="width:min(560px,100%)"><div id="clip-body"></div></div></div>
+<!-- Clip: aggiungi o modifica (admin) -->
+<div class="modal" id="m-clipf" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-labelledby="clf-t" style="width:min(560px,100%)">
+  <h3 id="clf-t">Aggiungi clip</h3>
+  <label class="clf-l" for="cl-yt">Link della clip su YouTube</label>
+  <input id="cl-yt" class="field" type="url" inputmode="url" autocomplete="off" placeholder="Incolla il link (Condividi → Copia link)" style="width:100%">
+  <div id="clf-dyn"></div>
+  <label class="clf-l" for="cl-t">Titolo (facoltativo)</label>
+  <input id="cl-t" class="field" type="text" maxlength="80" autocomplete="off" placeholder="Es. Tunnel e gol all’incrocio" style="width:100%">
+  <div class="clip-act"><button type="button" class="btn ghost" data-close>Annulla</button><button type="button" class="btn primary" data-action="clip-save">Salva clip</button></div>
+</div></div>
 <div class="modal" id="m-propres" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-label="Esito della tua formazione" style="width:min(460px,100%)"><div id="propres-body"></div></div></div>
 <!-- Testo libero (motivo del rifiuto) -->
 <div class="modal" id="m-ask" aria-hidden="true"><div class="sheet glass" role="dialog" aria-modal="true" aria-labelledby="ask-t" style="width:min(460px,100%)"><h3 id="ask-t"></h3><p class="lead-p" id="ask-p"></p><textarea id="ask-in" class="field w100 ask-in" rows="3" maxlength="200"></textarea><div class="row end" style="margin-top:12px"><button type="button" class="btn ghost" data-close>Annulla</button><button type="button" class="btn primary" data-action="ask-ok" id="ask-ok">Conferma</button></div></div></div>
@@ -2640,7 +2685,7 @@ const CVIEW_ORDER = ['gen', 'g', 'a', 'ga', 'pct', 's', 'og'];
 /* =========================================================
    STATE
    ========================================================= */
-const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{}, casino:{}, messages:{}, playerKeys:{}, totw:{}, totm:{}, ballon:{}, plqPick:{}, lineupProps:{} };
+const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{}, casino:{}, messages:{}, playerKeys:{}, totw:{}, totm:{}, ballon:{}, plqPick:{}, lineupProps:{}, clips:{} };
 const loaded = { players:false, matches:false, settings:false };
 let localMode = false;
 /* Accesso admin ricordato su questo dispositivo per 30 giorni (finché non si esce o non cambia il PIN) */
@@ -2650,6 +2695,7 @@ function adminRemember(pin){ try{ sessionStorage.setItem('cmb_admin', '1'); loca
 function adminForget(){ try{ sessionStorage.removeItem('cmb_admin'); localStorage.removeItem('cmb_admin_until'); localStorage.removeItem('cmb_admin_sig'); }catch(e){} }
 const ui = {
   view:'dashboard',
+  clipF:null,   /* modulo della clip aperto (admin): { id, mid, cat, pids, ast } */
   admOpen:{ fx:false, gs:false },   /* pannello admin: «Funzioni» e «Gestione admin» aperti o chiusi */
   fView:(() => { try{ return localStorage.getItem('cmb_fView') === 'list' ? 'list' : 'pitch'; }catch(e){ return 'pitch'; } })(),
   sort:{ key:'rank', dir:1 },
@@ -2736,6 +2782,25 @@ function ytId(s){
   return YT_ID.test(id) ? id : null;
 }
 const ytUrl = id => 'https://www.youtube.com/watch?v=' + id;
+/* Clip della stagione (1.13.0), percorso nuovo e facoltativo clips/{id} = { yt, cat, mid, pids, ast?, t?, sh?, at }:
+   yt codice del video, cat una delle CLIP_CATS, mid la gara, pids chi è nella clip, ast chi ha fatto l'assist (solo nei gol:
+   così la stessa clip vale anche come assist), t titolo, sh 1 se è uno Short (video verticale), at quando è stata aggiunta */
+const CLIP_CATS = {
+  gol:{ i:'⚽', l:'Gol', who:'Chi ha segnato', one:'Gol di ' },
+  ast:{ i:'👟', l:'Assist', who:'Chi ha fatto l’assist', one:'Assist di ' },
+  par:{ i:'🧤', l:'Parate', who:'Chi ha parato', one:'Parata di ' },
+  pap:{ i:'🤡', l:'Papere', who:'Chi ha fatto la papera', one:'Papera di ' },
+  az:{ i:'🔥', l:'Azioni da ricordare', who:'Chi c’è nell’azione', one:'Azione di ' }
+};
+function cleanClips(raw){
+  const out = {};
+  for(const [id, c] of Object.entries(raw && typeof raw === 'object' ? raw : {})){
+    if(!idOk(id) || !c || typeof c !== 'object' || typeof c.yt !== 'string' || !YT_ID.test(c.yt) || !CLIP_CATS[c.cat]) continue;
+    const pids = [...new Set((Array.isArray(c.pids) ? c.pids : Object.values(c.pids || {})).filter(idOk))].slice(0, 12);
+    out[id] = { yt:c.yt, cat:c.cat, mid:idOk(c.mid) ? c.mid : '', pids, ast:c.cat === 'gol' && idOk(c.ast) ? c.ast : '', t:typeof c.t === 'string' ? c.t.slice(0, 80) : '', sh:c.sh ? 1 : 0, at:Number(c.at) || 0 };
+  }
+  return out;
+}
 function cleanMatches(raw){
   const out = {};
   if(!raw || typeof raw !== 'object') return out;
@@ -2840,7 +2905,7 @@ function featuresHTML(){
 function loadCache(){
   try{
     const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    if(c){ store.players = cleanPlayers(c.players); store.matches = cleanMatches(c.matches); store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; store.playerKeys = c.playerKeys || {}; store.casino = c.casino || {}; store.totw = c.totw || {}; store.totm = c.totm || {}; store.ballon = c.ballon || {}; store.plqPick = c.plqPick || {}; store.lineupProps = c.lineupProps || {}; }
+    if(c){ store.players = cleanPlayers(c.players); store.matches = cleanMatches(c.matches); store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; store.playerKeys = c.playerKeys || {}; store.casino = c.casino || {}; store.totw = c.totw || {}; store.totm = c.totm || {}; store.ballon = c.ballon || {}; store.plqPick = c.plqPick || {}; store.lineupProps = c.lineupProps || {}; store.clips = cleanClips(c.clips); }
   }catch(e){}
 }
 let cacheT;
@@ -2853,7 +2918,7 @@ function saveCache(){
       const { photo, ...rest } = p;
       return [k, (!rest.photoV && photo) ? p : rest];
     }));
-    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, profileReq:store.profileReq, casino:store.casino, totw:store.totw, totm:store.totm, ballon:store.ballon, plqPick:store.plqPick, lineupProps:store.lineupProps, photos:localMode ? store.photos : {}, ...(localMode ? { playerKeys:store.playerKeys } : {}) };
+    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, profileReq:store.profileReq, casino:store.casino, totw:store.totw, totm:store.totm, ballon:store.ballon, plqPick:store.plqPick, lineupProps:store.lineupProps, clips:store.clips, photos:localMode ? store.photos : {}, ...(localMode ? { playerKeys:store.playerKeys } : {}) };
     try{ localStorage.setItem(CACHE_KEY, JSON.stringify(data)); }
     catch(e){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, players:Object.fromEntries(Object.entries(players).map(([k, p]) => { const { photo, ...r } = p || {}; return [k, r]; })) })); }catch(e2){} }
   }, 400);
@@ -2932,6 +2997,8 @@ function initFirebase(){
   /* Targhe scelte e proposte di formazione (percorsi nuovi e facoltativi plqPick e lineupProps): se le regole non li permettono l'app continua a funzionare */
   db.ref('plqPick').on('value', s => { store.plqPick = s.val() || {}; afterData(); }, () => scheduleRender());
   db.ref('lineupProps').on('value', s => { store.lineupProps = s.val() || {}; afterData(); }, () => scheduleRender());
+  /* Clip (percorso nuovo e facoltativo clips): se le regole non lo permettono l'app continua a funzionare e l'admin vede il motivo nel pannello */
+  db.ref('clips').on('value', s => { store.clips = cleanClips(s.val()); clipsIssue = false; afterData(); }, () => { clipsIssue = true; scheduleRender(); });
   /* Voto ai compagni: se le regole non permettono questi percorsi l'app continua a funzionare e l'admin vede il motivo nel pannello */
   db.ref('ratingsDone').on('value', s => { store.ratingsDone = s.val() || {}; loaded.ratingsDone = true; afterData(); }, () => { loaded.ratingsDone = true; ratingsProblem('read', 'ratingsDone'); });
   db.ref('.info/connected').on('value', s => {
@@ -2947,6 +3014,7 @@ let messagesIssue = false;        /* true se il database rifiuta la lettura di �
 let totwIssue = false;            /* true se il database rifiuta la lettura di «totw» o «totm» */
 let ballonIssue = false;          /* true se il database rifiuta la lettura di «ballon» (Pallone d'Oro) */
 let casinoIssue = false;          /* true se il database rifiuta la lettura di «casino» */
+let clipsIssue = false;           /* true se il database rifiuta la lettura di «clips» */
 let ratingsIssue = null;           /* { kind:'read'|'write', path } se il database rifiuta questi percorsi: lo vede l'admin */
 const ratingsLoaded = {}, ratingsWatch = {};
 function ratingsProblem(kind, path){ ratingsIssue = { kind, path }; scheduleRender(); }
@@ -4504,6 +4572,92 @@ function scorersHTML(m){
 }
 /* Tasto degli highlights su YouTube: solo nelle gare giocate che hanno il video (si apre l'app o il sito di YouTube) */
 const ytBtnHTML = m => m.status !== 'scheduled' && m.yt && YT_ID.test(m.yt) ? `<div class="yt-wrap"><a class="btn yt-btn" href="${ytUrl(m.yt)}" target="_blank" rel="noopener noreferrer" aria-label="Guarda gli highlights della partita su YouTube"><svg viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="5" fill="#fff"/><path d="M11.2 5.6v8.8l7.6-4.4z" fill="#e00000"/></svg>Highlights</a></div>` : '';
+/* ---------- Clip della stagione (1.13.0) ---------- */
+/* sempre passando dalla pulizia: anche le clip appena scritte in locale hanno tutti i campi */
+const clipList = () => Object.entries(cleanClips(store.clips)).map(([id, c]) => ({ id, ...c }));
+const clipGet = cid => { const c = cleanClips({ [cid]: (store.clips || {})[cid] })[cid]; return c ? { id:cid, ...c } : null; };
+const clipHas = (c, pid) => c.pids.includes(pid) || c.ast === pid;
+const clipInCat = (c, k) => c.cat === k || (k === 'ast' && c.cat === 'gol' && !!c.ast);   /* il gol con l'assist vale anche come assist */
+const CLIP_ORD = Object.keys(CLIP_CATS);
+/* dalla gara più recente; nella stessa gara per categoria e poi in ordine di aggiunta */
+function clipsSorted(L){
+  const ord = new Map(STATS.matches.map((m, i) => [m.id, i]));
+  return L.sort((a, b) => ((ord.has(b.mid) ? ord.get(b.mid) : -1) - (ord.has(a.mid) ? ord.get(a.mid) : -1)) || (CLIP_ORD.indexOf(a.cat) - CLIP_ORD.indexOf(b.cat)) || (a.at - b.at));
+}
+const namesTxt = ids => { const n = ids.map(p => pname(p)); return n.length > 1 ? n.slice(0, -1).join(', ') + ' e ' + n[n.length - 1] : (n[0] || ''); };
+function clipTitle(c){
+  if(c.t) return c.t;
+  const C = CLIP_CATS[c.cat], who = namesTxt(c.pids.filter(p => store.players[p] || p));
+  return (who ? C.one + who : (c.cat === 'az' ? 'Azione da ricordare' : C.l)) + (c.cat === 'gol' && c.ast ? ` (assist di ${pname(c.ast)})` : '');
+}
+function clipCardHTML(c, day = true){
+  const C = CLIP_CATS[c.cat], m = store.matches[c.mid];
+  return `<button type="button" class="clp" data-action="clip-open" data-cid="${c.id}" aria-label="${esc(C.l)}: ${esc(clipTitle(c))}${m ? `, giornata ${num(m.day)}` : ''}"><span class="clp-th"><img src="https://i.ytimg.com/vi/${c.yt}/mqdefault.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()"><span class="clp-cat">${C.i} ${C.l}</span><span class="clp-pl" aria-hidden="true">▶</span></span><span class="clp-t">${esc(clipTitle(c))}</span>${day && m ? `<small>Giornata ${num(m.day)}</small>` : ''}</button>`;
+}
+/* Resoconto: sotto il tasto Highlights. Senza clip lo vede solo l'admin, come tasto per aggiungerne */
+function clipsMatchHTML(m){
+  if(m.status === 'scheduled') return '';
+  const L = clipsSorted(clipList().filter(c => c.mid === m.id));
+  const add = lbl => ui.admin ? `<button type="button" class="btn sm" data-action="clip-new" data-mid="${m.id}" aria-label="Aggiungi una clip">${lbl}</button>` : '';
+  if(!L.length) return ui.admin ? `<div class="clp-add">${add('🎬 ＋ Aggiungi clip')}</div>` : '';
+  return `<section class="clp-sec" aria-label="Clip della partita"><div class="clp-hd"><h3>🎬 Clip <small>${L.length}</small></h3>${add('＋ Aggiungi')}</div><div class="clp-row">${L.map(c => clipCardHTML(c, false)).join('')}</div></section>`;
+}
+/* Finestra con il video dentro l'app (alla chiusura il video si toglie e si ferma) */
+function openClip(cid){
+  const c = clipGet(cid); if(!c) return;
+  const C = CLIP_CATS[c.cat], m = store.matches[c.mid];
+  const who = [...c.pids.map(p => [p, '']), ...(c.ast ? [[c.ast, 'assist']] : [])].map(([p, r]) => `<span>${avatar(store.players[p] || { name:pname(p) }, 'xs')}${esc(pname(p))}${r ? ` <em>${r}</em>` : ''}</span>`).join('');
+  $('#clip-body').innerHTML = `<div class="clip-v${c.sh ? ' sh' : ''}"><iframe src="https://www.youtube-nocookie.com/embed/${c.yt}?autoplay=1&amp;playsinline=1&amp;rel=0" title="${esc(clipTitle(c))}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+    <div class="clip-info"><span class="clp-cat">${C.i} ${C.l}</span><h3>${esc(clipTitle(c))}</h3>${m ? `<p class="mu sm" style="margin:0">Giornata ${num(m.day)}${m.date ? ' · ' + fmtDate(m.date) : ''}</p>` : ''}${who ? `<div class="clip-who">${who}</div>` : ''}</div>
+    <div class="clip-act">${ui.admin ? `<button type="button" class="btn sm" data-action="clip-edit" data-cid="${cid}">✏️ Modifica</button><button type="button" class="btn sm danger" data-action="clip-del" data-cid="${cid}">Elimina</button>` : ''}<a class="btn sm" href="${ytUrl(c.yt)}" target="_blank" rel="noopener noreferrer">Apri su YouTube</a><button type="button" class="btn sm ghost" data-close>Chiudi</button></div>`;
+  openModal('#m-clip');
+}
+/* Modulo dell'admin: giocatori della gara divisi per squadra (più quelli già scelti che non sono più nella gara) */
+function clipPeople(mid, extra){
+  const m = store.matches[mid], E = m ? effEntries(m) : { white:[], black:[] };
+  const team = { white:E.white.map(e => e.pid).filter(p => store.players[p]), black:E.black.map(e => e.pid).filter(p => store.players[p]) };
+  const seen = new Set([...team.white, ...team.black]);
+  return { team, others:[...new Set(extra)].filter(p => p && !seen.has(p) && store.players[p]) };
+}
+function openClipForm(mid, cid){
+  if(!ui.admin) return;
+  const c = cid ? clipGet(cid) : null;
+  if(cid ? !c : !store.matches[mid]) return;
+  ui.clipF = { id:cid || null, mid:c ? c.mid : mid, cat:c ? c.cat : 'gol', pids:c ? [...c.pids] : [], ast:c ? c.ast : '' };
+  $('#clf-t').textContent = c ? 'Modifica clip' : 'Aggiungi clip';
+  $('#cl-yt').value = c ? (c.sh ? 'https://www.youtube.com/shorts/' + c.yt : ytUrl(c.yt)) : '';
+  $('#cl-t').value = c ? c.t : '';
+  paintClipForm(); openModal('#m-clipf'); setTimeout(() => $('#cl-yt').focus(), 80);
+}
+function paintClipForm(focus){
+  const F = ui.clipF; if(!F) return;
+  const C = CLIP_CATS[F.cat], P = clipPeople(F.mid, [...F.pids, F.ast]);
+  const chip = (attr, pid, on) => `<button type="button" ${attr}="${pid}" aria-pressed="${on}">${avatar(store.players[pid], 'xs')}${esc(pname(pid))}</button>`;
+  const group = (attr, isOn) => [['white', 'Bianchi'], ['black', 'Neri']].map(([T, l]) => P.team[T].length ? `<span class="tm">${l}</span>${P.team[T].map(pid => chip(attr, pid, isOn(pid))).join('')}` : '').join('')
+    + (P.others.length ? `<span class="tm">Altri</span>${P.others.map(pid => chip(attr, pid, isOn(pid))).join('')}` : '');
+  $('#clf-dyn').innerHTML = `<span class="clf-l">Categoria</span><div class="clf-ch cats" role="group" aria-label="Categoria">${Object.entries(CLIP_CATS).map(([k, X]) => `<button type="button" data-clcat="${k}" aria-pressed="${F.cat === k}">${X.i} ${X.l}</button>`).join('')}</div>
+    <span class="clf-l">${C.who}${F.cat === 'az' ? ' (facoltativo)' : ''}</span><div class="clf-ch" role="group" aria-label="${C.who}">${group('data-clp', pid => F.pids.includes(pid))}</div>
+    ${F.cat === 'gol' ? `<span class="clf-l">Assist (facoltativo): la clip vale anche come assist di chi l’ha fatto</span><div class="clf-ch" role="group" aria-label="Assist"><button type="button" class="none" data-cla="" aria-pressed="${!F.ast}">Nessuno</button>${group('data-cla', pid => F.ast === pid)}</div>` : ''}`;
+  if(focus) $('#clf-dyn').querySelector(`[${focus[0]}="${focus[1]}"]`)?.focus();
+}
+async function saveClip(){
+  const F = ui.clipF; if(!F || !requireAdmin()) return;
+  const raw = $('#cl-yt').value.trim(), yt = ytId(raw);
+  if(!yt){ toast(yt === '' ? 'Incolla il link della clip' : 'Il link non è un video di YouTube: su YouTube tocca «Condividi» e poi «Copia link»', 'err'); $('#cl-yt').focus(); return; }
+  if(F.cat !== 'az' && !F.pids.length){ toast(`${CLIP_CATS[F.cat].who}? Scegli almeno un giocatore`, 'warn'); return; }
+  const old = F.id ? clipGet(F.id) : null, t = $('#cl-t').value.trim().slice(0, 80);
+  const sh = /\/shorts\//i.test(raw) || (old && old.yt === yt && old.sh) ? 1 : 0;
+  const val = { yt, cat:F.cat, mid:F.mid, pids:F.pids, ...(F.cat === 'gol' && F.ast ? { ast:F.ast } : {}), ...(t ? { t } : {}), ...(sh ? { sh:1 } : {}), at:(old && old.at) || Date.now() };
+  const id = F.id || newId();
+  closeModal('#m-clipf');
+  await commit({ [`clips/${id}`]: val }, F.id ? 'Clip aggiornata' : 'Clip aggiunta');
+}
+async function deleteClip(cid){
+  if(!requireAdmin() || !store.clips[cid]) return;
+  closeModal('#m-clip');
+  const ok = await confirmDlg('Eliminare la clip?', 'Sparisce dall’app per tutti. Il video su YouTube resta dov’è.', 'Elimina', true); if(!ok) return;
+  await commit({ [`clips/${cid}`]: null }, 'Clip eliminata');
+}
 /* Esportazioni: stessi pulsanti sotto Resoconto e Formazioni */
 function mediaBtns(m){
   const pre = m.status === 'scheduled';
@@ -4841,6 +4995,7 @@ function matchDetailHTML(id){
     <div class="hero-meta"><span class="tag">Giornata ${num(m.day)}</span>${m.date ? `<span>${fmtDate(m.date)}</span>` : ''}${matchLen(m) ? `<span>Durata ${matchLen(m)}’</span>` : ''}${SURF[m.surf] ? `<span>${SURF[m.surf]}</span>` : ''}<span class="sum">${starters(m, 'white').length} contro ${starters(m, 'black').length}</span></div>
     ${boardHTML(sc)}
     ${ytBtnHTML(m)}
+    ${clipsMatchHTML(m)}
     ${scorersHTML(m)}
     ${cambiHTML(m)}
     ${mvp}${awards}${voteBoxHTML(m)}${rateBoxHTML(m)}
@@ -8309,6 +8464,7 @@ function renderAdmin(){
     ${ratingsIssue && feat('ratings') ? `<div class="warnline">${ratingsIssue.kind === 'read'
       ? `Il database non permette di leggere «${esc(ratingsIssue.path)}». Per il voto ai compagni aggiungi nelle regole di Firebase i percorsi “ratings” e “ratingsDone” (lettura e scrittura per tutti i dispositivi).`
       : `Il database ha rifiutato la scrittura di un voto ai compagni (percorso «${esc(ratingsIssue.path)}»). Nelle regole di Firebase servono ratings/$gara/$rid e ratingsDone/$gara/$pid con scrittura consentita a tutti i dispositivi.`}</div>` : ''}
+    ${clipsIssue ? `<div class="warnline">Il database non permette di leggere «clips». Per le clip aggiungi nelle regole di Firebase il percorso “clips” (lettura e scrittura per tutti i dispositivi).</div>` : ''}
     ${casinoIssue && feat('casino') ? `<div class="warnline">Il database non permette di leggere «casino». Per il CASiNO aggiungi nelle regole di Firebase il percorso “casino” (lettura e scrittura per tutti i dispositivi).</div>` : ''}
     ${!store.settings?.pin ? `<div class="warnline">Stai usando il PIN predefinito ${DEFAULT_PIN}: cambialo prima di condividere il link. <button type="button" class="btn sm" data-action="change-pin">Cambia PIN</button></div>` : ''}
     <div class="glass db-info"><span>Archivio: <b>${mode}</b></span><span>Giocatori: <b>${STATS.list.length}</b></span><span>Gare: <b>${STATS.matches.length}</b></span><span>Versione: <b>v${APP_VERSION}</b></span></div>
@@ -9022,6 +9178,7 @@ async function deleteMatch(id){
   ui.matchId = null;
   /* Con la gara spariscono anche mercati, scommesse, scelte dei monti e sfide (sempre, anche a CASiNO spento: si toglie, non si crea) */
   const up = { [`matches/${id}`]: null, [`votes/${id}`]: null, [`ratings/${id}`]: null, [`ratingsDone/${id}`]: null };
+  for(const [cid, c] of Object.entries(store.clips || {})) if(c.mid === id) up[`clips/${cid}`] = null;   /* le clip della gara */
   for(const k of ['markets', 'bets', 'pools', 'duels']) if(store.casino && store.casino[k] && store.casino[k][id]) up[`casino/${k}/${id}`] = null;
   commit(up, 'Gara eliminata');
 }
@@ -9183,7 +9340,7 @@ async function backupAll(){
   backing = true;
   toast('Backup in corso…');
   const data = {}, failed = [];
-  const PATHS = ['players','matches','settings','votes','photos','ratings','ratingsDone','profileReq','casino','messages','plqPick','lineupProps'];
+  const PATHS = ['players','matches','settings','votes','photos','ratings','ratingsDone','profileReq','casino','messages','plqPick','lineupProps','clips'];
   for(const path of PATHS){
     try{ data[path] = (await db.ref(path).once('value')).val(); }
     catch(e){ console.warn('backup', path, e); failed.push(path); }
@@ -9311,6 +9468,8 @@ function closeModal(sel, force){
   if(sel === '#m-fig'){ openFigPid = null; figPlq = null; figTurned = false; }
   if(sel === '#m-match') ED = null;
   if(sel === '#m-plq') plqOpen = null;
+  if(sel === '#m-clip') $('#clip-body').innerHTML = '';   /* toglie il video: si ferma */
+  if(sel === '#m-clipf') ui.clipF = null;
   if(sel === '#m-walk') clearTimeout(walkT);
   if(sel === '#m-confirm' && confirmResolve){ const r = confirmResolve; confirmResolve = null; r(false); }
   if(sel === '#m-ask' && askResolve){ const r = askResolve; askResolve = null; r(null); }
@@ -9491,6 +9650,9 @@ document.addEventListener('click', async e => {
   }
   if(d.metab){ ui.meTab = ME_TABS.some(x => x[0] === d.metab) ? d.metab : 'pro'; renderMe(); const el = $('#me'); if(el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ block:'start', behavior:'instant' }); return; }
   if(d.fview){ ui.fView = d.fview === 'list' ? 'list' : 'pitch'; try{ localStorage.setItem('cmb_fView', ui.fView); }catch(e){} ui.swapSel = null; ui.swapMode = false; paintMatch(); return; }
+  if(d.clcat){ const F = ui.clipF; if(F && CLIP_CATS[d.clcat]){ F.cat = d.clcat; if(F.cat !== 'gol') F.ast = ''; paintClipForm(['data-clcat', d.clcat]); } return; }
+  if(d.clp){ const F = ui.clipF; if(F){ F.pids = F.pids.includes(d.clp) ? F.pids.filter(p => p !== d.clp) : [...F.pids, d.clp]; if(F.ast === d.clp) F.ast = ''; paintClipForm(['data-clp', d.clp]); } return; }
+  if('cla' in d){ const F = ui.clipF; if(F){ F.ast = d.cla && F.ast !== d.cla ? d.cla : ''; if(F.ast) F.pids = F.pids.filter(p => p !== F.ast); paintClipForm(['data-cla', d.cla]); } return; }
   if(d.mtab){ ui.mTab = d.mtab === 'form' ? 'form' : 'rep'; ui.swapSel = null; if(ui.mTab === 'rep') ui.swapMode = false; paintMatch(); return; }
   if(d.plv){ openPlq(d.plv); return; }
   if(d.rcv){ openRecCard(d.rcv); return; }
@@ -9542,6 +9704,11 @@ document.addEventListener('click', async e => {
     case 'new-sched': if(requireAdmin()) openMatchEditor(null, 'scheduled'); break;
     case 'edit-match': if(requireAdmin()) openMatchEditor(d.mid); break;
     case 'del-match': if(requireAdmin()) deleteMatch(d.mid); break;
+    case 'clip-open': openClip(d.cid); break;
+    case 'clip-new': if(requireAdmin()) openClipForm(d.mid); break;
+    case 'clip-edit': if(requireAdmin()){ closeModal('#m-clip'); openClipForm(null, d.cid); } break;
+    case 'clip-del': deleteClip(d.cid); break;
+    case 'clip-save': saveClip(); break;
     case 'export-match': exportMatch(d.mid, t); break;
     case 'share-fig': exportFigurina(d.pid, t); break;
     case 'fig-turn': figTurn(); break;
