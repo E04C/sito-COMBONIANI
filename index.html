@@ -140,13 +140,14 @@ main{max-width:1440px;margin:0 auto;padding:18px max(14px,env(safe-area-inset-le
 .mm-meta .ed-yt{flex-basis:100%}
 .mm-meta .ed-yt .field{width:100%}
 /* Clip della stagione (1.13.0): fila nel Resoconto, raccolta in Partite, finestra con il video e modulo dell'admin */
-.clp-sec{margin:0 0 16px}
-.clp-add{display:flex;justify-content:center;margin:-4px 0 14px}
-.clp-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 8px}
-.clp-hd h3{margin:0;font:italic 800 20px/1.1 var(--disp);white-space:nowrap}
-.clp-hd h3 small{font:700 13px var(--body);color:var(--mu);margin-left:4px}
-.clp-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x proximity}
-.clp-row .clp{flex:0 0 min(64%,240px);scroll-snap-align:start}
+.clp-gal{padding:14px}
+.clp-flt{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none}
+.clp-flt button{flex:none;min-height:38px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:rgba(249,115,22,.06);color:var(--tx);font:700 13.5px var(--body);white-space:nowrap;cursor:pointer}
+.clp-flt button small{color:var(--mu);font-weight:700;margin-left:2px}
+.clp-flt button.on{background:var(--or);border-color:var(--or);color:#1a0a00}
+.clp-flt button.on small{color:#1a0a00}
+.clp-gal>select{width:100%;max-width:300px;margin-bottom:14px}
+.clp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px 12px}
 .clp{display:flex;flex-direction:column;gap:4px;min-width:0;padding:0;border:0;background:none;color:inherit;text-align:left;cursor:pointer;font:inherit}
 .clp-th{position:relative;display:block;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#11151c;border:1px solid var(--hair)}
 .clp-th img{width:100%;height:100%;object-fit:cover;display:block}
@@ -171,7 +172,6 @@ main{max-width:1440px;margin:0 auto;padding:18px max(14px,env(safe-area-inset-le
 .clf-ch button{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 12px 0 5px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--tx);font:700 13.5px var(--body);cursor:pointer}
 .clf-ch.cats button,.clf-ch button.none{padding:0 12px}
 .clf-ch button[aria-pressed="true"]{background:var(--or);border-color:var(--or);color:#1a0a00}
-.clf-ch .tm{width:100%;font:800 11.5px var(--body);color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-top:4px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:rgba(249,115,22,.08);color:var(--tx);font:700 14px var(--body);text-decoration:none;transition:transform .12s var(--ease),background .2s,border-color .2s,box-shadow .2s;touch-action:manipulation}
 .btn:hover{border-color:var(--line-strong)}
 .btn:active{transform:scale(.96)}
@@ -2151,6 +2151,7 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
   <button data-go="players"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l4 4v10l-4 4H8l-4-4V7z"/><circle cx="12" cy="10" r="3"/><path d="M7.5 18c1-2.3 2.7-3.3 4.5-3.3s3.5 1 4.5 3.3"/></svg>Giocatori</button>
   <button data-go="matches"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5l3.8 2.8-1.4 4.4H9.6l-1.4-4.4z"/><path d="M12 3v4.5M20.6 9.5l-4.8.8M17.5 19.5l-3.1-4.8M6.5 19.5l3.1-4.8M3.4 9.5l4.8.8"/></svg>Partite</button>
   <button data-go="trophies"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/><path d="M12 14v3M8.5 20.5h7M9.5 17.5h5l.5 3h-6z"/></svg>Trofei</button>
+  <button data-go="clips"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10.5 9.5v5l4-2.5z"/></svg>Clip</button>
   <button data-go="casino" id="nav-casino"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v5M12 16v5M3 12h5M16 12h5"/></svg>CASiNO</button>
   <button data-go="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.8-4 3.8-6 7.5-6s6.7 2 7.5 6"/></svg>Io</button>
 </nav>
@@ -2199,6 +2200,13 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
  <section id="view-me" class="view" aria-label="Il mio giocatore" hidden><div id="me"></div></section>
 
   <section id="view-trophies" class="view" aria-label="Trofei e primati" hidden><div id="troph"></div></section>
+  <section id="view-clips" class="view" aria-label="Clip" hidden>
+    <div class="toolbar">
+      <h2 class="vtitle">Clip</h2>
+      <button class="btn primary admin-only" data-action="clip-new">＋ Aggiungi clip</button>
+    </div>
+    <div id="clipsv"></div>
+  </section>
 
   <section id="view-casino" class="view" aria-label="CASiNO" hidden><div id="casino"></div></section>
 
@@ -2343,6 +2351,8 @@ body.theme-casino .cs-tab{background:rgba(255,255,255,.08)}
   <label class="clf-l" for="cl-yt">Link della clip su YouTube</label>
   <input id="cl-yt" class="field" type="url" inputmode="url" autocomplete="off" placeholder="Incolla il link (Condividi → Copia link)" style="width:100%">
   <div id="clf-dyn"></div>
+  <label class="clf-l" for="cl-mid">Giornata (facoltativa)</label>
+  <select id="cl-mid" class="field" style="width:100%"></select>
   <label class="clf-l" for="cl-t">Titolo (facoltativo)</label>
   <input id="cl-t" class="field" type="text" maxlength="80" autocomplete="off" placeholder="Es. Tunnel e gol all’incrocio" style="width:100%">
   <div class="clip-act"><button type="button" class="btn ghost" data-close>Annulla</button><button type="button" class="btn primary" data-action="clip-save">Salva clip</button></div>
@@ -2695,6 +2705,7 @@ function adminRemember(pin){ try{ sessionStorage.setItem('cmb_admin', '1'); loca
 function adminForget(){ try{ sessionStorage.removeItem('cmb_admin'); localStorage.removeItem('cmb_admin_until'); localStorage.removeItem('cmb_admin_sig'); }catch(e){} }
 const ui = {
   view:'dashboard',
+  clipFlt:{ cat:'', pid:'' },        /* filtri della sezione Clip */
   clipF:null,   /* modulo della clip aperto (admin): { id, mid, cat, pids, ast } */
   admOpen:{ fx:false, gs:false },   /* pannello admin: «Funzioni» e «Gestione admin» aperti o chiusi */
   fView:(() => { try{ return localStorage.getItem('cmb_fView') === 'list' ? 'list' : 'pitch'; }catch(e){ return 'pitch'; } })(),
@@ -3919,7 +3930,7 @@ function render(){
   /* ogni sezione si disegna per conto suo: un dato sbagliato in una non deve fermare le altre (né voti e finestre obbligatorie) */
   const sx = fn => { try{ fn(); }catch(e){ console.error('render', e); } };
   /* Partite e Io si disegnano solo se sono a schermo, altrimenti quando ci entri (avvio più leggero) */
-  sx(renderDashboard); sx(renderPlayers); lazyView('matches', sx); lazyView('me', sx); sx(refreshAcctProf); if(ui.view === 'trophies') sx(renderTrophies); if(ui.view === 'casino') sx(renderCasino); if(ui.view === 'ballon') sx(renderBallon); sx(renderAdmin);
+  sx(renderDashboard); sx(renderPlayers); lazyView('matches', sx); lazyView('me', sx); sx(refreshAcctProf); if(ui.view === 'trophies') sx(renderTrophies); if(ui.view === 'clips') sx(renderClips); if(ui.view === 'casino') sx(renderCasino); if(ui.view === 'ballon') sx(renderBallon); sx(renderAdmin);
   if(ui.duel && $('#m-duel').classList.contains('open')) renderDuel();
   if(openFigPid && Date.now() > figAnimUntil) renderFigurina();   // non interrompe il flip se arrivano dati durante l'animazione
   if(ED && $('#m-match').classList.contains('open')) renderEditor();
@@ -4572,72 +4583,68 @@ function scorersHTML(m){
 }
 /* Tasto degli highlights su YouTube: solo nelle gare giocate che hanno il video (si apre l'app o il sito di YouTube) */
 const ytBtnHTML = m => m.status !== 'scheduled' && m.yt && YT_ID.test(m.yt) ? `<div class="yt-wrap"><a class="btn yt-btn" href="${ytUrl(m.yt)}" target="_blank" rel="noopener noreferrer" aria-label="Guarda gli highlights della partita su YouTube"><svg viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="5" fill="#fff"/><path d="M11.2 5.6v8.8l7.6-4.4z" fill="#e00000"/></svg>Highlights</a></div>` : '';
-/* ---------- Clip della stagione (1.13.0) ---------- */
+/* ---------- Clip della stagione (1.13.0): sezione «Clip» tutta sua, indipendente dalle partite ---------- */
 /* sempre passando dalla pulizia: anche le clip appena scritte in locale hanno tutti i campi */
 const clipList = () => Object.entries(cleanClips(store.clips)).map(([id, c]) => ({ id, ...c }));
 const clipGet = cid => { const c = cleanClips({ [cid]: (store.clips || {})[cid] })[cid]; return c ? { id:cid, ...c } : null; };
 const clipHas = (c, pid) => c.pids.includes(pid) || c.ast === pid;
 const clipInCat = (c, k) => c.cat === k || (k === 'ast' && c.cat === 'gol' && !!c.ast);   /* il gol con l'assist vale anche come assist */
-const CLIP_ORD = Object.keys(CLIP_CATS);
-/* dalla gara più recente; nella stessa gara per categoria e poi in ordine di aggiunta */
-function clipsSorted(L){
-  const ord = new Map(STATS.matches.map((m, i) => [m.id, i]));
-  return L.sort((a, b) => ((ord.has(b.mid) ? ord.get(b.mid) : -1) - (ord.has(a.mid) ? ord.get(a.mid) : -1)) || (CLIP_ORD.indexOf(a.cat) - CLIP_ORD.indexOf(b.cat)) || (a.at - b.at));
-}
+const clipsSorted = L => L.sort((a, b) => b.at - a.at);   /* dalla più recente */
 const namesTxt = ids => { const n = ids.map(p => pname(p)); return n.length > 1 ? n.slice(0, -1).join(', ') + ' e ' + n[n.length - 1] : (n[0] || ''); };
 function clipTitle(c){
   if(c.t) return c.t;
-  const C = CLIP_CATS[c.cat], who = namesTxt(c.pids.filter(p => store.players[p] || p));
+  const C = CLIP_CATS[c.cat], who = namesTxt(c.pids);
   return (who ? C.one + who : (c.cat === 'az' ? 'Azione da ricordare' : C.l)) + (c.cat === 'gol' && c.ast ? ` (assist di ${pname(c.ast)})` : '');
 }
-function clipCardHTML(c, day = true){
-  const C = CLIP_CATS[c.cat], m = store.matches[c.mid];
-  return `<button type="button" class="clp" data-action="clip-open" data-cid="${c.id}" aria-label="${esc(C.l)}: ${esc(clipTitle(c))}${m ? `, giornata ${num(m.day)}` : ''}"><span class="clp-th"><img src="https://i.ytimg.com/vi/${c.yt}/mqdefault.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()"><span class="clp-cat">${C.i} ${C.l}</span><span class="clp-pl" aria-hidden="true">▶</span></span><span class="clp-t">${esc(clipTitle(c))}</span>${day && m ? `<small>Giornata ${num(m.day)}</small>` : ''}</button>`;
+function clipCardHTML(c){
+  const C = CLIP_CATS[c.cat], m = c.mid && store.matches[c.mid];
+  return `<button type="button" class="clp" data-action="clip-open" data-cid="${c.id}" aria-label="${esc(C.l)}: ${esc(clipTitle(c))}${m ? `, giornata ${num(m.day)}` : ''}"><span class="clp-th"><img src="https://i.ytimg.com/vi/${c.yt}/mqdefault.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()"><span class="clp-cat">${C.i} ${C.l}</span><span class="clp-pl" aria-hidden="true">▶</span></span><span class="clp-t">${esc(clipTitle(c))}</span>${m ? `<small>Giornata ${num(m.day)}</small>` : ''}</button>`;
 }
-/* Resoconto: sotto il tasto Highlights. Senza clip lo vede solo l'admin, come tasto per aggiungerne */
-function clipsMatchHTML(m){
-  if(m.status === 'scheduled') return '';
-  const L = clipsSorted(clipList().filter(c => c.mid === m.id));
-  const add = lbl => ui.admin ? `<button type="button" class="btn sm" data-action="clip-new" data-mid="${m.id}" aria-label="Aggiungi una clip">${lbl}</button>` : '';
-  if(!L.length) return ui.admin ? `<div class="clp-add">${add('🎬 ＋ Aggiungi clip')}</div>` : '';
-  return `<section class="clp-sec" aria-label="Clip della partita"><div class="clp-hd"><h3>🎬 Clip <small>${L.length}</small></h3>${add('＋ Aggiungi')}</div><div class="clp-row">${L.map(c => clipCardHTML(c, false)).join('')}</div></section>`;
+/* Sezione Clip: filtri per categoria e per giocatore, poi la griglia */
+function clipsGalleryHTML(){
+  const all = clipsSorted(clipList()), f = ui.clipFlt;
+  if(!all.length) return `<div class="glass empty"><h3>Ancora nessuna clip</h3><p>Qui arriveranno gol, assist, parate, papere e azioni da ricordare.${ui.admin ? ' Aggiungile con «＋ Aggiungi clip».' : ''}</p></div>`;
+  if(f.pid && !all.some(c => clipHas(c, f.pid))) f.pid = '';
+  const L = all.filter(c => (!f.cat || clipInCat(c, f.cat)) && (!f.pid || clipHas(c, f.pid)));
+  const n = k => all.filter(c => (!f.pid || clipHas(c, f.pid)) && (!k || clipInCat(c, k))).length;
+  const chips = [['', 'Tutte'], ...Object.entries(CLIP_CATS).map(([k, C]) => [k, `${C.i} ${C.l}`])]
+    .map(([k, l]) => `<button type="button" class="${f.cat === k ? 'on' : ''}" data-clcatf="${k}" aria-pressed="${f.cat === k}">${l} <small>${n(k)}</small></button>`).join('');
+  const people = [...new Set(all.flatMap(c => [...c.pids, c.ast]).filter(p => p && store.players[p]))].sort((a, b) => pname(a).localeCompare(pname(b), 'it'));
+  return `<div class="glass clp-gal"><div class="clp-flt" role="group" aria-label="Categoria">${chips}</div>
+    <select id="clp-pl" class="field" aria-label="Giocatore"><option value="">Tutti i giocatori</option>${people.map(p => `<option value="${p}"${f.pid === p ? ' selected' : ''}>${esc(pname(p))}</option>`).join('')}</select>
+    ${L.length ? `<div class="clp-grid">${L.map(clipCardHTML).join('')}</div>` : '<p class="mu sm">Nessuna clip con questi filtri.</p>'}</div>`;
 }
+function renderClips(){ const el = $('#clipsv'); if(el) el.innerHTML = clipsGalleryHTML(); }
 /* Finestra con il video dentro l'app (alla chiusura il video si toglie e si ferma) */
 function openClip(cid){
   const c = clipGet(cid); if(!c) return;
-  const C = CLIP_CATS[c.cat], m = store.matches[c.mid];
+  const C = CLIP_CATS[c.cat], m = c.mid && store.matches[c.mid];
   const who = [...c.pids.map(p => [p, '']), ...(c.ast ? [[c.ast, 'assist']] : [])].map(([p, r]) => `<span>${avatar(store.players[p] || { name:pname(p) }, 'xs')}${esc(pname(p))}${r ? ` <em>${r}</em>` : ''}</span>`).join('');
   $('#clip-body').innerHTML = `<div class="clip-v${c.sh ? ' sh' : ''}"><iframe src="https://www.youtube-nocookie.com/embed/${c.yt}?autoplay=1&amp;playsinline=1&amp;rel=0" title="${esc(clipTitle(c))}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
     <div class="clip-info"><span class="clp-cat">${C.i} ${C.l}</span><h3>${esc(clipTitle(c))}</h3>${m ? `<p class="mu sm" style="margin:0">Giornata ${num(m.day)}${m.date ? ' · ' + fmtDate(m.date) : ''}</p>` : ''}${who ? `<div class="clip-who">${who}</div>` : ''}</div>
     <div class="clip-act">${ui.admin ? `<button type="button" class="btn sm" data-action="clip-edit" data-cid="${cid}">✏️ Modifica</button><button type="button" class="btn sm danger" data-action="clip-del" data-cid="${cid}">Elimina</button>` : ''}<a class="btn sm" href="${ytUrl(c.yt)}" target="_blank" rel="noopener noreferrer">Apri su YouTube</a><button type="button" class="btn sm ghost" data-close>Chiudi</button></div>`;
   openModal('#m-clip');
 }
-/* Modulo dell'admin: giocatori della gara divisi per squadra (più quelli già scelti che non sono più nella gara) */
-function clipPeople(mid, extra){
-  const m = store.matches[mid], E = m ? effEntries(m) : { white:[], black:[] };
-  const team = { white:E.white.map(e => e.pid).filter(p => store.players[p]), black:E.black.map(e => e.pid).filter(p => store.players[p]) };
-  const seen = new Set([...team.white, ...team.black]);
-  return { team, others:[...new Set(extra)].filter(p => p && !seen.has(p) && store.players[p]) };
-}
-function openClipForm(mid, cid){
+/* Modulo dell'admin: tutta la rosa in ordine di nome; la giornata è facoltativa */
+const clipRoster = () => Object.keys(store.players).sort((a, b) => pname(a).localeCompare(pname(b), 'it'));
+function openClipForm(cid){
   if(!ui.admin) return;
-  const c = cid ? clipGet(cid) : null;
-  if(cid ? !c : !store.matches[mid]) return;
-  ui.clipF = { id:cid || null, mid:c ? c.mid : mid, cat:c ? c.cat : 'gol', pids:c ? [...c.pids] : [], ast:c ? c.ast : '' };
+  const c = cid ? clipGet(cid) : null; if(cid && !c) return;
+  ui.clipF = { id:cid || null, cat:c ? c.cat : 'gol', pids:c ? [...c.pids] : [], ast:c ? c.ast : '' };
   $('#clf-t').textContent = c ? 'Modifica clip' : 'Aggiungi clip';
   $('#cl-yt').value = c ? (c.sh ? 'https://www.youtube.com/shorts/' + c.yt : ytUrl(c.yt)) : '';
   $('#cl-t').value = c ? c.t : '';
+  $('#cl-mid').innerHTML = '<option value="">Nessuna</option>' + [...STATS.matches].reverse().map(m => `<option value="${m.id}">Giornata ${num(m.day)}${m.date ? ' · ' + fmtDate(m.date) : ''}</option>`).join('');
+  $('#cl-mid').value = c && c.mid && store.matches[c.mid] ? c.mid : '';
   paintClipForm(); openModal('#m-clipf'); setTimeout(() => $('#cl-yt').focus(), 80);
 }
 function paintClipForm(focus){
   const F = ui.clipF; if(!F) return;
-  const C = CLIP_CATS[F.cat], P = clipPeople(F.mid, [...F.pids, F.ast]);
+  const C = CLIP_CATS[F.cat], R = clipRoster();
   const chip = (attr, pid, on) => `<button type="button" ${attr}="${pid}" aria-pressed="${on}">${avatar(store.players[pid], 'xs')}${esc(pname(pid))}</button>`;
-  const group = (attr, isOn) => [['white', 'Bianchi'], ['black', 'Neri']].map(([T, l]) => P.team[T].length ? `<span class="tm">${l}</span>${P.team[T].map(pid => chip(attr, pid, isOn(pid))).join('')}` : '').join('')
-    + (P.others.length ? `<span class="tm">Altri</span>${P.others.map(pid => chip(attr, pid, isOn(pid))).join('')}` : '');
   $('#clf-dyn').innerHTML = `<span class="clf-l">Categoria</span><div class="clf-ch cats" role="group" aria-label="Categoria">${Object.entries(CLIP_CATS).map(([k, X]) => `<button type="button" data-clcat="${k}" aria-pressed="${F.cat === k}">${X.i} ${X.l}</button>`).join('')}</div>
-    <span class="clf-l">${C.who}${F.cat === 'az' ? ' (facoltativo)' : ''}</span><div class="clf-ch" role="group" aria-label="${C.who}">${group('data-clp', pid => F.pids.includes(pid))}</div>
-    ${F.cat === 'gol' ? `<span class="clf-l">Assist (facoltativo): la clip vale anche come assist di chi l’ha fatto</span><div class="clf-ch" role="group" aria-label="Assist"><button type="button" class="none" data-cla="" aria-pressed="${!F.ast}">Nessuno</button>${group('data-cla', pid => F.ast === pid)}</div>` : ''}`;
+    <span class="clf-l">${C.who}${F.cat === 'az' ? ' (facoltativo)' : ''}</span><div class="clf-ch" role="group" aria-label="${C.who}">${R.map(pid => chip('data-clp', pid, F.pids.includes(pid))).join('')}</div>
+    ${F.cat === 'gol' ? `<span class="clf-l">Assist (facoltativo): la clip vale anche come assist di chi l’ha fatto</span><div class="clf-ch" role="group" aria-label="Assist"><button type="button" class="none" data-cla="" aria-pressed="${!F.ast}">Nessuno</button>${R.map(pid => chip('data-cla', pid, F.ast === pid)).join('')}</div>` : ''}`;
   if(focus) $('#clf-dyn').querySelector(`[${focus[0]}="${focus[1]}"]`)?.focus();
 }
 async function saveClip(){
@@ -4645,9 +4652,9 @@ async function saveClip(){
   const raw = $('#cl-yt').value.trim(), yt = ytId(raw);
   if(!yt){ toast(yt === '' ? 'Incolla il link della clip' : 'Il link non è un video di YouTube: su YouTube tocca «Condividi» e poi «Copia link»', 'err'); $('#cl-yt').focus(); return; }
   if(F.cat !== 'az' && !F.pids.length){ toast(`${CLIP_CATS[F.cat].who}? Scegli almeno un giocatore`, 'warn'); return; }
-  const old = F.id ? clipGet(F.id) : null, t = $('#cl-t').value.trim().slice(0, 80);
+  const old = F.id ? clipGet(F.id) : null, t = $('#cl-t').value.trim().slice(0, 80), mid = store.matches[$('#cl-mid').value] ? $('#cl-mid').value : '';
   const sh = /\/shorts\//i.test(raw) || (old && old.yt === yt && old.sh) ? 1 : 0;
-  const val = { yt, cat:F.cat, mid:F.mid, pids:F.pids, ...(F.cat === 'gol' && F.ast ? { ast:F.ast } : {}), ...(t ? { t } : {}), ...(sh ? { sh:1 } : {}), at:(old && old.at) || Date.now() };
+  const val = { yt, cat:F.cat, pids:F.pids, ...(mid ? { mid } : {}), ...(F.cat === 'gol' && F.ast ? { ast:F.ast } : {}), ...(t ? { t } : {}), ...(sh ? { sh:1 } : {}), at:(old && old.at) || Date.now() };
   const id = F.id || newId();
   closeModal('#m-clipf');
   await commit({ [`clips/${id}`]: val }, F.id ? 'Clip aggiornata' : 'Clip aggiunta');
@@ -4995,7 +5002,6 @@ function matchDetailHTML(id){
     <div class="hero-meta"><span class="tag">Giornata ${num(m.day)}</span>${m.date ? `<span>${fmtDate(m.date)}</span>` : ''}${matchLen(m) ? `<span>Durata ${matchLen(m)}’</span>` : ''}${SURF[m.surf] ? `<span>${SURF[m.surf]}</span>` : ''}<span class="sum">${starters(m, 'white').length} contro ${starters(m, 'black').length}</span></div>
     ${boardHTML(sc)}
     ${ytBtnHTML(m)}
-    ${clipsMatchHTML(m)}
     ${scorersHTML(m)}
     ${cambiHTML(m)}
     ${mvp}${awards}${voteBoxHTML(m)}${rateBoxHTML(m)}
@@ -9178,7 +9184,7 @@ async function deleteMatch(id){
   ui.matchId = null;
   /* Con la gara spariscono anche mercati, scommesse, scelte dei monti e sfide (sempre, anche a CASiNO spento: si toglie, non si crea) */
   const up = { [`matches/${id}`]: null, [`votes/${id}`]: null, [`ratings/${id}`]: null, [`ratingsDone/${id}`]: null };
-  for(const [cid, c] of Object.entries(store.clips || {})) if(c.mid === id) up[`clips/${cid}`] = null;   /* le clip della gara */
+  for(const [cid, c] of Object.entries(store.clips || {})) if(c && c.mid === id) up[`clips/${cid}/mid`] = null;   /* le clip restano, senza giornata */
   for(const k of ['markets', 'bets', 'pools', 'duels']) if(store.casino && store.casino[k] && store.casino[k][id]) up[`casino/${k}/${id}`] = null;
   commit(up, 'Gara eliminata');
 }
@@ -9567,7 +9573,7 @@ function anHTML(){
   const hMax = Math.max(1, ...hours);
   const views = {}, feats = {};
   S.forEach(x => { for(const [k, v] of Object.entries(x.v || {})) views[k] = (views[k] || 0) + num(v); for(const [k, v] of Object.entries(x.f || {})) feats[k] = (feats[k] || 0) + num(v); });
-  const VL = { dashboard:'Classifica', players:'Giocatori', matches:'Partite', me:'Io', trophies:'Trofei', casino:'CASiNO', admin:'Admin' }, FL = { replay:'Replay dei gol', export:'Immagini esportate', vote:'Voti MVP', news:'Novità aperte' };
+  const VL = { dashboard:'Classifica', players:'Giocatori', matches:'Partite', me:'Io', trophies:'Trofei', clips:'Clip', casino:'CASiNO', admin:'Admin' }, FL = { replay:'Replay dei gol', export:'Immagini esportate', vote:'Voti MVP', news:'Novità aperte' };
   const vTot = Object.values(views).reduce((a, b) => a + b, 0) || 1;
   const nm = x => x.pid && store.players[x.pid] ? store.players[x.pid].name : (x.guest ? 'Ospite · ' + x.guest : 'Ospite');
   const fmt = ts => ts ? new Date(num(ts)).toLocaleString('it-IT', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '–';
@@ -9609,6 +9615,7 @@ function go(view){
     const dl = el.querySelector('.me-dlt[data-sig]'); if(dl) try{ localStorage.setItem('cmb_meOvrSeen', dl.dataset.sig); }catch(e){} }
   if(view === 'dashboard') rankShift();
   if(view === 'trophies') renderTrophies();
+  if(view === 'clips') renderClips();
   if(view === 'matches') centerMday();
   paintMeBar();
   if(view === 'casino'){ ui.cAnim = true; ui.cFrom = null; renderCasino(); }
@@ -9653,6 +9660,7 @@ document.addEventListener('click', async e => {
   if(d.clcat){ const F = ui.clipF; if(F && CLIP_CATS[d.clcat]){ F.cat = d.clcat; if(F.cat !== 'gol') F.ast = ''; paintClipForm(['data-clcat', d.clcat]); } return; }
   if(d.clp){ const F = ui.clipF; if(F){ F.pids = F.pids.includes(d.clp) ? F.pids.filter(p => p !== d.clp) : [...F.pids, d.clp]; if(F.ast === d.clp) F.ast = ''; paintClipForm(['data-clp', d.clp]); } return; }
   if('cla' in d){ const F = ui.clipF; if(F){ F.ast = d.cla && F.ast !== d.cla ? d.cla : ''; if(F.ast) F.pids = F.pids.filter(p => p !== F.ast); paintClipForm(['data-cla', d.cla]); } return; }
+  if('clcatf' in d){ ui.clipFlt.cat = CLIP_CATS[d.clcatf] ? d.clcatf : ''; renderClips(); return; }
   if(d.mtab){ ui.mTab = d.mtab === 'form' ? 'form' : 'rep'; ui.swapSel = null; if(ui.mTab === 'rep') ui.swapMode = false; paintMatch(); return; }
   if(d.plv){ openPlq(d.plv); return; }
   if(d.rcv){ openRecCard(d.rcv); return; }
@@ -9705,8 +9713,8 @@ document.addEventListener('click', async e => {
     case 'edit-match': if(requireAdmin()) openMatchEditor(d.mid); break;
     case 'del-match': if(requireAdmin()) deleteMatch(d.mid); break;
     case 'clip-open': openClip(d.cid); break;
-    case 'clip-new': if(requireAdmin()) openClipForm(d.mid); break;
-    case 'clip-edit': if(requireAdmin()){ closeModal('#m-clip'); openClipForm(null, d.cid); } break;
+    case 'clip-new': if(requireAdmin()) openClipForm(); break;
+    case 'clip-edit': if(requireAdmin()){ closeModal('#m-clip'); openClipForm(d.cid); } break;
     case 'clip-del': deleteClip(d.cid); break;
     case 'clip-save': saveClip(); break;
     case 'export-match': exportMatch(d.mid, t); break;
@@ -9914,6 +9922,7 @@ document.addEventListener('change', e => {
   const t = e.target;
   if(t.id === 'duel-b' && ui.duel){ ui.duel.b = t.value; renderDuel(); return; }
   if(t.id === 'psort'){ ui.pSort = t.value; renderPlayers(); return; }
+  if(t.id === 'clp-pl'){ ui.clipFlt.pid = store.players[t.value] ? t.value : ''; renderClips(); return; }
   if(t.id === 'gf-og' && GF){ GF.og = t.checked; if(GF.og) GF.a = ''; renderGoals(); return; }
   if(t.matches('select[data-cmpfm]') && ui.cmp){ ui.cmp.fm[t.dataset.cmpfm] = t.value; paintMatch(); return; }
   if(t.matches('select[data-fm]') && ui.admin && store.matches[t.dataset.mid]) commit({ [`matches/${t.dataset.mid}/${t.dataset.fm}`]: t.value });
