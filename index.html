@@ -171,6 +171,11 @@ main{max-width:1440px;margin:0 auto;padding:18px max(14px,env(safe-area-inset-le
 .clf-ch{display:flex;flex-wrap:wrap;gap:6px}
 .clf-ch button{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 12px 0 5px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--tx);font:700 13.5px var(--body);cursor:pointer}
 .clf-ch.cats button,.clf-ch button.none{padding:0 12px}
+.clf-ch button.on{background:var(--or);border-color:var(--or);color:#1a0a00}
+.clf-ch button .x{margin-left:2px;font-weight:800}
+.clf-q{width:100%;margin-top:4px}
+.clf-res{margin-top:8px}
+.clf-res:empty{display:none}
 .clf-ch button[aria-pressed="true"]{background:var(--or);border-color:var(--or);color:#1a0a00}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:rgba(249,115,22,.08);color:var(--tx);font:700 14px var(--body);text-decoration:none;transition:transform .12s var(--ease),background .2s,border-color .2s,box-shadow .2s;touch-action:manipulation}
 .btn:hover{border-color:var(--line-strong)}
@@ -4371,14 +4376,24 @@ function openClipForm(cid){
   $('#cl-mid').value = c && c.mid && store.matches[c.mid] ? c.mid : '';
   paintClipForm(); openModal('#m-clipf'); setTimeout(() => $('#cl-yt').focus(), 80);
 }
+/* Giocatori della clip: si cercano per nome (come nel registro gara), si vedono solo quelli scelti, con ✕ per toglierli */
 function paintClipForm(focus){
   const F = ui.clipF; if(!F) return;
-  const C = CLIP_CATS[F.cat], R = clipRoster();
-  const chip = (attr, pid, on) => `<button type="button" ${attr}="${pid}" aria-pressed="${on}">${avatar(store.players[pid], 'xs')}${esc(pname(pid))}</button>`;
+  const C = CLIP_CATS[F.cat];
+  const sel = (attr, pid) => `<button type="button" class="on" ${attr}="${pid}" aria-label="Togli ${esc(pname(pid))}">${avatar(store.players[pid] || { name:pname(pid) }, 'xs')}${esc(pname(pid))}<span class="x" aria-hidden="true">✕</span></button>`;
+  const search = (id, box, ph, lbl) => `<input id="${id}" class="field clf-q" type="search" autocomplete="off" placeholder="${ph}" aria-label="${lbl}" aria-controls="${box}"><div class="clf-ch clf-res" id="${box}" aria-live="polite"></div>`;
   $('#clf-dyn').innerHTML = `<span class="clf-l">Categoria</span><div class="clf-ch cats" role="group" aria-label="Categoria">${Object.entries(CLIP_CATS).map(([k, X]) => `<button type="button" data-clcat="${k}" aria-pressed="${F.cat === k}">${X.i} ${X.l}</button>`).join('')}</div>
-    <span class="clf-l">${C.who}${F.cat === 'az' ? ' (facoltativo)' : ''}</span><div class="clf-ch" role="group" aria-label="${C.who}">${R.map(pid => chip('data-clp', pid, F.pids.includes(pid))).join('')}</div>
-    ${F.cat === 'gol' ? `<span class="clf-l">Assist (facoltativo): la clip vale anche come assist di chi l’ha fatto</span><div class="clf-ch" role="group" aria-label="Assist"><button type="button" class="none" data-cla="" aria-pressed="${!F.ast}">Nessuno</button>${R.map(pid => chip('data-cla', pid, F.ast === pid)).join('')}</div>` : ''}`;
-  if(focus) $('#clf-dyn').querySelector(`[${focus[0]}="${focus[1]}"]`)?.focus();
+    <span class="clf-l">${C.who}${F.cat === 'az' ? ' (facoltativo)' : ''}</span>${F.pids.length ? `<div class="clf-ch">${F.pids.map(p => sel('data-clp', p)).join('')}</div>` : ''}
+    ${search('cl-q', 'cl-r', F.pids.length ? 'Aggiungi un altro: scrivi il nome' : 'Scrivi il nome del giocatore', `${C.who}: cerca per nome`)}
+    ${F.cat === 'gol' ? `<span class="clf-l">Assist (facoltativo): la clip vale anche come assist di chi l’ha fatto</span>${F.ast ? `<div class="clf-ch">${sel('data-cla', F.ast)}</div>` : search('cl-qa', 'cl-ra', 'Scrivi il nome di chi ha fatto l’assist', 'Assist: cerca per nome')}` : ''}`;
+  if(focus) $('#clf-dyn').querySelector(focus)?.focus();
+}
+/* Risultati della ricerca (k = 'p' giocatori della clip, 'a' assist): solo mentre si scrive, al massimo 8 */
+function paintClipRes(k){
+  const F = ui.clipF, inp = $(k === 'a' ? '#cl-qa' : '#cl-q'), box = $(k === 'a' ? '#cl-ra' : '#cl-r'); if(!F || !inp || !box) return;
+  const q = norm(inp.value), skip = k === 'a' ? F.pids : [...F.pids, F.ast];
+  const L = q ? clipRoster().filter(p => !skip.includes(p) && norm(pname(p)).includes(q)).slice(0, 8) : [];
+  box.innerHTML = !q ? '' : L.length ? L.map(p => `<button type="button" ${k === 'a' ? 'data-cla' : 'data-clp'}="${p}">${avatar(store.players[p], 'xs')}${esc(pname(p))}</button>`).join('') : '<span class="mu sm">Nessun giocatore con questo nome</span>';
 }
 async function saveClip(){
   const F = ui.clipF; if(!F || !requireAdmin()) return;
@@ -8224,9 +8239,9 @@ document.addEventListener('click', async e => {
   }
   if(d.metab){ ui.meTab = ME_TABS.some(x => x[0] === d.metab) ? d.metab : 'pro'; renderMe(); const el = $('#me'); if(el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ block:'start', behavior:'instant' }); return; }
   if(d.fview){ ui.fView = d.fview === 'list' ? 'list' : 'pitch'; try{ localStorage.setItem('cmb_fView', ui.fView); }catch(e){} ui.swapSel = null; ui.swapMode = false; paintMatch(); return; }
-  if(d.clcat){ const F = ui.clipF; if(F && CLIP_CATS[d.clcat]){ F.cat = d.clcat; if(F.cat !== 'gol') F.ast = ''; paintClipForm(['data-clcat', d.clcat]); } return; }
-  if(d.clp){ const F = ui.clipF; if(F){ F.pids = F.pids.includes(d.clp) ? F.pids.filter(p => p !== d.clp) : [...F.pids, d.clp]; if(F.ast === d.clp) F.ast = ''; paintClipForm(['data-clp', d.clp]); } return; }
-  if('cla' in d){ const F = ui.clipF; if(F){ F.ast = d.cla && F.ast !== d.cla ? d.cla : ''; if(F.ast) F.pids = F.pids.filter(p => p !== F.ast); paintClipForm(['data-cla', d.cla]); } return; }
+  if(d.clcat){ const F = ui.clipF; if(F && CLIP_CATS[d.clcat]){ F.cat = d.clcat; if(F.cat !== 'gol') F.ast = ''; paintClipForm(`[data-clcat="${d.clcat}"]`); } return; }
+  if(d.clp){ const F = ui.clipF; if(F){ F.pids = F.pids.includes(d.clp) ? F.pids.filter(p => p !== d.clp) : [...F.pids, d.clp]; if(F.ast === d.clp) F.ast = ''; paintClipForm('#cl-q'); } return; }
+  if('cla' in d){ const F = ui.clipF; if(F){ F.ast = d.cla && F.ast !== d.cla ? d.cla : ''; if(F.ast) F.pids = F.pids.filter(p => p !== F.ast); paintClipForm(F.ast ? '#cl-q' : '#cl-qa'); } return; }
   if('clcatf' in d){ ui.clipFlt.cat = CLIP_CATS[d.clcatf] ? d.clcatf : ''; renderClips(); return; }
   if(d.mtab){ ui.mTab = d.mtab === 'form' ? 'form' : 'rep'; ui.swapSel = null; if(ui.mTab === 'rep') ui.swapMode = false; paintMatch(); return; }
   if(d.plv){ openPlq(d.plv); return; }
@@ -8414,6 +8429,9 @@ document.addEventListener('input', e => {
   renderBoardPart();
   const b = $('[data-action="cls-filters"]'); if(b){ const n = clsNF(); b.textContent = 'Filtri' + (n ? ` (${n})` : ''); b.classList.toggle('primary', !!n); }
 });
+/* Clip: ricerca dei giocatori mentre si scrive; Invio sceglie il primo risultato */
+document.addEventListener('input', e => { const t = e.target; if(t && (t.id === 'cl-q' || t.id === 'cl-qa')) paintClipRes(t.id === 'cl-qa' ? 'a' : 'p'); });
+document.addEventListener('keydown', e => { const t = e.target; if(e.key !== 'Enter' || !t || (t.id !== 'cl-q' && t.id !== 'cl-qa')) return; e.preventDefault(); const b = $(t.id === 'cl-qa' ? '#cl-ra' : '#cl-r')?.querySelector('button'); if(b) b.click(); });
 document.addEventListener('input', e => { const t = e.target; if(t && t.id === 'msg-text'){ const n = $('#msg-n'); if(n) n.textContent = t.value.length + ' / ' + MSG_MAX; } });
 
 document.addEventListener('input', e => { const t = e.target; if(t && typeof t.id === 'string' && /^pf2-/.test(t.id)) profDraft = profReadForm(); });
