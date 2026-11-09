@@ -2435,6 +2435,8 @@ PLAQUES.push({ id:'matador', icon:'🐂', name:'El Matador', desc:'Più partite 
   ok:s => s.topS >= 1, cmp:(a,b) => (b.topS - a.topS) || (b.g - a.g), val:s => `${s.topS} ${s.topS === 1 ? 'gara' : 'gare'} da miglior marcatore` });
 const plqOn = P => !P.feat || feat(P.feat);
 const PLQ_MIN_PRES = 3;   /* per tenere una targa servono almeno 3 presenze in stagione */
+/* Targhe al passo prima ({ id: pid }) dalla storia gara per gara: a pari valore principale la targa resta a chi l'aveva (1.14.0) */
+let PLQ_PREV = null;
 const PLQ_CAP = 2;        /* targhe al massimo per giocatore (dalla 1.14.0; dalla 1.12.5 alla 1.13.0 erano 3) */
 /* Moduli per ogni misura di squadra (da 1 a 11 titolari). La prima riga è sempre un solo giocatore "in porta"; massimo 4 righe e 5 per riga.
    Quelli a 8 sono i quattro di sempre. Il menu del modulo mostra solo quelli la cui somma è uguale ai titolari. */
@@ -3446,6 +3448,12 @@ function computeStats(upto){
   plqExtras(arr, ms, wal);
   const PC = {};
   for(const P of PLAQUES){ if(plqOn(P)) PC[P.id] = arr.filter(s => s.pres >= PLQ_MIN_PRES && P.ok(s)).sort((a, b) => P.cmp(a, b) || a.name.localeCompare(b.name, 'it')); }
+  /* Parità (1.14.0): a pari valore principale (quello di PLQ_GAP) resta a chi aveva la targa alla gara prima.
+     I criteri di parità scritti nella targa decidono solo tra chi ci arriva insieme, nella stessa giornata */
+  if(PLQ_PREV) for(const [id, Lc] of Object.entries(PC)){
+    const inc = PLQ_PREV[id], G = PLQ_GAP[id], i = inc ? Lc.findIndex(s => s.pid === inc) : -1;
+    if(i > 0 && G){ const a = Number(G[0](Lc[i])), b = Number(G[0](Lc[0])); if(Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) < 1e-9) Lc.unshift(...Lc.splice(i, 1)); }
+  }
   const allot = resv => {
     const held = {}, plaques = {};
     for(const [id, pid] of Object.entries(resv)) (held[pid] = held[pid] || []).push(id);
@@ -3659,6 +3667,8 @@ function render(){
   attachPhotos();
   OVRC = ovrCfg(store.settings && store.settings.ovr); ovrSigCheck();
   STATS = computeStats();
+  /* Targhe a pari merito: restano a chi le aveva alla gara prima (la storia si ricalcola solo quando cambiano i dati) */
+  if(STATS.matches.length > 1){ const H = trophyHistory(); if(H.length > 1){ PLQ_PREV = H[H.length - 2].plaques; try{ STATS = computeStats(); } finally { PLQ_PREV = null; } } }
   document.body.classList.toggle('is-admin', ui.admin);
   { const me = myPid(); $('#lock-label').textContent = ui.admin ? 'Admin' : (me && store.players[me] ? pname(me).split(/\s+/)[0].slice(0, 12) : 'Ospite'); }
   $('#lock-shackle').setAttribute('d', ui.admin ? 'M8 11V8a4 4 0 0 1 7.5-2' : 'M8 11V8a4 4 0 0 1 8 0v3');
@@ -5914,6 +5924,8 @@ function recPrevHolder(key){
   const h = trophyHistory(), last = h[h.length - 1];
   return last && last.hold ? last.hold[key] : undefined;
 }
+/* Parità (1.14.0): eq confronta solo il valore principale; a pari valore resta a chi aveva già il primato.
+   I criteri di parità dell'ordinamento decidono solo tra chi ci arriva insieme */
 function recPick(key, arr, eq, idOf){
   const best = arr[0];
   if(!best) return best;
@@ -6026,12 +6038,12 @@ function computeRecords(){
   }
   const L = STATS.list, alpha = (a, b) => a.name.localeCompare(b.name, 'it');
   const nameOfPair = k => k.split('|').map(id => pname(id)).sort((x, y) => x.localeCompare(y, 'it')).join('');
-  const cecchino = recPick('cecchino', L.filter(s => s.pres >= 3).sort((a, b) => (b.avg - a.avg) || (b.g - a.g) || alpha(a, b)), (x, y) => near(x.avg, y.avg) && x.g === y.g, RID.pid);
+  const cecchino = recPick('cecchino', L.filter(s => s.pres >= 3).sort((a, b) => (b.avg - a.avg) || (b.g - a.g) || alpha(a, b)), (x, y) => near(x.avg, y.avg), RID.pid);
   /* Il Fortino: la media più bassa di gol subiti a partita (non il totale, che premierebbe chi gioca meno). Parità: più presenze */
   const cAvg = s => conc[s.pid] / s.pres;
-  const fortino = recPick('fortino', L.filter(s => isDef(s) && s.pres >= 3).sort((a, b) => (cAvg(a) - cAvg(b)) || (b.pres - a.pres) || alpha(a, b)), (x, y) => near(cAvg(x), cAvg(y)) && x.pres === y.pres, RID.pid);
+  const fortino = recPick('fortino', L.filter(s => isDef(s) && s.pres >= 3).sort((a, b) => (cAvg(a) - cAvg(b)) || (b.pres - a.pres) || alpha(a, b)), (x, y) => near(cAvg(x), cAvg(y)), RID.pid);
   const inarr = recPick('inarr', L.filter(s => streak[s.pid]?.best > 0).sort((a, b) => (streak[b.pid].best - streak[a.pid].best) || alpha(a, b)), (x, y) => streak[x.pid].best === streak[y.pid].best, RID.pid);
-  const mina = recPick('mina', L.filter(s => s.p.role !== 'ATT' && s.g > 0).sort((a, b) => (b.g - a.g) || (a.pres - b.pres) || alpha(a, b)), (x, y) => x.g === y.g && x.pres === y.pres, RID.pid);
+  const mina = recPick('mina', L.filter(s => s.p.role !== 'ATT' && s.g > 0).sort((a, b) => (b.g - a.g) || (a.pres - b.pres) || alpha(a, b)), (x, y) => x.g === y.g, RID.pid);
   /* Scalata (o caduta) di fila: gare consecutive in cui l'OVR non scende (non sale per la caduta). Una gara che non cambia l'OVR non interrompe la serie; una che lo muove nel verso opposto sì.
      Si contano i punti guadagnati (persi) dall'inizio alla fine della serie, quindi una salita con un calo in mezzo non vale come una salita di fila. */
   const swing = (s, dir) => {
@@ -6048,15 +6060,15 @@ function computeRecords(){
     const from = s.hist[best.lo].pre, to = s.hist[best.hi].ovr;
     return { pid:s.pid, s, d:best.d, from:roundOvr(from), to:roundOvr(to), dr:Math.abs(roundOvr(to) - roundOvr(from)), d1:num(s.hist[best.lo].m.day), d2:num(s.hist[best.hi].m.day) };
   };
-  const swEq = (x, y) => x.dr === y.dr && near(x.d, y.d);
+  const swEq = (x, y) => x.dr === y.dr;
   const come = recPick('come', L.map(s => swing(s, 1)).filter(Boolean).sort((a, b) => (b.dr - a.dr) || (b.d - a.d) || (b.to - a.to) || alpha(a.s, b.s)), swEq, RID.pid);
   const down = recPick('down', L.map(s => swing(s, -1)).filter(Boolean).sort((a, b) => (b.dr - a.dr) || (b.d - a.d) || (a.to - b.to) || alpha(a.s, b.s)), swEq, RID.pid);
-  const eroe = recPick('eroe', L.filter(s => s.votesRx >= 1).sort((a, b) => (b.votesRx - a.votesRx) || (b.mvp - a.mvp) || alpha(a, b)), (x, y) => x.votesRx === y.votesRx && x.mvp === y.mvp, RID.pid);
-  const oro = recPick('oro', Object.entries(pairs).filter(([, p]) => p.v > 0).sort(([ka, a], [kb, b]) => (b.v - a.v) || (b.v / b.n - a.v / a.n) || (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([, a], [, b]) => a.v === b.v && near(a.v / a.n, b.v / b.n) && a.n === b.n, RID.pair);
+  const eroe = recPick('eroe', L.filter(s => s.votesRx >= 1).sort((a, b) => (b.votesRx - a.votesRx) || (b.mvp - a.mvp) || alpha(a, b)), (x, y) => x.votesRx === y.votesRx, RID.pid);
+  const oro = recPick('oro', Object.entries(pairs).filter(([, p]) => p.v > 0).sort(([ka, a], [kb, b]) => (b.v - a.v) || (b.v / b.n - a.v / a.n) || (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([, a], [, b]) => a.v === b.v, RID.pair);
   const derby = recPick('derby', Object.entries(opp).sort(([ka, a], [kb, b]) => (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([, a], [, b]) => a.n === b.n, RID.pair);
-  const bunk = recPick('bunk', Object.entries(bunker).filter(([, b]) => b.n >= 2).sort(([ka, a], [kb, b]) => (a.c / a.n - b.c / b.n) || (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([, a], [, b]) => near(a.c / a.n, b.c / b.n) && a.n === b.n, RID.pair);
-  const ritard = recPick('rit', L.filter(s => s.ritardi > 0).sort((a, b) => (b.ritardi - a.ritardi) || ((b.ritardi / b.pres) - (a.ritardi / a.pres)) || alpha(a, b)), (x, y) => x.ritardi === y.ritardi && near(x.ritardi / x.pres, y.ritardi / y.pres), RID.pid);
-  const intesa = recPick('intesa', Object.entries(combo).sort(([ka, a], [kb, b]) => (b.c - a.c) || ((b.c / ((pairs[kb] && pairs[kb].n) || 1)) - (a.c / ((pairs[ka] && pairs[ka].n) || 1))) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([ka, a], [kb, b]) => a.c === b.c && near(a.c / ((pairs[ka] && pairs[ka].n) || 1), b.c / ((pairs[kb] && pairs[kb].n) || 1)), RID.pair);
+  const bunk = recPick('bunk', Object.entries(bunker).filter(([, b]) => b.n >= 2).sort(([ka, a], [kb, b]) => (a.c / a.n - b.c / b.n) || (b.n - a.n) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([, a], [, b]) => near(a.c / a.n, b.c / b.n), RID.pair);
+  const ritard = recPick('rit', L.filter(s => s.ritardi > 0).sort((a, b) => (b.ritardi - a.ritardi) || ((b.ritardi / b.pres) - (a.ritardi / a.pres)) || alpha(a, b)), (x, y) => x.ritardi === y.ritardi, RID.pid);
+  const intesa = recPick('intesa', Object.entries(combo).sort(([ka, a], [kb, b]) => (b.c - a.c) || ((b.c / ((pairs[kb] && pairs[kb].n) || 1)) - (a.c / ((pairs[ka] && pairs[ka].n) || 1))) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([ka, a], [kb, b]) => a.c === b.c, RID.pair);
   /* Il Cristallo: l'infortunio singolo più lungo (quello in corso conta fino a oggi) */
   const t0 = todayISO();
   const inf = recPick('inf', L.map(s => {
@@ -6067,16 +6079,16 @@ function computeRecords(){
   /* Re dell'Attacco, del Centrocampo e della Difesa: più premi di reparto (Top Attaccante, Top Centrocampista, Top Difensore).
      Il premio va solo nel reparto del proprio ruolo, quindi i premi di un giocatore sono tutti del suo reparto. Parità: meno gare per prenderli */
   const aw = s => num(s.awards), awR = s => s.pres ? num(s.awards) / s.pres : 0;
-  const repOf = (role, key) => recPick(key, L.filter(s => (ROLES[s.p.role] ? s.p.role : 'CEN') === role && aw(s) > 0).sort((a, b) => (aw(b) - aw(a)) || (awR(b) - awR(a)) || alpha(a, b)), (x, y) => aw(x) === aw(y) && near(awR(x), awR(y)), RID.pid);
+  const repOf = (role, key) => recPick(key, L.filter(s => (ROLES[s.p.role] ? s.p.role : 'CEN') === role && aw(s) > 0).sort((a, b) => (aw(b) - aw(a)) || (awR(b) - awR(a)) || alpha(a, b)), (x, y) => aw(x) === aw(y), RID.pid);
   const repatt = repOf('ATT', 'repatt'), repcen = repOf('CEN', 'repcen'), repdif = repOf('DIF', 'repdif');
   /* Il Mister: più formazioni proposte e accettate dall'organizzatore (matches/{id}/propBy) nelle gare giocate. Parità: più accettate senza modifiche */
   const mst = {};
   for(const m of STATS.matches) if(m.propBy && known(m.propBy)){ const o = mst[m.propBy] || (mst[m.propBy] = { n:0, clean:0 }); o.n++; if(!m.propMod) o.clean++; }
-  const mister = recPick('mister', L.filter(s => mst[s.pid]).sort((a, b) => (mst[b.pid].n - mst[a.pid].n) || (mst[b.pid].clean - mst[a.pid].clean) || alpha(a, b)), (x, y) => mst[x.pid].n === mst[y.pid].n && mst[x.pid].clean === mst[y.pid].clean, RID.pid);
+  const mister = recPick('mister', L.filter(s => mst[s.pid]).sort((a, b) => (mst[b.pid].n - mst[a.pid].n) || (mst[b.pid].clean - mst[a.pid].clean) || alpha(a, b)), (x, y) => mst[x.pid].n === mst[y.pid].n, RID.pid);
   if(mister) mister.mst = mst[mister.pid];
   /* Assist man: più assist in tutto il torneo. Brutto periodo: più OVR perso nelle ultime 5 giornate (mom5 da computeStats) */
-  const assistman = recPick('assistman', L.filter(s => s.a > 0).sort((a, b) => (b.a - a.a) || (a.pres - b.pres) || alpha(a, b)), (x, y) => x.a === y.a && x.pres === y.pres, RID.pid);
-  const brutto = recPick('brutto', L.filter(s => s.mom5 < -1e-9).sort((a, b) => (a.mom5 - b.mom5) || (a.ovr - b.ovr) || alpha(a, b)), (x, y) => near(x.mom5, y.mom5) && near(x.ovr, y.ovr), RID.pid);
+  const assistman = recPick('assistman', L.filter(s => s.a > 0).sort((a, b) => (b.a - a.a) || (a.pres - b.pres) || alpha(a, b)), (x, y) => x.a === y.a, RID.pid);
+  const brutto = recPick('brutto', L.filter(s => s.mom5 < -1e-9).sort((a, b) => (a.mom5 - b.mom5) || (a.ovr - b.ovr) || alpha(a, b)), (x, y) => near(x.mom5, y.mom5), RID.pid);
   /* Bianchi contro Neri: vittorie per colore in tutta la stagione (titolo di squadra, senza giocatore) */
   let bvn = null;
   if(STATS.matches.length){
@@ -6084,7 +6096,7 @@ function computeRecords(){
     for(const m of STATS.matches){ const sc = matchScore(m); if(sc.w > sc.b) w++; else if(sc.b > sc.w) b++; else d++; }
     bvn = { w, b, d, lead:w > b ? 'white' : b > w ? 'black' : null };
   }
-  const capo = recPick('capo', L.filter(s => s.g > 0).sort((a, b) => (b.g - a.g) || (a.pres - b.pres) || alpha(a, b)), (x, y) => x.g === y.g && x.pres === y.pres, RID.pid);
+  const capo = recPick('capo', L.filter(s => s.g > 0).sort((a, b) => (b.g - a.g) || (a.pres - b.pres) || alpha(a, b)), (x, y) => x.g === y.g, RID.pid);
   const malato = recPick('malato', L.filter(s => pres[s.pid] && pres[s.pid].best >= 2).sort((a, b) => (pres[b.pid].best - pres[a.pid].best) || alpha(a, b)), (x, y) => pres[x.pid].best === pres[y.pid].best, RID.pid);
   /* Serie sulle gare giocate da ognuno (le assenze non contano): Sempre a Segno (almeno un gol) e Il Digiuno (attaccanti senza gol) */
   const runOf = (h, ok) => { let cur = 0, from = null, best = 0, bFrom = null, bTo = null; for(const x of h){ if(ok(x)){ if(!cur) from = x.m; cur++; if(cur > best){ best = cur; bFrom = from; bTo = x.m; } } else cur = 0; } return { best, bFrom, bTo, live:cur > 0 && cur === best }; };
@@ -6096,7 +6108,7 @@ function computeRecords(){
   const mom = s => { const h = s.hist; let b = null;
     for(let i = 0; i + 4 < h.length; i++){ const d = h[i + 4].ovr - h[i].pre; if(!b || d > b.d + 1e-9) b = { d, from:h[i].pre, to:h[i + 4].ovr, d1:num(h[i].m.day), d2:num(h[i + 4].m.day) }; }
     return b ? { pid:s.pid, s, ...b, dr:roundOvr(b.to) - roundOvr(b.from) } : null; };
-  const momento = recPick('momento', L.map(mom).filter(x => x && x.dr >= 1).sort((a, b) => (b.dr - a.dr) || (b.d - a.d) || alpha(a.s, b.s)), (x, y) => x.dr === y.dr && near(x.d, y.d), RID.pid);
+  const momento = recPick('momento', L.map(mom).filter(x => x && x.dr >= 1).sort((a, b) => (b.dr - a.dr) || (b.d - a.d) || alpha(a.s, b.s)), (x, y) => x.dr === y.dr, RID.pid);
   const rimonta = recPick('rimonta', rims.sort((a, b) => (b.def - a.def) || (num(a.m.day) - num(b.m.day))), (x, y) => x.def === y.def, RID.pid);
   const sovrano = recPick('sovrano', L.filter(s => top1[s.pid] > 0).sort((a, b) => (top1[b.pid] - top1[a.pid]) || alpha(a, b)), (x, y) => top1[x.pid] === top1[y.pid], RID.pid);
   const fedeli = recPick('fedeli', Object.entries(pairs).sort(([ka, a], [kb, b]) => (b.n - a.n) || (b.v - a.v) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([, a], [, b]) => a.n === b.n, RID.pair);
@@ -6124,12 +6136,13 @@ const lockSVG = st => `<svg class="lk" viewBox="0 0 24 24" aria-hidden="true"><p
 /* Ricalcola targhe e primati dopo ogni gara (k = 1..N) per avere regno, storia e passaggi di mano */
 let histCache = { key:null, data:[] };
 function trophyHistory(){
-  const key = STATS.matches.map(m => m.id + ':' + (m.updatedAt || '')).join(',') + '|' + Object.keys(store.players).length + '|' + JSON.stringify(store.votes || {}).length + '|' + Object.values(store.players).map(p => p && p.role).join('') + '|' + Object.values(store.players).map(p => p ? (p.injured ? 1 : 0) + (p.injuredSince || '') + list(p.injHist).length : '').join(',') + '|' + featSig();
+  const key = STATS.matches.map(m => m.id + ':' + (m.updatedAt || '')).join(',') + '|' + Object.keys(store.players).length + '|' + JSON.stringify(store.votes || {}).length + '|' + Object.values(store.players).map(p => p && p.role).join('') + '|' + Object.values(store.players).map(p => p ? (p.injured ? 1 : 0) + (p.injuredSince || '') + list(p.injHist).length : '').join(',') + '|' + featSig() + '|' + JSON.stringify(store.plqPick || {}) + '|' + JSON.stringify(OVRC);
   if(histCache.key === key) return histCache.data;
   const keep = STATS, steps = [];
   try{
     HIST_BUSY = true;
     for(let k = 1; k <= keep.matches.length; k++){
+      PLQ_PREV = k > 1 ? steps[k - 2].plaques : null;
       STATS = computeStats(k);
       REC_PREV = k > 1 ? steps[k - 2].hold : null;
       const cards = buildRecordCards(computeRecords(), k);
@@ -6140,7 +6153,7 @@ function trophyHistory(){
         recs:Object.fromEntries(cards.map(c => [c.key, c.lock ? null : { holder:recHolder(c), value:c.value, txt:recText(c) }]))
       });
     }
-  }finally{ STATS = keep; REC_PREV = null; HIST_BUSY = false; }
+  }finally{ STATS = keep; REC_PREV = null; PLQ_PREV = null; HIST_BUSY = false; }
   histCache = { key, data:steps };
   return steps;
 }
@@ -6704,7 +6717,7 @@ function renderTrophies(){
   const mineChip = me ? `<div class="th-filter"><button type="button" data-action="t-mine" aria-pressed="${onlyMine}">${onlyMine ? '✓ ' : ''}Solo i miei</button></div>` : '';
   const mineEmpty = t => `<p class="mu sm th-empty">${t}</p>`;
   const ttabs = `<div class="sub-tabs" role="tablist" aria-label="Trofei">${[['plq', 'Targhe'], ['rec', 'Trofei storici'], ['tw', 'TOTW'], ['tm', 'TOTM']].map(([k, l]) => `<button type="button" role="tab" class="sub-tab ${k === tt ? 'on' : ''}" aria-selected="${k === tt}" data-ttab="${k}">${l}</button>`).join('')}</div>`;
-  el.innerHTML = `${ttabs}${tt === 'tw' || tt === 'tm' ? '' : `<details class="glass th-how"${ui.thHow ? ' open' : ''}><summary>ℹ️ Come funzionano targhe e primati</summary><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo ${PLQ_CAP} a testa, servono almeno ${PLQ_MIN_PRES} presenze; chi ne potrebbe avere di più sceglie le sue ${PLQ_CAP} in Io → Traguardi). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. I primati storici restano a chi li ha stabiliti per primo, finché qualcuno non fa davvero meglio: a pari merito non cambiano mano.</p></details>`}
+  el.innerHTML = `${ttabs}${tt === 'tw' || tt === 'tm' ? '' : `<details class="glass th-how"${ui.thHow ? ' open' : ''}><summary>ℹ️ Come funzionano targhe e primati</summary><p>Le ${PL.length} targhe si aggiornano dopo ogni gara (massimo ${PLQ_CAP} a testa, servono almeno ${PLQ_MIN_PRES} presenze; chi ne potrebbe avere di più sceglie le sue ${PLQ_CAP} in Io → Traguardi). Il lucchetto conta da quante gare il detentore la tiene e trema quando il rivale è vicino. A pari merito targhe e primati restano a chi c’è arrivato per primo, finché qualcuno non fa davvero meglio: i criteri di parità scritti contano solo se due ci arrivano nella stessa giornata.</p></details>`}
     ${tt === 'tw' ? `<div class="th-sec"><h3>Team of the Week</h3><span>2-4-2 · da lunedì a domenica</span></div>${twView('w')}` : tt === 'tm' ? `<div class="th-sec"><h3>Team of the Month</h3><span>2-4-2 · dal primo all’ultimo del mese</span></div>${twView('m')}` : tt === 'plq' ? `<div class="th-sec"><h3>Le ${PL.length} targhe stagionali</h3><span>Leader in tempo reale · tocca una targa per i dettagli</span></div>
     ${mineChip}<div class="plv-grid">${(onlyMine ? plk.filter(x => x.mine || x.near) : plk).map(x => x.tile).join('') || mineEmpty('Non detieni ancora nessuna targa e non sei secondo in nessuna: gioca e segna per entrare in corsa.')}</div>` : `<div class="th-sec"><h3>Bacheca dei primati storici</h3><span>${nM} ${nM === 1 ? 'gara analizzata' : 'gare analizzate'} · tocca un primato per i dettagli</span></div>
     ${mineChip}<div class="plv-grid">${(onlyMine ? recs.filter(x => x.mine) : recs).map(x => x.tile).join('') || mineEmpty('Non detieni ancora nessun primato storico.')}</div>`}`;
