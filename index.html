@@ -1346,7 +1346,7 @@ h4 .hico{width:1.1em;height:1.1em;vertical-align:-.18em}
 .me-sec .affr+.affr{border-top:1px solid var(--hair)}
 .me-sec p{margin:8px 0 0}
 .ovrchart{display:block;width:100%;height:auto;max-height:260px}
-/* Io (1.14.0): il contenitore ha le proporzioni del disegno, così i puntini toccabili restano sopra i punti */
+/* Io (1.13.1): il contenitore ha le proporzioni del disegno, così i puntini toccabili restano sopra i punti */
 .oc-wrap{position:relative;max-width:589px;margin:0 auto}
 .oc-wrap .ovrchart{max-height:none}
 .oc-hit{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;padding:0;border:0;border-radius:50%;background:transparent;cursor:pointer}
@@ -2455,9 +2455,9 @@ PLAQUES.push({ id:'matador', icon:'🐂', name:'El Matador', desc:'Più partite 
   ok:s => s.topS >= 1, cmp:(a,b) => (b.topS - a.topS) || (b.g - a.g), val:s => `${s.topS} ${s.topS === 1 ? 'gara' : 'gare'} da miglior marcatore` });
 const plqOn = P => !P.feat || feat(P.feat);
 const PLQ_MIN_PRES = 3;   /* per tenere una targa servono almeno 3 presenze in stagione */
-/* Targhe al passo prima ({ id: pid }) dalla storia gara per gara: a pari valore principale la targa resta a chi l'aveva (1.14.0) */
+/* Targhe al passo prima ({ id: pid }) dalla storia gara per gara: a pari valore principale la targa resta a chi l'aveva (1.13.1) */
 let PLQ_PREV = null;
-const PLQ_CAP = 2;        /* targhe al massimo per giocatore (dalla 1.14.0; dalla 1.12.5 alla 1.13.0 erano 3) */
+const PLQ_CAP = 2;        /* targhe al massimo per giocatore (dalla 1.13.1; dalla 1.12.5 alla 1.13.0 erano 3) */
 /* Moduli per ogni misura di squadra (da 1 a 11 titolari). La prima riga è sempre un solo giocatore "in porta"; massimo 4 righe e 5 per riga.
    Quelli a 8 sono i quattro di sempre. Il menu del modulo mostra solo quelli la cui somma è uguale ai titolari. */
 const FORMATIONS = {
@@ -3468,7 +3468,7 @@ function computeStats(upto){
   plqExtras(arr, ms, wal);
   const PC = {};
   for(const P of PLAQUES){ if(plqOn(P)) PC[P.id] = arr.filter(s => s.pres >= PLQ_MIN_PRES && P.ok(s)).sort((a, b) => P.cmp(a, b) || a.name.localeCompare(b.name, 'it')); }
-  /* Parità (1.14.0): a pari valore principale (quello di PLQ_GAP) resta a chi aveva la targa alla gara prima.
+  /* Parità (1.13.1): a pari valore principale (quello di PLQ_GAP) resta a chi aveva la targa alla gara prima.
      I criteri di parità scritti nella targa decidono solo tra chi ci arriva insieme, nella stessa giornata */
   if(PLQ_PREV) for(const [id, Lc] of Object.entries(PC)){
     const inc = PLQ_PREV[id], G = PLQ_GAP[id], i = inc ? Lc.findIndex(s => s.pid === inc) : -1;
@@ -3624,11 +3624,11 @@ function ovrChartHTML(s, tap){
   const rc = r => r === 'v' ? '#22c55e' : r === 's' ? '#fb7185' : '#8a93a6';
   const dots = pts.map((v, i) => { const last = i === pts.length - 1;
     return `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${last ? 4.8 : 3}" fill="${i ? rc(h[i - 1].r) : '#0a0d14'}" stroke="${last ? '#f97316' : i ? '#0a0d14' : '#f97316'}" stroke-width="${last ? 2 : 1.3}"/>`; }).join('');
-  /* In Io ogni puntino di una partita è un tasto (sopra il disegno): apre la scheda di quel giorno (1.14.0) */
+  /* In Io ogni puntino di una partita è un tasto (sopra il disegno): apre la scheda di quel giorno (1.13.1) */
   const hits = tap ? h.map((x, j) => `<button type="button" class="oc-hit" style="left:${(X(j + 1) / W * 100).toFixed(2)}%;top:${(Y(pts[j + 1]) / H * 100).toFixed(2)}%" data-action="ovr-snap" data-pid="${s.pid}" data-i="${j}" aria-label="Giornata ${num(x.m.day)}: OVR ${roundOvr(x.ovr)}. Apri la tua scheda di quel giorno"></button>`).join('') : '';
   return `<div class="oc-wrap"><svg class="ovrchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Andamento OVR da ${OVR_START} a ${roundOvr(s.ovr)}"><defs><linearGradient id="oca" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f97316" stop-opacity=".24"/><stop offset="1" stop-color="#f97316" stop-opacity="0"/></linearGradient></defs>${th}${yl}${xl}<path d="${area}" fill="url(#oca)"/><path class="ocl" d="${line}" fill="none" stroke="#f97316" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" pathLength="1"/>${dots}</svg>${hits}</div><p class="oc-leg"><span><i style="background:#22c55e"></i>vittoria</span><span><i style="background:#fb7185"></i>sconfitta</span><span><i style="background:#8a93a6"></i>pareggio</span></p>`;
 }
-/* Scheda di un giorno (1.14.0): com'eri dopo la partita j del tuo grafico. Statistiche di stagione fino a quella gara
+/* Scheda di un giorno (1.13.1): com'eri dopo la partita j del tuo grafico. Statistiche di stagione fino a quella gara
    (computeStats(k)) e targhe di quel momento dalla storia gara per gara */
 function snapHTML(pid, j){
   const s = STATS.byId[pid], x = s && s.hist[j]; if(!x) return '';
@@ -5972,7 +5972,7 @@ function recPrevHolder(key){
   const h = trophyHistory(), last = h[h.length - 1];
   return last && last.hold ? last.hold[key] : undefined;
 }
-/* Parità (1.14.0): eq confronta solo il valore principale; a pari valore resta a chi aveva già il primato.
+/* Parità (1.13.1): eq confronta solo il valore principale; a pari valore resta a chi aveva già il primato.
    I criteri di parità dell'ordinamento decidono solo tra chi ci arriva insieme */
 function recPick(key, arr, eq, idOf){
   const best = arr[0];
@@ -6160,7 +6160,7 @@ function computeRecords(){
   const rimonta = recPick('rimonta', rims.sort((a, b) => (b.def - a.def) || (num(a.m.day) - num(b.m.day))), (x, y) => x.def === y.def, RID.pid);
   const sovrano = recPick('sovrano', L.filter(s => top1[s.pid] > 0).sort((a, b) => (top1[b.pid] - top1[a.pid]) || alpha(a, b)), (x, y) => top1[x.pid] === top1[y.pid], RID.pid);
   const fedeli = recPick('fedeli', Object.entries(pairs).sort(([ka, a], [kb, b]) => (b.n - a.n) || (b.v - a.v) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([, a], [, b]) => a.n === b.n, RID.pair);
-  /* Vetta per ruolo (1.14.0): l'overall più alto mai raggiunto in stagione da un difensore, un centrocampista, un attaccante (ruolo attuale).
+  /* Leggende per ruolo (1.13.1): l'overall più alto mai raggiunto in stagione da un difensore, un centrocampista, un attaccante (ruolo attuale).
      Conta l'overall mostrato sulla figurina (intero); a pari overall resta a chi c'è arrivato prima */
   const ordM = new Map(STATS.matches.map((m, i) => [m.id, i]));
   const peakOf = s => { let b = null; for(const x of s.hist){ const v = roundOvr(x.ovr), i = ordM.has(x.m.id) ? ordM.get(x.m.id) : 0; if(!b || v > b.v) b = { pid:s.pid, s, v, m:x.m, i }; } return b; };
@@ -6866,13 +6866,13 @@ function buildRecordCards(R, nM){
       : { icon:'👟', title:'Assist man', desc:'Più assist serviti in tutto il torneo. Parità: meno presenze.', lock:need('Ancora nessun assist') }
     ,R.brutto ? { icon:'📉', title:'Brutto periodo', desc:'Più overall perso nelle ultime 5 giornate del torneo (contano le gare giocate). Parità: OVR più basso.', pid:R.brutto.pid, sub:`OVR ${roundOvr(R.brutto.ovr)} adesso`, value:'−' + itn(-R.brutto.mom5), unit:'OVR nelle ultime 5 giornate' }
       : { icon:'📉', title:'Brutto periodo', desc:'Più overall perso nelle ultime 5 giornate del torneo (contano le gare giocate). Parità: OVR più basso.', lock:need('Nessuno ha perso overall nelle ultime 5 giornate') }
-    /* Vetta per ruolo (1.14.0): l'overall più alto mai raggiunto in stagione da difensori, centrocampisti e attaccanti */
-    ,R.vdif ? { icon:'🏔️', title:'Vetta della Difesa', desc:'L’overall più alto mai raggiunto da un difensore in stagione. A pari overall resta a chi c’è arrivato prima.', pid:R.vdif.pid, sub:`Raggiunto: ${matchWhen(R.vdif.m)}`, value:R.vdif.v, unit:'OVR più alto' }
-      : { icon:'🏔️', title:'Vetta della Difesa', desc:'L’overall più alto mai raggiunto da un difensore in stagione. A pari overall resta a chi c’è arrivato prima.', lock:need('Nessun difensore ha ancora giocato') }
-    ,R.vcen ? { icon:'🏔️', title:'Vetta del Centrocampo', desc:'L’overall più alto mai raggiunto da un centrocampista in stagione. A pari overall resta a chi c’è arrivato prima.', pid:R.vcen.pid, sub:`Raggiunto: ${matchWhen(R.vcen.m)}`, value:R.vcen.v, unit:'OVR più alto' }
-      : { icon:'🏔️', title:'Vetta del Centrocampo', desc:'L’overall più alto mai raggiunto da un centrocampista in stagione. A pari overall resta a chi c’è arrivato prima.', lock:need('Nessun centrocampista ha ancora giocato') }
-    ,R.vatt ? { icon:'🏔️', title:'Vetta dell’Attacco', desc:'L’overall più alto mai raggiunto da un attaccante in stagione. A pari overall resta a chi c’è arrivato prima.', pid:R.vatt.pid, sub:`Raggiunto: ${matchWhen(R.vatt.m)}`, value:R.vatt.v, unit:'OVR più alto' }
-      : { icon:'🏔️', title:'Vetta dell’Attacco', desc:'L’overall più alto mai raggiunto da un attaccante in stagione. A pari overall resta a chi c’è arrivato prima.', lock:need('Nessun attaccante ha ancora giocato') }
+    /* Leggende per ruolo (1.13.1): l'overall più alto mai raggiunto in stagione da difensori, centrocampisti e attaccanti */
+    ,R.vdif ? { icon:'👑', title:'Leggenda della Difesa', desc:'L’overall più alto mai raggiunto da un difensore in stagione. A pari overall resta a chi c’è arrivato prima.', pid:R.vdif.pid, sub:`Raggiunto: ${matchWhen(R.vdif.m)}`, value:R.vdif.v, unit:'OVR più alto' }
+      : { icon:'👑', title:'Leggenda della Difesa', desc:'L’overall più alto mai raggiunto da un difensore in stagione. A pari overall resta a chi c’è arrivato prima.', lock:need('Nessun difensore ha ancora giocato') }
+    ,R.vcen ? { icon:'👑', title:'Leggenda del Centrocampo', desc:'L’overall più alto mai raggiunto da un centrocampista in stagione. A pari overall resta a chi c’è arrivato prima.', pid:R.vcen.pid, sub:`Raggiunto: ${matchWhen(R.vcen.m)}`, value:R.vcen.v, unit:'OVR più alto' }
+      : { icon:'👑', title:'Leggenda del Centrocampo', desc:'L’overall più alto mai raggiunto da un centrocampista in stagione. A pari overall resta a chi c’è arrivato prima.', lock:need('Nessun centrocampista ha ancora giocato') }
+    ,R.vatt ? { icon:'👑', title:'Leggenda dell’Attacco', desc:'L’overall più alto mai raggiunto da un attaccante in stagione. A pari overall resta a chi c’è arrivato prima.', pid:R.vatt.pid, sub:`Raggiunto: ${matchWhen(R.vatt.m)}`, value:R.vatt.v, unit:'OVR più alto' }
+      : { icon:'👑', title:'Leggenda dell’Attacco', desc:'L’overall più alto mai raggiunto da un attaccante in stagione. A pari overall resta a chi c’è arrivato prima.', lock:need('Nessun attaccante ha ancora giocato') }
   ];
   cards.forEach((c, i) => { c.key = REC_KEYS[i]; if((REC_FEAT[c.key] && !feat(REC_FEAT[c.key])) || REC_OFF.has(c.key)) c.off = true; });   /* le chiavi restano per posizione: una funzione spenta nasconde la scheda, non la toglie */
   return cards;
@@ -9056,12 +9056,12 @@ try{
     localStorage.setItem('cmb_mig_v162', '1');
   }
 }catch(e){}
-/* Migrazione 1.14.0: targhe al massimo 2 a testa, parità che premia chi arriva prima e tre trofei nuovi.
+/* Migrazione 1.13.1: targhe al massimo 2 a testa, parità che premia chi arriva prima e tre trofei nuovi.
    Si azzerano i "già visto" di trofei e targhe: il codice li ricrea in silenzio, senza finti avvisi */
 try{
-  if(!localStorage.getItem('cmb_mig_v1140')){
+  if(!localStorage.getItem('cmb_mig_v1131')){
     ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV'].forEach(k => localStorage.removeItem(k));
-    localStorage.setItem('cmb_mig_v1140', '1');
+    localStorage.setItem('cmb_mig_v1131', '1');
   }
 }catch(e){}
 /* Migrazione 1.12.8: arrivano targhe nuove. Si azzerano i "già visto" di trofei e targhe: il codice li ricrea in silenzio */
