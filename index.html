@@ -6112,7 +6112,13 @@ function computeRecords(){
   const rimonta = recPick('rimonta', rims.sort((a, b) => (b.def - a.def) || (num(a.m.day) - num(b.m.day))), (x, y) => x.def === y.def, RID.pid);
   const sovrano = recPick('sovrano', L.filter(s => top1[s.pid] > 0).sort((a, b) => (top1[b.pid] - top1[a.pid]) || alpha(a, b)), (x, y) => top1[x.pid] === top1[y.pid], RID.pid);
   const fedeli = recPick('fedeli', Object.entries(pairs).sort(([ka, a], [kb, b]) => (b.n - a.n) || (b.v - a.v) || nameOfPair(ka).localeCompare(nameOfPair(kb), 'it')), ([, a], [, b]) => a.n === b.n, RID.pair);
-  return { bvn, assistman, brutto, mister, repatt, repcen, repdif, capo, malato, pres, momento, segno, segR, rimonta, digiuno, digR, sovrano, top1, fedeli, inf, manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, ritard, bunkerAny:Object.keys(bunker).length };
+  /* Vetta per ruolo (1.14.0): l'overall più alto mai raggiunto in stagione da un difensore, un centrocampista, un attaccante (ruolo attuale).
+     Conta l'overall mostrato sulla figurina (intero); a pari overall resta a chi c'è arrivato prima */
+  const ordM = new Map(STATS.matches.map((m, i) => [m.id, i]));
+  const peakOf = s => { let b = null; for(const x of s.hist){ const v = roundOvr(x.ovr), i = ordM.has(x.m.id) ? ordM.get(x.m.id) : 0; if(!b || v > b.v) b = { pid:s.pid, s, v, m:x.m, i }; } return b; };
+  const vetta = (role, key) => recPick(key, L.filter(s => (ROLES[s.p.role] ? s.p.role : 'CEN') === role && s.hist.length).map(peakOf).filter(Boolean).sort((a, b) => (b.v - a.v) || (a.i - b.i) || alpha(a.s, b.s)), (x, y) => x.v === y.v, RID.pid);
+  const vdif = vetta('DIF', 'vdif'), vcen = vetta('CEN', 'vcen'), vatt = vetta('ATT', 'vatt');
+  return { vdif, vcen, vatt, bvn, assistman, brutto, mister, repatt, repcen, repdif, capo, malato, pres, momento, segno, segR, rimonta, digiuno, digR, sovrano, top1, fedeli, inf, manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, ritard, bunkerAny:Object.keys(bunker).length };
 }
 const matchWhen = m => `Giornata ${num(m.day)}${m.date ? ', ' + fmtDateCap(m.date) : ''}`;
 function recCard(o, x = {}){
@@ -6726,12 +6732,12 @@ function renderTrophies(){
   try{ localStorage.setItem('cmb2627_seenPlq', JSON.stringify(curP)); localStorage.setItem('cmb2627_seenRecV', JSON.stringify(curR)); }catch(e){}
 }
 const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk','rit','inf','colp','kami',
-  'repatt','repcen','repdif','capo','malato','momento','segno','rimonta','digiuno','sovrano','fedeli','mister','bvn','assistman','brutto'];
+  'repatt','repcen','repdif','capo','malato','momento','segno','rimonta','digiuno','sovrano','fedeli','mister','bvn','assistman','brutto','vdif','vcen','vatt'];
 /* Trofei solo di coppia, di squadra, di partita e quelli scelti dal proprietario: i doppioni delle targhe e gli individuali diventati targhe restano in coda di chiavi (posizione) ma spenti */
 const REC_OFF = new Set(['cecchino', 'inarr', 'eroe', 'mina', 'fortino', 'malato', 'momento', 'segno', 'sovrano', 'mister', 'colp', 'kami', 'manita', 'mitra', 'mida', 'uomo']);
 /* event = record di una singola impresa (festeggiato anche se lo stesso giocatore si migliora); lead = primato di classifica (festeggiato solo al cambio di detentore) */
 const REC_KIND = { manita:'event', mitra:'event', lampo:'event', scadere:'event', mida:'event', uomo:'event', inarr:'event', goleada:'event', cappotto:'event', cecchino:'lead', fortino:'lead', mina:'lead', come:'lead', down:'lead', eroe:'lead', oro:'lead', intesa:'lead', derby:'lead', bunk:'lead', rit:'lead', inf:'lead', colp:'event', kami:'event',
-  repatt:'lead', repcen:'lead', repdif:'lead', capo:'lead', malato:'event', momento:'event', segno:'event', rimonta:'event', digiuno:'event', sovrano:'lead', fedeli:'lead', mister:'lead', bvn:'lead', assistman:'lead', brutto:'lead' };
+  repatt:'lead', repcen:'lead', repdif:'lead', capo:'lead', malato:'event', momento:'event', segno:'event', rimonta:'event', digiuno:'event', sovrano:'lead', fedeli:'lead', mister:'lead', bvn:'lead', assistman:'lead', brutto:'lead', vdif:'lead', vcen:'lead', vatt:'lead' };
 /* Primati legati a una funzione: con la funzione spenta la scheda non si mostra e non fa popup */
 const REC_FEAT = { eroe:'mvp' };
 function buildRecordCards(R, nM){
@@ -6812,6 +6818,13 @@ function buildRecordCards(R, nM){
       : { icon:'👟', title:'Assist man', desc:'Più assist serviti in tutto il torneo. Parità: meno presenze.', lock:need('Ancora nessun assist') }
     ,R.brutto ? { icon:'📉', title:'Brutto periodo', desc:'Più overall perso nelle ultime 5 giornate del torneo (contano le gare giocate). Parità: OVR più basso.', pid:R.brutto.pid, sub:`OVR ${roundOvr(R.brutto.ovr)} adesso`, value:'−' + itn(-R.brutto.mom5), unit:'OVR nelle ultime 5 giornate' }
       : { icon:'📉', title:'Brutto periodo', desc:'Più overall perso nelle ultime 5 giornate del torneo (contano le gare giocate). Parità: OVR più basso.', lock:need('Nessuno ha perso overall nelle ultime 5 giornate') }
+    /* Vetta per ruolo (1.14.0): l'overall più alto mai raggiunto in stagione da difensori, centrocampisti e attaccanti */
+    ,R.vdif ? { icon:'🏔️', title:'Vetta della Difesa', desc:'L’overall più alto mai raggiunto da un difensore in stagione. A pari overall resta a chi c’è arrivato prima.', pid:R.vdif.pid, sub:`Raggiunto: ${matchWhen(R.vdif.m)}`, value:R.vdif.v, unit:'OVR più alto' }
+      : { icon:'🏔️', title:'Vetta della Difesa', desc:'L’overall più alto mai raggiunto da un difensore in stagione. A pari overall resta a chi c’è arrivato prima.', lock:need('Nessun difensore ha ancora giocato') }
+    ,R.vcen ? { icon:'🏔️', title:'Vetta del Centrocampo', desc:'L’overall più alto mai raggiunto da un centrocampista in stagione. A pari overall resta a chi c’è arrivato prima.', pid:R.vcen.pid, sub:`Raggiunto: ${matchWhen(R.vcen.m)}`, value:R.vcen.v, unit:'OVR più alto' }
+      : { icon:'🏔️', title:'Vetta del Centrocampo', desc:'L’overall più alto mai raggiunto da un centrocampista in stagione. A pari overall resta a chi c’è arrivato prima.', lock:need('Nessun centrocampista ha ancora giocato') }
+    ,R.vatt ? { icon:'🏔️', title:'Vetta dell’Attacco', desc:'L’overall più alto mai raggiunto da un attaccante in stagione. A pari overall resta a chi c’è arrivato prima.', pid:R.vatt.pid, sub:`Raggiunto: ${matchWhen(R.vatt.m)}`, value:R.vatt.v, unit:'OVR più alto' }
+      : { icon:'🏔️', title:'Vetta dell’Attacco', desc:'L’overall più alto mai raggiunto da un attaccante in stagione. A pari overall resta a chi c’è arrivato prima.', lock:need('Nessun attaccante ha ancora giocato') }
   ];
   cards.forEach((c, i) => { c.key = REC_KEYS[i]; if((REC_FEAT[c.key] && !feat(REC_FEAT[c.key])) || REC_OFF.has(c.key)) c.off = true; });   /* le chiavi restano per posizione: una funzione spenta nasconde la scheda, non la toglie */
   return cards;
