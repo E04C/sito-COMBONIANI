@@ -2296,7 +2296,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.12.10';
+const APP_VERSION = '1.13.0';
 const DEFAULT_PIN = '2026';
 /* Interruttori delle funzioni: li accende e spegne l'admin (settings/features/{chiave}), valgono per tutti i dispositivi.
    Il codice legge sempre e solo feat(chiave). Spenta = nascosta e disattivata; codice e dati restano, riaccesa torna tutto com'era. */
@@ -8527,6 +8527,10 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.13.0', date:'2026-11-09', items:[
+    `🎬 Nuova sezione «Clip» nella barra in basso: gol, assist, parate, papere e azioni da ricordare, da guardare direttamente nell’app. Puoi filtrare per categoria e per giocatore.`,
+    `👋 Il CASiNO non c’è più: spariscono portafoglio, scommesse, Negozio e le targhe Il Banco, Il Profeta, Il Colpaccio e Il Kamikaze.`
+  ] },
   { v:'1.12.10', date:'2026-11-07', items:[
     `▶️ Abbiamo un canale YouTube! Nelle partite con il video, sotto il risultato c’è il tasto rosso «Highlights»: toccalo e guardi i momenti migliori della gara.`,
     `👋 Il replay dei gol non c’è più: al suo posto ci sono gli highlights veri.`

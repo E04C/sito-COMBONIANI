@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.13.0
+- Clip: sezione nuova «Clip» (`view-clips`, `renderClips`) nella barra in basso dopo Trofei, indipendente dalle partite. Percorso nuovo e facoltativo `clips/{id}` = { yt, cat (gol, ast, par, pap, az), pids, ast?, mid?, t?, sh?, at } pulito da `cleanClips`; la clip Gol con `ast` vale anche come assist. L'admin aggiunge, modifica ed elimina (`#m-clipf`), il video si guarda nell'app (`#m-clip`, youtube-nocookie). Eliminando una gara le sue clip restano senza giornata. Avviso all'admin se le regole non permettono «clips»; «clips» entra nel backup.
+- CASiNO tolto del tutto: sezione, tasto, interruttore, riquadri admin, portafoglio, scommesse, monti, sfide, Negozio, aste dei numeri, oggetti estetici, tema e stile non più usati; targhe banco, profeta, colp e kami. I primati colp e kami restano come posti spenti (chiavi per posizione). Non si legge più `casino` dal database (i dati restano). Le gare nuove non hanno più `px`; chi lo aveva lo tiene. `lineupKey` resta per le proposte; `nameHTML` scrive solo nome e icona dell'infermeria.
+
 ## 1.12.10
 - Tolto del tutto il Replay dei gol (tasto, `#m-replay`, funzioni `rp*`, stile `rpv`/`rv-`, comandi da tastiera). Nel Negozio le categorie `trail` e `cheer` (solo replay) escono da `SHOP_CATS`: non si vendono né si mostrano, ma gli oggetti restano in `SHOP_ITEMS` così gli acquisti già fatti contano ancora nel saldo.
 - Highlights su YouTube: campo facoltativo `matches/{id}/yt` con il solo codice del video (`ytId` accetta link watch, youtu.be, shorts, live, embed; altri link rifiutati). Tasto rosso «Highlights» sotto il punteggio del Resoconto; il link si incolla nel registro gara (solo gare giocate).
