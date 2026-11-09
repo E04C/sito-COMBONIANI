@@ -2435,7 +2435,7 @@ PLAQUES.push({ id:'matador', icon:'🐂', name:'El Matador', desc:'Più partite 
   ok:s => s.topS >= 1, cmp:(a,b) => (b.topS - a.topS) || (b.g - a.g), val:s => `${s.topS} ${s.topS === 1 ? 'gara' : 'gare'} da miglior marcatore` });
 const plqOn = P => !P.feat || feat(P.feat);
 const PLQ_MIN_PRES = 3;   /* per tenere una targa servono almeno 3 presenze in stagione */
-const PLQ_CAP = 3;        /* targhe al massimo per giocatore (dalla 1.12.5; prima erano 2) */
+const PLQ_CAP = 2;        /* targhe al massimo per giocatore (dalla 1.14.0; dalla 1.12.5 alla 1.13.0 erano 3) */
 /* Moduli per ogni misura di squadra (da 1 a 11 titolari). La prima riga è sempre un solo giocatore "in porta"; massimo 4 righe e 5 per riga.
    Quelli a 8 sono i quattro di sempre. Il menu del modulo mostra solo quelli la cui somma è uguale ai titolari. */
 const FORMATIONS = {
@@ -3441,7 +3441,7 @@ function computeStats(upto){
   arr.sort(rankCmp);
   arr.forEach((s, i) => s.rank = i + 1);
   /* Targhe: assegnazione in ordine gerarchico con tetto di PLQ_CAP per giocatore.
-     Chi potrebbe vincerne 3 o più (è primo, oppure primo tra chi non è già al massimo) sceglie le sue 2 (plqPick/{pid}/p):
+     Chi potrebbe vincerne più di PLQ_CAP (è primo, oppure primo tra chi non è già al massimo) sceglie le sue PLQ_CAP (plqPick/{pid}/p):
      quelle gli restano, le altre vanno a chi segue. Senza scelta resta l'ordine gerarchico. */
   plqExtras(arr, ms, wal);
   const PC = {};
@@ -5698,7 +5698,7 @@ const ME_TABS = [['pro', 'Profilo'], ['stat', 'Statistiche'], ['goal', 'Traguard
 function meTabsHTML(t){
   return `<div class="sub-tabs me-tabs" role="tablist" aria-label="Io">${ME_TABS.map(([k, l]) => `<button type="button" role="tab" class="sub-tab ${k === t ? 'on' : ''}" aria-selected="${k === t}" data-metab="${k}">${l}</button>`).join('')}</div>`;
 }
-/* Le tue targhe: chi è primo in 3 o più sceglie le sue 2; chi ne ha almeno 2 sceglie quella in vetrina sulla figurina */
+/* Le tue targhe: chi è primo in più di PLQ_CAP sceglie le sue PLQ_CAP; chi ne ha almeno 2 sceglie quella in vetrina sulla figurina */
 function myPlqHTML(s){
   const leads = (s.plqLeads || []).map(plaqueById).filter(Boolean), mine = s.plaques.map(plaqueById).filter(Boolean);
   if(leads.length <= PLQ_CAP && mine.length < 2) return '';
@@ -8979,6 +8979,14 @@ try{
   if(!localStorage.getItem('cmb_mig_v162')){
     ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV','cmb2627_seenTier','cmb2627_seenOvr'].forEach(k => localStorage.removeItem(k));
     localStorage.setItem('cmb_mig_v162', '1');
+  }
+}catch(e){}
+/* Migrazione 1.14.0: targhe al massimo 2 a testa, parità che premia chi arriva prima e tre trofei nuovi.
+   Si azzerano i "già visto" di trofei e targhe: il codice li ricrea in silenzio, senza finti avvisi */
+try{
+  if(!localStorage.getItem('cmb_mig_v1140')){
+    ['cmb2627_recSeen','cmb2627_seenPlq','cmb2627_seenRecV'].forEach(k => localStorage.removeItem(k));
+    localStorage.setItem('cmb_mig_v1140', '1');
   }
 }catch(e){}
 /* Migrazione 1.12.8: arrivano targhe nuove. Si azzerano i "già visto" di trofei e targhe: il codice li ricrea in silenzio */
