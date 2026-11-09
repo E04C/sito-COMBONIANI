@@ -2321,7 +2321,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.13.0';
+const APP_VERSION = '1.13.1';
 const DEFAULT_PIN = '2026';
 /* Interruttori delle funzioni: li accende e spegne l'admin (settings/features/{chiave}), valgono per tutti i dispositivi.
    Il codice legge sempre e solo feat(chiave). Spenta = nascosta e disattivata; codice e dati restano, riaccesa torna tutto com'era. */
@@ -8621,6 +8621,12 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.13.1', date:'2026-11-09', items:[
+    `🥈 Targhe: adesso ognuno ne tiene al massimo 2. Se potresti averne di più, scegli tu quali in Io → Traguardi.`,
+    `🤝 A pari merito targhe e trofei restano a chi c’è arrivato per primo: per portarli via bisogna fare meglio, non uguale.`,
+    `👑 Tre trofei nuovi: Leggenda della Difesa, Leggenda del Centrocampo e Leggenda dell’Attacco, per l’overall più alto mai raggiunto in ogni ruolo.`,
+    `📈 In Io → Statistiche tocca un puntino del grafico dell’overall: rivedi la tua scheda di quel giorno, con overall, gol, assist e posizione in classifica.`
+  ] },
   { v:'1.13.0', date:'2026-11-09', items:[
     `🎬 Nuova sezione «Clip» nella barra in basso: gol, assist, parate, papere e azioni da ricordare, da guardare direttamente nell’app. Puoi filtrare per categoria e per giocatore.`,
     `👋 Il CASiNO non c’è più: spariscono portafoglio, scommesse, Negozio e le targhe Il Banco, Il Profeta, Il Colpaccio e Il Kamikaze.`

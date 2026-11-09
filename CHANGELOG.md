@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.13.1
+- Targhe al massimo 2 a testa (`PLQ_CAP`); chi potrebbe averne di più sceglie le sue 2. Migrazione `cmb_mig_v1131`.
+- Parità: a pari valore principale targhe e trofei restano a chi c'è arrivato per primo. Targhe: `PLQ_PREV` dalla storia gara per gara (`trophyHistory`), confronto sul valore di `PLQ_GAP`, secondo calcolo in `render`. Trofei: le funzioni di confronto di `recPick` guardano solo il valore principale. I criteri di parità scritti valgono solo tra chi ci arriva nella stessa giornata. La chiave della storia cambia anche con `plqPick` e i parametri dell'overall.
+- Trofei storici nuovi in coda a `REC_KEYS`: `vdif`, `vcen`, `vatt` (Leggenda della Difesa, del Centrocampo, dell'Attacco): l'overall più alto (intero) mai raggiunto in stagione per ruolo; a pari overall resta a chi c'è arrivato prima.
+- Io: i puntini del grafico dell'overall sono tasti (`ovr-snap`, `.oc-hit`) che aprono la scheda di quel giorno (`#m-snap`, `snapHTML`): figurina com'era, la gara, i numeri di stagione fino a lì da `computeStats(k)`, posizione e targhe di quel momento; frecce per le giornate vicine.
+
 ## 1.13.0
 - Clip: sezione nuova «Clip» (`view-clips`, `renderClips`) nella barra in basso dopo Trofei, indipendente dalle partite. Percorso nuovo e facoltativo `clips/{id}` = { yt, cat (gol, ast, par, pap, az), pids, ast?, mid?, t?, sh?, at } pulito da `cleanClips`; la clip Gol con `ast` vale anche come assist. L'admin aggiunge, modifica ed elimina (`#m-clipf`), il video si guarda nell'app (`#m-clip`, youtube-nocookie). Eliminando una gara le sue clip restano senza giornata. Avviso all'admin se le regole non permettono «clips»; «clips» entra nel backup.
 - Clip: nel modulo dell'admin i giocatori (e l'assist) si cercano per nome (`#cl-q`, `#cl-qa`, `paintClipRes`) invece dell'elenco di tutta la rosa; si vedono solo quelli scelti, con ✕ per toglierli. Invio sceglie il primo risultato.
