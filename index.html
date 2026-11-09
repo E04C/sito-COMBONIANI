@@ -4505,10 +4505,11 @@ function propsAllHTML(){
   return `<h3>Proposte di formazione</h3><p class="lead-p">Arrivano qui e in Partite → giornata → Formazioni → «📥 Proposte ricevute».</p>${ms.length ? ms.map(m => { const all = lineupPropsOf(m.id), w = all.filter(([, x]) => x.st === 'wait').length;
     return `<div class="prop-it"><div class="pi-t" style="grid-column:1/-1"><b>Giornata ${num(m.day)}</b><small>${esc(whenLabel(m) || 'Data da definire')} · ${all.length} ${all.length === 1 ? 'proposta' : 'proposte'}${w ? `, ${w} da vedere` : ''}${propsOpen(m) ? '' : ' · chiuse'}</small></div><div class="pi-a"><button type="button" class="btn sm primary" data-action="props-open" data-mid="${m.id}" ${all.length ? '' : 'disabled'}>Vedi le proposte</button></div></div>`; }).join('') : '<p class="mu">Nessuna gara in programma con proposte.</p>'}`;
 }
-/* Esito della tua proposta: si mostra una volta per decisione (cmb_propSeen = { mid: dec }); su un telefono nuovo solo quelle degli ultimi 7 giorni */
+/* Esito della tua proposta: si mostra una volta per decisione (cmb_propSeen = { mid: dec }) e solo finché la gara è in programma
+   (giocata la partita non serve più: così non torna su un telefono o un indirizzo nuovo); su un telefono nuovo solo le decisioni degli ultimi 7 giorni */
 function propResCheck(me){
   let seen = {}; try{ seen = JSON.parse(localStorage.getItem('cmb_propSeen') || '{}') || {}; }catch(e){}
-  const hit = Object.entries(store.lineupProps || {}).map(([mid, o]) => [mid, o && o[me]]).filter(([mid, x]) => x && ['ok', 'mod', 'no'].includes(x.st) && num(x.dec) && seen[mid] !== num(x.dec) && store.matches[mid])
+  const hit = Object.entries(store.lineupProps || {}).map(([mid, o]) => [mid, o && o[me]]).filter(([mid, x]) => x && ['ok', 'mod', 'no'].includes(x.st) && num(x.dec) && seen[mid] !== num(x.dec) && store.matches[mid] && store.matches[mid].status === 'scheduled')
     .sort((a, b) => num(b[1].dec) - num(a[1].dec))[0];
   if(!hit) return false;
   const [mid, x] = hit; seen[mid] = num(x.dec);
