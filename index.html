@@ -153,6 +153,7 @@ main{max-width:1440px;margin:0 auto;padding:18px max(14px,env(safe-area-inset-le
 .clp-th{position:relative;display:block;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#11151c;border:1px solid var(--hair)}
 .clp-th img{width:100%;height:100%;object-fit:cover;display:block}
 .clp:hover .clp-th{border-color:var(--line-strong)}
+.clp-cat .evi{width:15px;height:15px}
 .clp-cat{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;background:rgba(0,0,0,.72);color:#fff;font:800 11.5px/1.6 var(--body);white-space:nowrap}
 .clp-th .clp-cat{position:absolute;left:6px;top:6px;max-width:calc(100% - 12px);overflow:hidden;text-overflow:ellipsis}
 .clp-pl{position:absolute;left:50%;top:50%;width:40px;height:28px;margin:-14px 0 0 -20px;border-radius:8px;background:#e00000;color:#fff;display:grid;place-items:center;font-size:13px}
@@ -174,6 +175,7 @@ main{max-width:1440px;margin:0 auto;padding:18px max(14px,env(safe-area-inset-le
 .clf-ch.cats button,.clf-ch button.none{padding:0 12px}
 .clf-ch button.on{background:var(--or);border-color:var(--or);color:#1a0a00}
 .clf-ch button .x{margin-left:2px;font-weight:800}
+.clf-ch button .evi{width:18px;height:18px;margin-right:-1px}
 .clf-q{width:100%;margin-top:4px}
 .clf-res{margin-top:8px}
 .clf-res:empty{display:none}
@@ -445,7 +447,7 @@ button.m.tap:active{transform:scale(.97)}
 .gx-top>.av{margin-right:-4px}.gx-top span{margin-left:6px;min-width:0}.gx-top b{font-size:15px}.gx-top small{display:block;color:var(--mu);font-size:12px}
 .gx-oth{font:600 12.5px var(--body);color:var(--mu);margin:0 0 8px}
 .gx-r{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--hair)}
-.gx-min{font:italic 800 20px var(--disp);color:var(--or);text-align:center}.gx-r b{display:block;font-size:14px}.gx-r small{color:var(--mu);font-size:12px}
+.gx-min{font:italic 800 20px var(--disp);color:var(--or);text-align:center}.gx-min .evi{width:24px;height:24px}.gx-r b .evi{width:17px;height:17px;vertical-align:-3px;margin-right:4px}#gl-body h3 .evi{width:1.05em;height:1.05em;vertical-align:-.15em;margin-right:7px}.gx-r b{display:block;font-size:14px}.gx-r small{color:var(--mu);font-size:12px}
 .gx-s{font:700 12px var(--body);color:var(--mu);text-align:right;white-space:nowrap}
 .m b{display:block;font:italic 800 24px/1 var(--disp);font-variant-numeric:tabular-nums;white-space:nowrap}
 .m span{display:block;font:700 10.5px/1.2 var(--body);color:var(--mu);margin-top:4px}
@@ -2678,11 +2680,11 @@ const ytUrl = id => 'https://www.youtube.com/watch?v=' + id;
    yt codice del video, cat una delle CLIP_CATS, mid la gara, pids chi è nella clip, ast chi ha fatto l'assist (solo nei gol:
    così la stessa clip vale anche come assist), t titolo, sh 1 se è uno Short (video verticale), at quando è stata aggiunta */
 const CLIP_CATS = {
-  gol:{ i:'⚽', l:'Gol', who:'Chi ha segnato', one:'Gol di ' },
-  ast:{ i:'👟', l:'Assist', who:'Chi ha fatto l’assist', one:'Assist di ' },
-  par:{ i:'🧤', l:'Parate', who:'Chi ha parato', one:'Parata di ' },
-  pap:{ i:'🤡', l:'Papere', who:'Chi ha fatto la papera', one:'Papera di ' },
-  az:{ i:'🔥', l:'Azioni da ricordare', who:'Chi c’è nell’azione', one:'Azione di ' }
+  gol:{ ic:'gol', l:'Gol', who:'Chi ha segnato', one:'Gol di ' },
+  ast:{ ic:'assist', l:'Assist', who:'Chi ha fatto l’assist', one:'Assist di ' },
+  par:{ ic:'parata', l:'Parate', who:'Chi ha parato', one:'Parata di ' },
+  pap:{ ic:'papera', l:'Papere', who:'Chi ha fatto la papera', one:'Papera di ' },
+  az:{ ic:'azione', l:'Azioni da ricordare', who:'Chi c’è nell’azione', one:'Azione di ' }
 };
 function cleanClips(raw){
   const out = {};
@@ -4453,7 +4455,7 @@ function clipTitle(c){
 }
 function clipCardHTML(c){
   const C = CLIP_CATS[c.cat], m = c.mid && store.matches[c.mid];
-  return `<button type="button" class="clp" data-action="clip-open" data-cid="${c.id}" aria-label="${esc(C.l)}: ${esc(clipTitle(c))}${m ? `, giornata ${num(m.day)}` : ''}"><span class="clp-th"><img src="https://i.ytimg.com/vi/${c.yt}/mqdefault.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()"><span class="clp-cat">${C.i} ${C.l}</span><span class="clp-pl" aria-hidden="true">▶</span></span><span class="clp-t">${esc(clipTitle(c))}</span>${m ? `<small>Giornata ${num(m.day)}</small>` : ''}</button>`;
+  return `<button type="button" class="clp" data-action="clip-open" data-cid="${c.id}" aria-label="${esc(C.l)}: ${esc(clipTitle(c))}${m ? `, giornata ${num(m.day)}` : ''}"><span class="clp-th"><img src="https://i.ytimg.com/vi/${c.yt}/mqdefault.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()"><span class="clp-cat">${evIcon(C.ic)}${C.l}</span><span class="clp-pl" aria-hidden="true">▶</span></span><span class="clp-t">${esc(clipTitle(c))}</span>${m ? `<small>Giornata ${num(m.day)}</small>` : ''}</button>`;
 }
 /* Sezione Clip: filtri per categoria e per giocatore, poi la griglia */
 function clipsGalleryHTML(){
@@ -4462,7 +4464,7 @@ function clipsGalleryHTML(){
   if(f.pid && !all.some(c => clipHas(c, f.pid))) f.pid = '';
   const L = all.filter(c => (!f.cat || clipInCat(c, f.cat)) && (!f.pid || clipHas(c, f.pid)));
   const n = k => all.filter(c => (!f.pid || clipHas(c, f.pid)) && (!k || clipInCat(c, k))).length;
-  const chips = [['', 'Tutte'], ...Object.entries(CLIP_CATS).map(([k, C]) => [k, `${C.i} ${C.l}`])]
+  const chips = [['', 'Tutte'], ...Object.entries(CLIP_CATS).map(([k, C]) => [k, `${evIcon(C.ic)}${C.l}`])]
     .map(([k, l]) => `<button type="button" class="${f.cat === k ? 'on' : ''}" data-clcatf="${k}" aria-pressed="${f.cat === k}">${l} <small>${n(k)}</small></button>`).join('');
   const people = [...new Set(all.flatMap(c => [...c.pids, c.ast]).filter(p => p && store.players[p]))].sort((a, b) => pname(a).localeCompare(pname(b), 'it'));
   return `<div class="glass clp-gal"><div class="clp-flt" role="group" aria-label="Categoria">${chips}</div>
@@ -4478,7 +4480,7 @@ function openClip(cid){
   const C = CLIP_CATS[c.cat], m = c.mid && store.matches[c.mid];
   const who = [...c.pids.map(p => [p, '']), ...(c.ast ? [[c.ast, 'assist']] : [])].map(([p, r]) => `<span>${avatar(store.players[p] || { name:pname(p) }, 'xs')}${esc(pname(p))}${r ? ` <em>${r}</em>` : ''}</span>`).join('');
   $('#clip-body').innerHTML = `<div class="clip-v${c.sh ? ' sh' : ''}"><iframe src="https://www.youtube-nocookie.com/embed/${c.yt}?autoplay=1&amp;playsinline=1&amp;rel=0" title="${esc(clipTitle(c))}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
-    <div class="clip-info"><span class="clp-cat">${C.i} ${C.l}</span><h3>${esc(clipTitle(c))}</h3>${m ? `<p class="mu sm" style="margin:0">Giornata ${num(m.day)}${m.date ? ' · ' + fmtDate(m.date) : ''}</p>` : ''}${who ? `<div class="clip-who">${who}</div>` : ''}</div>
+    <div class="clip-info"><span class="clp-cat">${evIcon(C.ic)}${C.l}</span><h3>${esc(clipTitle(c))}</h3>${m ? `<p class="mu sm" style="margin:0">Giornata ${num(m.day)}${m.date ? ' · ' + fmtDate(m.date) : ''}</p>` : ''}${who ? `<div class="clip-who">${who}</div>` : ''}</div>
     <div class="clip-act">${ui.admin ? `<button type="button" class="btn sm" data-action="clip-edit" data-cid="${cid}">✏️ Modifica</button><button type="button" class="btn sm danger" data-action="clip-del" data-cid="${cid}">Elimina</button>` : ''}<a class="btn sm" href="${ytUrl(c.yt)}" target="_blank" rel="noopener noreferrer">Apri su YouTube</a><button type="button" class="btn sm ghost" data-close autofocus>Chiudi</button></div>`;
   openModal('#m-clip');
 }
@@ -4501,7 +4503,7 @@ function paintClipForm(focus){
   const C = CLIP_CATS[F.cat];
   const sel = (attr, pid) => `<button type="button" class="on" ${attr}="${pid}" aria-label="Togli ${esc(pname(pid))}">${avatar(store.players[pid] || { name:pname(pid) }, 'xs')}${esc(pname(pid))}<span class="x" aria-hidden="true">✕</span></button>`;
   const search = (id, box, ph, lbl) => `<input id="${id}" class="field clf-q" type="search" autocomplete="off" placeholder="${ph}" aria-label="${lbl}" aria-controls="${box}"><div class="clf-ch clf-res" id="${box}" aria-live="polite"></div>`;
-  $('#clf-dyn').innerHTML = `<span class="clf-l">Categoria</span><div class="clf-ch cats" role="group" aria-label="Categoria">${Object.entries(CLIP_CATS).map(([k, X]) => `<button type="button" data-clcat="${k}" aria-pressed="${F.cat === k}">${X.i} ${X.l}</button>`).join('')}</div>
+  $('#clf-dyn').innerHTML = `<span class="clf-l">Categoria</span><div class="clf-ch cats" role="group" aria-label="Categoria">${Object.entries(CLIP_CATS).map(([k, X]) => `<button type="button" data-clcat="${k}" aria-pressed="${F.cat === k}">${evIcon(X.ic)}${X.l}</button>`).join('')}</div>
     <span class="clf-l">${C.who}${F.cat === 'az' ? ' (facoltativo)' : ''}</span>${F.pids.length ? `<div class="clf-ch">${F.pids.map(p => sel('data-clp', p)).join('')}</div>` : ''}
     ${search('cl-q', 'cl-r', F.pids.length ? 'Aggiungi un altro: scrivi il nome' : 'Scrivi il nome del giocatore', `${C.who}: cerca per nome`)}
     ${F.cat === 'gol' ? `<span class="clf-l">Assist (facoltativo): la clip vale anche come assist di chi l’ha fatto</span>${F.ast ? `<div class="clf-ch">${sel('data-cla', F.ast)}</div>` : search('cl-qa', 'cl-ra', 'Scrivi il nome di chi ha fatto l’assist', 'Assist: cerca per nome')}` : ''}`;
@@ -4672,11 +4674,11 @@ function glistHTML(pid, k){
   const unit = n => n === 1 ? (k === 'g' ? 'assist' : 'gol') : (k === 'g' ? 'assist' : 'gol');
   const lead = first.length ? `<div class="gx-top">${first.slice(0, 3).map(([o]) => avatar(store.players[o], 'md')).join('')}<span><small>${k === 'g' ? 'Chi gli ha servito più assist' : 'Il compagno che ha servito di più'}</small><b>${first.map(([o]) => esc(pname(o))).join(', ').replace(/, ([^,]*)$/, ' e $1')} · ${best} ${unit(best)}${first.length > 1 ? ' ciascuno' : ''}</b></span></div>${rest.length ? `<p class="gx-oth">Poi ${rest.map(([o, n]) => `${esc(pname(o))} (${n})`).join(', ')}</p>` : ''}` : '';
   const line = r => {
-    const what = r.x ? (k === 'g' ? (r.x.pen ? '🎯 Su rigore' : r.x.a && store.players[r.x.a] ? `Assist di ${esc(pname(r.x.a))}` : 'Senza assist') : `Gol di ${esc(pname(r.x.s))}`) : `${r.n} ${k === 'g' ? 'gol' : 'assist'} (dettaglio non registrato)`;
-    return `<div class="gx-r"><span class="gx-min">${r.x && r.x.min != null ? r.x.min + '’' : k === 'g' ? '⚽' : '👟'}</span><span><b>${what}</b><small>Giornata ${num(r.m.day)}${r.m.date ? ' · ' + esc(fmtDate(r.m.date)) : ''}</small></span><span class="gx-s">${SURF[r.m.surf] ? SURF[r.m.surf] + '<br>' : ''}${r.team === 'white' ? 'Bianchi' : 'Neri'} ${r.own}</span></div>`;
+    const what = r.x ? (k === 'g' ? (r.x.pen ? `${evIcon('rig')}Su rigore` : r.x.a && store.players[r.x.a] ? `Assist di ${esc(pname(r.x.a))}` : 'Senza assist') : `Gol di ${esc(pname(r.x.s))}`) : `${r.n} ${k === 'g' ? 'gol' : 'assist'} (dettaglio non registrato)`;
+    return `<div class="gx-r"><span class="gx-min">${r.x && r.x.min != null ? r.x.min + '’' : evIcon(k === 'g' ? 'gol' : 'assist')}</span><span><b>${what}</b><small>Giornata ${num(r.m.day)}${r.m.date ? ' · ' + esc(fmtDate(r.m.date)) : ''}</small></span><span class="gx-s">${SURF[r.m.surf] ? SURF[r.m.surf] + '<br>' : ''}${r.team === 'white' ? 'Bianchi' : 'Neri'} ${r.own}</span></div>`;
   };
   const tot = k === 'g' ? s.g : s.a;
-  return `<h3>${k === 'g' ? '⚽ I gol' : '👟 Gli assist'} di ${esc(s.name)}</h3><p class="lead-p" style="margin:0">${tot} ${k === 'g' ? 'gol' : 'assist'} in ${s.pres} ${s.pres === 1 ? 'partita' : 'partite'}</p>${lead}${rows.slice().reverse().map(line).join('') || '<p class="mu">Ancora niente.</p>'}`;
+  return `<h3>${k === 'g' ? evIcon('gol') + 'I gol' : evIcon('assist') + 'Gli assist'} di ${esc(s.name)}</h3><p class="lead-p" style="margin:0">${tot} ${k === 'g' ? 'gol' : 'assist'} in ${s.pres} ${s.pres === 1 ? 'partita' : 'partite'}</p>${lead}${rows.slice().reverse().map(line).join('') || '<p class="mu">Ancora niente.</p>'}`;
 }
 function propsListHTML(mid){
   const m = store.matches[mid], all = lineupPropsOf(mid);
