@@ -177,6 +177,10 @@ main{max-width:1440px;margin:0 auto;padding:18px max(14px,env(safe-area-inset-le
 .clf-res{margin-top:8px}
 .clf-res:empty{display:none}
 .clf-ch button[aria-pressed="true"]{background:var(--or);border-color:var(--or);color:#1a0a00}
+/* Rigori (1.13.2): etichetta del rigore segnato e riga del rigore sbagliato */
+.pen{display:inline-block;margin-left:6px;padding:0 6px;border-radius:6px;background:#fbbf24;color:#1a0a00;font:800 10.5px/1.7 var(--body);letter-spacing:.04em;vertical-align:1px}
+.pmx{color:#fb7185;font-weight:700;font-size:12.5px;white-space:nowrap}
+.gl-row.pm .gl-w em{color:#fb7185;font-style:normal}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:rgba(249,115,22,.08);color:var(--tx);font:700 14px var(--body);text-decoration:none;transition:transform .12s var(--ease),background .2s,border-color .2s,box-shadow .2s;touch-action:manipulation}
 .btn:hover{border-color:var(--line-strong)}
 .btn:active{transform:scale(.96)}
@@ -2667,6 +2671,9 @@ function cleanMatches(raw){
     for(const k of ['white', 'black']) if(k in c) c[k] = cleanEntries(c[k]);
     for(const k of ['capW', 'capB']) if(k in c && !(c[k] === null || idOk(c[k]))) c[k] = null;
     if('yt' in c && !(typeof c.yt === 'string' && YT_ID.test(c.yt))) delete c.yt;
+    /* rigori sbagliati (1.13.2): matches/{id}/pm = [{ s, min?, ts? }], fuori dalla sequenza dei gol */
+    if('pm' in c) c.pm = (Array.isArray(c.pm) ? c.pm : Object.values(c.pm || {})).filter(x => x && idOk(x.s)).slice(0, 30)
+      .map(x => ({ s:x.s, ...(x.min != null && x.min !== '' && Number.isFinite(Number(x.min)) ? { min:Number(x.min) } : {}), ...(typeof x.ts === 'string' && /^\d{1,2}:\d{2}$/.test(x.ts) ? { ts:x.ts } : {}) }));
     out[id] = c;
   }
   return out;
@@ -3088,7 +3095,7 @@ function matchGoals(m, lenOverride){
     const t = own ? (og ? otherTeam(own) : own) : null;
     const cm = g.ts ? clockMin(g.ts, m.time, m.end) : null;
     const min = cm != null ? cm : (g.min == null || g.min === '' ? null : num(g.min));
-    return { i, s:g.s, a:g.a || '', og, t, min, est:false, ts:g.ts || '' };
+    return { i, s:g.s, a:g.a || '', og, pen:!og && !!num(g.pen), t, min, est:false, ts:g.ts || '' };
   });
   const len = lenOverride != null ? lenOverride : matchLen(m);
   for(let i = 0; i < out.length; i++){
@@ -3249,7 +3256,7 @@ function rankCmp(a, b){
 const OVR_BANDS = [['b60', 60, 69], ['b70', 70, 79], ['b80', 80, 84], ['b85', 85, 89], ['b90', 90, 94], ['b95', 95, 99]];
 const OVR_BAND0 = { fp:1, win:2, wc:0.1, draw:0, loss:2, ldc:1, dA:0, dC:0, dD:0, dc:0, cap:3, gcap:5 };
 const OVR_DEF = {
-  gol:1, ast:0.5, rATT:0.8, rCEN:1, rDIF:1.2, og:1, aw:0.2, late:0.3,
+  gol:1, ast:0.5, rATT:0.8, rCEN:1, rDIF:1.2, og:1, pm:1, aw:0.2, late:0.3,
   b60:{ ...OVR_BAND0, fp:2, minFp:3, loss:1, ldc:0.5 },
   b70:{ ...OVR_BAND0 },
   b80:{ ...OVR_BAND0 },
@@ -3261,7 +3268,7 @@ const OVR_DEF = {
 const OVR_META_G = [
   ['gol', 'Valore di un gol', 0, 3, 0.1], ['ast', 'Valore di un assist', 0, 3, 0.1],
   ['rATT', 'Moltiplicatore attaccante', 0, 3, 0.05], ['rCEN', 'Moltiplicatore centrocampista', 0, 3, 0.05], ['rDIF', 'Moltiplicatore difensore', 0, 3, 0.05],
-  ['aw', 'Premio di reparto', 0, 2, 0.05], ['og', 'Autogol (punti persi)', 0, 5, 0.1], ['late', 'Ritardo (punti persi)', 0, 3, 0.1]
+  ['aw', 'Premio di reparto', 0, 2, 0.05], ['og', 'Autogol (punti persi)', 0, 5, 0.1], ['pm', 'Rigore sbagliato (punti persi)', 0, 5, 0.1], ['late', 'Ritardo (punti persi)', 0, 3, 0.1]
 ];
 const OVR_META_B = [
   ['fp', 'Moltiplicatore dei punti positivi', 0, 4, 0.05], ['minFp', 'Al minimo (60): moltiplicatore', 0, 5, 0.1],
@@ -3308,10 +3315,10 @@ function ovrParts(role, ovr, c){
   const cpen = R === 'DIF' && c.res === 's' ? (B.dc || 0) * c.conceded : 0;
   const leg = shown >= 99 && c.res === 'v' && (B.leg || 0) > 0 && c.g < (R === 'DIF' ? B.legGD : B.legG);   /* Leggenda: vincere senza i gol richiesti costa punti */
   if(leg) pos = 0;
-  const raw = pos - lPts - c.og * C.og - dry - cpen - (leg ? B.leg : 0);
+  const raw = pos - lPts - c.og * C.og - (c.pm || 0) * C.pm - dry - cpen - (leg ? B.leg : 0);
   const d = Math.max(-B.cap, Math.min(B.gcap, raw));
   return { d, fp, fl:1, band:B.txt, mult, near2, dr:dPts > 0 && !leg ? dPts * fp : 0,
-    v:leg ? 0 : vPts * fp, l:lPts, g:leg ? 0 : c.g * C.gol * mult * fp, a:leg ? 0 : c.a * C.ast * mult * fp, aw:!leg && c.award ? C.aw * fp : 0, og:c.og * C.og, dry, cpen, leg:leg ? B.leg : 0, lcap:B.cap, gcap:B.gcap, cap:d - raw };
+    v:leg ? 0 : vPts * fp, l:lPts, g:leg ? 0 : c.g * C.gol * mult * fp, a:leg ? 0 : c.a * C.ast * mult * fp, aw:!leg && c.award ? C.aw * fp : 0, og:c.og * C.og, pm:(c.pm || 0) * C.pm, dry, cpen, leg:leg ? B.leg : 0, lcap:B.cap, gcap:B.gcap, cap:d - raw };
 }
 function ovrDelta(role, ovr, c){ return ovrParts(role, ovr, c).d; }
 /* Premi di reparto: solo punti individuali (gol + assist pesati dal ruolo - autogol), niente esito. Parità: gol, assist, alfabeto. */
@@ -3383,7 +3390,7 @@ function computeStats(upto){
   const S = {}, wal = upto == null;   /* stagione intera (gli storici dei trofei passano upto) */
   for(const [pid, p] of Object.entries(store.players || {})){
     if(!p || typeof p !== 'object') continue;
-    S[pid] = { pid, p, name:p.name || '', pres:0, v:0, pa:0, s:0, g:0, a:0, og:0, mvp:0, mvpPts:0, votesRx:0, ritardi:0, firstG:0, lateG:0, hat:0, maxG:0, minConcW:Infinity, bigW:0, fant:0, aTo:{},
+    S[pid] = { pid, p, name:p.name || '', pres:0, v:0, pa:0, s:0, g:0, a:0, og:0, mvp:0, mvpPts:0, votesRx:0, ritardi:0, pen:0, pmis:0, firstG:0, lateG:0, hat:0, maxG:0, minConcW:Infinity, bigW:0, fant:0, aTo:{},
                ovr:OVR_START, last:null, mates:{}, hist:[], prevRank:null };
   }
   const all = sortedMatches();
@@ -3405,6 +3412,7 @@ function computeStats(upto){
       white: sc.w > sc.b ? 'v' : sc.w < sc.b ? 's' : 'pa',
       black: sc.b > sc.w ? 'v' : sc.b < sc.w ? 's' : 'pa'
     };
+    const pmBy = {}; for(const x of list(m.pm)) if(x && x.s) pmBy[x.s] = (pmBy[x.s] || 0) + 1;   /* rigori sbagliati (1.13.2) */
     const gtl = matchGoals(m), mlen = matchLen(m), firstS = gtl.length && !gtl[0].og ? gtl[0].s : '', lateBy = {};
     if(mlen) for(const x of gtl) if(!x.og && !x.est && x.min != null && x.min >= mlen * 0.8) lateBy[x.s] = (lateBy[x.s] || 0) + 1;
     for(const x of gtl) if(!x.og && x.a && x.a !== x.s && S[x.a] && S[x.s]) S[x.a].aTo[x.s] = 1;   /* L'Altruista: a quali compagni hai servito un assist (cronaca) */
@@ -3429,14 +3437,16 @@ function computeStats(upto){
         if(award) st.awards = (st.awards || 0) + 1;
         const preOvr = st.ovr;
         /* il bonus delle stelle e la penalità del ritardo (OVRC.late) si sommano dopo il delta già limitato dai tetti della fascia; la variazione mostrata li include */
-        const P = ovrParts(st.p.role, st.ovr, { res:r, margin, conceded, g, a, og, mvp:isMvp, award });
+        const pm = pmBy[e.pid] || 0, pen = gtl.filter(x => x.pen && x.s === e.pid).length;
+        st.pmis += pm; st.pen += pen;
+        const P = ovrParts(st.p.role, st.ovr, { res:r, margin, conceded, g, a, og, pm, mvp:isMvp, award });
         const bonus = RR[e.pid] ? RR[e.pid].bonus : 0, latePen = e.late ? OVRC.late : 0;
         const d = P.d + bonus - latePen;
         st.ovr = Math.max(OVR_MIN, Math.min(OVR_MAX, st.ovr + d));
         const parts = { ...P, bonus, late:latePen, clamp:st.ovr - (preOvr + d), conceded, margin };
         st.last = { d, day:num(m.day) };
         (log[m.id] = log[m.id] || {})[e.pid] = { d, ovr:st.ovr, pre:preOvr };
-        st.hist.push({ m, team, r, g, a, og, d, ovr:st.ovr, pre:preOvr, parts });
+        st.hist.push({ m, team, r, g, a, og, pm, d, ovr:st.ovr, pre:preOvr, parts });
         for(const o of es){
           if(o.pid === e.pid) continue;
           const mt = st.mates[o.pid] || (st.mates[o.pid] = { n:0, v:0, pa:0, s:0 });
@@ -4360,16 +4370,23 @@ function scorersHTML(m){
   const seq = matchGoals(m);
   const col = (team, cls) => {
     let li = [];
+    const gm = [];   /* minuto di ogni riga dei gol: serve a mettere i rigori sbagliati al loro posto */
     if(seq.length){
       seq.filter(x => x.t === team).forEach(x => {
+        gm.push(x.min);
         const mn = x.min != null ? `<span class="mn">${x.est ? '~' : ''}${x.min}’</span>` : '';
-        li.push(`<p class="sc-li">${mn}${scAv(x.s)}<span class="sc-tx">${esc(pname(x.s))}${x.og ? ' <span class="aut">(aut.)</span>' : ''}${!x.og && x.a ? `<small>assist ${esc(pname(x.a))}</small>` : ''}</span></p>`);
+        li.push(`<p class="sc-li">${mn}${scAv(x.s)}<span class="sc-tx">${esc(pname(x.s))}${x.og ? ' <span class="aut">(aut.)</span>' : x.pen ? ' <span class="pen">RIG</span>' : ''}${!x.og && x.a ? `<small>assist ${esc(pname(x.a))}</small>` : ''}</span></p>`);
       });
     }else{
       const ev = teamEvents(m, team), c = e => e.c > 1 ? ` x${e.c}` : '';
       ev.goals.forEach(e => li.push(`<p class="sc-li">${scAv(e.pid)}<span class="sc-tx">${esc(e.n)}${c(e)}</span></p>`));
       ev.ogs.forEach(e => li.push(`<p class="sc-li">${scAv(e.pid)}<span class="sc-tx">${esc(e.n)}${c(e)} <span class="aut">(aut.)</span></span></p>`));
       ev.assists.forEach(e => li.push(`<p class="sc-li"><small>assist ${esc(e.n)}${c(e)}</small></p>`));
+    }
+    for(const x of list(m.pm)) if(x && startTeam(m, x.s) === team){
+      const row = `<p class="sc-li pm">${x.min != null ? `<span class="mn">${x.min}’</span>` : ''}${scAv(x.s)}<span class="sc-tx">${esc(pname(x.s))} <span class="pmx">❌ rig. sbagliato</span></span></p>`;
+      const at = x.min != null && gm.length === li.length ? gm.findIndex(v => v != null && v > x.min) : -1;   /* prima del primo gol con il minuto dopo */
+      if(at >= 0){ li.splice(at, 0, row); gm.splice(at, 0, x.min); } else { li.push(row); gm.push(x.min); }
     }
     return { cls, li };
   };
@@ -4611,7 +4628,7 @@ function glistHTML(pid, k){
   const unit = n => n === 1 ? (k === 'g' ? 'assist' : 'gol') : (k === 'g' ? 'assist' : 'gol');
   const lead = first.length ? `<div class="gx-top">${first.slice(0, 3).map(([o]) => avatar(store.players[o], 'md')).join('')}<span><small>${k === 'g' ? 'Chi gli ha servito più assist' : 'Il compagno che ha servito di più'}</small><b>${first.map(([o]) => esc(pname(o))).join(', ').replace(/, ([^,]*)$/, ' e $1')} · ${best} ${unit(best)}${first.length > 1 ? ' ciascuno' : ''}</b></span></div>${rest.length ? `<p class="gx-oth">Poi ${rest.map(([o, n]) => `${esc(pname(o))} (${n})`).join(', ')}</p>` : ''}` : '';
   const line = r => {
-    const what = r.x ? (k === 'g' ? (r.x.a && store.players[r.x.a] ? `Assist di ${esc(pname(r.x.a))}` : 'Senza assist') : `Gol di ${esc(pname(r.x.s))}`) : `${r.n} ${k === 'g' ? 'gol' : 'assist'} (dettaglio non registrato)`;
+    const what = r.x ? (k === 'g' ? (r.x.pen ? '🎯 Su rigore' : r.x.a && store.players[r.x.a] ? `Assist di ${esc(pname(r.x.a))}` : 'Senza assist') : `Gol di ${esc(pname(r.x.s))}`) : `${r.n} ${k === 'g' ? 'gol' : 'assist'} (dettaglio non registrato)`;
     return `<div class="gx-r"><span class="gx-min">${r.x && r.x.min != null ? r.x.min + '’' : k === 'g' ? '⚽' : '👟'}</span><span><b>${what}</b><small>Giornata ${num(r.m.day)}${r.m.date ? ' · ' + esc(fmtDate(r.m.date)) : ''}</small></span><span class="gx-s">${SURF[r.m.surf] ? SURF[r.m.surf] + '<br>' : ''}${r.team === 'white' ? 'Bianchi' : 'Neri'} ${r.own}</span></div>`;
   };
   const tot = k === 'g' ? s.g : s.a;
@@ -5710,7 +5727,7 @@ function ovrHowHTML(C = OVRC){
     if(B.leg > 0) bits.push(`a ${OVR_MAX}, se vinci con meno di ${B.legG} gol (difensore: ${B.legGD}) perdi ${n(B.leg)}`);
     return `<li><b>${lo}-${hi}</b>: ${bits.join('; ')}.</li>`;
   }).join('');
-  return `<p>Parti da ${OVR_START}. Ogni gol vale ${n(C.gol)} e ogni assist ${n(C.ast)}, moltiplicati per il tuo ruolo (difensore ×${n(C.rDIF)}, centrocampista ×${n(C.rCEN)}, attaccante ×${n(C.rATT)}). Il premio di reparto dà +${n(C.aw)}, ogni autogol −${n(C.og)}. Poi conta la fascia del tuo OVR:</p><ul class="ox-bands">${rows}</ul><p>Nel pareggio non c'è la penalità senza gol né assist. Poi si aggiungono i voti dei compagni (da −0,2 a +0,2) e −${n(C.late)} se arrivi in ritardo. L'OVR resta sempre tra ${OVR_MIN} e ${OVR_MAX}.</p>`;
+  return `<p>Parti da ${OVR_START}. Ogni gol vale ${n(C.gol)} e ogni assist ${n(C.ast)}, moltiplicati per il tuo ruolo (difensore ×${n(C.rDIF)}, centrocampista ×${n(C.rCEN)}, attaccante ×${n(C.rATT)}). Il premio di reparto dà +${n(C.aw)}, ogni autogol −${n(C.og)} e ogni rigore sbagliato −${n(C.pm)}. Poi conta la fascia del tuo OVR:</p><ul class="ox-bands">${rows}</ul><p>Nel pareggio non c'è la penalità senza gol né assist. Poi si aggiungono i voti dei compagni (da −0,2 a +0,2) e −${n(C.late)} se arrivi in ritardo. L'OVR resta sempre tra ${OVR_MIN} e ${OVR_MAX}.</p>`;
 }
 function ovrExplainHTML(s){
   const sg = v => (v < 0 ? '−' : '+') + String(Math.round(Math.abs(v) * 100) / 100).replace('.', ',');
@@ -5728,6 +5745,7 @@ function ovrExplainHTML(s){
     add(`Assist${h.a > 1 ? ' ×' + h.a : ''}`, P.a);
     add('Premio di reparto', P.aw);
     add(`Autogol${h.og > 1 ? ' ×' + h.og : ''}`, -P.og);
+    add(`Rigore sbagliato${h.pm > 1 ? ' ×' + h.pm : ''}`, -(P.pm || 0));
     add('Né gol né assist', -(P.dry || 0));
     add('Gol subiti da difensore', -(P.cpen || 0), `${P.conceded} gol subiti`);
     add('Leggenda: vittoria senza gol richiesti', -(P.leg || 0));
@@ -7298,7 +7316,7 @@ function setEdMode(mode){
   $('#ed-yt-w').hidden = mode === 'scheduled';
   $('#ed-save').textContent = mode === 'scheduled' ? 'Salva gara in programma' : 'Salva risultato';
   if(mode === 'scheduled'){
-    [...ED.white, ...ED.black].forEach(e => { e.g = 0; e.a = 0; e.og = 0; delete e.late; delete e.inj; }); ED.goals = []; ED.moves = []; goalFormReset(); moveFormReset();
+    [...ED.white, ...ED.black].forEach(e => { e.g = 0; e.a = 0; e.og = 0; delete e.late; delete e.inj; }); ED.goals = []; ED.moves = []; ED.pm = []; goalFormReset(); moveFormReset();
     /* una gara in programma non ha giocatori "in più": tornano tra i convocati */
     for(const T of ['white', 'black']){ ED.called.push(...ED[T].filter(e => e.bench).map(e => e.pid)); ED[T] = ED[T].filter(e => !e.bench); }
   }
@@ -7311,7 +7329,8 @@ function openMatchEditor(id, mode){
   const wasSched = m?.status === 'scheduled';
   ED = { id:id || null, day:m ? num(m.day) : nextDay(), date:m?.date || todayISO(), time:m?.time || '', end:m?.end || '', fmW:m?.fmW || DEF_FM, fmB:m?.fmB || DEF_FM, posW:m?.posW || null, posB:m?.posB || null, balW:null, balB:null, capW:m?.capW || null, capB:m?.capB || null,
          white:cp(m?.white), black:cp(m?.black), called:wasSched ? list(m.pool).filter(pid => store.players[pid] && ![...list(m.white), ...list(m.black)].some(e => e.pid === pid)) : [], status:mode || (wasSched ? 'scheduled' : 'played'),
-         goals:list(m?.goals).map(g => ({ s:g.s, a:g.a || '', og:!!num(g.og), min:(g.min == null ? null : num(g.min)), ts:g.ts || '' })),
+         goals:list(m?.goals).map(g => ({ s:g.s, a:g.a || '', og:!!num(g.og), pen:!num(g.og) && !!num(g.pen), min:(g.min == null ? null : num(g.min)), ts:g.ts || '' })),
+         pm:list(m?.pm).filter(x => x && x.s).map(x => ({ s:x.s, min:x.min == null ? null : num(x.min), ts:x.ts || '' })),
          moves:list(m?.moves).map(x => ({ pid:x.pid, k:x.k, ...(x.why ? { why:x.why } : {}), min:(x.min == null ? null : num(x.min)), ts:x.ts || '', at:num(x.at) })),
          seq:!m || wasSched || list(m.goals).length > 0 || [...list(m.white), ...list(m.black)].every(e => !num(e.g) && !num(e.a) && !num(e.og)) };
   goalFormReset(); moveFormReset(); if(ED.seq) syncCounts();
@@ -7524,7 +7543,7 @@ const roSteps = e => (e.g || e.a || e.og) ? `<div class="steps ro">${e.g ? `<spa
 
 /* ---------- Gol in sequenza (editor) ---------- */
 let GF = null;
-function goalFormReset(){ GF = { s:'', a:'', og:false, ts:'', edit:-1 }; }
+function goalFormReset(){ GF = { s:'', a:'', og:false, pen:false, miss:false, ts:'', edit:-1 }; }
 const edTeamOf = pid => ED.white.some(e => e.pid === pid) ? 'white' : ED.black.some(e => e.pid === pid) ? 'black' : null;
 const goalsInvolve = pid => !!ED && ED.seq && ED.goals.some(g => g.s === pid || g.a === pid);
 const movesInvolve = pid => !!ED && ED.moves.some(x => x.pid === pid);
@@ -7608,7 +7627,7 @@ function renderGoals(){
   const allMin = ED.goals.length > 1 && ED.goals.every(g => g.min != null);
   const rows = tl.map((x, k) => `<li class="gl-row ${x.t === 'black' ? 'b' : 'w'}">
       <span class="gl-n">${k + 1}° gol</span><span class="gl-m">${x.min != null ? (x.est ? '~' : '') + x.min + '’' : ''}</span>
-      <span class="gl-w"><span>${x.og ? '🟥' : '⚽'} ${esc(pname(x.s))}${x.og ? ' <em>autogol</em>' : ''}</span>${!x.og && x.a ? `<small>assist ${esc(pname(x.a))}</small>` : ''}</span>
+      <span class="gl-w"><span>${x.og ? '🟥' : x.pen ? '🎯' : '⚽'} ${esc(pname(x.s))}${x.og ? ' <em>autogol</em>' : x.pen ? ' <span class="pen">RIG</span>' : ''}</span>${!x.og && x.a ? `<small>assist ${esc(pname(x.a))}</small>` : ''}</span>
       <span class="gl-s">${x.w}–${x.b}</span>
       <span class="gl-act">${allMin ? '' : `<button type="button" data-gact="up" data-gi="${k}" aria-label="Sposta su">↑</button><button type="button" data-gact="down" data-gi="${k}" aria-label="Sposta giù">↓</button>`}<button type="button" data-gact="edit" data-gi="${k}" aria-label="Modifica">✎</button><button type="button" data-gact="del" data-gi="${k}" aria-label="Elimina">×</button></span>
     </li>`).join('');
@@ -7618,21 +7637,26 @@ function renderGoals(){
   const scorerChips = none ? '<p class="mu sm" style="margin:0">Schiera prima i giocatori nelle due squadre.</p>'
     : [...ED.white.map(e => chip(e, 'white', 'data-gs', GF.s === e.pid)), ...ED.black.map(e => chip(e, 'black', 'data-gs', GF.s === e.pid))].join('');
   const mates = ED.moves.length ? [...ED.white, ...ED.black].filter(e => e.pid !== GF.s) : (st ? ED[st].filter(e => e.pid !== GF.s) : []);
+  const gk = GF.og ? 'og' : GF.miss ? 'miss' : GF.pen ? 'pen' : 'g';
+  const kinds = [['g', '⚽ Gol'], ['pen', '🎯 Rigore'], ['miss', '❌ Rigore sbagliato'], ['og', '🟥 Autogol']].map(([k, l]) => `<button type="button" class="pchip gc" data-gk="${k}" aria-pressed="${gk === k}" ${k === 'miss' && GF.edit >= 0 ? 'disabled' : ''}>${l}</button>`).join('');
+  const pmRows = list(ED.pm).map((x, i) => `<li class="gl-row pm"><span class="gl-n">❌</span><span class="gl-m">${x.min != null ? x.min + '’' : ''}</span><span class="gl-w"><span>${esc(pname(x.s))} <em>rigore sbagliato</em></span></span><span class="gl-s"></span><span class="gl-act"><button type="button" data-pmdel="${i}" aria-label="Elimina il rigore sbagliato">×</button></span></li>`).join('');
   const assistChips = GF.og ? '<p class="mu sm" style="margin:0">Nessun assist su autogol.</p>'
+    : GF.miss || GF.pen ? '<p class="mu sm" style="margin:0">Nessun assist su rigore.</p>'
     : !GF.s ? '<p class="mu sm" style="margin:0">Scegli prima chi ha segnato.</p>'
     : `<button type="button" class="pchip gc none" data-ga="" aria-pressed="${!GF.a}">Nessun assist</button>${mates.map(e => chip(e, edTeamOf(e.pid) || st, 'data-ga', GF.a === e.pid)).join('')}`;
   const pw = parseWhen(GF.ts);
   const prev = pw.err ? pw.err : pw.min != null ? `→ ${pw.min}’ dall’inizio` : '';
   box.innerHTML = `<div class="gl-h"><h4>⚽ Gol in sequenza</h4><span class="mu sm">${dur ? `Durata ${dur}’ (${ED.time}–${ED.end})` : 'Imposta ora inizio e ora fine per ricavare i minuti'}</span></div>
     ${tl.length ? `<ol class="gl-list">${rows}</ol>` : '<p class="mu sm" style="margin:0 0 12px">Nessun gol inserito. Se la gara è finita 0–0, salva pure così.</p>'}
+    ${pmRows ? `<div class="gl-lb">Rigori sbagliati (non contano nel risultato, −${fmtPts(OVRC.pm)} di overall)</div><ol class="gl-list">${pmRows}</ol>` : ''}
     <div class="gl-form">
-      <div class="gl-ft">${GF.edit >= 0 ? `Modifica il ${GF.edit + 1}° gol` : `${ED.goals.length + 1}° gol`}</div>
-      <div class="gl-lb">${GF.og ? 'Chi ha fatto autogol' : 'Chi ha segnato'}</div><div class="gl-chips">${scorerChips}</div>
-      <label class="gl-og"><input type="checkbox" id="gf-og" ${GF.og ? 'checked' : ''}> 🟥 Autogol (il gol va alla squadra avversaria)</label>
+      <div class="gl-ft">${GF.edit >= 0 ? `Modifica il ${GF.edit + 1}° gol` : GF.miss ? 'Rigore sbagliato' : `${ED.goals.length + 1}° gol`}</div>
+      <div class="gl-lb">Tipo</div><div class="gl-chips">${kinds}</div>
+      <div class="gl-lb">${GF.og ? 'Chi ha fatto autogol (il gol va alla squadra avversaria)' : GF.miss ? 'Chi ha sbagliato il rigore' : 'Chi ha segnato'}</div><div class="gl-chips">${scorerChips}</div>
       <div class="gl-lb">Assist</div><div class="gl-chips">${assistChips}</div>
       <div class="gl-lb">Minuto o ora del memo (facoltativo)</div>
       <div class="gl-when"><input id="gf-ts" class="field" type="text" inputmode="text" autocomplete="off" placeholder="es. 21:14 oppure 23" value="${esc(GF.ts)}"><span id="gf-prev">${esc(prev)}</span></div>
-      <div class="row end" style="gap:8px">${GF.edit >= 0 ? '<button type="button" class="btn ghost sm" data-action="goal-cancel">Annulla modifica</button>' : ''}<button type="button" class="btn primary" data-action="goal-add">${GF.edit >= 0 ? 'Salva modifica' : '＋ Aggiungi gol'}</button></div>
+      <div class="row end" style="gap:8px">${GF.edit >= 0 ? '<button type="button" class="btn ghost sm" data-action="goal-cancel">Annulla modifica</button>' : ''}<button type="button" class="btn primary" data-action="goal-add">${GF.miss ? 'Aggiungi rigore sbagliato' : GF.edit >= 0 ? 'Salva modifica' : '＋ Aggiungi gol'}</button></div>
     </div>`;
 }
 function goalAdd(){
@@ -7640,7 +7664,11 @@ function goalAdd(){
   if(!GF.s){ toast('Scegli chi ha segnato', 'warn'); return; }
   const st = edTeamOf(GF.s); if(!st){ toast('Il marcatore non è in distinta', 'err'); return; }
   const w = parseWhen(GF.ts); if(w.err){ toast(w.err, 'warn'); return; }
-  const g = { s:GF.s, og:!!GF.og, a:(!GF.og && GF.a) ? GF.a : '', min:w.min != null ? w.min : null, ts:w.ts || '' };
+  if(GF.miss){   /* rigore sbagliato: non è un gol, va nel suo elenco (ED.pm) e non tocca risultato, minuti e cambi */
+    ED.pm = [...list(ED.pm), { s:GF.s, min:w.min != null ? w.min : null, ts:w.ts || '' }];
+    goalFormReset(); renderEditor(); toast('Rigore sbagliato aggiunto'); return;
+  }
+  const g = { s:GF.s, og:!!GF.og, pen:!GF.og && !!GF.pen, a:(!GF.og && !GF.pen && GF.a) ? GF.a : '', min:w.min != null ? w.min : null, ts:w.ts || '' };
   if(g.a && g.a === g.s){ toast('L’assist deve essere un compagno di squadra del marcatore', 'warn'); return; }
   if(!ED.moves.length && g.a && edTeamOf(g.a) !== st){ toast('L’assist deve essere un compagno di squadra del marcatore', 'warn'); return; }
   const arr = [...ED.goals];
@@ -7660,7 +7688,7 @@ function goalAct(act, i){
     if(GF && GF.edit === i) goalFormReset(); else if(GF && GF.edit > i) GF.edit--;
     renderEditor(); return;
   }
-  if(act === 'edit'){ const g = ED.goals[i]; GF = { s:g.s, a:g.a || '', og:!!g.og, ts:g.ts || (g.min != null ? String(g.min) : ''), edit:i }; renderGoals(); return; }
+  if(act === 'edit'){ const g = ED.goals[i]; GF = { s:g.s, a:g.a || '', og:!!g.og, pen:!!g.pen, miss:false, ts:g.ts || (g.min != null ? String(g.min) : ''), edit:i }; renderGoals(); return; }
   const j = act === 'up' ? i - 1 : i + 1;
   if(j < 0 || j >= ED.goals.length) return;
   { const ng = [...ED.goals]; ED.goals.forEach(gkey); [ng[i], ng[j]] = [ng[j], ng[i]]; setGoals(ng); }
@@ -7786,9 +7814,11 @@ async function saveMatch(){
     const ordered = goalOrder(effGoals(ED.goals)), mvOrd = rebasedMoves(ED.goals, ordered);
     const verr = validateMatch({ ...ED, goals:ordered, moves:mvOrd }); if(verr){ toast(verr, 'err'); return; }
     ED.goals = ordered; ED.moves = mvOrd;
-    goalsOut = ordered.map(g => ({ s:g.s, ...(g.a && !g.og ? { a:g.a } : {}), ...(g.og ? { og:1 } : {}), ...(g.min != null ? { min:g.min } : {}), ...(g.ts ? { ts:g.ts } : {}) }));
+    goalsOut = ordered.map(g => ({ s:g.s, ...(g.a && !g.og ? { a:g.a } : {}), ...(g.og ? { og:1 } : {}), ...(g.pen && !g.og ? { pen:1 } : {}), ...(g.min != null ? { min:g.min } : {}), ...(g.ts ? { ts:g.ts } : {}) }));
   }
   const clean = e => ({ pid:e.pid, n:pname(e.pid, e.n), g:sched ? 0 : num(e.g), a:sched ? 0 : num(e.a), og:sched ? 0 : num(e.og), ...(e.bench && !sched ? { bench:1 } : {}), ...(e.late && !sched ? { late:1 } : {}), ...(e.inj && !sched ? { inj:1 } : {}) });
+  /* rigori sbagliati: solo nelle gare giocate in sequenza e solo di chi è in distinta */
+  const pmOut = (!sched && ED.seq) ? list(ED.pm).filter(x => x && edTeamOf(x.s)).map(x => ({ s:x.s, ...(x.min != null ? { min:x.min } : {}), ...(x.ts ? { ts:x.ts } : {}) })) : [];
   const movesOut = (!sched && ED.seq) ? matchTimeline({ ...ED, goals:goalsOut }).moves.map(x => ({ pid:x.pid, k:x.k, ...(x.why ? { why:x.why } : {}), ...(x.min != null ? { min:x.min } : {}), ...(x.ts ? { ts:x.ts } : {}), at:x.slot })) : [];
   const oldM = ED.id ? store.matches[ED.id] : null, newPlayed = !sched && (!oldM || oldM.status === 'scheduled');
   const vHrs = oldM && oldM.voteHrs ? oldM.voteHrs : (newPlayed ? VOTE_HRS_NEW : 0);   /* gare nuove: 12 ore; le esistenti restano a 24 */
@@ -7799,6 +7829,7 @@ async function saveMatch(){
     day:ED.day, date:ED.date, ...(ED.surf ? { surf:ED.surf } : {}), ...(ED.yt ? { yt:ED.yt } : {}),
     white:ED.white.map(clean), black:ED.black.map(clean),
     ...(goalsOut.length ? { goals:goalsOut } : {}),
+    ...(pmOut.length ? { pm:pmOut } : {}),
     ...(movesOut.length ? { moves:movesOut } : {}),
     createdAt:(ED.id && store.matches[ED.id]?.createdAt) || Date.now(),
     ...(vHrs && !sched ? { voteHrs:vHrs } : {}), ...(oldM && oldM.voteExt && !sched ? { voteExt:oldM.voteExt } : {}),
@@ -8336,6 +8367,8 @@ document.addEventListener('click', async e => {
   if(d.gs !== undefined){ if(GF){ GF.s = GF.s === d.gs ? '' : d.gs; if(GF.s && GF.a && (GF.a === GF.s || (!ED.moves.length && edTeamOf(GF.a) !== edTeamOf(GF.s)))) GF.a = ''; renderGoals(); } return; }
   if(d.ga !== undefined){ if(GF){ GF.a = d.ga; renderGoals(); } return; }
   if(d.gact){ goalAct(d.gact, +d.gi); return; }
+  if(d.gk && GF){ GF.og = d.gk === 'og'; GF.pen = d.gk === 'pen'; GF.miss = d.gk === 'miss'; if(d.gk !== 'g') GF.a = ''; renderGoals(); $(`#ed-goals [data-gk="${d.gk}"]`)?.focus(); return; }
+  if(d.pmdel !== undefined && ED){ ED.pm = list(ED.pm).filter((_, k) => k !== +d.pmdel); renderEditor(); return; }
   if(d.rt !== undefined){ rateTap(d.rt); return; }
   if(d.mp !== undefined){ if(MF){ MF.pid = MF.pid === d.mp ? '' : d.mp; renderMoves(); } return; }
   if(d.mk !== undefined){ if(MF){ MF.k = MF.k === d.mk ? '' : d.mk; if(MF.k !== 'out') MF.why = ''; renderMoves(); } return; }
@@ -8551,7 +8584,6 @@ document.addEventListener('change', e => {
   if(t.id === 'duel-b' && ui.duel){ ui.duel.b = t.value; renderDuel(); return; }
   if(t.id === 'psort'){ ui.pSort = t.value; renderPlayers(); return; }
   if(t.id === 'clp-pl'){ ui.clipFlt.pid = store.players[t.value] ? t.value : ''; renderClips(); return; }
-  if(t.id === 'gf-og' && GF){ GF.og = t.checked; if(GF.og) GF.a = ''; renderGoals(); return; }
   if(t.matches('select[data-cmpfm]') && ui.cmp){ ui.cmp.fm[t.dataset.cmpfm] = t.value; paintMatch(); return; }
   if(t.matches('select[data-fm]') && ui.admin && store.matches[t.dataset.mid]) commit({ [`matches/${t.dataset.mid}/${t.dataset.fm}`]: t.value });
 });
