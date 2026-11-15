@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.13.4
+- Formazioni a fine gara con le icone nuove: eventi sulle card del campo (`pc-ev`), elenco accanto al campo (`lineupListHTML`) e legenda; anche i totali per giocatore nel registro gara (`roSteps`). Due disegni in più nello sprite: `premio` (medaglia, premio di reparto) e `debut` (germoglio, debutto). Le icone sulle card non prendono più la regola della sagoma della maglia (`.pc-ph svg`). L'immagine esportata resta com'era.
+
 ## 1.13.3
 - Icone degli eventi di gara disegnate apposta (gol, gol subito, autogol, rigore segnato e sbagliato, assist, MVP, entra, esce, cambio squadra, infortunio, parata, papera, azione): un unico sprite SVG in cima alla pagina, richiamato con `evIcon(chiave)`. Al posto delle emoji nel Resoconto (cronaca, rigori sbagliati, MVP, Cambi), in «Overall spiegato», nel registro gara (tipo di gol, sequenza, rigori sbagliati, cambi, motivo infortunio), nella lista dei gol e degli assist della figurina e nelle categorie delle Clip (`CLIP_CATS[k].ic` al posto di `i`). Nessun dato cambia.
 
