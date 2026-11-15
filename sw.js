@@ -4,7 +4,7 @@
    - Il database Firebase non passa mai da qui: resta sempre in tempo reale. */
 /* Nome della cache = "cmb-v" + APP_VERSION di index.html: da aggiornare insieme a ogni release */
 const VERSION = 'cmb-v1.13.4';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'];
+const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png', './icons/ev/gol.png', './icons/ev/golsub.png', './icons/ev/aut.png', './icons/ev/assist.png', './icons/ev/mvp.png', './icons/ev/rig.png', './icons/ev/rigx.png', './icons/ev/parata.png', './icons/ev/papera.png'];
 const CDN = /(^|\.)gstatic\.com$|(^|\.)cdnjs\.cloudflare\.com$|(^|\.)fonts\.googleapis\.com$|(^|\.)cdn\.jsdelivr\.net$/;
 
 self.addEventListener('install', e => {
