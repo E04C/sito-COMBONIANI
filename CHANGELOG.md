@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.13.5
+- Icone di gol, gol subito, autogol, assist, MVP, rigore segnato e sbagliato, parata e papera: immagini scelte dal proprietario in `icons/ev/` (PNG trasparenti, 16 KB in tutto, nella cache dell'app), richiamate dagli stessi simboli dello sprite. «Gol subito» è il pallone del gol con il bollino rosso del rigore sbagliato.
+- Rigore parato: campo facoltativo `matches/{id}/pm[i].p` (chi ha parato, avversario di chi tira). Nel registro gara «Parato da» al posto dell'assist quando il tipo è «Rigore sbagliato». Parametro `pp` «Rigore parato» (di base +1) in Calcolo overall, sommato pieno; «parato da» nel Resoconto, nel registro e in «Overall spiegato»; statistica `ppar`.
+- Novità: nessuna voce per questa versione (scelta del proprietario); lo stemma delle Novità si accende solo se c'è una voce più recente dell'ultima aperta.
+
 ## 1.13.4
 - Formazioni a fine gara con le icone nuove: eventi sulle card del campo (`pc-ev`), elenco accanto al campo (`lineupListHTML`) e legenda; anche i totali per giocatore nel registro gara (`roSteps`). Due disegni in più nello sprite: `premio` (medaglia, premio di reparto) e `debut` (germoglio, debutto). Le icone sulle card non prendono più la regola della sagoma della maglia (`.pc-ph svg`). L'immagine esportata resta com'era.
 
