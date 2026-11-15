@@ -1587,6 +1587,10 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .gl-row{display:grid;grid-template-columns:auto auto 1fr auto;align-items:center;gap:6px 10px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.035);border-left:3px solid #eef1f6}
 .gl-row.b{border-left-color:var(--or)}
 .gl-n{font:800 11.5px var(--body);color:var(--mu);white-space:nowrap}
+.gl-n .evi{width:19px;height:19px;vertical-align:middle}
+.gl-w .evi{width:17px;height:17px;vertical-align:-4px;margin-right:5px}
+.gl-h h4 .evi{width:19px;height:19px;vertical-align:-4px;margin-right:6px}
+.pchip .evi{width:19px;height:19px;margin-left:3px}
 .gl-m{font:italic 800 15px var(--disp);color:var(--or);min-width:30px}
 .gl-w{min-width:0;display:flex;flex-direction:column;font-weight:800;font-size:14px}
 .gl-w small{font-weight:600;color:var(--mu);font-size:12px}
@@ -1621,6 +1625,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .cr .mn{font:italic 800 16px var(--disp);color:var(--or)}
 .cr .mn.est{color:var(--mu)}
 .cr .ci{text-align:center}
+.cr .ci .evi{width:20px;height:20px;vertical-align:middle}
 .cr .cw{display:flex;flex-direction:column;font-size:14px;min-width:0}
 .cr .cw small{color:var(--mu);font-weight:600;font-size:12px}
 .cr .cs{font:italic 800 18px var(--disp);font-variant-numeric:tabular-nums}
@@ -3085,7 +3090,7 @@ function moveRows(m){
 }
 const teamName = t => t === 'white' ? 'Bianchi' : 'Neri';
 /* ⬇️ esce (🤕 per infortunio, 📅 per impegno), ⬆️ entra, 🔁 passa all'altra squadra */
-const moveIcon = (k, why) => k === 'sw' ? '🔁' : k === 'in' ? '⬆️' : why === 'inf' ? '🤕' : why === 'imp' ? '📅' : '⬇️';
+const moveIcon = (k, why) => evIcon(k === 'sw' ? 'sw' : k === 'in' ? 'in' : why === 'inf' ? 'inj' : 'out');
 function moveText(r, m){
   const nm = pname(r.pid, [...list(m.white), ...list(m.black)].find(e => e.pid === r.pid)?.n);
   if(r.k === 'sw') return `${nm} passa ${r.from ? `dai ${teamName(r.from)} ai ${teamName(r.to)}` : 'all’altra squadra'}`;
@@ -7781,14 +7786,14 @@ function renderGoals(){
   if(!ED || ED.status === 'scheduled'){ box.hidden = true; box.innerHTML = ''; return; }
   box.hidden = false;
   if(!ED.seq){
-    box.innerHTML = `<div class="gl-h"><h4>⚽ Gol e assist</h4></div><p class="mu sm" style="margin:0 0 10px">Questa gara è registrata con i soli totali per giocatore. Passando all’inserimento in sequenza avrai cronaca, minuti, rimonte e intesa, ma i totali attuali si azzerano e vanno reinseriti un gol alla volta.</p><button type="button" class="btn sm" data-action="goals-seq">🔁 Passa all’inserimento in sequenza</button>`;
+    box.innerHTML = `<div class="gl-h"><h4>${evIcon('gol')}Gol e assist</h4></div><p class="mu sm" style="margin:0 0 10px">Questa gara è registrata con i soli totali per giocatore. Passando all’inserimento in sequenza avrai cronaca, minuti, rimonte e intesa, ma i totali attuali si azzerano e vanno reinseriti un gol alla volta.</p><button type="button" class="btn sm" data-action="goals-seq">🔁 Passa all’inserimento in sequenza</button>`;
     return;
   }
   const tl = matchGoals({ white:ED.white, black:ED.black, goals:ED.goals, time:ED.time, end:ED.end }), dur = matchLen({ time:ED.time, end:ED.end });
   const allMin = ED.goals.length > 1 && ED.goals.every(g => g.min != null);
   const rows = tl.map((x, k) => `<li class="gl-row ${x.t === 'black' ? 'b' : 'w'}">
       <span class="gl-n">${k + 1}° gol</span><span class="gl-m">${x.min != null ? (x.est ? '~' : '') + x.min + '’' : ''}</span>
-      <span class="gl-w"><span>${x.og ? '🟥' : x.pen ? '🎯' : '⚽'} ${esc(pname(x.s))}${x.og ? ' <em>autogol</em>' : x.pen ? ' <span class="pen">RIG</span>' : ''}</span>${!x.og && x.a ? `<small>assist ${esc(pname(x.a))}</small>` : ''}</span>
+      <span class="gl-w"><span>${evIcon(x.og ? 'aut' : x.pen ? 'rig' : 'gol')}${esc(pname(x.s))}${x.og ? ' <em>autogol</em>' : x.pen ? ' <span class="pen">RIG</span>' : ''}</span>${!x.og && x.a ? `<small>assist ${esc(pname(x.a))}</small>` : ''}</span>
       <span class="gl-s">${x.w}–${x.b}</span>
       <span class="gl-act">${allMin ? '' : `<button type="button" data-gact="up" data-gi="${k}" aria-label="Sposta su">↑</button><button type="button" data-gact="down" data-gi="${k}" aria-label="Sposta giù">↓</button>`}<button type="button" data-gact="edit" data-gi="${k}" aria-label="Modifica">✎</button><button type="button" data-gact="del" data-gi="${k}" aria-label="Elimina">×</button></span>
     </li>`).join('');
@@ -7799,15 +7804,15 @@ function renderGoals(){
     : [...ED.white.map(e => chip(e, 'white', 'data-gs', GF.s === e.pid)), ...ED.black.map(e => chip(e, 'black', 'data-gs', GF.s === e.pid))].join('');
   const mates = ED.moves.length ? [...ED.white, ...ED.black].filter(e => e.pid !== GF.s) : (st ? ED[st].filter(e => e.pid !== GF.s) : []);
   const gk = GF.og ? 'og' : GF.miss ? 'miss' : GF.pen ? 'pen' : 'g';
-  const kinds = [['g', '⚽ Gol'], ['pen', '🎯 Rigore'], ['miss', '❌ Rigore sbagliato'], ['og', '🟥 Autogol']].map(([k, l]) => `<button type="button" class="pchip gc" data-gk="${k}" aria-pressed="${gk === k}" ${k === 'miss' && GF.edit >= 0 ? 'disabled' : ''}>${l}</button>`).join('');
-  const pmRows = list(ED.pm).map((x, i) => `<li class="gl-row pm"><span class="gl-n">❌</span><span class="gl-m">${x.min != null ? x.min + '’' : ''}</span><span class="gl-w"><span>${esc(pname(x.s))} <em>rigore sbagliato</em></span></span><span class="gl-s"></span><span class="gl-act"><button type="button" data-pmdel="${i}" aria-label="Elimina il rigore sbagliato">×</button></span></li>`).join('');
+  const kinds = [['g', 'gol', 'Gol'], ['pen', 'rig', 'Rigore'], ['miss', 'rigx', 'Rigore sbagliato'], ['og', 'aut', 'Autogol']].map(([k, ic, l]) => `<button type="button" class="pchip gc" data-gk="${k}" aria-pressed="${gk === k}" ${k === 'miss' && GF.edit >= 0 ? 'disabled' : ''}>${evIcon(ic)}${l}</button>`).join('');
+  const pmRows = list(ED.pm).map((x, i) => `<li class="gl-row pm"><span class="gl-n">${evIcon('rigx')}</span><span class="gl-m">${x.min != null ? x.min + '’' : ''}</span><span class="gl-w"><span>${esc(pname(x.s))} <em>rigore sbagliato</em></span></span><span class="gl-s"></span><span class="gl-act"><button type="button" data-pmdel="${i}" aria-label="Elimina il rigore sbagliato">×</button></span></li>`).join('');
   const assistChips = GF.og ? '<p class="mu sm" style="margin:0">Nessun assist su autogol.</p>'
     : GF.miss || GF.pen ? '<p class="mu sm" style="margin:0">Nessun assist su rigore.</p>'
     : !GF.s ? '<p class="mu sm" style="margin:0">Scegli prima chi ha segnato.</p>'
     : `<button type="button" class="pchip gc none" data-ga="" aria-pressed="${!GF.a}">Nessun assist</button>${mates.map(e => chip(e, edTeamOf(e.pid) || st, 'data-ga', GF.a === e.pid)).join('')}`;
   const pw = parseWhen(GF.ts);
   const prev = pw.err ? pw.err : pw.min != null ? `→ ${pw.min}’ dall’inizio` : '';
-  box.innerHTML = `<div class="gl-h"><h4>⚽ Gol in sequenza</h4><span class="mu sm">${dur ? `Durata ${dur}’ (${ED.time}–${ED.end})` : 'Imposta ora inizio e ora fine per ricavare i minuti'}</span></div>
+  box.innerHTML = `<div class="gl-h"><h4>${evIcon('gol')}Gol in sequenza</h4><span class="mu sm">${dur ? `Durata ${dur}’ (${ED.time}–${ED.end})` : 'Imposta ora inizio e ora fine per ricavare i minuti'}</span></div>
     ${tl.length ? `<ol class="gl-list">${rows}</ol>` : '<p class="mu sm" style="margin:0 0 12px">Nessun gol inserito. Se la gara è finita 0–0, salva pure così.</p>'}
     ${pmRows ? `<div class="gl-lb">Rigori sbagliati (non contano nel risultato, −${fmtPts(OVRC.pm)} di overall)</div><ol class="gl-list">${pmRows}</ol>` : ''}
     <div class="gl-form">
@@ -7864,7 +7869,7 @@ function renderMoves(){
   if(!ED || ED.status === 'scheduled'){ box.hidden = true; box.innerHTML = ''; return; }
   box.hidden = false;
   if(!ED.seq){
-    box.innerHTML = `<div class="gl-h"><h4>🔁 Cambi</h4></div><p class="mu sm" style="margin:0">I cambi (giocatori in più, uscite, passaggi all’altra squadra) si registrano solo con l’inserimento dei gol in sequenza, perché servono a sapere per quale squadra segna ciascuno. Questa gara è registrata con i soli totali: passa alla sequenza nella sezione dei gol per usarli.</p>`;
+    box.innerHTML = `<div class="gl-h"><h4>${evIcon('sw')}Cambi</h4></div><p class="mu sm" style="margin:0">I cambi (giocatori in più, uscite, passaggi all’altra squadra) si registrano solo con l’inserimento dei gol in sequenza, perché servono a sapere per quale squadra segna ciascuno. Questa gara è registrata con i soli totali: passa alla sequenza nella sezione dei gol per usarli.</p>`;
     return;
   }
   const rows = moveRows(ED);
@@ -7876,16 +7881,16 @@ function renderMoves(){
   const chip = (e, T) => `<button type="button" class="pchip ${T === 'white' ? 'w' : 'b'} gc" data-mp="${e.pid}" aria-pressed="${MF.pid === e.pid}">${avatar(store.players[e.pid] || { name:e.n }, 'xs')}${esc(pname(e.pid, e.n))}${e.bench ? '<span class="tg">in più</span>' : ''}</button>`;
   const chips = (!ED.white.length && !ED.black.length) ? '<p class="mu sm" style="margin:0">Schiera prima i giocatori nelle due squadre.</p>'
     : [...ED.white.map(e => chip(e, 'white')), ...ED.black.map(e => chip(e, 'black'))].join('');
-  const KS = [['out', '⬇️ Esce'], ['sw', '🔁 Passa all’altra squadra'], ['in', '⬆️ Entra']];
+  const KS = [['out', evIcon('out') + 'Esce'], ['sw', evIcon('sw') + 'Passa all’altra squadra'], ['in', evIcon('in') + 'Entra']];
   const pw = parseWhen(MF.ts), prev = pw.err ? pw.err : pw.min != null ? `→ ${pw.min}’ dall’inizio` : '';
   const at = MF.edit >= 0 ? ED.moves[MF.edit]?.at : ED.goals.length;
-  box.innerHTML = `<div class="gl-h"><h4>🔁 Cambi</h4><span class="mu sm">Giocatori in più, uscite e passaggi all’altra squadra</span></div>
+  box.innerHTML = `<div class="gl-h"><h4>${evIcon('sw')}Cambi</h4><span class="mu sm">Giocatori in più, uscite e passaggi all’altra squadra</span></div>
     ${rows.length ? `<ol class="gl-list">${list_}</ol>` : '<p class="mu sm" style="margin:0 0 12px">Nessun cambio. Se serve, aggiungi chi esce, chi passa all’altra squadra o chi entra come giocatore in più.</p>'}
     <div class="gl-form">
       <div class="gl-ft">${MF.edit >= 0 ? 'Modifica il cambio' : 'Nuovo cambio'}</div>
       <div class="gl-lb">Giocatore</div><div class="gl-chips">${chips}</div>
       <div class="gl-lb">Tipo</div><div class="gl-chips">${KS.map(([k, l]) => `<button type="button" class="pchip gc" data-mk="${k}" aria-pressed="${MF.k === k}">${l}</button>`).join('')}</div>
-      ${MF.k === 'out' ? `<div class="gl-lb">Motivo dell’uscita</div><div class="gl-chips">${[['inf', '🤕 Infortunio'], ['imp', '📅 Impegno']].map(([k, l]) => `<button type="button" class="pchip gc" data-mw="${k}" aria-pressed="${MF.why === k}">${l}</button>`).join('')}</div>` : ''}
+      ${MF.k === 'out' ? `<div class="gl-lb">Motivo dell’uscita</div><div class="gl-chips">${[['inf', evIcon('inj') + 'Infortunio'], ['imp', '📅 Impegno']].map(([k, l]) => `<button type="button" class="pchip gc" data-mw="${k}" aria-pressed="${MF.why === k}">${l}</button>`).join('')}</div>` : ''}
       <div class="gl-lb">Minuto o ora del memo (facoltativo)</div>
       <div class="gl-when"><input id="mv-ts" class="field" type="text" inputmode="text" autocomplete="off" placeholder="es. 21:14 oppure 23" value="${esc(MF.ts)}"><span id="mv-prev">${esc(prev)}</span></div>
       <p class="mu sm" style="margin:0">Senza minuto il cambio vale dopo i ${at} gol già in cronaca.</p>
