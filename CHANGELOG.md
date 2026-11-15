@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.13.3
+- Icone degli eventi di gara disegnate apposta (gol, gol subito, autogol, rigore segnato e sbagliato, assist, MVP, entra, esce, cambio squadra, infortunio, parata, papera, azione): un unico sprite SVG in cima alla pagina, richiamato con `evIcon(chiave)`. Al posto delle emoji nel Resoconto (cronaca, rigori sbagliati, MVP, Cambi), in «Overall spiegato», nel registro gara (tipo di gol, sequenza, rigori sbagliati, cambi, motivo infortunio), nella lista dei gol e degli assist della figurina e nelle categorie delle Clip (`CLIP_CATS[k].ic` al posto di `i`). Nessun dato cambia.
+
 ## 1.13.2
 - Rigori: nel registro gara il tipo del gol (Gol, Rigore, Rigore sbagliato, Autogol). Il rigore segnato è un gol con `pen:1` (etichetta RIG nel Resoconto, «Su rigore» nella lista dei gol). Il rigore sbagliato sta in `matches/{id}/pm` (facoltativo, fuori dalla sequenza dei gol), non conta nel risultato, compare nel Resoconto al suo minuto e toglie `pm` punti di overall (1, regolabile in Calcolo overall). Statistiche `pen` e `pmis`.
 - Clip: non più nella barra in basso ma scheda `clip` di Trofei (Targhe · Storici · TOTW · TOTM · Clip).
