@@ -1144,6 +1144,7 @@ button.rec-who{cursor:pointer}
 .ox-b{padding:2px 12px 12px;display:grid;gap:5px}
 .ox-b>div{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;font-variant-numeric:tabular-nums}
 .ox-b small{color:var(--mu2)}
+.ox-b .evi{width:17px;height:17px;vertical-align:-4px;margin-right:5px}
 .ox-b .nt{color:var(--mu);font-size:12.5px}
 .ox-b .tot{border-top:1px dashed var(--hair);padding-top:6px;margin-top:2px;font-weight:800}
 .ox-more{margin-top:4px}
@@ -5894,17 +5895,17 @@ function ovrExplainHTML(s){
   const one = h => {
     const P = h.parts; if(!P) return '';
     const rows = [];
-    const add = (label, v, note) => { if(Math.abs(v) > 1e-9) rows.push(`<div><span>${label}${note ? ` <small>${note}</small>` : ''}</span><b>${sg(v)}</b></div>`); };
+    const add = (label, v, note, ic) => { if(Math.abs(v) > 1e-9) rows.push(`<div><span>${ic ? evIcon(ic) : ''}${label}${note ? ` <small>${note}</small>` : ''}</span><b>${sg(v)}</b></div>`); };
     if(h.r === 'v') add('Vittoria', P.v, P.conceded ? `${P.conceded} ${P.conceded === 1 ? 'gol subito' : 'gol subiti'}` : 'porta inviolata');
     else if(h.r === 's') add('Sconfitta', -P.l, P.near2 ? 'di misura, da difensore' : '');
     else if(P.dr || P.l) add('Pareggio', P.dr - P.l); else rows.push('<div><span>Pareggio</span><b>0</b></div>');
-    add(`Gol${h.g > 1 ? ' ×' + h.g : ''}`, P.g, `ruolo ×${nIt(P.mult)}`);
-    add(`Assist${h.a > 1 ? ' ×' + h.a : ''}`, P.a);
+    add(`Gol${h.g > 1 ? ' ×' + h.g : ''}`, P.g, `ruolo ×${nIt(P.mult)}`, 'gol');
+    add(`Assist${h.a > 1 ? ' ×' + h.a : ''}`, P.a, '', 'assist');
     add('Premio di reparto', P.aw);
-    add(`Autogol${h.og > 1 ? ' ×' + h.og : ''}`, -P.og);
-    add(`Rigore sbagliato${h.pm > 1 ? ' ×' + h.pm : ''}`, -(P.pm || 0));
+    add(`Autogol${h.og > 1 ? ' ×' + h.og : ''}`, -P.og, '', 'aut');
+    add(`Rigore sbagliato${h.pm > 1 ? ' ×' + h.pm : ''}`, -(P.pm || 0), '', 'rigx');
     add('Né gol né assist', -(P.dry || 0));
-    add('Gol subiti da difensore', -(P.cpen || 0), `${P.conceded} gol subiti`);
+    add('Gol subiti da difensore', -(P.cpen || 0), `${P.conceded} gol subiti`, 'golsub');
     add('Leggenda: vittoria senza gol richiesti', -(P.leg || 0));
     if(P.band || P.fp !== 1 || P.fl !== 1) rows.push(`<div class="nt"><span>${esc(P.band || 'Moltiplicatore del livello')}</span><b></b></div>`);
     add(P.cap > 0 ? 'Tetto: massimo −' + nIt(P.lcap) + ' a gara' : 'Tetto: massimo +' + nIt(P.gcap) + ' a gara', P.cap);
