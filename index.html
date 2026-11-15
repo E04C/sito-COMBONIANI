@@ -2348,7 +2348,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.13.1';
+const APP_VERSION = '1.13.2';
 const DEFAULT_PIN = '2026';
 /* Interruttori delle funzioni: li accende e spegne l'admin (settings/features/{chiave}), valgono per tutti i dispositivi.
    Il codice legge sempre e solo feat(chiave). Spenta = nascosta e disattivata; codice e dati restano, riaccesa torna tutto com'era. */
@@ -8814,6 +8814,11 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.13.2', date:'2026-11-15', items:[
+    `📋 Presenze: nella prossima gara tocca «✋ Ci sono» per prenderti il posto. Quando la lista è piena ti metti in riserva, e se qualcuno si toglie entri tu in automatico. Il sondaggio si chiude all’inizio della gara.`,
+    `🎯 Rigori: il rigore segnato vale come un gol e ha la sua etichetta RIG. Il rigore sbagliato costa 1 punto di overall.`,
+    `🎬 Le Clip si sono spostate dentro Trofei, nella scheda «Clip».`
+  ] },
   { v:'1.13.1', date:'2026-11-09', items:[
     `🥈 Targhe: adesso ognuno ne tiene al massimo 2. Se potresti averne di più, scegli tu quali in Io → Traguardi.`,
     `🤝 A pari merito targhe e trofei restano a chi c’è arrivato per primo: per portarli via bisogna fare meglio, non uguale.`,

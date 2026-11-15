@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.13.2
+- Rigori: nel registro gara il tipo del gol (Gol, Rigore, Rigore sbagliato, Autogol). Il rigore segnato è un gol con `pen:1` (etichetta RIG nel Resoconto, «Su rigore» nella lista dei gol). Il rigore sbagliato sta in `matches/{id}/pm` (facoltativo, fuori dalla sequenza dei gol), non conta nel risultato, compare nel Resoconto al suo minuto e toglie `pm` punti di overall (1, regolabile in Calcolo overall). Statistiche `pen` e `pmis`.
+- Clip: non più nella barra in basso ma scheda `clip` di Trofei (Targhe · Storici · TOTW · TOTM · Clip).
+- Presenze: percorso nuovo e facoltativo `presenze/{mid}/{pid}` = { at, adm?, out?, late? } con l'ora del server; posti in `matches/{id}/posti` (di base i titolari dei due moduli), chiusura manuale `matches/{id}/pclose` o automatica all'inizio della gara. Dentro i primi «posti» (prima gli aggiunti dall'admin, poi per ordine di arrivo), gli altri riserve: chi esce lascia il posto alla prima riserva. Segno all'admin per chi si toglie nelle ultime 24 ore. I presenti entrano in `matchPool` (convocati, proposte, Componi sul campo) e nel registro gara. Avviso in app a chi entra dalla riserva (`cmb_presSeen`). Avviso all'admin se le regole non permettono «presenze»; «presenze» entra nel backup.
+
 ## 1.13.1
 - Targhe al massimo 2 a testa (`PLQ_CAP`); chi potrebbe averne di più sceglie le sue 2. Migrazione `cmb_mig_v1131`.
 - Parità: a pari valore principale targhe e trofei restano a chi c'è arrivato per primo. Targhe: `PLQ_PREV` dalla storia gara per gara (`trophyHistory`), confronto sul valore di `PLQ_GAP`, secondo calcolo in `render`. Trofei: le funzioni di confronto di `recPick` guardano solo il valore principale. I criteri di parità scritti valgono solo tra chi ci arriva nella stessa giornata. La chiave della storia cambia anche con `plqPick` e i parametri dell'overall.
