@@ -182,6 +182,35 @@ main{max-width:1440px;margin:0 auto;padding:18px max(14px,env(safe-area-inset-le
 .pen{display:inline-block;margin-left:6px;padding:0 6px;border-radius:6px;background:#fbbf24;color:#1a0a00;font:800 10.5px/1.7 var(--body);letter-spacing:.04em;vertical-align:1px}
 .pmx{color:#fb7185;font-weight:700;font-size:12.5px;white-space:nowrap}
 .gl-row.pm .gl-w em{color:#fb7185;font-style:normal}
+/* Presenze (1.13.2) */
+.pres-box{margin:0 0 14px;padding:14px;border-radius:16px;background:rgba(255,255,255,.035)}
+.pres-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.pres-hd h3{margin:0;font:italic 800 21px/1.1 var(--disp)}
+.pres-hd h3 b{color:var(--or)}
+.pres-st{font:700 12.5px var(--body);padding:3px 10px;border-radius:999px;background:rgba(74,222,128,.12);color:#86efac}
+.pres-st.full{background:rgba(251,191,36,.12);color:#fde68a}
+.pres-st.closed{background:rgba(255,255,255,.06);color:var(--mu)}
+.pres-me{margin:8px 0 0;font-weight:800}
+.pres-act{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+.pres-list{list-style:none;margin:10px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:6px}
+.pres-r{display:flex;align-items:center;gap:6px;min-height:36px;padding:4px 6px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--hair);min-width:0}
+.pres-r.me{border-color:var(--or)}
+.pr-n{flex:none;width:20px;text-align:center;font:800 12px var(--body);color:var(--mu)}
+.pr-nm{flex:1;min-width:0;font:700 13.5px/1.2 var(--body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pr-nm small{display:block;font-weight:600;font-size:11px;color:var(--mu)}
+.pr-x{flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--hair);background:none;color:var(--mu);cursor:pointer}
+.pres-sub{margin:12px 0 0;font:800 11.5px var(--body);color:var(--mu);text-transform:uppercase;letter-spacing:.05em}
+.pres-list.res .pres-r{opacity:.85;border-style:dashed}
+.pres-late{margin:12px 0 0;padding:10px 12px;border-radius:12px;background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.35);color:#fda4af;font-size:13.5px}
+.pres-adm{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--hair)}
+.pres-seats{display:inline-flex;align-items:center;gap:6px;font:700 13px var(--body);color:var(--mu)}
+.pres-seats b{min-width:22px;text-align:center;color:var(--tx);font-size:16px}
+.pres-adm .clf-q{flex:1 1 100%}
+.pres-adm .clf-res{flex:1 1 100%;margin-top:0}
+.pres-mini{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 0;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04)}
+.pm-t{display:flex;flex-direction:column;font:800 14px var(--body)}
+.pm-t b{color:var(--or)}
+.pm-t small{font:600 12px var(--body);color:var(--mu)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:rgba(249,115,22,.08);color:var(--tx);font:700 14px var(--body);text-decoration:none;transition:transform .12s var(--ease),background .2s,border-color .2s,box-shadow .2s;touch-action:manipulation}
 .btn:hover{border-color:var(--line-strong)}
 .btn:active{transform:scale(.96)}
@@ -2155,6 +2184,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
         <label id="ed-time-w">Ora inizio<input id="ed-time" class="field" type="time"></label>
         <label id="ed-end-w">Ora fine<input id="ed-end" class="field" type="time"></label>
         <label>Campo<select id="ed-surf" class="field"><option value="">Non indicato</option><option value="s">🟩 Sintetico</option><option value="t">🟫 Terra</option></select></label>
+        <label id="ed-posti-w">Posti (presenze)<input id="ed-posti" class="field" type="number" min="2" max="30" inputmode="numeric"></label>
         <label class="ed-yt" id="ed-yt-w">Highlights su YouTube (facoltativo)<input id="ed-yt" class="field" type="url" inputmode="url" autocomplete="off" placeholder="Incolla il link del video"></label>
       </div>
     </div>
@@ -2535,7 +2565,7 @@ const CVIEW_ORDER = ['gen', 'g', 'a', 'ga', 'pct', 's', 'og'];
 /* =========================================================
    STATE
    ========================================================= */
-const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{}, messages:{}, playerKeys:{}, totw:{}, totm:{}, ballon:{}, plqPick:{}, lineupProps:{}, clips:{} };
+const store = { players:{}, matches:{}, settings:{}, photos:{}, votes:{}, ratings:{}, ratingsDone:{}, profileReq:{}, messages:{}, playerKeys:{}, totw:{}, totm:{}, ballon:{}, plqPick:{}, lineupProps:{}, clips:{}, presenze:{} };
 const loaded = { players:false, matches:false, settings:false };
 let localMode = false;
 /* Accesso admin ricordato su questo dispositivo per 30 giorni (finché non si esce o non cambia il PIN) */
@@ -2664,6 +2694,8 @@ function cleanMatches(raw){
     for(const k of ['white', 'black']) if(k in c) c[k] = cleanEntries(c[k]);
     for(const k of ['capW', 'capB']) if(k in c && !(c[k] === null || idOk(c[k]))) c[k] = null;
     if('yt' in c && !(typeof c.yt === 'string' && YT_ID.test(c.yt))) delete c.yt;
+    if('posti' in c){ const n = Math.round(Number(c.posti)); if(Number.isFinite(n) && n >= 2 && n <= 30) c.posti = n; else delete c.posti; }   /* posti del sondaggio presenze (1.13.2) */
+    if('pclose' in c){ if(c.pclose) c.pclose = 1; else delete c.pclose; }
     /* rigori sbagliati (1.13.2): matches/{id}/pm = [{ s, min?, ts? }], fuori dalla sequenza dei gol */
     if('pm' in c) c.pm = (Array.isArray(c.pm) ? c.pm : Object.values(c.pm || {})).filter(x => x && idOk(x.s)).slice(0, 30)
       .map(x => ({ s:x.s, ...(x.min != null && x.min !== '' && Number.isFinite(Number(x.min)) ? { min:Number(x.min) } : {}), ...(typeof x.ts === 'string' && /^\d{1,2}:\d{2}$/.test(x.ts) ? { ts:x.ts } : {}) }));
@@ -2760,7 +2792,7 @@ function featuresHTML(){
 function loadCache(){
   try{
     const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-    if(c){ store.players = cleanPlayers(c.players); store.matches = cleanMatches(c.matches); store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; store.playerKeys = c.playerKeys || {}; store.totw = c.totw || {}; store.totm = c.totm || {}; store.ballon = c.ballon || {}; store.plqPick = c.plqPick || {}; store.lineupProps = c.lineupProps || {}; store.clips = cleanClips(c.clips); }
+    if(c){ store.players = cleanPlayers(c.players); store.matches = cleanMatches(c.matches); store.settings = c.settings || {}; store.photos = c.photos || {}; store.votes = c.votes || {}; store.ratings = c.ratings || {}; store.ratingsDone = c.ratingsDone || {}; store.profileReq = c.profileReq || {}; store.playerKeys = c.playerKeys || {}; store.totw = c.totw || {}; store.totm = c.totm || {}; store.ballon = c.ballon || {}; store.plqPick = c.plqPick || {}; store.lineupProps = c.lineupProps || {}; store.clips = cleanClips(c.clips); store.presenze = c.presenze || {}; }
   }catch(e){}
 }
 let cacheT;
@@ -2773,7 +2805,7 @@ function saveCache(){
       const { photo, ...rest } = p;
       return [k, (!rest.photoV && photo) ? p : rest];
     }));
-    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, profileReq:store.profileReq, totw:store.totw, totm:store.totm, ballon:store.ballon, plqPick:store.plqPick, lineupProps:store.lineupProps, clips:store.clips, photos:localMode ? store.photos : {}, ...(localMode ? { playerKeys:store.playerKeys } : {}) };
+    const data = { players, matches:store.matches, settings:store.settings, votes:store.votes, ratings:store.ratings, ratingsDone:store.ratingsDone, profileReq:store.profileReq, totw:store.totw, totm:store.totm, ballon:store.ballon, plqPick:store.plqPick, lineupProps:store.lineupProps, clips:store.clips, presenze:store.presenze, photos:localMode ? store.photos : {}, ...(localMode ? { playerKeys:store.playerKeys } : {}) };
     try{ localStorage.setItem(CACHE_KEY, JSON.stringify(data)); }
     catch(e){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ ...data, players:Object.fromEntries(Object.entries(players).map(([k, p]) => { const { photo, ...r } = p || {}; return [k, r]; })) })); }catch(e2){} }
   }, 400);
@@ -2852,6 +2884,8 @@ function initFirebase(){
   db.ref('lineupProps').on('value', s => { store.lineupProps = s.val() || {}; afterData(); }, () => scheduleRender());
   /* Clip (percorso nuovo e facoltativo clips): se le regole non lo permettono l'app continua a funzionare e l'admin vede il motivo nel pannello */
   db.ref('clips').on('value', s => { store.clips = cleanClips(s.val()); clipsIssue = false; afterData(); }, () => { clipsIssue = true; scheduleRender(); });
+  /* Presenze (percorso nuovo e facoltativo presenze): se le regole non lo permettono l'app continua a funzionare e l'admin vede il motivo nel pannello */
+  db.ref('presenze').on('value', s => { store.presenze = s.val() || {}; presIssue = false; afterData(); }, () => { presIssue = true; scheduleRender(); });
   /* Voto ai compagni: se le regole non permettono questi percorsi l'app continua a funzionare e l'admin vede il motivo nel pannello */
   db.ref('ratingsDone').on('value', s => { store.ratingsDone = s.val() || {}; loaded.ratingsDone = true; afterData(); }, () => { loaded.ratingsDone = true; ratingsProblem('read', 'ratingsDone'); });
   db.ref('.info/connected').on('value', s => {
@@ -2867,6 +2901,7 @@ let messagesIssue = false;        /* true se il database rifiuta la lettura di �
 let totwIssue = false;            /* true se il database rifiuta la lettura di «totw» o «totm» */
 let ballonIssue = false;          /* true se il database rifiuta la lettura di «ballon» (Pallone d'Oro) */
 let clipsIssue = false;           /* true se il database rifiuta la lettura di «clips» */
+let presIssue = false;            /* true se il database rifiuta la lettura di «presenze» */
 let ratingsIssue = null;           /* { kind:'read'|'write', path } se il database rifiuta questi percorsi: lo vede l'admin */
 const ratingsLoaded = {}, ratingsWatch = {};
 function ratingsProblem(kind, path){ ratingsIssue = { kind, path }; scheduleRender(); }
@@ -3735,7 +3770,7 @@ function render(){
   if(ED && $('#m-match').classList.contains('open')) renderEditor();
   if($('#m-prof') && $('#m-prof').classList.contains('open') && ui.admin) $('#pr-body').innerHTML = profListHTML();
   profToast();
-  if(dataReady()){ syncSeenTiers(); checkRecords(); migrateLegacyPhotos(); rankShift(); pvFlush(); prFlush(); flow(); }
+  if(dataReady()){ presCheck(); syncSeenTiers(); checkRecords(); migrateLegacyPhotos(); rankShift(); pvFlush(); prFlush(); flow(); }
 }
 
 function renderDashboard(){
@@ -3772,6 +3807,7 @@ function renderDashboardInner(){
   const nxPool = nx ? matchPool(nx) : null, nxPb = nx ? propsBits(nx, 'prop-go') : null;
   const next = nx ? `<div class="glass next big" role="button" tabindex="0" data-open-match="${nx.id}" aria-label="Apri la gara in programma">
       <div class="nx-top"><span class="tag">🗓️ Prossima gara</span><b>Giornata ${num(nx.day)}</b><span class="mu">${esc(whenLabel(nx) || 'Data da definire')}</span>${cdSpan(nx)}</div>
+      ${presBoxHTML(nx, true)}
       ${nx.propBy ? propByHTML(nx).replace('class="prop-by"', 'class="prop-by sm"') : ''}
       ${nxCaps ? capsVsHTML(nx) : nxPool ? `<div class="nx-pool"><b>Squadre da decidere</b><span class="mu sm">${nxPool.length} convocati</span><div class="nx-avs">${nxPool.map(pid => avatar(store.players[pid], 'xs')).join('')}</div></div>` : ''}
       ${nxCaps ? `<div class="ovbar" aria-label="OVR medio Bianchi ${itn(nxW)}, Neri ${itn(nxB)}"><span>${itn(nxW)}</span><span class="bar"><i style="width:${nxSh}%"></i><em></em></span><span>${itn(nxB)}</span></div>` : ''}
@@ -4682,7 +4718,125 @@ async function propReject(mid, pid){
    Si salva solo con «Salva formazioni»: squadre, ordine (posW/posB) e moduli della gara, come fanno già gli scambi. */
 const cmpFor = mid => !!(ui.cmp && ui.cmp.mid === mid && (ui.admin || ui.cmp.mode === 'prop'));
 /* Convocati della gara (pool + chi è già in squadra); null se la gara non li indica: allora si sceglie tra tutta la rosa */
-const matchPool = m => m && m.pool ? [...new Set([...list(m.pool), ...list(m.white).map(e => e.pid), ...list(m.black).map(e => e.pid)])].filter(pid => store.players[pid]) : null;
+/* ---------- Presenze (1.13.2): presenze/{mid}/{pid} = { at, adm?, out?, late? } (percorso nuovo e facoltativo) ----------
+   at = quando ha detto «ci sono» (ora del server), adm = aggiunto dall'admin (entra subito), out = quando si è tolto dalla lista,
+   late = si è tolto quando mancavano meno di 24 ore. Posti in matches/{id}/posti (se mancano: i titolari dei due moduli, di solito 16).
+   Dentro i primi «posti»: prima gli aggiunti dall'admin, poi in ordine di arrivo. Gli altri sono riserve, nello stesso ordine:
+   se qualcuno esce entra da sola la prima riserva, perché la lista si ricalcola ogni volta */
+const presSeats = m => { const n = num(m && m.posti); return n >= 2 && n <= 30 ? n : (fmSize((m && m.fmW) || DEF_FM) + fmSize((m && m.fmB) || DEF_FM)) || 16; };
+/* codice della gara anche quando arriva l'oggetto dell'archivio (store.matches[id] non porta l'id con sé) */
+const midOf = m => (m && (m.id || Object.keys(store.matches || {}).find(k => store.matches[k] === m))) || '';
+function presState(m){
+  const R = (store.presenze && store.presenze[midOf(m)]) || {}, rows = [], outs = [];
+  for(const [pid, x] of Object.entries(R)){
+    if(!x || typeof x !== 'object' || !store.players[pid]) continue;
+    if(num(x.out)) outs.push({ pid, out:num(x.out), late:!!x.late });
+    else if(num(x.at) > 0) rows.push({ pid, at:num(x.at), adm:!!x.adm });
+  }
+  rows.sort((a, b) => (b.adm - a.adm) || (a.at - b.at) || a.pid.localeCompare(b.pid));
+  const n = presSeats(m);
+  return { n, inn:rows.slice(0, n), res:rows.slice(n), outs:outs.sort((a, b) => b.out - a.out) };
+}
+const presIn = m => m && m.status === 'scheduled' ? presState(m).inn.map(r => r.pid) : [];
+const presClosed = m => !!m.pclose || (() => { const k = kickDate(m); return !!k && Date.now() >= k.getTime(); })();
+const presMine = (m, me) => { const S = presState(m); return S.inn.some(r => r.pid === me) ? 'in' : S.res.some(r => r.pid === me) ? 'res' : ''; };
+const presNow = () => (db && window.firebase && firebase.database && firebase.database.ServerValue) ? firebase.database.ServerValue.TIMESTAMP : Date.now();
+/* I convocati della gara: quelli scelti dall'admin, i presenti del sondaggio e chi è già in squadra */
+const matchPool = m => {
+  if(!m) return null;
+  const pin = presIn(m); if(!m.pool && !pin.length) return null;
+  return [...new Set([...list(m.pool), ...pin, ...list(m.white).map(e => e.pid), ...list(m.black).map(e => e.pid)])].filter(pid => store.players[pid]);
+};
+/* Riquadro delle presenze: in Partite (completo) e nella prossima gara della Classifica (compact) */
+function presBoxHTML(m, compact){
+  if(!m || m.status !== 'scheduled') return '';
+  m = { ...m, id:midOf(m) };
+  const S = presState(m), me = myPid(), mine = me ? presMine(m, me) : '', closed = presClosed(m), full = S.inn.length >= S.n;
+  const resPos = mine === 'res' ? S.res.findIndex(r => r.pid === me) + 1 : 0;
+  const status = closed ? (m.pclose ? 'Chiuse dall’organizzatore' : 'Chiuse: la gara è iniziata') : full ? 'Lista piena: si entra in riserva' : `${S.n - S.inn.length} ${S.n - S.inn.length === 1 ? 'posto libero' : 'posti liberi'}`;
+  const meLine = mine === 'in' ? '✅ Ci sei' : mine === 'res' ? `🪑 Sei ${resPos}° in riserva` : '';
+  const btn = !me ? '<button type="button" class="btn sm" data-go="me">Entra con il tuo giocatore per rispondere</button>'
+    : closed ? ''
+    : mine ? `<button type="button" class="btn sm" data-action="pres-leave" data-mid="${m.id}">${mine === 'in' ? 'Non ci sono più' : 'Esci dalle riserve'}</button>`
+    : `<button type="button" class="btn ${compact ? 'sm ' : ''}primary" data-action="pres-join" data-mid="${m.id}">${full ? '🪑 Mettimi in riserva' : '✋ Ci sono'}</button>`;
+  if(compact) return `<div class="pres-mini"><span class="pm-t">📋 Presenze <b>${S.inn.length}/${S.n}</b><small>${meLine || status}</small></span>${btn}</div>`;
+  const row = (r, i) => `<li class="pres-r${r.pid === me ? ' me' : ''}"><span class="pr-n">${i + 1}</span>${avatar(store.players[r.pid], 'xs')}<span class="pr-nm">${esc(pname(r.pid))}${r.adm ? '<small>aggiunto dall’organizzatore</small>' : ''}</span>${ui.admin ? `<button type="button" class="pr-x" data-action="pres-rm" data-mid="${m.id}" data-pid="${r.pid}" aria-label="Togli ${esc(pname(r.pid))}">✕</button>` : ''}</li>`;
+  const k = kickDate(m), late = ui.admin ? S.outs.filter(o => o.late) : [];
+  const hrs = o => k ? Math.max(0, Math.round((k.getTime() - o.out) / 3600e3)) : null;
+  return `<section class="pres-box" aria-label="Presenze">
+    <div class="pres-hd"><h3>📋 Presenze <b>${S.inn.length}/${S.n}</b></h3><span class="pres-st ${closed ? 'closed' : full ? 'full' : 'open'}">${status}</span></div>
+    ${meLine ? `<p class="pres-me">${meLine}</p>` : ''}${btn ? `<div class="pres-act">${btn}</div>` : ''}
+    ${S.inn.length ? `<ol class="pres-list">${S.inn.map(row).join('')}</ol>` : '<p class="mu sm" style="margin:6px 0 0">Ancora nessuno: rispondi per primo!</p>'}
+    ${S.res.length ? `<div class="pres-sub">Riserve</div><ol class="pres-list res">${S.res.map(row).join('')}</ol>` : ''}
+    ${late.length ? `<p class="pres-late">⚠️ Si sono tolti nelle ultime 24 ore: ${late.map(o => `<b>${esc(pname(o.pid))}</b>${hrs(o) != null ? ` (a ${hrs(o)} ${hrs(o) === 1 ? 'ora' : 'ore'} dalla gara)` : ''}`).join(', ')}</p>` : ''}
+    ${ui.admin ? `<div class="pres-adm">
+      <span class="pres-seats">Posti <button type="button" class="btn sm ghost" data-action="pres-seats" data-mid="${m.id}" data-d="-1" aria-label="Un posto in meno">−</button><b>${S.n}</b><button type="button" class="btn sm ghost" data-action="pres-seats" data-mid="${m.id}" data-d="1" aria-label="Un posto in più">＋</button></span>
+      <button type="button" class="btn sm" data-action="pres-close" data-mid="${m.id}">${m.pclose ? 'Riapri le presenze' : 'Chiudi le presenze'}</button>
+      <input id="pq" class="field clf-q" type="search" data-mid="${m.id}" autocomplete="off" placeholder="Aggiungi un giocatore: scrivi il nome" aria-label="Aggiungi un giocatore alla lista" aria-controls="pq-r"><div class="clf-ch clf-res" id="pq-r" aria-live="polite"></div>
+    </div>` : ''}
+  </section>`;
+}
+function paintPresRes(mid){
+  const m = store.matches[mid], inp = $('#pq'), box = $('#pq-r'); if(!m || !inp || !box) return;
+  const q = norm(inp.value), S = presState(m), taken = new Set([...S.inn, ...S.res].map(r => r.pid));
+  const L = q ? Object.keys(store.players).filter(p => !taken.has(p) && norm(pname(p)).includes(q)).sort((a, b) => pname(a).localeCompare(pname(b), 'it')).slice(0, 8) : [];
+  box.innerHTML = !q ? '' : L.length ? L.map(p => `<button type="button" data-action="pres-add" data-mid="${mid}" data-pid="${p}">${avatar(store.players[p], 'xs')}${esc(pname(p))}</button>`).join('') : '<span class="mu sm">Nessun giocatore con questo nome (o è già in lista)</span>';
+}
+/* Chi è in lista sa se è entrato dalla riserva o se l'admin lo ha tolto o aggiunto (cmb_presSeen = { mid: 'in'|'res'|'no' } su questo telefono) */
+function presSeenSet(mid, st){ try{ const s = JSON.parse(localStorage.getItem('cmb_presSeen') || '{}') || {}; s[mid] = st; localStorage.setItem('cmb_presSeen', JSON.stringify(s)); }catch(e){} }
+function presCheck(){
+  const me = myPid(); if(!me) return;
+  let seen = {}; try{ seen = JSON.parse(localStorage.getItem('cmb_presSeen') || '{}') || {}; }catch(e){}
+  let ch = false;
+  for(const m of STATS.scheduled){
+    const st = presMine(m, me) || 'no', was = seen[m.id], g = `la Giornata ${num(m.day)}`;
+    if(was && was !== st){
+      const adm = !!((store.presenze || {})[m.id] || {})[me]?.adm;
+      if(was === 'res' && st === 'in') toast(`✅ Sei dentro per ${g}: si è liberato un posto!`, 'ok');
+      else if(was === 'in' && st === 'res') toast(`🪑 Per ${g} ora sei in riserva`, 'warn');
+      else if(was === 'no' && st === 'in' && adm) toast(`✅ L’organizzatore ti ha messo nella lista di ${g}`, 'ok');
+      else if(st === 'no') toast(`L’organizzatore ti ha tolto dalla lista di ${g}`, 'warn');
+    }
+    if(was !== st){ seen[m.id] = st; ch = true; }
+  }
+  if(ch) try{ localStorage.setItem('cmb_presSeen', JSON.stringify(seen)); }catch(e){}
+}
+async function presJoin(mid){
+  const me = myPid(), m = store.matches[mid];
+  if(!me || !store.players[me]){ toast('Per rispondere entra con il tuo giocatore nella sezione Io', 'warn'); return; }
+  if(!m || m.status !== 'scheduled' || presClosed(m)){ toast('Le presenze di questa gara sono chiuse', 'warn'); return; }
+  const S = presState(m), full = S.inn.length >= S.n;
+  presSeenSet(mid, full ? 'res' : 'in');
+  await commit({ [`presenze/${mid}/${me}`]: { at:presNow() } }, full ? 'Sei in riserva: se si libera un posto entri tu' : 'Ci sei! Sei nella lista');
+}
+async function presLeave(mid){
+  const me = myPid(), m = store.matches[mid]; if(!me || !m) return;
+  const was = presMine(m, me); if(!was) return;
+  const k = kickDate(m), late = was === 'in' && !!k && k.getTime() - Date.now() < 24 * 3600e3;
+  const ok = await confirmDlg(was === 'in' ? 'Non ci sei più?' : 'Esci dalle riserve?', was === 'in' ? `Il tuo posto va alla prima riserva.${late ? ' Mancano meno di 24 ore alla gara: l’organizzatore lo vedrà.' : ''}` : 'Non sarai più in fila per un posto.', 'Sì, toglimi');
+  if(!ok) return;
+  presSeenSet(mid, 'no');
+  await commit({ [`presenze/${mid}/${me}`]: was === 'in' ? { out:presNow(), ...(late ? { late:1 } : {}) } : null }, 'Ti sei tolto dalla lista');
+}
+async function presAdminAdd(mid, pid){
+  if(!requireAdmin() || !store.matches[mid] || !store.players[pid]) return;
+  await commit({ [`presenze/${mid}/${pid}`]: { at:presNow(), adm:1 } }, `${pname(pid)} è nella lista`);
+  const inp = $('#pq'); if(inp){ inp.value = ''; inp.focus(); }
+}
+async function presAdminRemove(mid, pid){
+  if(!requireAdmin()) return;
+  const ok = await confirmDlg(`Togliere ${pname(pid)}?`, 'Se era nella lista, il suo posto va alla prima riserva.', 'Togli'); if(!ok) return;
+  await commit({ [`presenze/${mid}/${pid}`]: null }, `${pname(pid)} tolto dalla lista`);
+}
+function presSetSeats(mid, d){
+  const m = store.matches[mid]; if(!requireAdmin() || !m) return;
+  const n = Math.max(2, Math.min(30, presSeats(m) + d));
+  commit({ [`matches/${mid}/posti`]: n });
+}
+function presToggleClose(mid){
+  const m = store.matches[mid]; if(!requireAdmin() || !m) return;
+  commit({ [`matches/${mid}/pclose`]: m.pclose ? null : 1 }, m.pclose ? 'Presenze riaperte' : 'Presenze chiuse');
+}
 /* mode: 'adm' (l'admin compone), 'prop' (chi manda la sua formazione), 'rev' (l'admin guarda la proposta di src) */
 function cmpStart(mid, mode = 'adm', src = null){
   const m = store.matches[mid]; if(!m || m.status !== 'scheduled') return;
@@ -5404,6 +5558,7 @@ function scheduledDetailHTML(m){
   if(ui.mTab === 'form') return formViewHTML(m, false);
   return `<div class="mone"><article class="glass tab">
     <div class="hero-meta"><span class="tag">🗓️ In programma</span><span>Giornata ${num(m.day)}</span><span>${esc(whenLabel(m) || 'Data da definire')}</span>${cdSpan(m)}<span class="sum">${list(m.white).length} contro ${list(m.black).length}</span></div>
+    ${presBoxHTML(m)}
     ${capsVsHTML(m)}
     <div class="ovbar" aria-label="OVR medio Bianchi ${itn(mW)}, Neri ${itn(mB)}"><span>${itn(mW)}</span><span class="bar"><i style="width:${share}%"></i><em></em></span><span>${itn(mB)}</span></div>
     <p class="mu sm" style="text-align:center;margin:0 0 12px">OVR medio delle due squadre</p>
@@ -7157,6 +7312,7 @@ function renderAdmin(){
     ${ratingsIssue && feat('ratings') ? `<div class="warnline">${ratingsIssue.kind === 'read'
       ? `Il database non permette di leggere «${esc(ratingsIssue.path)}». Per il voto ai compagni aggiungi nelle regole di Firebase i percorsi “ratings” e “ratingsDone” (lettura e scrittura per tutti i dispositivi).`
       : `Il database ha rifiutato la scrittura di un voto ai compagni (percorso «${esc(ratingsIssue.path)}»). Nelle regole di Firebase servono ratings/$gara/$rid e ratingsDone/$gara/$pid con scrittura consentita a tutti i dispositivi.`}</div>` : ''}
+    ${presIssue ? `<div class="warnline">Il database non permette di leggere «presenze». Per il sondaggio delle presenze aggiungi nelle regole di Firebase il percorso “presenze” (lettura e scrittura per tutti i dispositivi).</div>` : ''}
     ${clipsIssue ? `<div class="warnline">Il database non permette di leggere «clips». Per le clip aggiungi nelle regole di Firebase il percorso “clips” (lettura e scrittura per tutti i dispositivi).</div>` : ''}
     ${!store.settings?.pin ? `<div class="warnline">Stai usando il PIN predefinito ${DEFAULT_PIN}: cambialo prima di condividere il link. <button type="button" class="btn sm" data-action="change-pin">Cambia PIN</button></div>` : ''}
     <div class="glass db-info"><span>Archivio: <b>${mode}</b></span><span>Giocatori: <b>${STATS.list.length}</b></span><span>Gare: <b>${STATS.matches.length}</b></span><span>Versione: <b>v${APP_VERSION}</b></span></div>
@@ -7309,6 +7465,7 @@ function setEdMode(mode){
   $('#m-match .sheet').classList.toggle('sched', mode === 'scheduled');
   $('#ed-end-w').hidden = mode === 'scheduled';
   $('#ed-yt-w').hidden = mode === 'scheduled';
+  $('#ed-posti-w').hidden = mode !== 'scheduled';
   $('#ed-save').textContent = mode === 'scheduled' ? 'Salva gara in programma' : 'Salva risultato';
   if(mode === 'scheduled'){
     [...ED.white, ...ED.black].forEach(e => { e.g = 0; e.a = 0; e.og = 0; delete e.late; delete e.inj; }); ED.goals = []; ED.moves = []; ED.pm = []; goalFormReset(); moveFormReset();
@@ -7323,7 +7480,7 @@ function openMatchEditor(id, mode){
   const cp = arr => list(arr).map(e => ({ pid:e.pid, n:e.n, g:num(e.g), a:num(e.a), og:num(e.og), ...(e.bench ? { bench:1 } : {}), ...(e.late ? { late:1 } : {}), ...(e.inj ? { inj:1 } : {}) }));
   const wasSched = m?.status === 'scheduled';
   ED = { id:id || null, day:m ? num(m.day) : nextDay(), date:m?.date || todayISO(), time:m?.time || '', end:m?.end || '', fmW:m?.fmW || DEF_FM, fmB:m?.fmB || DEF_FM, posW:m?.posW || null, posB:m?.posB || null, balW:null, balB:null, capW:m?.capW || null, capB:m?.capB || null,
-         white:cp(m?.white), black:cp(m?.black), called:wasSched ? list(m.pool).filter(pid => store.players[pid] && ![...list(m.white), ...list(m.black)].some(e => e.pid === pid)) : [], status:mode || (wasSched ? 'scheduled' : 'played'),
+         white:cp(m?.white), black:cp(m?.black), called:wasSched ? [...new Set([...list(m.pool), ...presIn(m)])].filter(pid => store.players[pid] && ![...list(m.white), ...list(m.black)].some(e => e.pid === pid)) : [], status:mode || (wasSched ? 'scheduled' : 'played'),
          goals:list(m?.goals).map(g => ({ s:g.s, a:g.a || '', og:!!num(g.og), pen:!num(g.og) && !!num(g.pen), min:(g.min == null ? null : num(g.min)), ts:g.ts || '' })),
          pm:list(m?.pm).filter(x => x && x.s).map(x => ({ s:x.s, min:x.min == null ? null : num(x.min), ts:x.ts || '' })),
          moves:list(m?.moves).map(x => ({ pid:x.pid, k:x.k, ...(x.why ? { why:x.why } : {}), min:(x.min == null ? null : num(x.min)), ts:x.ts || '', at:num(x.at) })),
@@ -7337,6 +7494,7 @@ function openMatchEditor(id, mode){
   $('#ed-end').value = ED.end;
   $('#ed-surf').value = SURF[m && m.surf] ? m.surf : '';
   $('#ed-yt').value = m && m.yt && YT_ID.test(m.yt) ? ytUrl(m.yt) : '';
+  $('#ed-posti').value = presSeats(m || {});
   $('#ed-filter').value = '';
   setEdMode(ED.status);
   openModal('#m-match');
@@ -7781,6 +7939,7 @@ async function saveMatch(){
   ED.end = $('#ed-end').value || '';
   ED.surf = SURF[$('#ed-surf').value] ? $('#ed-surf').value : '';
   ED.yt = ED.status === 'scheduled' ? '' : ytId($('#ed-yt').value);
+  { const n = Math.round(Number($('#ed-posti').value)); ED.posti = Number.isFinite(n) && n >= 2 && n <= 30 ? n : 0; }
   if(ED.yt === null){ toast('Il link degli highlights non è un video di YouTube: su YouTube tocca «Condividi» e poi «Copia link»', 'err'); $('#ed-yt').focus(); return; }
   if(ED.status !== 'scheduled' && ED.end && (!ED.time || matchLen({ time:ED.time, end:ED.end }) == null)){ toast('Controlla ora inizio e ora fine della gara', 'err'); return; }
   const w = ED.white.filter(e => !e.bench).length, b = ED.black.filter(e => !e.bench).length;
@@ -7818,7 +7977,7 @@ async function saveMatch(){
   const oldM = ED.id ? store.matches[ED.id] : null, newPlayed = !sched && (!oldM || oldM.status === 'scheduled');
   const vHrs = oldM && oldM.voteHrs ? oldM.voteHrs : (newPlayed ? VOTE_HRS_NEW : 0);   /* gare nuove: 12 ore; le esistenti restano a 24 */
   const payload = {
-    status:sched ? 'scheduled' : 'played', time:ED.time, ...(!sched && ED.end ? { end:ED.end } : {}), fmW:ED.fmW || DEF_FM, fmB:ED.fmB || DEF_FM,
+    status:sched ? 'scheduled' : 'played', ...(sched && ED.posti ? { posti:ED.posti } : {}), ...(sched && oldM && oldM.pclose ? { pclose:1 } : {}), time:ED.time, ...(!sched && ED.end ? { end:ED.end } : {}), fmW:ED.fmW || DEF_FM, fmB:ED.fmB || DEF_FM,
     ...(ED.posW ? { posW:list(ED.posW) } : {}), ...(ED.posB ? { posB:list(ED.posB) } : {}),
     ...(ED.capW ? { capW:ED.capW } : {}), ...(ED.capB ? { capB:ED.capB } : {}),
     day:ED.day, date:ED.date, ...(ED.surf ? { surf:ED.surf } : {}), ...(ED.yt ? { yt:ED.yt } : {}),
@@ -7878,6 +8037,7 @@ async function deleteMatch(id){
   ui.matchId = null;
   const up = { [`matches/${id}`]: null, [`votes/${id}`]: null, [`ratings/${id}`]: null, [`ratingsDone/${id}`]: null };
   for(const [cid, c] of Object.entries(store.clips || {})) if(c && c.mid === id) up[`clips/${cid}/mid`] = null;   /* le clip restano, senza giornata */
+  if(store.presenze && store.presenze[id]) up[`presenze/${id}`] = null;   /* il sondaggio delle presenze */
   commit(up, 'Gara eliminata');
 }
 
@@ -8038,7 +8198,7 @@ async function backupAll(){
   backing = true;
   toast('Backup in corso…');
   const data = {}, failed = [];
-  const PATHS = ['players','matches','settings','votes','photos','ratings','ratingsDone','profileReq','messages','plqPick','lineupProps','clips'];
+  const PATHS = ['players','matches','settings','votes','photos','ratings','ratingsDone','profileReq','messages','plqPick','lineupProps','clips','presenze'];
   for(const path of PATHS){
     try{ data[path] = (await db.ref(path).once('value')).val(); }
     catch(e){ console.warn('backup', path, e); failed.push(path); }
@@ -8389,6 +8549,12 @@ document.addEventListener('click', async e => {
     case 'edit-match': if(requireAdmin()) openMatchEditor(d.mid); break;
     case 'del-match': if(requireAdmin()) deleteMatch(d.mid); break;
     case 'clip-open': openClip(d.cid); break;
+    case 'pres-join': presJoin(d.mid); break;
+    case 'pres-leave': presLeave(d.mid); break;
+    case 'pres-add': presAdminAdd(d.mid, d.pid); break;
+    case 'pres-rm': presAdminRemove(d.mid, d.pid); break;
+    case 'pres-seats': presSetSeats(d.mid, +d.d || 0); break;
+    case 'pres-close': presToggleClose(d.mid); break;
     case 'ovr-snap': openSnap(d.pid, +d.i, +d.dir || 0); break;
     case 'clip-new': if(requireAdmin()) openClipForm(); break;
     case 'clip-edit': if(requireAdmin()){ closeModal('#m-clip'); openClipForm(d.cid); } break;
@@ -8532,7 +8698,8 @@ document.addEventListener('input', e => {
   const b = $('[data-action="cls-filters"]'); if(b){ const n = clsNF(); b.textContent = 'Filtri' + (n ? ` (${n})` : ''); b.classList.toggle('primary', !!n); }
 });
 /* Clip: ricerca dei giocatori mentre si scrive; Invio sceglie il primo risultato */
-document.addEventListener('input', e => { const t = e.target; if(t && (t.id === 'cl-q' || t.id === 'cl-qa')) paintClipRes(t.id === 'cl-qa' ? 'a' : 'p'); });
+document.addEventListener('input', e => { const t = e.target; if(t && (t.id === 'cl-q' || t.id === 'cl-qa')) paintClipRes(t.id === 'cl-qa' ? 'a' : 'p'); if(t && t.id === 'pq') paintPresRes(t.dataset.mid); });
+document.addEventListener('keydown', e => { const t = e.target; if(e.key !== 'Enter' || !t || t.id !== 'pq') return; e.preventDefault(); $('#pq-r')?.querySelector('button')?.click(); });
 document.addEventListener('keydown', e => { const t = e.target; if(e.key !== 'Enter' || !t || (t.id !== 'cl-q' && t.id !== 'cl-qa')) return; e.preventDefault(); const b = $(t.id === 'cl-qa' ? '#cl-ra' : '#cl-r')?.querySelector('button'); if(b) b.click(); });
 document.addEventListener('input', e => { const t = e.target; if(t && t.id === 'msg-text'){ const n = $('#msg-n'); if(n) n.textContent = t.value.length + ' / ' + MSG_MAX; } });
 
