@@ -9126,7 +9126,8 @@ function verCmp(a, b){
 let newsSeenMem = '';
 function newsSeenGet(){ try{ return localStorage.getItem(NEWS_KEY) || newsSeenMem; }catch(e){ return newsSeenMem; } }
 function newsSeenSet(v){ newsSeenMem = v; try{ localStorage.setItem(NEWS_KEY, v); }catch(e){} }
-const newsHasNew = () => verCmp(APP_VERSION, newsSeenGet()) > 0;
+/* il segnale si accende solo se c'è una voce delle novità più recente dell'ultima aperta: una versione senza voce (solo correzioni) non lo accende */
+const newsHasNew = () => verCmp(NEWS.length ? NEWS[0].v : APP_VERSION, newsSeenGet()) > 0;
 /* Scritta di scoperta, una sola volta (cmb_newsHint): non durante la splash né con una finestra aperta (chi sei, voto, risultato…).
    Sparisce da sola dopo 6 secondi o al primo tocco. Con localStorage bloccato non compare (non potremmo ricordarla). */
 let newsHintT = 0;
