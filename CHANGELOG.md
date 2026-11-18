@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.14.0
+- Bilancia squadre a più fattori: punteggio pesato (`BAL_W`) di overall medio, forma (somma delle variazioni delle ultime 3 gare), gol a gara e assist a gara della squadra (ognuno per conto suo, con la media del gruppo come base per chi ha poche gare), ruoli, nuovi (meno di 3 gare), intesa delle coppie (vittorie da compagni pari nelle due squadre; le coppie sopra `BAL_STRONG` si separano) e compagni dell'ultima gara rimasti insieme. Fino a 16 giocatori prova tutte le divisioni, oltre partenze casuali e scambi entro 150 ms; tra le divisioni entro `BAL_TOL` dalla migliore ne sceglie una a caso.
+- Riquadro «Confronto» Bianchi contro Neri sotto il tasto (`#ed-cmp`), dopo il primo bilanciamento e aggiornato anche con gli spostamenti a mano. Nessun dato nuovo nel database.
+
 ## 1.13.5
 - Icone di gol, gol subito, autogol, assist, MVP, rigore segnato e sbagliato, parata e papera: immagini scelte dal proprietario in `icons/ev/` (PNG trasparenti, 16 KB in tutto, nella cache dell'app), richiamate dagli stessi simboli dello sprite. «Gol subito» è il pallone del gol con il bollino rosso del rigore sbagliato.
 - Rigore parato: campo facoltativo `matches/{id}/pm[i].p` (chi ha parato, avversario di chi tira). Nel registro gara «Parato da» al posto dell'assist quando il tipo è «Rigore sbagliato». Parametro `pp` «Rigore parato» (di base +1) in Calcolo overall, sommato pieno; «parato da» nel Resoconto, nel registro e in «Overall spiegato»; statistica `ppar`.

@@ -2373,7 +2373,7 @@ const firebaseConfig = {
   appId: "1:935402230973:web:2bdc6b997910b3786a93d4",
   measurementId: "G-P5H4WKKGP9"
 };
-const APP_VERSION = '1.13.5';
+const APP_VERSION = '1.14.0';
 const DEFAULT_PIN = '2026';
 /* Interruttori delle funzioni: li accende e spegne l'admin (settings/features/{chiave}), valgono per tutti i dispositivi.
    Il codice legge sempre e solo feat(chiave). Spenta = nascosta e disattivata; codice e dati restano, riaccesa torna tutto com'era. */
@@ -8930,6 +8930,9 @@ $('#cpin-form').addEventListener('submit', e => {
    CHANGELOG.md, APP_VERSION e alla cache di sw.js. Ogni testo passa da esc() quando viene mostrato.
    ========================================================= */
 const NEWS = [
+  { v:'1.14.0', date:'2026-11-18', items:[
+    `⚖️ Squadre più equilibrate: quando si fanno le squadre in automatico ora contano anche la forma delle ultime gare, chi segna e chi fa assist, i ruoli, i nuovi arrivati e le coppie che vincono sempre insieme. E difficilmente si rifanno le stesse squadre della volta prima 😉`
+  ] },
   { v:'1.13.4', date:'2026-11-15', items:[
     `🎨 Le icone nuove arrivano anche nelle Formazioni a fine gara: sulle card del campo e nell’elenco vedi gol, assist, autogol e MVP con i disegni nuovi, più una medaglia per il premio di reparto e un germoglio per chi debutta 🌱`
   ] },
