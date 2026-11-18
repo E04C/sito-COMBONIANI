@@ -764,6 +764,13 @@ button.arow:hover{background:rgba(255,255,255,.035)}
 .bal{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:space-between;padding:10px 12px;border-radius:14px;border:1px dashed rgba(251,191,36,.35);background:rgba(251,191,36,.05)}
 .bal span{font-weight:700;font-size:13.5px;color:#fde68a}
 .bal-sz{display:inline-flex;align-items:center;gap:6px}
+.bal-cmp{margin-top:8px;padding:10px 12px;border-radius:14px;border:1px solid rgba(251,191,36,.22);background:rgba(251,191,36,.05);display:grid;gap:5px}
+.bal-cmp[hidden]{display:none}
+.bal-cmp .bc-r{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;font:800 13.5px var(--body);font-variant-numeric:tabular-nums}
+.bal-cmp .bc-r>span:last-child{text-align:right}
+.bal-cmp .bc-r em{font:600 12px var(--body);color:var(--mu);text-align:center}
+.bal-cmp .bc-h{color:#fde68a;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em}
+.bal-cmp .bc-n{margin:3px 0 0;color:var(--mu);font-size:12px;line-height:1.4;text-align:center}
 .bal-sz label{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:12.5px;color:#fde68a}
 .bal-sz input{width:56px;height:34px;padding:0 4px;text-align:center}
 .bal-sz b{color:var(--mu)}
@@ -2218,6 +2225,7 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
         <input id="ed-filter" class="field" type="search" enterkeyhint="done" placeholder="🔎 Cerca un giocatore e premi Invio per aggiungerlo" aria-label="Cerca giocatore" autocomplete="off">
       </div>
       <div class="bal"><span id="ed-called">Convocati 0</span><span class="bal-sz"><label>Bianchi <input id="bal-w" class="field" type="number" min="1" max="11" inputmode="numeric" aria-label="Giocatori dei Bianchi"></label><b>/</b><label>Neri <input id="bal-b" class="field" type="number" min="1" max="11" inputmode="numeric" aria-label="Giocatori dei Neri"></label></span><button type="button" class="btn sm primary" data-action="balance" id="ed-bal">⚖️ Bilancia squadre</button></div>
+      <div id="ed-cmp" class="bal-cmp" aria-live="polite" hidden></div>
       <div id="ed-pool" class="pool"></div>
     </div>
     <div class="ed-teams">
@@ -7562,66 +7570,126 @@ function edToggle(pid){
   }
   renderEditor();
 }
-/* Bilanciatore: divide i giocatori in due squadre di misure kA e n-kA minimizzando la differenza di OVR medio, con un piccolo peso
-   sulla distribuzione dei ruoli (difensori e attaccanti). Assegnazione golosa + scambi di miglioramento, ripetuti da più partenze casuali
-   entro un budget di tempo. Quando le combinazioni possibili sono poche (fino a 16 giocatori) le prova tutte, ma una alla volta (niente 2^n):
-   oltre si usa l'euristica, che regge anche 26 giocatori. Restituisce un array di 0/1 (1 = squadra A); tra le soluzioni quasi equivalenti ne sceglie una a caso. */
-const BAL_EXACT_MAX = 13000;   /* combinazioni al massimo da provare tutte (16 giocatori in 8 + 8: 12870) */
-function balanceSplit(o, role, kA, budgetMs){
-  const n = o.length, kB = n - kA;
-  const out = new Array(n).fill(0);
+/* Bilanciatore (1.14.0): divide i giocatori in due squadre di misure kA e n-kA cercando il punteggio più basso. Il punteggio somma, con i pesi di BAL_W:
+   overall medio, forma (variazioni delle ultime 3 gare), gol a gara e assist a gara della squadra (ognuno per conto suo: i bomber si dividono),
+   ruoli, nuovi (meno di BAL_NEW gare), intesa delle coppie (le vittorie da compagni: l'intesa resta pari e le coppie che vincono
+   insieme almeno 4 volte su 5, su abbastanza gare, si separano) e compagni dell'ultima gara rimasti insieme.
+   Fino a BAL_EXACT_MAX divisioni le prova tutte; oltre parte più volte a caso e migliora con gli scambi, entro un budget di tempo.
+   Tra le divisioni quasi equivalenti (entro BAL_TOL dalla migliore) ne sceglie una a caso: premendo di nuovo esce un'alternativa. */
+const BAL_EXACT_MAX = 13000;   /* 16 giocatori in 8 + 8: 12870 divisioni */
+const BAL_TOL = 0.15;
+const BAL_W = { ovr:1.5, form:0.35, gol:1.5, ast:0.75, role:0.5, newb:0.5, chem:0.6, pair:3, rep:2 };
+const BAL_STRONG = 0.18;   /* soglia dell'intesa per una coppia «che vince quasi sempre insieme» (circa l'80% su 8-10 gare insieme) */
+const BAL_NEW = 3, BAL_K = 3;  /* meno di 3 gare = nuovo; gol e assist a gara si avvicinano alla media del gruppo come se ci fossero 3 gare medie in più */
+const BAL_RK = { DIF:0, CEN:1, ATT:2 };
+/* Ultima gara giocata prima di quella che si sta componendo (se si modifica una gara giocata, quella prima di lei) */
+function balLastMatch(skipMid){
+  const all = sortedMatches().filter(m => m.status !== 'scheduled');
+  const at = skipMid ? all.findIndex(m => m.id === skipMid) : -1;
+  return (at >= 0 ? all.slice(0, at) : all).pop() || null;
+}
+/* I dati di ogni giocatore e di ogni coppia, senza la gara che si sta modificando (solo l'overall è quello di oggi) */
+function balModel(ids, skipMid){
+  const n = ids.length, H = ids.map(id => list(STATS.byId[id]?.hist).filter(x => x.m.id !== skipMid));
+  let tg = 0, ta = 0, tp = 0;
+  for(const id in STATS.byId){ const s = STATS.byId[id]; tg += s.g; ta += s.a; tp += s.pres; }
+  const Lg = tp ? tg / tp : 0, La = tp ? ta / tp : 0;
+  const M = { n, ids, o:[], form:[], gpg:[], apg:[], rk:[], nw:[], c:new Float64Array(n * n), w:new Float64Array(n * n), nn:new Float64Array(n * n), st:new Float64Array(n * n), rep:new Uint8Array(n * n), repTot:0, last:null };
+  ids.forEach((id, i) => {
+    const hs = H[i], P = hs.length, G = hs.reduce((t, x) => t + num(x.g), 0), A = hs.reduce((t, x) => t + num(x.a), 0);
+    M.o[i] = ovrOf(id);
+    M.form[i] = hs.slice(-3).reduce((t, x) => t + (Number(x.d) || 0), 0);
+    M.gpg[i] = (G + Lg * BAL_K) / (P + BAL_K);
+    M.apg[i] = (A + La * BAL_K) / (P + BAL_K);
+    M.rk[i] = BAL_RK[store.players[id]?.role] ?? 1;
+    M.nw[i] = P < BAL_NEW ? 1 : 0;
+  });
+  for(let i = 0; i < n; i++) for(let j = i + 1; j < n; j++){
+    const t = STATS.byId[ids[i]]?.mates?.[ids[j]];
+    if(!t || !t.n) continue;
+    const rate = (t.v + 0.5 * t.pa) / t.n, c = t.n >= 2 ? (rate - 0.5) * t.n / (t.n + 4) : 0;   /* intesa: da −0,5 a +0,5, più sicura con più gare insieme */
+    M.c[i * n + j] = c; M.st[i * n + j] = Math.max(0, c - BAL_STRONG);                                /* coppia «troppo forte»: vince quasi sempre insieme */
+    M.w[i * n + j] = t.v + 0.5 * t.pa; M.nn[i * n + j] = t.n;
+  }
+  const lm = balLastMatch(skipMid);
+  if(lm){
+    M.last = lm;
+    const tm = {}; for(const T of ['white', 'black']) for(const e of list(lm[T])) tm[e.pid] = T;
+    for(let i = 0; i < n; i++) for(let j = i + 1; j < n; j++) if(tm[ids[i]] && tm[ids[i]] === tm[ids[j]]){ M.rep[i * n + j] = 1; M.repTot++; }
+  }
+  return M;
+}
+/* Punteggio di una divisione (inA[i] = 1 se il giocatore i è nella squadra A); con full restituisce anche i valori delle due squadre */
+function balEval(M, inA, kA, kB, full){
+  const n = M.n, rA = [0, 0, 0], rB = [0, 0, 0];
+  let oA = 0, oB = 0, fA = 0, fB = 0, aA = 0, aB = 0, gA = 0, gB = 0, nA = 0, nB = 0;   /* g = gol a gara, a = assist a gara (somme di squadra) */
+  for(let i = 0; i < n; i++){
+    if(inA[i]){ oA += M.o[i]; fA += M.form[i]; aA += M.apg[i]; gA += M.gpg[i]; nA += M.nw[i]; rA[M.rk[i]]++; }
+    else { oB += M.o[i]; fB += M.form[i]; aB += M.apg[i]; gB += M.gpg[i]; nB += M.nw[i]; rB[M.rk[i]]++; }
+  }
+  let cA = 0, cB = 0, st = 0, kept = 0, wA = 0, wB = 0, xA = 0, xB = 0;
+  for(let i = 0; i < n; i++) for(let j = i + 1; j < n; j++){
+    if(inA[i] !== inA[j]) continue;
+    const k = i * n + j;
+    if(inA[i]){ cA += M.c[k]; wA += M.w[k]; xA += M.nn[k]; } else { cB += M.c[k]; wB += M.w[k]; xB += M.nn[k]; }
+    st += M.st[k]; kept += M.rep[k];
+  }
+  const half = n / 2, P = {
+    ovr:Math.abs(oA / kA - oB / kB), form:Math.abs(fA / kA - fB / kB), gol:Math.abs(gA / kA - gB / kB) * half, ast:Math.abs(aA / kA - aB / kB) * half,
+    role:(Math.abs(rA[0] / kA - rB[0] / kB) + Math.abs(rA[1] / kA - rB[1] / kB) + Math.abs(rA[2] / kA - rB[2] / kB)) * half,
+    newb:Math.abs(nA / kA - nB / kB) * half, chem:Math.abs(cA - cB), pair:st, rep:M.repTot ? kept / M.repTot : 0
+  };
+  let s = 0; for(const k in BAL_W) s += BAL_W[k] * P[k];
+  if(!full) return s;
+  return { s, P, kept, A:{ k:kA, o:oA / kA, f:fA / kA, g:gA, a:aA, r:rA, nw:nA, win:xA ? wA / xA : null }, B:{ k:kB, o:oB / kB, f:fB / kB, g:gB, a:aB, r:rB, nw:nB, win:xB ? wB / xB : null } };
+}
+/* Restituisce un array di 0/1 (1 = squadra A) */
+function balanceSplit(M, kA, budgetMs){
+  const n = M.n, kB = n - kA, out = new Array(n).fill(0);
   if(kA <= 0 || kB <= 0){ if(kA >= n) out.fill(1); return out; }
   let combos = 1; for(let i = 1; i <= Math.min(kA, kB); i++) combos = combos * (n - Math.min(kA, kB) + i) / i;
-  if(combos <= BAL_EXACT_MAX && n <= 30) return balanceExact(o, role, kA);
-  const rk = role.map(r => r === 'DIF' ? 0 : r === 'ATT' ? 1 : -1);
-  const total = o.reduce((t, v) => t + v, 0), nD = rk.filter(x => x === 0).length, nT = rk.filter(x => x === 1).length, w = n / 2 * 0.08;
-  const sc = (sA, dA, tA) => Math.abs(sA / kA - (total - sA) / kB) + (Math.abs(dA / kA - (nD - dA) / kB) + Math.abs(tA / kA - (nT - tA) / kB)) * w;
+  if(combos <= BAL_EXACT_MAX && n <= 30) return balanceExact(M, kA);
   const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
-  const t0 = now(), seen = new Map();
+  const t0 = now(), seen = new Map(), inA = new Uint8Array(n);
   let best = Infinity, tries = 0;
   while(tries < 12 || (now() - t0 < budgetMs && tries < 600)){
     tries++;
-    /* partenza: dal più forte al più debole, ognuno nella squadra con la media prevista più bassa (con un po' di rumore) */
-    const idx = o.map((v, i) => [v + Math.random() * 3, i]).sort((a, b) => b[0] - a[0]).map(x => x[1]);
-    const inA = new Array(n).fill(false); let cA = 0, cB = 0, sA = 0, sB = 0, dA = 0, tA = 0;
+    /* partenza: dal più forte al più debole (con un po' di rumore), ognuno nella squadra con la media più bassa */
+    const idx = M.o.map((v, i) => [v + Math.random() * 3, i]).sort((x, y) => y[0] - x[0]).map(x => x[1]);
+    inA.fill(0); let cA = 0, cB = 0, sA = 0, sB = 0;
     for(const i of idx){
       const toA = cA >= kA ? false : cB >= kB ? true : (sA / kA) <= (sB / kB);
-      if(toA){ inA[i] = true; cA++; sA += o[i]; if(rk[i] === 0) dA++; if(rk[i] === 1) tA++; } else { cB++; sB += o[i]; }
+      if(toA){ inA[i] = 1; cA++; sA += M.o[i]; } else { cB++; sB += M.o[i]; }
     }
-    let cur = sc(sA, dA, tA);
-    for(let it = 0; it < 80; it++){
-      let bi = -1, bj = -1, bs = cur - 1e-9, bsA = 0, bdA = 0, btA = 0;
-      for(let a = 0; a < n; a++){ if(!inA[a]) continue;
-        for(let b = 0; b < n; b++){ if(inA[b]) continue;
-          const s2 = sA - o[a] + o[b], d2 = dA - (rk[a] === 0 ? 1 : 0) + (rk[b] === 0 ? 1 : 0), t2 = tA - (rk[a] === 1 ? 1 : 0) + (rk[b] === 1 ? 1 : 0), v = sc(s2, d2, t2);
-          if(v < bs){ bs = v; bi = a; bj = b; bsA = s2; bdA = d2; btA = t2; }
+    let cur = balEval(M, inA, kA, kB);
+    for(let it = 0; it < 60; it++){   /* scambi: ogni volta il migliore tra tutti quelli possibili */
+      let bi = -1, bj = -1, bs = cur - 1e-9;
+      for(let x = 0; x < n; x++){ if(!inA[x]) continue;
+        for(let y = 0; y < n; y++){ if(inA[y]) continue;
+          inA[x] = 0; inA[y] = 1; const v = balEval(M, inA, kA, kB); inA[x] = 1; inA[y] = 0;
+          if(v < bs){ bs = v; bi = x; bj = y; }
         } }
       if(bi < 0) break;
-      inA[bi] = false; inA[bj] = true; sA = bsA; dA = bdA; tA = btA; cur = bs;
+      inA[bi] = 0; inA[bj] = 1; cur = bs;
     }
-    const key = inA.map(x => x ? 1 : 0).join('');
+    const key = inA.join('');
     if(!seen.has(key)) seen.set(key, cur);
     if(cur < best) best = cur;
   }
-  const near = [...seen].filter(([, v]) => v <= best + 0.12);
-  const pick = near[Math.floor(Math.random() * near.length)][0];
-  return [...pick].map(Number);
+  const near = [...seen].filter(([, v]) => v <= best + BAL_TOL);
+  return [...near[Math.floor(Math.random() * near.length)][0]].map(Number);
 }
-/* Prova tutte le divisioni con kA giocatori in A (enumerazione per combinazioni, algoritmo di Gosper) e sceglie a caso tra quelle entro 0,12 dalla migliore */
-function balanceExact(o, role, kA){
-  const n = o.length, kB = n - kA, total = o.reduce((t, v) => t + v, 0);
-  const rk = role.map(r => r === 'DIF' ? 0 : r === 'ATT' ? 1 : -1), nD = rk.filter(x => x === 0).length, nT = rk.filter(x => x === 1).length, w = n / 2 * 0.08;
-  const scoreOf = mask => {
-    let sA = 0, dA = 0, tA = 0;
-    for(let m = mask; m; m &= m - 1){ const i = 31 - Math.clz32(m & -m); sA += o[i]; if(rk[i] === 0) dA++; else if(rk[i] === 1) tA++; }
-    return Math.abs(sA / kA - (total - sA) / kB) + (Math.abs(dA / kA - (nD - dA) / kB) + Math.abs(tA / kA - (nT - tA) / kB)) * w;
-  };
-  const limit = 1 << n, first = (1 << kA) - 1;
+/* Prova tutte le divisioni con kA giocatori in A (combinazioni in ordine, algoritmo di Gosper) e sceglie a caso tra quelle entro BAL_TOL dalla migliore */
+function balanceExact(M, kA){
+  const n = M.n, kB = n - kA, inA = new Uint8Array(n), masks = [], scores = [];
+  const limit = 2 ** n, first = 2 ** kA - 1;
   const next = c => { const x = c & -c, y = c + x; return (((c ^ y) >>> 2) / x | 0) | y; };
   let best = Infinity;
-  for(let c = first; c < limit; c = next(c)){ const v = scoreOf(c); if(v < best) best = v; }
-  let pick = first, seen = 0;
-  for(let c = first; c < limit; c = next(c)){ if(scoreOf(c) <= best + 0.12 && Math.random() * ++seen < 1) pick = c; }   /* scelta uniforme tra le quasi-equivalenti */
+  for(let c = first; c < limit; c = next(c)){
+    for(let i = 0; i < n; i++) inA[i] = (c >> i) & 1;
+    const v = balEval(M, inA, kA, kB); masks.push(c); scores.push(v); if(v < best) best = v;
+  }
+  const near = masks.filter((_, i) => scores[i] <= best + BAL_TOL), pick = near[Math.floor(Math.random() * near.length)];
   return Array.from({ length:n }, (_, i) => (pick >> i) & 1);
 }
 function balanceTeams(){
@@ -7634,17 +7702,39 @@ function balanceTeams(){
   if(n > 2 * MAX_START){ toast(`Il bilanciatore sistema fino a ${2 * MAX_START} titolari (${MAX_START} per squadra): togli ${n - 2 * MAX_START} convocati e aggiungili poi come giocatori in più`, 'warn'); return; }
   const sz = edSizes(n);
   if(sz.err){ toast(sz.err, 'warn'); return; }
-  const o = ids.map(ovrOf), role = ids.map(id => store.players[id]?.role || 'CEN');
-  const mask = balanceSplit(o, role, sz.w, 120);
+  const mask = balanceSplit(balModel(ids, ED.id), sz.w, 150);
   const old = Object.fromEntries([...ED.white, ...ED.black].map(e => [e.pid, e]));
   const mk = id => old[id] || { pid:id, n:pname(id), g:0, a:0, og:0 };
   ED.white = [...ids.filter((_, i) => mask[i]).map(mk), ...benchW];
   ED.black = [...ids.filter((_, i) => !mask[i]).map(mk), ...benchB];
   ED.called = [];
+  ED.balCmp = true;   /* da qui il confronto tra le due squadre resta visibile e si aggiorna anche con i cambi a mano */
   edTeam = 'white';
   renderEditor();
-  const mean = arr => { const l = arr.filter(e => !e.bench); return l.reduce((t, e) => t + ovrOf(e.pid), 0) / (l.length || 1); };
-  toast(`Squadre bilanciate (${sz.w} contro ${sz.b}): OVR medio ${itn(mean(ED.white))} contro ${itn(mean(ED.black))}. Premi di nuovo per un’alternativa.`);
+  toast(`Squadre bilanciate (${sz.w} contro ${sz.b}): sotto trovi il confronto. Premi di nuovo per un’alternativa.`);
+}
+/* Confronto Bianchi contro Neri (titolari) dopo il bilanciamento */
+function renderBalCmp(){
+  const box = $('#ed-cmp'); if(!box) return;
+  const W = ED ? ED.white.filter(e => !e.bench).map(e => e.pid) : [], B = ED ? ED.black.filter(e => !e.bench).map(e => e.pid) : [];
+  if(!ED || !ED.balCmp || !W.length || !B.length){ box.hidden = true; box.innerHTML = ''; return; }
+  const ids = [...W, ...B], M = balModel(ids, ED.id), inA = Uint8Array.from(ids, (_, i) => i < W.length ? 1 : 0);
+  const R = balEval(M, inA, W.length, B.length, true), sg = v => (v > 0.05 ? '+' : v < -0.05 ? '−' : '') + itn(Math.abs(v));
+  const row = (l, a, b) => `<div class="bc-r"><span>${a}</span><em>${l}</em><span>${b}</span></div>`;
+  const roles = r => `${r[0]} D · ${r[1]} C · ${r[2]} A`, pc = v => v == null ? '–' : Math.round(v * 100) + '%';
+  const strong = [];
+  for(let i = 0; i < M.n; i++) for(let j = i + 1; j < M.n; j++) if(M.st[i * M.n + j] > 0 && inA[i] === inA[j]) strong.push(`${esc(shortName(pname(ids[i])))} e ${esc(shortName(pname(ids[j])))}`);
+  box.innerHTML = `<div class="bc-r bc-h"><span>Bianchi</span><em>Confronto</em><span>Neri</span></div>`
+    + row('OVR medio', itn(R.A.o), itn(R.B.o))
+    + row('Forma (ultime 3)', sg(R.A.f), sg(R.B.f))
+    + row('Gol a gara', itn(R.A.g), itn(R.B.g))
+    + row('Assist a gara', itn(R.A.a), itn(R.B.a))
+    + row('Ruoli', roles(R.A.r), roles(R.B.r))
+    + (R.A.nw || R.B.nw ? row('Nuovi', R.A.nw, R.B.nw) : '')
+    + (R.A.win != null || R.B.win != null ? row('Vittorie da compagni', pc(R.A.win), pc(R.B.win)) : '')
+    + (strong.length ? `<p class="bc-n">Insieme anche se vincono quasi sempre in coppia: ${strong.slice(0, 3).join(', ')}${strong.length > 3 ? ` e altre ${strong.length - 3}` : ''}.</p>` : '')
+    + (M.repTot ? `<p class="bc-n">Rispetto all’ultima gara (giornata ${num(M.last.day)}) restano compagni ${R.kept} ${R.kept === 1 ? 'coppia' : 'coppie'} su ${M.repTot}.</p>` : '');
+  box.hidden = false;
 }
 /* Misure scelte per il bilanciatore (campi "Bianchi n / Neri n"); senza scelta: ceil(n/2) e floor(n/2) */
 function balInput(side, v){
@@ -7708,7 +7798,7 @@ function edTeamHTML(T){
 }
 function renderEditor(){
   if(ED) edCapFix();
-  renderEditorScore(); renderEditorPick();
+  renderEditorScore(); renderEditorPick(); renderBalCmp();
   $('#ed-white').innerHTML = edTeamHTML('white');
   $('#ed-black').innerHTML = edTeamHTML('black');
   renderGoals(); renderMoves();
