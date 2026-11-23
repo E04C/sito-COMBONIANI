@@ -1665,12 +1665,15 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .xc.dense2 .xc-g .who small{display:none}
 .me-hist{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;align-items:end}
 .mh-col{display:flex;flex-direction:column;align-items:center;gap:4px}
-.mh-pair{height:92px;width:100%;display:flex;align-items:flex-end;justify-content:center;gap:5px}
+.mh-pair{height:110px;width:100%;display:flex;align-items:flex-end;justify-content:center;gap:5px}
+.mh-bw{width:38%;max-width:30px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+.mh-bw .mh-bar{width:100%}
+.mh-n{font:italic 800 14px/1 var(--disp);color:var(--or);margin-bottom:3px;min-height:14px}
+.mh-bw.a .mh-n{color:var(--gold)}
 .mh-bar{width:38%;max-width:30px;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,var(--or),var(--or2))}
 .mh-bar.a{background:linear-gradient(180deg,var(--gold),var(--gold2))}
 .mh-col.top .mh-bar:not(.a){box-shadow:0 0 14px rgba(249,115,22,.7)}
-.mh-v{font:italic 800 16px var(--disp);color:var(--or);min-height:19px}
-.mh-l{font:700 11px/1.15 var(--body);color:var(--mu);text-align:center}
+.mh-l{font:700 11px/1.15 var(--body);color:var(--mu);text-align:center;min-height:2.3em}
 .mh-key{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--or);vertical-align:-1px;margin-right:2px}
 .mh-key.a{background:var(--gold);margin-left:8px}
 .me-anim .mh-bar{transform-origin:bottom;animation:mhUp .8s var(--ease) both}
@@ -6038,7 +6041,7 @@ function renderMe(){
     }
   }
   const hMax = Math.max(...hg, ...ha), hTot = hg.reduce((t, v) => t + v, 0);
-  const histBox = hMax ? `<div class="me-hist">${PH.map((l, i) => `<div class="mh-col ${hg[i] && hg[i] === Math.max(...hg) ? 'top' : ''}"><span class="mh-v">${hg[i] || ''}</span><div class="mh-pair"><span class="mh-bar" style="height:${Math.max(3, Math.round(hg[i] / hMax * 92))}px"></span><span class="mh-bar a" style="height:${Math.max(3, Math.round(ha[i] / hMax * 92))}px"></span></div><span class="mh-l">${l}</span></div>`).join('')}</div>
+  const histBox = hMax ? `<div class="me-hist">${PH.map((l, i) => `<div class="mh-col ${hg[i] && hg[i] === Math.max(...hg) ? 'top' : ''}" role="img" aria-label="${l}: ${hg[i]} gol, ${ha[i]} assist"><div class="mh-pair" aria-hidden="true"><span class="mh-bw"><i class="mh-n">${hg[i] || ''}</i><span class="mh-bar" style="height:${Math.max(3, Math.round(hg[i] / hMax * 92))}px"></span></span><span class="mh-bw a"><i class="mh-n">${ha[i] || ''}</i><span class="mh-bar a" style="height:${Math.max(3, Math.round(ha[i] / hMax * 92))}px"></span></span></div><span class="mh-l" aria-hidden="true">${l}</span></div>`).join('')}</div>
       <p class="mu sm"><span class="mh-key"></span> gol <span class="mh-key a"></span> assist${hTot ? `. Segni di più <b>${PHT[hg.indexOf(Math.max(...hg))]}</b>.` : '.'}</p>`
     : '<svg class="empty-ill" viewBox="0 0 260 54" aria-hidden="true"><g stroke="rgba(255,255,255,.16)" stroke-width="1.2" fill="none"><path d="M10 30H250"/><path d="M10 25V35"/><path d="M50 25V35"/><path d="M90 25V35"/><path d="M130 25V35"/><path d="M170 25V35"/><path d="M210 25V35"/><path d="M250 25V35"/></g><g fill="rgba(138,147,166,.7)" font-size="9" font-weight="700" text-anchor="middle"><text x="10" y="50">0’</text><text x="50" y="50">10’</text><text x="90" y="50">20’</text><text x="130" y="50">30’</text><text x="170" y="50">40’</text><text x="210" y="50">50’</text><text x="250" y="50">60’</text></g><g fill="rgba(249,115,22,.1)" stroke="rgba(249,115,22,.55)" stroke-dasharray="2.5 2"><circle cx="62" cy="14" r="7"/><circle cx="128" cy="14" r="7"/><circle cx="203" cy="14" r="7"/></g></svg><p class="mu sm" style="margin:0;text-align:center">Quando i tuoi gol e assist avranno il minuto (ora inizio e fine gara) vedrai in quale fase della partita incidi di più.</p>';
   const ev = [];
