@@ -1538,6 +1538,18 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
 .rcv-new{position:absolute;top:9px;right:8px;padding:1px 6px;border-radius:6px;background:#4ade80;color:#052e16;font:900 10px var(--body);animation:dangerPulse 1.6s ease-in-out infinite}
 .plq-sheet .rec{margin-bottom:14px}
 .plq-sheet{width:min(460px,100%)}
+.trk{margin:12px 0 2px;padding-top:10px;border-top:1px solid var(--hair)}
+.trk h4{margin:0 0 8px;font:italic 800 18px var(--disp)}.trk h4 small{font:600 12px var(--body);color:var(--mu);margin-left:6px}
+.trk ol{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.trk li{display:grid;grid-template-columns:26px minmax(0,1fr) auto;align-items:center;gap:8px;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid transparent}
+.trk li.me{background:var(--or-soft);border-color:var(--line)}
+.trk-n{font:italic 800 16px var(--disp);color:var(--or);text-align:center}
+.trk-w{display:flex;align-items:center;gap:6px;min-width:0;font-weight:700;font-size:13.5px}
+.trk-w .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trk-w em{flex:none;font:800 10px var(--body);font-style:normal;padding:2px 6px;border-radius:999px;background:var(--gold);color:#1a1200}.trk-w em.trk-tu{background:var(--or);color:#1a0a00}
+.trk-v{font:800 12.5px var(--body);white-space:nowrap;text-align:right}.trk-v small{display:block;font:600 11px var(--body);color:var(--mu)}
+.trk li.trk-gap{display:block;background:none;text-align:center;color:var(--mu);padding:0;line-height:1}
+.trk-no{margin:8px 0 0;color:var(--mu);font-size:12.5px;text-align:center}
 .plq-sheet .plk{margin-bottom:14px}
 /* --- Teche di vetro --- */
 .rec.glass{background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.015) 38%,rgba(10,13,20,.86)),rgba(10,13,20,.8);border:1px solid rgba(255,255,255,.15);
@@ -3583,7 +3595,7 @@ function computeStats(upto){
   });
   const scheduled = all.filter(m => m.status === 'scheduled')
     .sort((a, b) => String(a.date || '9').localeCompare(String(b.date || '9')) || String(a.time || '').localeCompare(String(b.time || '')) || (num(a.day) - num(b.day)));
-  return { list:arr, byId:Object.fromEntries(arr.map(s => [s.pid, s])), matches:ms, plaques, log, scheduled };
+  return { list:arr, byId:Object.fromEntries(arr.map(s => [s.pid, s])), matches:ms, plaques, plqRank:PC, log, scheduled };
 }
 function teamEvents(m, team){
   if(hasMoves(m)){   /* con i cambi gol e assist si attribuiscono dalla cronaca: chi passa di squadra segna per quella in cui sta */
@@ -6172,6 +6184,8 @@ function renderDuel(){
 /* Primati: se più candidati sono pari in cima, il primato resta a chi lo teneva già (cioè a chi lo ha raggiunto per primo); si cambia solo se qualcuno supera davvero il detentore.
    Il detentore precedente viene dalla storia gara per gara (trophyHistory): dentro la storia arriva da REC_PREV, fuori dalla storia si legge dall'ultimo passo. */
 let REC_PREV = null, HIST_BUSY = false;
+/* Classifiche dei trofei (1.14.0): gli elenchi ordinati dell'ultimo calcolo dei primati (non quelli della storia gara per gara) e i dati che servono per scriverli */
+let REC_ARR = {}, REC_LAST_R = null;
 function recPrevHolder(key){
   if(REC_PREV) return REC_PREV[key];
   if(HIST_BUSY) return undefined;
@@ -6181,6 +6195,7 @@ function recPrevHolder(key){
 /* Parità (1.13.1): eq confronta solo il valore principale; a pari valore resta a chi aveva già il primato.
    I criteri di parità dell'ordinamento decidono solo tra chi ci arriva insieme */
 function recPick(key, arr, eq, idOf){
+  if(!HIST_BUSY) REC_ARR[key] = arr;
   const best = arr[0];
   if(!best) return best;
   const tied = arr.filter(x => x === best || eq(x, best));
@@ -6190,22 +6205,26 @@ function recPick(key, arr, eq, idOf){
 }
 const RID = { pid:s => s.pid, pair:e => e[0].replace('|', '+') }, near = (x, y) => Math.abs(x - y) < 1e-9;
 function computeRecords(){
+  if(!HIST_BUSY) REC_ARR = {};
   const known = pid => !!store.players[pid];
   const dept = pid => store.players[pid]?.role;
   let manita = null, mida = null, uomo = null, goleada = null, cappotto = null, mitra = null, lampo = null, scadere = null;
   const conc = {}, streak = {}, pairs = {}, opp = {}, bunker = {}, combo = {};
   const pres = {}, cum = {}, top1 = {}, rims = [];   /* Malato di calcio, Il Sovrano, La Rimonta */
+  const allM = [], lampoBy = {}, scadBy = {};        /* per le classifiche: tutte le partite, il gol più presto e quello più tardi di ognuno */
   const pk = (a, b) => a < b ? a + '|' + b : b + '|' + a;
   for(const m of STATS.matches){
     const sc = matchScore(m), total = sc.w + sc.b, margin = Math.abs(sc.w - sc.b);
     if(total > 0 && (!goleada || total > goleada.total)) goleada = { m, sc, total };
     if(margin > 0 && (!cappotto || margin > cappotto.margin)) cappotto = { m, sc, margin };
+    allM.push({ m, sc, total, margin });
     const tlg = matchGoals(m), mlen = matchLen(m), byS = {};
     for(const x of tlg){
       if(!x.og && known(x.s) && !x.est && x.min != null){
         (byS[x.s] = byS[x.s] || []).push(x.min);
         if(!lampo || x.min < lampo.min) lampo = { pid:x.s, min:x.min, m };
-        if(mlen){ const rem = mlen - x.min; if(rem >= 0 && (!scadere || rem < scadere.rem)) scadere = { pid:x.s, rem, min:x.min, len:mlen, m }; }
+        if(mlen){ const rem = mlen - x.min; if(rem >= 0 && (!scadere || rem < scadere.rem)) scadere = { pid:x.s, rem, min:x.min, len:mlen, m }; if(rem >= 0 && (!scadBy[x.s] || rem < scadBy[x.s].rem)) scadBy[x.s] = { pid:x.s, rem, m }; }
+        if(!lampoBy[x.s] || x.min < lampoBy[x.s].min) lampoBy[x.s] = { pid:x.s, min:x.min, m };
       }
       if(x.og || !x.a || x.a === x.s || !known(x.s) || !known(x.a)) continue;
       const k = pk(x.s, x.a), cb = combo[k] || (combo[k] = { c:0, dir:{} });
@@ -6378,6 +6397,14 @@ function computeRecords(){
   const razR = {};
   for(const s of L){ let n = 0; for(const x of s.hist){ if(x.r === 'v') n++; else break; } razR[s.pid] = { n, live:n > 0 && n === s.hist.length, first:s.hist[0]?.m || null, at:n ? (ordM.get(s.hist[n - 1].m.id) ?? 0) : 0 }; }
   const razzo = recPick('razzo', L.filter(s => razR[s.pid].n >= 2).sort((a, b) => (razR[b.pid].n - razR[a.pid].n) || (razR[a.pid].at - razR[b.pid].at) || alpha(a, b)), (x, y) => razR[x.pid].n === razR[y.pid].n, RID.pid);
+  if(!HIST_BUSY){
+    const dayOf = x => num(x.m.day);
+    REC_ARR.goleada = allM.filter(x => x.total > 0).sort((a, b) => (b.total - a.total) || (dayOf(a) - dayOf(b)));
+    REC_ARR.cappotto = allM.filter(x => x.margin > 0).sort((a, b) => (b.margin - a.margin) || (dayOf(a) - dayOf(b)));
+    REC_ARR.lampo = Object.values(lampoBy).sort((a, b) => (a.min - b.min) || (dayOf(a) - dayOf(b)));
+    REC_ARR.scadere = Object.values(scadBy).sort((a, b) => (a.rem - b.rem) || (dayOf(a) - dayOf(b)));
+    REC_LAST_R = { digR, razR };
+  }
   return { razzo, razR, vdif, vcen, vatt, bvn, assistman, brutto, mister, repatt, repcen, repdif, capo, malato, pres, momento, segno, segR, rimonta, digiuno, digR, sovrano, top1, fedeli, inf, manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, ritard, bunkerAny:Object.keys(bunker).length };
 }
 const matchWhen = m => `Giornata ${num(m.day)}${m.date ? ', ' + fmtDateCap(m.date) : ''}`;
@@ -6894,21 +6921,73 @@ function twAction(act, key, mode){
 }
 /* Vetrina delle targhe: il riquadro completo (lucchetto, rivale, regola) si apre toccando il medaglione */
 /* La stessa finestra mostra anche il riquadro completo di un primato storico (plqOpen = "r:" + chiave), con la storia del primato */
-let PLK_CARDS = {}, REC_CARDS = {}, REC_TITLES = {}, plqOpen = null;
+let PLK_CARDS = {}, REC_CARDS = {}, REC_TITLES = {}, plqOpen = null, plqRank = false;
+/* Classifica di una targa o di un trofeo storico (1.14.0): righe { ids, who?, val, sub?, hold? } dal primo all'ultimo.
+   ids = i giocatori della riga (uno, una coppia o chi ha giocato quella partita): servono a trovare chi guarda */
+const RANK_S = { capo:s => `${s.g} gol`, assistman:s => `${s.a} assist`, rit:s => `${s.ritardi} ${s.ritardi === 1 ? 'ritardo' : 'ritardi'}`,
+  brutto:s => `−${itn(-s.mom5)} OVR`, repatt:s => rankAw(s), repcen:s => rankAw(s), repdif:s => rankAw(s) };
+const rankAw = s => `${num(s.awards)} ${num(s.awards) === 1 ? 'premio' : 'premi'}`;
+const rankPair = (k, val) => ({ ids:k.split('|'), val });
+const rankMatch = (x, val) => ({ ids:[...list(x.m.white), ...list(x.m.black)].map(e => e.pid), who:`G${num(x.m.day)} · Bianchi ${x.sc.w}–${x.sc.b} Neri`, val });
+function recRankRows(key){
+  const A = REC_ARR[key], R = REC_LAST_R || {}; if(!Array.isArray(A) || !A.length) return [];
+  const one = (pid, val, sub) => ({ ids:[pid], val, sub });
+  if(RANK_S[key]) return A.map(s => one(s.pid, RANK_S[key](s)));
+  switch(key){
+    case 'come': return A.map(x => one(x.pid, `+${x.dr} OVR`));
+    case 'down': return A.map(x => one(x.pid, `−${x.dr} OVR`));
+    case 'inf': return A.map(x => one(x.pid, `${x.d} ${x.d === 1 ? 'giorno' : 'giorni'}`));
+    case 'digiuno': return A.map(s => one(s.pid, `${R.digR?.[s.pid]?.best || 0} gare`));
+    case 'razzo': return A.map(s => one(s.pid, `${R.razR?.[s.pid]?.n || 0} vittorie`));
+    case 'vdif': case 'vcen': case 'vatt': return A.map(x => one(x.pid, `${x.v} OVR`, `tenuto ${x.held} ${x.held === 1 ? 'gara' : 'gare'}`));
+    case 'rimonta': { const seen = new Set(); return A.filter(x => !seen.has(x.pid) && seen.add(x.pid)).map(x => one(x.pid, `−${x.def} rimontati`, `G${num(x.m.day)}`)); }
+    case 'lampo': return A.map(x => one(x.pid, `${x.min}’`, `G${num(x.m.day)}`));
+    case 'scadere': return A.map(x => one(x.pid, x.rem ? `${x.rem}’ dalla fine` : 'all’ultimo minuto', `G${num(x.m.day)}`));
+    case 'oro': return A.map(([k, x]) => rankPair(k, `${x.v} ${x.v === 1 ? 'vittoria' : 'vittorie'}`));
+    case 'intesa': return A.map(([k, x]) => rankPair(k, `${x.c} gol insieme`));
+    case 'derby': return A.map(([k, x]) => rankPair(k, `${x.n} ${x.n === 1 ? 'sfida' : 'sfide'}`));
+    case 'bunk': return A.map(([k, x]) => rankPair(k, `${itn(x.c / x.n, 2)} subiti a gara`));
+    case 'fedeli': return A.map(([k, x]) => rankPair(k, `${x.n} gare insieme`));
+    case 'goleada': return A.map(x => rankMatch(x, `${x.total} gol`));
+    case 'cappotto': return A.map(x => rankMatch(x, `${x.margin} di scarto`));
+  }
+  return [];
+}
+function plqRankRows(id){
+  const P = plaqueById(id), L = STATS.plqRank && STATS.plqRank[id]; if(!P || !Array.isArray(L)) return [];
+  const hold = STATS.plaques[id]?.pid;
+  return L.map(s => ({ ids:[s.pid], val:P.val(s), hold:s.pid === hold }));
+}
+/* Top 10 e, se chi guarda è più in basso, anche la sua riga; se non c'è, una riga che lo spiega */
+function rankHTML(rows, none){
+  const me = myPid(), at = me ? rows.findIndex(r => r.ids.includes(me)) : -1;
+  const li = (r, i) => {
+    const who = r.who ? `<span class="nm">${esc(r.who)}</span>` : `${r.ids.slice(0, 2).map(id => avatar(store.players[id] || { name:pname(id) }, 'xs')).join('')}<span class="nm">${r.ids.map(id => esc(shortName(pname(id)))).join(' e ')}</span>`;
+    return `<li class="${i === at ? 'me' : ''}"><b class="trk-n">${i + 1}</b><span class="trk-w">${who}${r.hold ? '<em class="trk-h">Targa</em>' : ''}${i === at ? `<em class="trk-tu">${r.who ? 'C’eri' : 'Tu'}</em>` : ''}</span><span class="trk-v">${esc(r.val)}${r.sub ? `<small>${esc(r.sub)}</small>` : ''}</span></li>`;
+  };
+  const top = rows.slice(0, 10).map(li).join('');
+  const mine = at >= 10 ? `<li class="trk-gap" aria-hidden="true">…</li>${li(rows[at], at)}` : '';
+  const no = me && at < 0 ? `<p class="trk-no">${none}</p>` : '';
+  return `<div class="trk" id="plq-rank"><h4>Classifica <small>${rows.length} in tutto</small></h4><ol>${top}${mine}</ol>${no}</div>`;
+}
 function openPlq(id){
   if(!PLK_CARDS[id]) return;
-  plqOpen = id; paintPlq(); openModal('#m-plq');
+  plqOpen = id; plqRank = false; paintPlq(); openModal('#m-plq');
 }
 function openRecCard(key){
   if(!REC_CARDS[key]) return;
-  plqOpen = 'r:' + key; paintPlq(); openModal('#m-plq');
+  plqOpen = 'r:' + key; plqRank = false; paintPlq(); openModal('#m-plq');
 }
 const plqHTML = () => !plqOpen ? '' : plqOpen.startsWith('r:') ? REC_CARDS[plqOpen.slice(2)] : PLK_CARDS[plqOpen];
 function paintPlq(){
   const b = $('#plq-body'), html = plqHTML(); if(!b || !html) return;
   const isR = plqOpen.startsWith('r:'), P = isR ? null : plaqueById(plqOpen);
   b.setAttribute('aria-label', isR ? 'Primato ' + (REC_TITLES[plqOpen.slice(2)] || '') : 'Targa ' + (P ? P.name : ''));
-  b.innerHTML = `${html}<div class="row end"><button type="button" class="btn ghost" data-close>Chiudi</button></div>`;
+  const rows = isR ? recRankRows(plqOpen.slice(2)) : plqRankRows(plqOpen);
+  const me = myPid(), few = me && STATS.byId[me] && STATS.byId[me].pres < PLQ_MIN_PRES;
+  const none = isR ? 'Non sei ancora in questa classifica.' : few ? `Per entrare nelle classifiche delle targhe servono almeno ${PLQ_MIN_PRES} presenze.` : 'Non sei ancora in questa classifica.';
+  const btn = rows.length ? `<button type="button" class="btn ghost" data-action="t-rank" aria-expanded="${plqRank}" aria-controls="plq-rank">📊 ${plqRank ? 'Nascondi classifica' : 'Classifica'}</button>` : '';
+  b.innerHTML = `${html}${plqRank && rows.length ? rankHTML(rows, none) : ''}<div class="row end">${btn}<button type="button" class="btn ghost" data-close>Chiudi</button></div>`;
 }
 /* Medaglione di un primato nella bacheca: volto del detentore (o della coppia) in grande, simbolo piccolo; i primati di una partita mostrano il simbolo.
    noFace (La Rimonta, 1.12.9): il primato resta del giocatore, ma al posto della faccina c'è il simbolo */
@@ -8678,6 +8757,7 @@ document.addEventListener('click', async e => {
     case 'add-player': if(requireAdmin()) openPlayerForm(); break;
     case 'edit-player': if(requireAdmin()) openPlayerForm(d.pid); break;
     case 'del-player': if(requireAdmin()) deletePlayer(d.pid); break;
+    case 't-rank': plqRank = !plqRank; paintPlq(); if(plqRank) $('#plq-rank')?.scrollIntoView({ block:'nearest', behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); break;
     case 'new-match': if(requireAdmin()) openMatchEditor(); break;
     case 'new-sched': if(requireAdmin()) openMatchEditor(null, 'scheduled'); break;
     case 'edit-match': if(requireAdmin()) openMatchEditor(d.mid); break;
