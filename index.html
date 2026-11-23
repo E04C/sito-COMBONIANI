@@ -450,6 +450,10 @@ button.m.tap:active{transform:scale(.97)}
 .gx-min{font:italic 800 20px var(--disp);color:var(--or);text-align:center}.gx-min .evi{width:24px;height:24px}.gx-r b .evi{width:17px;height:17px;vertical-align:-3px;margin-right:4px}#gl-body h3 .evi{width:1.05em;height:1.05em;vertical-align:-.15em;margin-right:7px}.gx-r b{display:block;font-size:14px}.gx-r small{color:var(--mu);font-size:12px}
 .gx-s{font:700 12px var(--body);color:var(--mu);text-align:right;white-space:nowrap}
 .m b{display:block;font:italic 800 24px/1 var(--disp);font-variant-numeric:tabular-nums;white-space:nowrap}
+.m.mm{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.m.mm .mm-r{display:flex;align-items:baseline;justify-content:center;gap:3px;white-space:nowrap;margin:0;color:var(--tx)}
+.m.mm .mm-r b{display:inline;font-size:16px}
+.m.mm .mm-r i{font:700 10px var(--body);color:var(--mu);font-style:normal}
 .m span{display:block;font:700 10.5px/1.2 var(--body);color:var(--mu);margin-top:4px}
 .m.hl{border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.06)}
 .m.hl b{color:var(--gold)}
@@ -4369,7 +4373,7 @@ function renderFigurina(){
     <div class="fig-bot">
       <div class="fig-grid">
         ${mc('Presenze', cu(s.pres))}${mc('% vittorie', cu(+s.pct.toFixed(0), 0, '%'))}${tapM('Gol', cu(s.g), 'g', 'hl')}${tapM('Assist', cu(s.a), 'a')}
-        ${metric('V-P-S', `${s.v}-${s.pa}-${s.s}`, 'rec')}${mc('Media gol', cu(+s.avg.toFixed(2), 2))}${mc('Autogol', cu(s.og))}${mc('MVP', cu(s.mvp), 'hl')}
+        ${metric('V-P-S', `${s.v}-${s.pa}-${s.s}`, 'rec')}<div class="m mm"><span class="mm-r">${cu(+s.avg.toFixed(2), 2)}<i>gol</i></span><span class="mm-r">${cu(+(s.pres ? s.ga / s.pres : 0).toFixed(2), 2)}<i>G+A</i></span><span>Media a gara</span></div>${mc('Autogol', cu(s.og))}${mc('MVP', cu(s.mvp), 'hl')}
       </div>
       ${plq}
       <div class="aff">
