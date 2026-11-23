@@ -6373,7 +6373,12 @@ function computeRecords(){
   const peakOf = s => { let b = null; for(const x of s.hist){ const v = roundOvr(x.ovr), i = ordM.has(x.m.id) ? ordM.get(x.m.id) : 0; if(!b || v > b.v) b = { pid:s.pid, s, v, m:x.m, i }; } if(b) b.held = s.hist.filter(x => roundOvr(x.ovr) === b.v).length; return b; };   /* held = gare giocate con quell'overall */
   const vetta = (role, key) => recPick(key, L.filter(s => (ROLES[s.p.role] ? s.p.role : 'CEN') === role && s.hist.length).map(peakOf).filter(Boolean).sort((a, b) => (b.v - a.v) || (b.held - a.held) || (a.i - b.i) || alpha(a.s, b.s)), (x, y) => x.v === y.v && x.held === y.held, RID.pid);
   const vdif = vetta('DIF', 'vdif'), vcen = vetta('CEN', 'vcen'), vatt = vetta('ATT', 'vatt');
-  return { vdif, vcen, vatt, bvn, assistman, brutto, mister, repatt, repcen, repdif, capo, malato, pres, momento, segno, segR, rimonta, digiuno, digR, sovrano, top1, fedeli, inf, manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, ritard, bunkerAny:Object.keys(bunker).length };
+  /* Partenza a Razzo (1.14.0): vittorie di fila a partire dal debutto; il primo pareggio o la prima sconfitta chiudono la serie per sempre.
+     Almeno 2 vittorie. A pari vittorie vince chi c'è arrivato prima (poi resta a chi lo teneva) */
+  const razR = {};
+  for(const s of L){ let n = 0; for(const x of s.hist){ if(x.r === 'v') n++; else break; } razR[s.pid] = { n, live:n > 0 && n === s.hist.length, first:s.hist[0]?.m || null, at:n ? (ordM.get(s.hist[n - 1].m.id) ?? 0) : 0 }; }
+  const razzo = recPick('razzo', L.filter(s => razR[s.pid].n >= 2).sort((a, b) => (razR[b.pid].n - razR[a.pid].n) || (razR[a.pid].at - razR[b.pid].at) || alpha(a, b)), (x, y) => razR[x.pid].n === razR[y.pid].n, RID.pid);
+  return { razzo, razR, vdif, vcen, vatt, bvn, assistman, brutto, mister, repatt, repcen, repdif, capo, malato, pres, momento, segno, segR, rimonta, digiuno, digR, sovrano, top1, fedeli, inf, manita, mida, uomo, goleada, cappotto, cecchino, fortino, conc, inarr, streak, mina, come, down, eroe, oro, intesa, mitra, lampo, scadere, derby, bunk, ritard, bunkerAny:Object.keys(bunker).length };
 }
 const matchWhen = m => `Giornata ${num(m.day)}${m.date ? ', ' + fmtDateCap(m.date) : ''}`;
 function recCard(o, x = {}){
@@ -6987,12 +6992,12 @@ function renderTrophies(){
   try{ localStorage.setItem('cmb2627_seenPlq', JSON.stringify(curP)); localStorage.setItem('cmb2627_seenRecV', JSON.stringify(curR)); }catch(e){}
 }
 const REC_KEYS = ['manita','mitra','mida','uomo','cecchino','fortino','inarr','mina','come','down','eroe','goleada','cappotto','oro','intesa','lampo','scadere','derby','bunk','rit','inf','colp','kami',
-  'repatt','repcen','repdif','capo','malato','momento','segno','rimonta','digiuno','sovrano','fedeli','mister','bvn','assistman','brutto','vdif','vcen','vatt'];
+  'repatt','repcen','repdif','capo','malato','momento','segno','rimonta','digiuno','sovrano','fedeli','mister','bvn','assistman','brutto','vdif','vcen','vatt','razzo'];
 /* Trofei solo di coppia, di squadra, di partita e quelli scelti dal proprietario: i doppioni delle targhe e gli individuali diventati targhe restano in coda di chiavi (posizione) ma spenti */
 const REC_OFF = new Set(['cecchino', 'inarr', 'eroe', 'mina', 'fortino', 'malato', 'momento', 'segno', 'sovrano', 'mister', 'colp', 'kami', 'manita', 'mitra', 'mida', 'uomo']);
 /* event = record di una singola impresa (festeggiato anche se lo stesso giocatore si migliora); lead = primato di classifica (festeggiato solo al cambio di detentore) */
 const REC_KIND = { manita:'event', mitra:'event', lampo:'event', scadere:'event', mida:'event', uomo:'event', inarr:'event', goleada:'event', cappotto:'event', cecchino:'lead', fortino:'lead', mina:'lead', come:'lead', down:'lead', eroe:'lead', oro:'lead', intesa:'lead', derby:'lead', bunk:'lead', rit:'lead', inf:'lead', colp:'event', kami:'event',
-  repatt:'lead', repcen:'lead', repdif:'lead', capo:'lead', malato:'event', momento:'event', segno:'event', rimonta:'event', digiuno:'event', sovrano:'lead', fedeli:'lead', mister:'lead', bvn:'lead', assistman:'lead', brutto:'lead', vdif:'lead', vcen:'lead', vatt:'lead' };
+  repatt:'lead', repcen:'lead', repdif:'lead', capo:'lead', malato:'event', momento:'event', segno:'event', rimonta:'event', digiuno:'event', sovrano:'lead', fedeli:'lead', mister:'lead', bvn:'lead', assistman:'lead', brutto:'lead', vdif:'lead', vcen:'lead', vatt:'lead', razzo:'lead' };
 /* Primati legati a una funzione: con la funzione spenta la scheda non si mostra e non fa popup */
 const REC_FEAT = { eroe:'mvp' };
 function buildRecordCards(R, nM){
@@ -7080,6 +7085,9 @@ function buildRecordCards(R, nM){
       : { icon:'👑', title:'Leggenda del Centrocampo', desc:'L’overall più alto mai raggiunto da un centrocampista in stagione. A pari overall vince chi l’ha tenuto per più gare, poi chi c’è arrivato prima.', lock:need('Nessun centrocampista ha ancora giocato') }
     ,R.vatt ? { icon:'👑', title:'Leggenda dell’Attacco', desc:'L’overall più alto mai raggiunto da un attaccante in stagione. A pari overall vince chi l’ha tenuto per più gare, poi chi c’è arrivato prima.', pid:R.vatt.pid, sub:`Raggiunto: ${matchWhen(R.vatt.m)} · tenuto ${R.vatt.held} ${R.vatt.held === 1 ? 'gara' : 'gare'}`, value:R.vatt.v, unit:'OVR più alto' }
       : { icon:'👑', title:'Leggenda dell’Attacco', desc:'L’overall più alto mai raggiunto da un attaccante in stagione. A pari overall vince chi l’ha tenuto per più gare, poi chi c’è arrivato prima.', lock:need('Nessun attaccante ha ancora giocato') }
+    /* Partenza a Razzo (1.14.0) */
+    ,R.razzo ? (() => { const z = R.razR[R.razzo.pid]; return { icon:'🚀', title:'Partenza a Razzo', desc:'Più vittorie di fila dal debutto: il primo pareggio o la prima sconfitta chiudono la serie. Parità: chi ci è arrivato prima.', pid:R.razzo.pid, sub:`Debutto: ${matchWhen(z.first)}${z.live ? ' · serie ancora aperta' : ''}`, value:z.n, unit:'vittorie di fila dal debutto' }; })()
+      : { icon:'🚀', title:'Partenza a Razzo', desc:'Più vittorie di fila dal debutto: il primo pareggio o la prima sconfitta chiudono la serie. Parità: chi ci è arrivato prima.', lock:need('Nessuno ha ancora vinto le prime 2 gare di fila') }
   ];
   cards.forEach((c, i) => { c.key = REC_KEYS[i]; if((REC_FEAT[c.key] && !feat(REC_FEAT[c.key])) || REC_OFF.has(c.key)) c.off = true; });   /* le chiavi restano per posizione: una funzione spenta nasconde la scheda, non la toglie */
   return cards;
