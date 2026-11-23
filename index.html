@@ -1020,6 +1020,9 @@ button.awd:hover{border-color:var(--line)}
 .inj-days{position:absolute;left:9%;top:6.5%;z-index:7;pointer-events:none;width:max-content;max-width:58%;padding:3px 8px;border-radius:999px;border:1px solid rgba(248,113,113,.8);background:rgba(127,29,29,.88);color:#fee2e2;font:800 11px/1.2 var(--body);white-space:nowrap}
 .inj-chk{display:flex;align-items:center;gap:8px;min-height:38px;font-weight:700}
 .inj-chk input{width:20px;height:20px;accent-color:#dc2626}
+.hid-chk input{accent-color:var(--or)}
+.mfig-w.hid>.mfig{opacity:.5}
+.mfig-w.hid::before{content:"Nascosto";position:absolute;right:22px;top:-9px;z-index:5;padding:1px 10px;border-radius:999px;background:#475569;color:#fff;font:800 11px/1.6 var(--body)}
 .pchip.hurt{opacity:.8}
 .pchip .hx{font-size:12px}
 .latb.injb[aria-pressed=true]{background:rgba(220,38,38,.25);border-color:#ef4444}
@@ -2204,6 +2207,9 @@ body:not(.lit) .plate::after{animation:plateIdle 5s ease-in-out infinite alterna
           <span class="lbl">Infermeria</span>
           <label class="inj-chk"><input type="checkbox" id="pf-inj"> ✚ Infortunato</label>
           <div id="pf-injd-w" hidden><label class="lbl" for="pf-injd">Infortunato dal</label><input id="pf-injd" class="field" type="date"></div>
+          <span class="lbl">Visibilità</span>
+          <label class="inj-chk hid-chk"><input type="checkbox" id="pf-hid"> 🙈 Nascondi da classifica e lista giocatori</label>
+          <p class="hint">Resta nei convocati, nelle formazioni e in tutto il resto. Quando gioca e salvi il risultato della gara, torna visibile da solo.</p>
           <p class="hint">Un infortunato resta in tutte le classifiche e si può schierare: se gioca, esce dall’infermeria quando registri il risultato. Quando lo togli dall’infermeria l’infortunio si archivia (conta per il record «Il Cristallo»).</p>
         </div>
       </div>
@@ -2679,6 +2685,7 @@ function cleanPlayers(raw){
     c.name = txt(p.name, 80); if('role' in c) c.role = txt(p.role, 12); if('foot' in c) c.foot = txt(p.foot, 12);
     if('cardPos' in c) c.cardPos = cardPosList(p.cardPos).join('/');
     if('injured' in c) c.injured = c.injured ? 1 : 0;
+    if('hidden' in c){ if(c.hidden) c.hidden = 1; else delete c.hidden; }   /* nascosto da classifica e lista giocatori (1.14.0) */
     if('injuredSince' in c) c.injuredSince = /^\d{4}-\d{2}-\d{2}$/.test(c.injuredSince) ? c.injuredSince : '';
     if('injHist' in c) c.injHist = list(c.injHist).filter(h => h && /^\d{4}-\d{2}-\d{2}$/.test(h.f) && /^\d{4}-\d{2}-\d{2}$/.test(h.t) && h.f <= h.t).map(h => ({ f:h.f, t:h.t })).slice(-30);
     if('photo' in c && !safeImg(c.photo)) delete c.photo;
@@ -3546,7 +3553,7 @@ function computeStats(upto){
     return st;
   });
   arr.sort(rankCmp);
-  arr.forEach((s, i) => s.rank = i + 1);
+  let rk = 0; arr.forEach(s => s.rank = s.p.hidden ? 0 : ++rk);   /* i nascosti non hanno posizione (0): niente buchi nella classifica */
   /* Targhe: assegnazione in ordine gerarchico con tetto di PLQ_CAP per giocatore.
      Chi potrebbe vincerne più di PLQ_CAP (è primo, oppure primo tra chi non è già al massimo) sceglie le sue PLQ_CAP (plqPick/{pid}/p):
      quelle gli restano, le altre vanno a chi segue. Senza scelta resta l'ordine gerarchico. */
@@ -3730,7 +3737,7 @@ function snapHTML(pid, j){
     <div class="snap-card">${walkCardHTML(t, tierOf(t.ovr), t.ovr)}</div>
     <p class="snap-res ${x.r}"><b>${res} ${own[0]}–${own[1]}</b> con i ${x.team === 'white' ? 'Bianchi' : 'Neri'} · ${ev} · OVR <span class="${d > 1e-9 ? 'up' : d < -1e-9 ? 'dn' : 'eq'}">${d > 1e-9 ? '▲' : d < -1e-9 ? '▼' : '='} ${fmtD(d).replace('.', ',')}</span></p>
     <div class="snap-grid">${cell(t.pres, 'presenze')}${cell(`${t.v}-${t.pa}-${t.s}`, 'V-P-S')}${cell(`${Math.round(t.pct)}%`, 'vittorie')}${cell(t.g, 'gol')}${cell(t.a, 'assist')}${cell(t.mvp, 'MVP')}</div>
-    <p class="mu sm snap-more">${t.rank}° in classifica a quel punto${plq.length ? ` · Targhe: ${plq.map(P => `${P.icon} ${P.name}`).join(', ')}` : ''}</p>
+    <p class="mu sm snap-more">${t.rank ? `${t.rank}° in classifica a quel punto` : 'Fuori classifica'}${plq.length ? ` · Targhe: ${plq.map(P => `${P.icon} ${P.name}`).join(', ')}` : ''}</p>
     <div class="row end"><button type="button" class="btn ghost" data-close autofocus>Chiudi</button></div>`;
 }
 function openSnap(pid, j, dir){
@@ -3924,7 +3931,7 @@ const monthLbl = k => { const [y, mo] = k.split('-').map(Number); const n = MESI
 const clsMonths = () => [...new Set(STATS.matches.map(m => String(m.date || '').slice(0, 7)).filter(k => /^\d{4}-\d{2}$/.test(k)))].sort().reverse();
 /* Classifica con il filtro di mese o di campo: gli stessi conteggi della stagione, solo sulle gare scelte (l'OVR resta quello di adesso) */
 function clsBase(){
-  const cf = ui.cf; if(!cf.month && !cf.surf) return STATS.list;
+  const cf = ui.cf; if(!cf.month && !cf.surf) return STATS.list.filter(s => !s.p.hidden);
   const key = cf.month + '|' + cf.surf;
   if(STATS._cls && STATS._cls.k === key) return STATS._cls.list;
   const list = clsCompute(cf.month, cf.surf);
@@ -3944,7 +3951,7 @@ function clsCompute(month, surf){
     const sc = matchScore(m), res = { white:sc.w > sc.b ? 'v' : sc.w < sc.b ? 's' : 'pa', black:sc.b > sc.w ? 'v' : sc.b < sc.w ? 's' : 'pa' };
     for(const t of ['white', 'black']) for(const e of effEntries(m)[t]){ const x = S[e.pid]; if(!x) continue; x.pres++; x[res[t]]++; x.g += num(e.g); x.a += num(e.a); x.og += num(e.og); }
   }
-  const list = Object.values(S).map(x => Object.assign(x, { pct:x.pres ? x.v / x.pres * 100 : 0, avg:x.pres ? x.g / x.pres : 0, ga:x.g + x.a })).sort(rankCmp);
+  const list = Object.values(S).filter(x => !x.p.hidden).map(x => Object.assign(x, { pct:x.pres ? x.v / x.pres * 100 : 0, avg:x.pres ? x.g / x.pres : 0, ga:x.g + x.a })).sort(rankCmp);
   list.forEach((x, i) => x.rank = i + 1);
   return list;
 }
@@ -4045,6 +4052,7 @@ function renderPlayers(){
   const raw = $('#psearch').value, q = norm(raw);
   const cmp = PSORT[ui.pSort] || PSORT.ovr;
   const ps = STATS.list
+    .filter(s => ui.admin || !s.p.hidden)
     .filter(s => ui.pRole === 'ALL' || (ui.pRole === 'INF' ? isInj(s.pid) : roleGroup(s.p.role) === ui.pRole))
     .filter(s => !q || norm(s.name).includes(q))
     .sort((a, b) => cmp(a, b) || a.name.localeCompare(b.name, 'it'));
@@ -4052,7 +4060,7 @@ function renderPlayers(){
   const nInj = STATS.list.filter(s => isInj(s.pid)).length, ib = $('[data-prole="INF"]'); if(ib) ib.textContent = '✚ Infermeria' + (nInj ? ` (${nInj})` : '');
   const key = { ovr:null, g:'g', a:'a', ga:'ga', pres:'pres', az:null }[ui.pSort];
   const meId = myPid();
-  grid.innerHTML = ps.map(s => `<div class="mfig-w${s.pid === meId ? ' me' : ''}"><button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}${twHas(s.pid) ? ' totw' : ''}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}<span class="mfig-rt">${ovrPlate(s.ovr, 'sm')}${roleTag(s.pid, s.p)}</span>${twTag(s.pid)}<span class="mfig-b"><span class="mfig-n">${nameHTML(s.pid)}</span><span class="mfig-s">${[['gol', s.g, 'g'], ['ass', s.a, 'a'], ['pres', s.pres, 'pres'], ['vit', s.v, 'v'], ['sco', s.s, 's']].map(([l, v, k]) => `<span${key === k || (key === 'ga' && (k === 'g' || k === 'a')) ? ' style="color:var(--or)"' : ''}><b>${v}</b><i>${l}</i></span>`).join('')}</span><span class="mfig-orn" aria-hidden="true"></span></span></span></span></button><button type="button" class="mfig-turn" data-action="fig-back" data-pid="${s.pid}" aria-label="Retro della figurina di ${esc(s.name)}" title="Retro della figurina">↻</button>${ui.pRole === 'INF' ? `<span class="inj-days"${store.players[s.pid].injuredSince ? ` title="Infortunato dal ${shortDay(store.players[s.pid].injuredSince)}"` : ''}>🩹 ${injLabel(injDays(s.pid))}</span>` : ''}</div>`).join('')
+  grid.innerHTML = ps.map(s => `<div class="mfig-w${s.pid === meId ? ' me' : ''}${s.p.hidden ? ' hid' : ''}"><button class="mfig t-${tierOf(s.ovr)} ${streakCls(s)}${twHas(s.pid) ? ' totw' : ''}" data-open-player="${s.pid}" aria-label="Figurina di ${esc(s.name)}, overall ${roundOvr(s.ovr)}">${streakBadge(s)}<span class="mfig-fr chamf"><span class="mfig-in chamf">${photoBlock(s.p)}<span class="mfig-rt">${ovrPlate(s.ovr, 'sm')}${roleTag(s.pid, s.p)}</span>${twTag(s.pid)}<span class="mfig-b"><span class="mfig-n">${nameHTML(s.pid)}</span><span class="mfig-s">${[['gol', s.g, 'g'], ['ass', s.a, 'a'], ['pres', s.pres, 'pres'], ['vit', s.v, 'v'], ['sco', s.s, 's']].map(([l, v, k]) => `<span${key === k || (key === 'ga' && (k === 'g' || k === 'a')) ? ' style="color:var(--or)"' : ''}><b>${v}</b><i>${l}</i></span>`).join('')}</span><span class="mfig-orn" aria-hidden="true"></span></span></span></span></button><button type="button" class="mfig-turn" data-action="fig-back" data-pid="${s.pid}" aria-label="Retro della figurina di ${esc(s.name)}" title="Retro della figurina">↻</button>${ui.pRole === 'INF' ? `<span class="inj-days"${store.players[s.pid].injuredSince ? ` title="Infortunato dal ${shortDay(store.players[s.pid].injuredSince)}"` : ''}>🩹 ${injLabel(injDays(s.pid))}</span>` : ''}</div>`).join('')
     || `<p class="mu" style="grid-column:1/-1">${ui.pRole === 'INF' && !raw ? 'Infermeria vuota: sono tutti in forma 💪' : `Nessun giocatore${ui.pRole !== 'ALL' && ui.pRole !== 'INF' ? ' ' + ui.pRole : ''}${raw ? ` corrisponde a “${esc(raw)}”` : ' in questo ruolo'}.`}</p>`;
 }
 
@@ -4378,7 +4386,7 @@ function renderFigurina(){
     <div class="fig-top">${photoBlock(p)}
       <div class="fig-badges">
         <div class="fig-role">${ovrPlate(s.ovr, 'xl')}<span class="rf">${roleTag(pid, p)}<span>${esc(FEET[p.foot] || '')}</span></span></div>
-        <div class="fig-rank"><span class="tierlbl">${TIERS[t].i} ${TIERS[t].l}</span><b>${s.rank}°</b><span>in classifica</span>${dl}${streakChip(s)}${twChip(pid)}${ballonChip(pid)}</div>
+        <div class="fig-rank"><span class="tierlbl">${TIERS[t].i} ${TIERS[t].l}</span><b>${s.rank ? s.rank + '°' : '–'}</b><span>${s.rank ? 'in classifica' : 'fuori classifica'}</span>${dl}${streakChip(s)}${twChip(pid)}${ballonChip(pid)}</div>
       </div>
       <h3 class="fig-name" id="fig-t">${nameHTML(pid, p.name)}</h3>
     </div>
@@ -6094,7 +6102,7 @@ function renderMe(){
   const dltHTML = fresh ? `<p class="me-dlt ${dcls}" data-sig="${esc(newSig)}"><b data-cu="${dv}" data-from="0" data-dec="2" data-dur="2400" data-ease="io" data-it>${(dv > 0.004 ? '+' : dv < -0.004 ? '−' : '') + Math.abs(dv).toFixed(2).replace('.', ',')}</b> OVR nell’ultima gara</p>` : '';
   el.innerHTML = `${voteNote}${rateNote}${meTabsHTML(tab)}${tab !== 'pro' ? '' : `<div class="me-head glass"><div class="me-card">${miniFigHTML(s)}</div><div class="me-info"><span class="mu sm">Il mio giocatore</span><h2>${nameHTML(s.pid)}</h2>
       <div class="me-chips">${roleChip(s.p.role)}<span class="tierlbl t-${t}">${TIERS[t].i} ${TIERS[t].l}</span>${streakChip(s)}</div>
-      <div class="me-big"><div>${ovrBig}<span>OVR</span></div><div>${cu(s.rank, 0, '°')}<span>in classifica</span></div><div>${cu(s.pres)}<span>presenze</span></div></div>${dltHTML}
+      <div class="me-big"><div>${ovrBig}<span>OVR</span></div><div>${s.rank ? cu(s.rank, 0, '°') : '<b>–</b>'}<span>${s.rank ? 'in classifica' : 'fuori classifica'}</span></div><div>${cu(s.pres)}<span>presenze</span></div></div>${dltHTML}
       <div class="row"><button class="btn sm" data-open-player="${s.pid}">Apri figurina</button><button class="btn sm ghost" data-action="acct-open">Gestisci account</button></div></div></div>`}
     <div class="me-grid">${{
       pro:`<section class="glass me-sec"><h3>${ico('up')}Prossimo livello</h3>${tierBox}</section>
@@ -7535,6 +7543,7 @@ function openPlayerForm(pid){
   setRadio('pf-foot', FEET[p?.foot] ? p.foot : 'DX');
   PF.cp = cardPosList(p?.cardPos);
   $$('#pf-cp input').forEach(i => { i.checked = PF.cp.includes(i.value); });
+  $('#pf-hid').checked = !!p?.hidden;
   $('#pf-inj').checked = !!p?.injured; $('#pf-injd').value = (p?.injured && p.injuredSince) || todayISO(); $('#pf-injd').max = todayISO(); $('#pf-injd-w').hidden = !p?.injured;
   $('#pf-info').textContent = '';
   $('#pf-file').value = '';
@@ -7554,6 +7563,7 @@ function savePlayer(){
     [base + 'role']: getRadio('pf-role') || 'CEN',
     [base + 'foot']: getRadio('pf-foot') || 'DX',
     [base + 'cardPos']: (PF.cp || []).join('/') || null,
+    [base + 'hidden']: $('#pf-hid').checked ? 1 : null,
     [base + 'updatedAt']: Date.now()
   };
   /* infermeria: la data di inizio la sceglie l'admin; quando esce, l'infortunio si archivia in injHist */
@@ -8238,6 +8248,8 @@ async function saveMatch(){
     up[`players/${e.pid}/injured`] = null; up[`players/${e.pid}/injuredSince`] = null;
     if(p.injuredSince && p.injuredSince <= d) up[`players/${e.pid}/injHist`] = [...list(p.injHist).map(h => ({ f:h.f, t:h.t })), { f:p.injuredSince, t:d }].slice(-30);
   }
+  /* Chi era nascosto (classifica e lista giocatori) e ha giocato questa gara torna visibile */
+  if(!sched) for(const e of [...payload.white, ...payload.black]) if(store.players[e.pid]?.hidden) up[`players/${e.pid}/hidden`] = null;
   commit(up, sched ? 'Gara in programma salvata' : (wasEdit ? 'Risultato salvato' : 'Gara salvata'));
   if(!sched){ markFinal(id); setTimeout(() => showFinal({ id, ...payload }), 380); }
   go('matches');
@@ -8359,7 +8371,7 @@ function shareCardHTML(s, ph){
     <div class="sc-bot">
       <div class="sc-stats">${cell(s.pres, 'Presenze')}${cell(s.pct.toFixed(0) + '%', 'Vittorie')}${cell(s.g, 'Gol')}${cell(s.a, 'Assist')}${cell(s.mvp, 'MVP')}</div>
       <div class="sc-plq">${s.plaques.length ? s.plaques.map(id => { const P = plaqueById(id); return `<div>${P.icon} ${P.name}</div>`; }).join('') : '<div class="none">Nessuna targa, per ora</div>'}</div>
-      <div class="sc-foot">${crestSVG('cgs')}Stagione Comboniani 26/27<span>${s.rank}° in classifica</span></div>
+      <div class="sc-foot">${crestSVG('cgs')}Stagione Comboniani 26/27<span>${s.rank ? s.rank + '° in classifica' : 'Fuori classifica'}</span></div>
     </div>
   </div></div></div>`;
 }
