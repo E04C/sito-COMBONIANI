@@ -2529,6 +2529,8 @@ const DEF_FM = '1-3-3-1';
 const MAX_START = 11, MAX_BENCH = 2;                          /* titolari e giocatori "in più" per squadra */
 const MAX_CALLED = 2 * (MAX_START + MAX_BENCH);               /* 26 giocatori in distinta; 22 per una gara in programma */
 const fmSize = k => (FORMATIONS[k] || []).reduce((t, v) => t + v, 0);
+/* posizione orizzontale (in %) del giocatore j di una linea da cnt: le linee da 2 stanno strette al centro (due centrali, 1.14.0), le altre si allargano dal 14% all'86% */
+const rowX = (j, cnt) => cnt === 1 ? 50 : cnt === 2 ? (j ? 67 : 33) : 14 + j * (72 / (cnt - 1));
 const fmOptions = n => Object.keys(FORMATIONS).filter(k => fmSize(k) === n);
 const ROLE_ORDER = { DIF:1, CEN:2, ATT:3 };
 /* [valore, unità singolare, plurale, soglia "in pericolo", decimali] */
@@ -5700,7 +5702,7 @@ function pitchHTML(m){
     return (cmpOn ? cmpPlace(team) : placeTeam(m, team)).map(({ e, li, j, cnt, n, k }) => {
       const yTop = 6.4 + (n > 1 ? li * (35.3 / (n - 1)) : 0);
       const y = pos === 'top' ? yTop : 100 - yTop;
-      const x = cnt === 1 ? 50 : 14 + j * (72 / (cnt - 1));
+      const x = rowX(j, cnt);
       if(cmpOn && !e) return cmpEmptyHTML(team, k, x.toFixed(2), y.toFixed(2));
       const h = pitchCardHTML(e, m, team, cap, pre, mv, awards, cmpOn ? k : undefined)(x.toFixed(2), y.toFixed(2));
       return cnt >= 5 ? h.replace('class="pcard ', 'class="pcard r5 ') : h;   /* 5 per riga: il nome non deve sovrapporsi ai vicini */
@@ -5779,7 +5781,7 @@ function cPitchHTML(m, o = {}){
     const cap = captainFor(m, team);
     return placeTeam(m, team).map(({ e, li, j, cnt, n }) => {
       const yc = CP_Y0 + (n > 1 ? li * ((CP_Y1 - CP_Y0) / (n - 1)) : 0), yp = yc / CP_H * 100;
-      const y = pos === 'top' ? yp : 100 - yp, x = cnt === 1 ? 50 : 14 + j * (72 / (cnt - 1));
+      const y = pos === 'top' ? yp : 100 - yp, x = rowX(j, cnt);
       const h = cCardHTML(e, m, team, { pre, mv, awards, cap, ph:o.ph, ev:o.ev })(x.toFixed(2), y.toFixed(2));
       return cnt >= 5 ? h.replace('class="cc ', 'class="cc r5 ') : h;
     }).join('');
