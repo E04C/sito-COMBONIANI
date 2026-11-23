@@ -3,6 +3,14 @@
 ## 1.14.0
 - Bilancia squadre a più fattori: punteggio pesato (`BAL_W`) di overall medio, forma (somma delle variazioni delle ultime 3 gare), gol a gara e assist a gara della squadra (ognuno per conto suo, con la media del gruppo come base per chi ha poche gare), ruoli, nuovi (meno di 3 gare), intesa delle coppie (vittorie da compagni pari nelle due squadre; le coppie sopra `BAL_STRONG` si separano) e compagni dell'ultima gara rimasti insieme. Fino a 16 giocatori prova tutte le divisioni, oltre partenze casuali e scambi entro 150 ms; tra le divisioni entro `BAL_TOL` dalla migliore ne sceglie una a caso.
 - Riquadro «Confronto» Bianchi contro Neri sotto il tasto (`#ed-cmp`), dopo il primo bilanciamento e aggiornato anche con gli spostamenti a mano. Nessun dato nuovo nel database.
+- Trofei: tasto «Classifica» nella finestra di ogni targa (ordine completo in `STATS.plqRank`, con il segno di chi la detiene) e di ogni trofeo storico attivo (elenchi ordinati dei primati in `REC_ARR`, più partite per Goleada e Cappotto e gol più presto/più tardi di ognuno). Top 10 e riga di chi guarda se è più in basso; coppie e partite: la sua coppia o partita migliore.
+- Trofeo storico nuovo «Partenza a Razzo» (`razzo`, in fondo a `REC_KEYS`): più vittorie di fila dal debutto, il primo pareggio o sconfitta chiude la serie; almeno 2; a pari vittorie chi c'è arrivato prima.
+- Leggende di ruolo: a pari overall vince chi l'ha tenuto per più gare (`held`), poi chi c'è arrivato prima.
+- «Quando segni»: numero di gol e di assist sopra ogni barra; barre allineate anche con etichette su due righe.
+- Scheda giocatore: riquadro delle medie con gol a gara e gol più assist a gara.
+- TOTM: minimo di presenze nel mese da 3 a 1 (`TM_MIN`).
+- Moduli: le linee da 2 giocatori al 33% e al 67% della larghezza (`rowX`), sul campo e nell'immagine esportata.
+- Giocatori: campo facoltativo `players/{id}/hidden` («Nascondi da classifica e lista giocatori»): fuori dalla classifica e dalle posizioni, fuori dalla lista Giocatori tranne per l'admin; si toglie da solo quando il giocatore gioca e si salva la gara.
 
 ## 1.13.5
 - Icone di gol, gol subito, autogol, assist, MVP, rigore segnato e sbagliato, parata e papera: immagini scelte dal proprietario in `icons/ev/` (PNG trasparenti, 16 KB in tutto, nella cache dell'app), richiamate dagli stessi simboli dello sprite. «Gol subito» è il pallone del gol con il bollino rosso del rigore sbagliato.
