@@ -6415,7 +6415,7 @@ function trophyHistory(){
    Settimana = da lunedì a domenica secondo la data della gara; si calcola la media sulle gare giocate (almeno 1 presenza).
    Dati: totw/draft/{lunedì} = bozza che vede solo l'admin, totw/pub/{lunedì} = team mostrato a tutti. Valgono la grafica speciale e il bollino del team pubblicato più recente.
    ========================================================= */
-const TW_MIN = 1, TM_MIN = 3;   /* presenze minime per entrare: 1 nella settimana, 3 nel mese */
+const TW_MIN = 1, TM_MIN = 1;   /* presenze minime per entrare: basta una gara, nella settimana e nel mese (nel mese erano 3 fino alla 1.13.5) */
 const isoDay = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 const isoOk = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
 function addDays(iso, n){ const [y, m, d] = iso.split('-').map(Number), dt = new Date(y, m - 1, d + n); return isoDay(dt); }
@@ -6436,7 +6436,7 @@ function twLabel(wk){
 /* Calcolo del team di una settimana (wk = lunedì). Ritorna { d, m, f, sc, n, t } con gli id separati da virgola per riga. */
 /* Punteggi del periodo per ogni giocatore con almeno una presenza.
    TOTW: somma cumulativa dei punteggi di tutte le gare della settimana (e totale di gol e assist), qualunque sia il numero di presenze.
-   TOTM: media di tutte le gare del mese, qualunque sia il numero di presenze (minimo 3 per entrare).
+   TOTM: media di tutte le gare del mese, qualunque sia il numero di presenze (basta una gara).
    tg/ta/mvn = totali di gol, assist e MVP nel periodo. */
 function twAgg(wk, kind){
   const mo = kind === 'm', start = mo ? wk + '-01' : wk, end = mo ? wk + '-31' : addDays(wk, 6), per = {}, games = new Set();
@@ -6540,10 +6540,10 @@ function twView(mode){
   else{
     const rows = ['d', 'm', 'f'].map(k => twRow(t, k)), aggMap = Object.fromEntries(twAgg(key, mode).all.map(c => [c.pid, c]));
     const RD = revealing ? twRevOrder(t, rows, aggMap) : null;
-    if(!rows[0].length && !rows[1].length && !rows[2].length) body = TW_EMPTY(mo ? 'Nessun giocatore con almeno 3 presenze in questo mese: il team è vuoto.' : 'Nessuna partita giocata in questa settimana: il team è vuoto.');
+    if(!rows[0].length && !rows[1].length && !rows[2].length) body = TW_EMPTY(mo ? 'Nessuna partita giocata in questo mese: il team è vuoto.' : 'Nessuna partita giocata in questa settimana: il team è vuoto.');
     else body = `<div class="tw-x"><div class="tw-field${mo ? ' mo' : ''}${RD ? ' tw-rev' : ''}">${TW_LINES}${RD && RD.best ? `<span class="tw-bestb" style="--rd:${RD.d[RD.best]}s">⭐ Migliore ${mo ? 'del mese' : 'della settimana'}: ${esc(pname(RD.best))}</span>` : ''}${[2, 1, 0].map(i => `<div class="tw-row r${rows[i].length}">${rows[i].map(pid => twSlot(pid, twInfo(t, pid, aggMap), mode, { swap:adm && ui.twSwap, sel:ui.twSel, rd:RD ? RD.d[pid] : null, best:!!RD && RD.best === pid })).join('')}</div>`).join('')}</div></div>
       <div class="row" style="justify-content:center;margin-top:10px"><button type="button" class="btn sm" data-action="tw-export" data-k="${mode || 'w'}" data-wk="${key}">📸 Esporta la grafica</button></div>
-      <p class="mu sm tw-note">${dr ? 'BOZZA · ' : ''}${t.n} ${t.n === 1 ? 'gara' : 'gare'} ${mo ? 'nel mese' : 'nella settimana'}. ${mo ? 'Punteggio = media di tutte le gare del mese (gol, assist, MVP e voti dei compagni, meno autogol e ritardi), qualunque sia il numero di presenze; servono almeno 3 presenze. A parità: esito delle gare.' : 'Punteggio = somma di tutte le gare della settimana (gol e assist pesati dal ruolo, MVP e voti dei compagni, meno autogol e ritardi), qualunque sia il numero di presenze. A parità: più gol, poi più vittorie.'}</p>`;
+      <p class="mu sm tw-note">${dr ? 'BOZZA · ' : ''}${t.n} ${t.n === 1 ? 'gara' : 'gare'} ${mo ? 'nel mese' : 'nella settimana'}. ${mo ? 'Punteggio = media di tutte le gare del mese (gol, assist, MVP e voti dei compagni, meno autogol e ritardi), qualunque sia il numero di presenze. A parità: esito delle gare.' : 'Punteggio = somma di tutte le gare della settimana (gol e assist pesati dal ruolo, MVP e voti dei compagni, meno autogol e ritardi), qualunque sia il numero di presenze. A parità: più gol, poi più vittorie.'}</p>`;
   }
   return `${nav}${admin}${body}`;
 }
